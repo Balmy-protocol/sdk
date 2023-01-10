@@ -6,10 +6,10 @@ import { timeoutPromise } from "@shared/timeouts"
 // This fallback source will use different sources and combine the results of each of them
 export class FallbackTokenSource<CombinedToken extends BaseToken> implements ITokenSource<CombinedToken> {
 
-  private readonly sourceQueryTimeout: TimeString
+  private readonly sourceQueryTimeout?: TimeString
 
   constructor(private readonly sources: ITokenSource<CombinedToken>[], options?: { sourceQueryTimeout: TimeString }) {
-    this.sourceQueryTimeout = options?.sourceQueryTimeout ?? '1s'
+    this.sourceQueryTimeout = options?.sourceQueryTimeout
   }  
 
   supportedNetworks(): Network[] {

@@ -1,3 +1,4 @@
+import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { ProviderTokenSource } from '@services/tokens/token-sources/provider'
@@ -19,9 +20,11 @@ const TESTS: Record<ChainId, { address: TokenAddress, symbol: string, decimals: 
   [Networks.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC', decimals: 8 },
 }
 
-const PROVIDER_TOKEN_SOURCE = new ProviderTokenSource(new MulticallService(new PublicProvidersSource()), '4s')
+const PROVIDER_TOKEN_SOURCE = new ProviderTokenSource(new MulticallService(new PublicProvidersSource()))
 const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaTokenSource(new FetchService(crossFetch))
-const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource<Partial<DefiLlamaToken> & BaseToken>([PROVIDER_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE], { sourceQueryTimeout: '3s' })
+const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource<Partial<DefiLlamaToken> & BaseToken>([PROVIDER_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE])
+
+jest.setTimeout(ms('1m'))
 
 describe('Token Sources', () => {
 

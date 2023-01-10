@@ -1,6 +1,3 @@
-// import { BigNumber, BigNumberish } from "ethers";
-// import { IFetchService } from "@services/fetch/fetch-service";
-// import { IGasService } from "@services/gas/types";
 import { TransactionRequest } from "@ethersproject/providers"
 import { GasPrice, GasSpeed } from "@services/gas/types"
 import { BaseToken } from "@services/tokens/types"
@@ -23,8 +20,7 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
   getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse>[]
 }
 
-
-// simulate and estimate gas correctly
+// TODO:
 // sortBy?: 'least-gas' | 'most-swapped' | 'most-profitable', MEJORAR NOMBRES
 // ignoredFailed?: boolean
 
