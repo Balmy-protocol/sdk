@@ -12,5 +12,5 @@ export type Network = Readonly<{
   ids: ArrayOneOrMore<string>,
   currencySymbol: string,
   wToken: string,
-  publicRPCs: ArrayOneOrMore<string>,
+  publicRPCs?: Readonly<string[]>,
 }>

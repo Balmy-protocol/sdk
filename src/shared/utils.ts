@@ -44,3 +44,9 @@ export function amountToUSD<Price extends number | undefined>(decimals: number, 
   }
   return undefined as Price
 }
+
+export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<T[]> {
+  const results = await Promise.allSettled(promises)
+  return results.filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled')
+    .map(({ value }) => value)
+}

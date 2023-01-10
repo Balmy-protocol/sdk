@@ -19,7 +19,7 @@ const NETWORK_KEYS: Record<ChainId, string> = {
   [Networks.CRONOS.chainId]: 'cronos',
   [Networks.BOBA.chainId]: 'boba',
   [Networks.MOONRIVER.chainId]: 'moonriver',
-  [Networks.OKC.chainId]: 'okexchain',
+  // [Networks.OKC.chainId]: 'okexchain',
 
   // TODO: there are some missing. Check https://coins.llama.fi/chains
 }

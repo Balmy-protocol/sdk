@@ -1,26 +1,27 @@
 import { ethers } from "ethers"
-import { Address, ChainId, Network, TokenAddress } from "@types"
+import { Address, ChainId, Network, TimeString, TokenAddress } from "@types"
 import { Networks } from "@networks"
 import { AddedProperties, BaseToken, ITokenSource } from "@services/tokens/types"
 import { IMulticallService } from "@services/multicall/types"
 import { Addresses } from "@shared/constants"
-import { isSameAddress } from "@shared/utils"
+import { filterRejectedResults, isSameAddress } from "@shared/utils"
+import { timeoutPromise } from "@shared/timeouts"
 
 export class ProviderTokenSource implements ITokenSource {
 
-  constructor(private readonly multicallService: IMulticallService) { }  
+  constructor(private readonly multicallService: IMulticallService, private readonly defaultTimeout?: TimeString) { }  
 
   supportedNetworks(): Network[] {
     return this.multicallService.supportedNetworks()
   }
 
-  async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
+  async getTokens(addresses: Record<ChainId, TokenAddress[]>, timeout?: TimeString): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
     const promises = Object.entries(addresses)
       .map<Promise<[ChainId, Record<TokenAddress, BaseToken>]>>(async ([chainId, addresses]) => [
         parseInt(chainId),
-        await this.fetchTokensInNetwork(parseInt(chainId), addresses)
+        await timeoutPromise(this.fetchTokensInNetwork(parseInt(chainId), addresses), timeout ?? this.defaultTimeout)
       ])
-    return Object.fromEntries(await Promise.all(promises))
+    return Object.fromEntries(await filterRejectedResults(promises))
   }
 
   addedProperties(): AddedProperties<BaseToken>[] {

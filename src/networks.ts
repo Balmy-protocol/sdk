@@ -144,12 +144,6 @@ export class Networks {
     ids: ['ont', 'ontology'],
     currencySymbol: 'ONG',
     wToken: '0xd8bc24cfd45452ef2c8bc7618e32330b61f2691b',
-    publicRPCs: [
-      'http://dappnode1.ont.io/',
-      'http://dappnode2.ont.io/',
-      'http://dappnode3.ont.io/',
-      'http://dappnode4.ont.io/',
-    ]
   } as const) satisfies Network
 
 

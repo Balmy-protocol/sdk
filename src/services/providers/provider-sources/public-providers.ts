@@ -16,7 +16,8 @@ export class PublicProvidersSource implements IProviderSource {
   }
 
   getProvider(network: Network): providers.BaseProvider {
-    const config = network.publicRPCs.map((url, i) => ({
+    if (!this.networks.includes(network)) throw new Error(`Unsupported network ${network.name}`)
+    const config = network.publicRPCs!.map((url, i) => ({
       provider: new providers.StaticJsonRpcProvider(url, network.chainId),
       priority: i
     }))

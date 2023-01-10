@@ -2,8 +2,6 @@
   "name": "mean-sdk",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsconfig-replace-paths -s src -p tsconfig.json",
-    "start": "node --trace-warnings --abort-on-uncaught-exception --unhandled-rejections=strict dist/index.js",
-    "watch": "nodemon -r tsconfig-paths/register src/index.ts",
     "test": "jest --forceExit --detectOpenHandles --coverage --verbose"
   },
   "devDependencies": {
@@ -19,7 +17,6 @@
     "cross-fetch": "^3.1.5",
     "hardhat": "^2.12.5",
     "jest": "^29.3.1",
-    "nodemon": "^2.0.20",
     "ts-jest": "^29.0.3",
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.1.1",

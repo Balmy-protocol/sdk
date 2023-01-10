@@ -11,13 +11,8 @@ export function forcedTimeoutWrapper<
   return {
     ...source,
     quote: (components, request) => {
-      const quotePromise = source.quote(components, request)
-      if (!request.config.timeout) {
-        // Nothing to add here
-        return quotePromise
-      }
       const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.network.name}} for source ${source.getMetadata().name}`
-      return timeoutPromise(quotePromise, request.config.timeout, { description })
+      return timeoutPromise(source.quote(components, request), request.config.timeout, { description })
     }
   }
 }
