@@ -1,8 +1,9 @@
 import { Contract } from "ethers"
 import { AbiCoder } from "ethers/lib/utils";
-import { Address, Network } from "@types";
+import { Address, ChainId, Network } from "@types";
 import { IProviderSource } from "@services/providers/types";
 import { IMulticallService } from "./types";
+import { Networks } from "@networks";
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
 export class MulticallService implements IMulticallService {
@@ -11,8 +12,8 @@ export class MulticallService implements IMulticallService {
   constructor(private readonly providerSource: IProviderSource) { }
 
   supportedNetworks(): Network[] {
-    // TODO: Check networks supported by the multicall service https://github.com/mds1/multicall and calculate intersection
     return this.providerSource.supportedNetworks()
+      .filter(network => SUPPORTED_NETWORKS.has(network.chainId))
   }
 
   readOnlyMulticallToSingleTarget({ network, target, calls }: { network: Network, target: Address, calls: { calldata: string, decode: string }[] }) {
@@ -49,3 +50,60 @@ const MULTICALL_ABI = [
   'function tryAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) payable returns (tuple(bool success, bytes returnData)[] returnData)',
   'function tryBlockAndAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes32 blockHash, tuple(bool success, bytes returnData)[] returnData)',
 ];
+
+const SUPPORTED_NETWORKS: Set<ChainId> = new Set([
+  1,
+  3,
+  4,
+  5,
+  10,
+  14,
+  16,
+  18,
+  19,
+  25,
+  30,
+  31,
+  40,
+  42,
+  56,
+  66,
+  69,
+  97,
+  100,
+  106,
+  108,
+  114,
+  122,
+  128,
+  137,
+  250,
+  288,
+  321,
+  420,
+  592,
+  1088,
+  1284,
+  1285,
+  1287,
+  2001,
+  4002,
+  8217,
+  9000,
+  9001,
+  42161,
+  42170,
+  42220,
+  42262,
+  43113,
+  43114,
+  44787,
+  71401,
+  71402,
+  80001,
+  421611,
+  421613,
+  11155111,
+  1313161554,
+  1666600000,
+])
