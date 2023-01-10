@@ -6,7 +6,7 @@ import { GenericGasCalculatorBuilder } from "./generic-gas-calculator-builder";
 import { IGasPriceSource, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from "../types";
 
 type ConstructorParameters = {
-  gasSource: IGasPriceSource,
+  gasPriceSource: IGasPriceSource,
   multicallService: IMulticallService
 }
 
@@ -15,8 +15,8 @@ export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuil
   private readonly defaultCalculatorBuilder: IQuickGasCostCalculatorBuilder
   private readonly calculatorBuilderOverrides: Record<ChainId, IQuickGasCostCalculatorBuilder>
 
-  constructor({ gasSource, multicallService }: ConstructorParameters) {
-    this.defaultCalculatorBuilder = new GenericGasCalculatorBuilder(gasSource)
+  constructor({ gasPriceSource, multicallService }: ConstructorParameters) {
+    this.defaultCalculatorBuilder = new GenericGasCalculatorBuilder(gasPriceSource)
     this.calculatorBuilderOverrides = {
       [Networks.OPTIMISM.chainId]: new OptimismGasCalculatorBuilder(multicallService)
     }

@@ -8,11 +8,11 @@ const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
 export class MulticallService implements IMulticallService {
 
   private readonly ABI_CODER = new AbiCoder()
-  constructor(private readonly providerService: IProviderSource) { }
+  constructor(private readonly providerSource: IProviderSource) { }
 
   supportedNetworks(): Network[] {
     // TODO: Check networks supported by the multicall service https://github.com/mds1/multicall and calculate intersection
-    return this.providerService.supportedNetworks()
+    return this.providerSource.supportedNetworks()
   }
 
   readOnlyMulticallToSingleTarget({ network, target, calls }: { network: Network, target: Address, calls: { calldata: string, decode: string }[] }) {
@@ -26,7 +26,7 @@ export class MulticallService implements IMulticallService {
   }
 
   private getMulticall(network: Network) {
-    return new Contract(ADDRESS, MULTICALL_ABI, this.providerService.getProvider(network))
+    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getProvider(network))
   }
 }
 

@@ -5,14 +5,14 @@ import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types'
 // We are using the provider here to calculate the gas price
 export class ProviderGasPriceSource implements IGasPriceSource {
 
-  constructor(private readonly providerService: IProviderSource) { }
+  constructor(private readonly providerSource: IProviderSource) { }
 
   supportedNetworks(): Network[] {
-    return this.providerService.supportedNetworks()
+    return this.providerSource.supportedNetworks()
   }
 
   async getGasPrice(network: Network): Promise<Record<GasSpeed, GasPrice>> {
-    const feeData = await this.providerService.getProvider(network).getFeeData()
+    const feeData = await this.providerSource.getProvider(network).getFeeData()
     const gasPrice = 'maxFeePerGas' in feeData
       ? { maxFeePerGas: feeData.maxFeePerGas!, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas! }
       : { gasPrice: feeData! }

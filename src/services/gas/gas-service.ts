@@ -6,29 +6,29 @@ import { IProviderSource } from "@services/providers/types";
 import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from "./types";
 
 type ConstructorParameters = {
-  providerService: IProviderSource,
+  providerSource: IProviderSource,
   gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder,
 }
 
 export class GasService implements IGasService {
 
-  private readonly providerService: IProviderSource
+  private readonly providerSource: IProviderSource
   private readonly gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder
 
-  constructor({ providerService, gasCostCalculatorBuilder }: ConstructorParameters) {
-    this.providerService = providerService
+  constructor({ providerSource, gasCostCalculatorBuilder }: ConstructorParameters) {
+    this.providerSource = providerSource
     this.gasCostCalculatorBuilder = gasCostCalculatorBuilder
   }
 
   supportedNetworks(): Network[] {
     return networksIntersection(
-      this.providerService.supportedNetworks(),
+      this.providerSource.supportedNetworks(),
       this.gasCostCalculatorBuilder.supportedNetworks(),
     )
   }
 
   estimateGas(network: Network, tx: TransactionRequest): Promise<BigNumber> {
-    return this.providerService.getProvider(network).estimateGas(tx)
+    return this.providerSource.getProvider(network).estimateGas(tx)
   }
 
   getQuickGasCalculator(network: Network): Promise<IQuickGasCostCalculator> {
