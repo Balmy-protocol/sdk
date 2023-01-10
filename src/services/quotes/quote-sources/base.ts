@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 import { IFetchService } from "@services/fetch/types";
 import { GasPrice } from "@services/gas/types";
-import { GlobalQuoteSourceConfig } from "@services/quote/types";
+import { GlobalQuoteSourceConfig } from "@services/quotes/types";
 import { Address, Network, TimeString, TokenAddress } from "@types";
 import { BaseToken } from "@services/tokens/types";
 
