@@ -4,4 +4,4 @@ node_modules/
 coverage
 .env
 newrelic_agent.log
-.yarn-error.log
+yarn-error.log

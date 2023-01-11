@@ -19,6 +19,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && tsconfig-replace-paths -s src -p tsconfig.json",
+    "lint:check": "echo",
+    "lint:fix": "sort-package-json",
     "prepare": "husky install",
     "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration --testPathIgnorePatterns=quote-sources.spec.ts",
     "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=quote-sources.spec.ts",
