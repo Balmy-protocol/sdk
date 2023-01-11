@@ -9,20 +9,13 @@
       "request": "launch",
       "name": "Launch Program",
       "restart": true,
-      "skipFiles": [
-        "<node_internals>/**/*.js",
-        "node_modules/**/*.js"
-      ],
+      "skipFiles": ["<node_internals>/**/*.js", "node_modules/**/*.js"],
       "runtimeExecutable": "node",
       "sourceMaps": true,
       "showAsyncStacks": true,
       "autoAttachChildProcesses": true,
-      "runtimeArgs": [
-        "--preserve-symlinks"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "runtimeArgs": ["--preserve-symlinks"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "program": "${workspaceFolder}/dist/index.js",
       "preLaunchTask": "npm: build"
     },
@@ -30,13 +23,9 @@
       "name": "Debug Jest Tests",
       "type": "node",
       "request": "launch",
-      "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/jest",
-        "--runInBand"
-      ],
+      "runtimeArgs": ["--inspect-brk", "${workspaceRoot}/node_modules/.bin/jest", "--runInBand"],
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }

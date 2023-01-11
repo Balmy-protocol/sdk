@@ -1,33 +1,41 @@
-import { Contract } from "ethers"
-import { AbiCoder } from "ethers/lib/utils";
-import { Address, ChainId, Network } from "@types";
-import { IProviderSource } from "@services/providers/types";
-import { IMulticallService } from "./types";
-import { Networks } from "@networks";
+import { Contract } from 'ethers';
+import { AbiCoder } from 'ethers/lib/utils';
+import { Address, ChainId, Network } from '@types';
+import { IProviderSource } from '@services/providers/types';
+import { IMulticallService } from './types';
+import { Networks } from '@networks';
 
-const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
+const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 export class MulticallService implements IMulticallService {
-
-  private readonly ABI_CODER = new AbiCoder()
-  constructor(private readonly providerSource: IProviderSource) { }
+  private readonly ABI_CODER = new AbiCoder();
+  constructor(private readonly providerSource: IProviderSource) {}
 
   supportedNetworks(): Network[] {
-    return this.providerSource.supportedNetworks()
-      .filter(network => SUPPORTED_NETWORKS.has(network.chainId))
+    return this.providerSource.supportedNetworks().filter((network) => SUPPORTED_NETWORKS.has(network.chainId));
   }
 
-  readOnlyMulticallToSingleTarget({ network, target, calls }: { network: Network, target: Address, calls: { calldata: string, decode: string }[] }) {
-    return this.readOnlyMulticall({ network, calls: calls.map(({ calldata, decode }) => ({ target, calldata, decode })) })
+  readOnlyMulticallToSingleTarget({
+    network,
+    target,
+    calls,
+  }: {
+    network: Network;
+    target: Address;
+    calls: { calldata: string; decode: string }[];
+  }) {
+    return this.readOnlyMulticall({ network, calls: calls.map(({ calldata, decode }) => ({ target, calldata, decode })) });
   }
 
-  async readOnlyMulticall({ network, calls }: { network: Network, calls: { target: Address, calldata: string, decode: string }[] }) {
-    const multicall = this.getMulticall(network)
-    const [blockNumber, results]: [number, [string]] = await multicall.callStatic.aggregate(calls.map(({ target, calldata }) => [target, calldata]))
-    return results.map((result, i) => this.ABI_CODER.decode([calls[i].decode], result)[0])
+  async readOnlyMulticall({ network, calls }: { network: Network; calls: { target: Address; calldata: string; decode: string }[] }) {
+    const multicall = this.getMulticall(network);
+    const [blockNumber, results]: [number, [string]] = await multicall.callStatic.aggregate(
+      calls.map(({ target, calldata }) => [target, calldata])
+    );
+    return results.map((result, i) => this.ABI_CODER.decode([calls[i].decode], result)[0]);
   }
 
   private getMulticall(network: Network) {
-    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getProvider(network))
+    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getProvider(network));
   }
 }
 
@@ -52,58 +60,7 @@ const MULTICALL_ABI = [
 ];
 
 const SUPPORTED_NETWORKS: Set<ChainId> = new Set([
-  1,
-  3,
-  4,
-  5,
-  10,
-  14,
-  16,
-  18,
-  19,
-  25,
-  30,
-  31,
-  40,
-  42,
-  56,
-  66,
-  69,
-  97,
-  100,
-  106,
-  108,
-  114,
-  122,
-  128,
-  137,
-  250,
-  288,
-  321,
-  420,
-  592,
-  1088,
-  1284,
-  1285,
-  1287,
-  2001,
-  4002,
-  8217,
-  9000,
-  9001,
-  42161,
-  42170,
-  42220,
-  42262,
-  43113,
-  43114,
-  44787,
-  71401,
-  71402,
-  80001,
-  421611,
-  421613,
-  11155111,
-  1313161554,
-  1666600000,
-])
+  1, 3, 4, 5, 10, 14, 16, 18, 19, 25, 30, 31, 40, 42, 56, 66, 69, 97, 100, 106, 108, 114, 122, 128, 137, 250, 288, 321, 420, 592, 1088, 1284,
+  1285, 1287, 2001, 4002, 8217, 9000, 9001, 42161, 42170, 42220, 42262, 43113, 43114, 44787, 71401, 71402, 80001, 421611, 421613, 11155111,
+  1313161554, 1666600000,
+]);

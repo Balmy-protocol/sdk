@@ -1,32 +1,31 @@
-import { BigNumber, constants, utils } from "ethers";
+import { BigNumber, constants, utils } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
-import { serialize } from "@ethersproject/transactions";
-import { Networks } from "@networks";
-import { IMulticallService } from "@services/multicall/types";
-import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from "@services/gas/types"
-import { Network } from "@types";
+import { serialize } from '@ethersproject/transactions';
+import { Networks } from '@networks';
+import { IMulticallService } from '@services/multicall/types';
+import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
+import { Network } from '@types';
 
-const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F'
+const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
 export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
-
-  constructor(private readonly multicallService: IMulticallService) { }
+  constructor(private readonly multicallService: IMulticallService) {}
 
   supportedNetworks(): Network[] {
-    return [Networks.OPTIMISM]
+    return [Networks.OPTIMISM];
   }
 
   async build(network: Network): Promise<IQuickGasCostCalculator> {
-    const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService)
+    const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
       getGasPrice: () => ({ gasPrice: l2GasPrice }),
-      calculateGasCost: (tx, gasEstimation,) => {
-        const l1GasCost = getL1Fee(tx, l1GasValues)
-        const l2GasCost = l2GasPrice.mul(gasEstimation)
-        const gasCostNativeToken = l1GasCost.add(l2GasCost)
-        return { gasCostNativeToken, gasPrice: l2GasPrice }
+      calculateGasCost: (tx, gasEstimation) => {
+        const l1GasCost = getL1Fee(tx, l1GasValues);
+        const l2GasCost = l2GasPrice.mul(gasEstimation);
+        const gasCostNativeToken = l1GasCost.add(l2GasCost);
+        return { gasCostNativeToken, gasPrice: l2GasPrice };
       },
-    }
+    };
   }
 }
 
@@ -40,26 +39,29 @@ async function getGasValues(multicallService: IMulticallService) {
       { calldata: DECIMALS_CALLDATA, decode: 'uint256' },
       { calldata: SCALAR_CALLDATA, decode: 'uint256' },
       { calldata: GAS_PRICE_CALLDATA, decode: 'uint256' },
-    ]
-  })
-  return { overhead, l1BaseFee, decimals, scalar, l2GasPrice }
+    ],
+  });
+  return { overhead, l1BaseFee, decimals, scalar, l2GasPrice };
 }
 
-function getL1Fee(tx: TransactionRequest, { overhead, l1BaseFee, scalar, decimals }: { overhead: BigNumber, l1BaseFee: BigNumber, scalar: BigNumber, decimals: BigNumber }) {
+function getL1Fee(
+  tx: TransactionRequest,
+  { overhead, l1BaseFee, scalar, decimals }: { overhead: BigNumber; l1BaseFee: BigNumber; scalar: BigNumber; decimals: BigNumber }
+) {
   const l1GasUsed = getL1GasUsed(tx, overhead);
   const l1Fee = l1GasUsed.mul(l1BaseFee);
   const unscaled = l1Fee.mul(scalar);
-  const divisor = BigNumber.from(10).pow(decimals)
+  const divisor = BigNumber.from(10).pow(decimals);
   const scaled = unscaled.div(divisor);
-  return scaled
+  return scaled;
 }
 
 function getL1GasUsed(tx: TransactionRequest, overhead: BigNumber) {
-  const nonce = BigNumber.from(tx.nonce ?? 0xffffffff).toNumber()
-  const value = BigNumber.from(tx.value ?? 0).toHexString()
-  const gasLimit = BigNumber.from(tx.gasLimit ?? 0).toHexString()
-  const data = serialize({ ...tx, gasLimit, nonce, value })
-  let total = constants.Zero
+  const nonce = BigNumber.from(tx.nonce ?? 0xffffffff).toNumber();
+  const value = BigNumber.from(tx.value ?? 0).toHexString();
+  const gasLimit = BigNumber.from(tx.gasLimit ?? 0).toHexString();
+  const data = serialize({ ...tx, gasLimit, nonce, value });
+  let total = constants.Zero;
   for (const byte of data) {
     if (byte === '0') {
       total = total.add(4);
@@ -80,8 +82,8 @@ const ORACLE_ABI = [
 ];
 
 const ERC_20_INTERFACE = new utils.Interface(ORACLE_ABI);
-const OVERHEAD_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('overhead')
-const L1_BASE_FEE_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('l1BaseFee')
-const DECIMALS_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('decimals')
-const SCALAR_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('scalar')
-const GAS_PRICE_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('gasPrice')
+const OVERHEAD_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('overhead');
+const L1_BASE_FEE_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('l1BaseFee');
+const DECIMALS_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('decimals');
+const SCALAR_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('scalar');
+const GAS_PRICE_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('gasPrice');

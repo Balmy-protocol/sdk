@@ -5,10 +5,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": [
-      "node",
-      "jest"
-    ],
+    "types": ["node", "jest"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
