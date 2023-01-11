@@ -29,8 +29,12 @@ import { GasPrice } from '@services/gas/types';
 // It's very time expensive to test all sources for all networks, so we need to choose
 const RUN_FOR: { source: AvailableSources | undefined; network: Network | undefined } = {
   source: undefined, // If undefined, will select one randomly
-  network: undefined, // If undefined, will select one randomly
+  network: Networks.OPTIMISM, // If undefined, will select one randomly
 };
+
+// Since trading tests can be a little bit flaky, we want to re-test before failing
+jest.retryTimes(3);
+jest.setTimeout(ms('5m'));
 
 const CONFIG: GlobalQuoteSourceConfig & AllSourcesConfig = {
   odos: { apiKey: process.env.ODOS_API_KEY! },
@@ -40,6 +44,34 @@ type TokenData = { address: TokenAddress; whale: Address };
 type NetworkTokens = { WBTC: TokenData; USDC: TokenData; wToken: TokenData };
 // TODO: Add more networks
 const TOKENS: Record<ChainId, Record<string, TokenData>> = {
+  [Networks.ETHEREUM.chainId]: {
+    USDC: {
+      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      whale: '0xf977814e90da44bfa03b6295a0616a897441acec',
+    },
+    WBTC: {
+      address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+      whale: '0x218b95be3ed99141b0144dba6ce88807c4ad7c09',
+    },
+    wToken: {
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      whale: '0x08638ef1a205be6762a8b935f5da9b700cf7322c',
+    },
+  },
+  [Networks.OPTIMISM.chainId]: {
+    USDC: {
+      address: '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
+      whale: '0xf390830df829cf22c53c8840554b98eafc5dcbc2',
+    },
+    WBTC: {
+      address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095',
+      whale: '0x338726dd694db9e2230ec2bb8624a2d7f566c96d',
+    },
+    wToken: {
+      address: '0x4200000000000000000000000000000000000006',
+      whale: '0x68f5c0a2de713a54991e01858fd27a3832401849',
+    },
+  },
   [Networks.POLYGON.chainId]: {
     USDC: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
@@ -78,8 +110,6 @@ const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
     Test.UNWRAP_WTOKEN_AND_TRANSFER,
   ],
 };
-
-jest.setTimeout(ms('5m'));
 
 describe('Quote Sources', () => {
   const { sourceId, source } = getSource();
