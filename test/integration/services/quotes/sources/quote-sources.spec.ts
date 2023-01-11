@@ -29,7 +29,7 @@ import { GasPrice } from '@services/gas/types';
 // It's very time expensive to test all sources for all networks, so we need to choose
 const RUN_FOR: { source: AvailableSources | undefined; network: Network | undefined } = {
   source: undefined, // If undefined, will select one randomly
-  network: Networks.OPTIMISM, // If undefined, will select one randomly
+  network: undefined, // If undefined, will select one randomly
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
