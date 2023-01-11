@@ -21,16 +21,16 @@ const NETWORK_KEYS: Record<ChainId, string> = {
   [Networks.MOONRIVER.chainId]: 'moonriver',
   [Networks.OKC.chainId]: 'okexchain',
   [Networks.ONTOLOGY.chainId]: 'ontology',
+  [Networks.KLAYTN.chainId]: 'klaytn',
+  [Networks.AURORA.chainId]: 'aurora',
 
   // TODO: these networks are also supported by DefiLlama. We should add them
-  // "klaytn",
   // "harmony",
   // "kcc",
   // "kava",
   // "rsk",
   // "wan",
   // "kardia",
-  // "aurora",
   // "metis",
   // "telos",
   // "moonbeam",

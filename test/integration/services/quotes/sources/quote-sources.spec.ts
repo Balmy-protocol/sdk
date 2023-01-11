@@ -445,7 +445,7 @@ describe('Quote Sources', () => {
           if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
             expect(quote.value).to.equal(quote.maxSellAmount)
           } else {
-            expect(quote.value).to.be.oneOf([0, undefined])
+            expect(quote.value).to.be.oneOf([constants.Zero, undefined])
           }
         } else {
           expect(quote.buyAmount).to.equal(buyAmount)

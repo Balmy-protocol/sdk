@@ -131,7 +131,7 @@ export class Networks {
 
   static readonly BOBA = ({
     chainId: 288,
-    name: 'Boba Network', 
+    name: 'Boba Network',
     ids: ['boba'],
     currencySymbol: 'ETH',
     wToken: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000',
@@ -140,12 +140,29 @@ export class Networks {
 
   static readonly ONTOLOGY = ({
     chainId: 58,
-    name: 'Ontology', 
+    name: 'Ontology',
     ids: ['ont', 'ontology'],
     currencySymbol: 'ONG',
     wToken: '0xd8bc24cfd45452ef2c8bc7618e32330b61f2691b',
   } as const) satisfies Network
 
+  static readonly KLAYTN = ({
+    chainId: 8217,
+    name: 'Klaytn',
+    ids: ['klaytn'],
+    currencySymbol: 'KLAY',
+    wToken: '0xe4f05a66ec68b54a58b17c22107b02e0232cc817',
+    publicRPCs: ['https://public-node-api.klaytnapi.com/v1/cypress']
+  } as const) satisfies Network
+
+  static readonly AURORA = ({
+    chainId: 1313161554,
+    name: 'Aurora',
+    ids: ['aurora'],
+    currencySymbol: 'ETH',
+    wToken: '0xc9bdeed33cd01541e1eed10f90519d2c06fe3feb',
+    publicRPCs: ['https://mainnet.aurora.dev']
+  } as const) satisfies Network
 
   static getAllNetworks(): Network[] {
     return Object.values(Networks)

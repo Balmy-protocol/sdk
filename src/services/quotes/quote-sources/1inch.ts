@@ -20,9 +20,8 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
           Networks.GNOSIS,
           Networks.AVALANCHE,
           Networks.FANTOM,
-          // TODO
-          // Networks.KLAYTN
-          // Networks.AURORA
+          Networks.KLAYTN,
+          Networks.AURORA,
         ],
         swapAndTransfer: true,
         buyOrders: false
