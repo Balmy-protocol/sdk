@@ -5,12 +5,13 @@ import { Network } from "@types"
 import { BigNumber, utils } from "ethers";
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from "./quote-sources/base";
 import { AllSourcesConfig, buildSources, SourcesBasedOnConfig } from "./sources-list";
-import { GlobalQuoteSourceConfig, IQuoteService, QuoteRequest, QuoteResponse, TokenWithOptionalPrice } from "./types";
+import { FailedQuote, GlobalQuoteSourceConfig, IQuoteService, QuoteRequest, QuoteResponse, TokenWithOptionalPrice, WithFailedQuotes } from "./types";
 import { BaseToken, ITokenService } from "@services/tokens/types";
 import { Addresses } from "@shared/constants";
 import { forcedTimeoutWrapper } from "./quote-sources/wrappers/forced-timeout-wrapper";
 import { buyToSellOrderWrapper } from "./quote-sources/wrappers/buy-to-sell-order-wrapper";
-import { amountToUSD, calculateGasDetails } from "@shared/utils";
+import { amountToUSD, calculateGasDetails, filterRejectedResults } from "@shared/utils";
+import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from "./quote-compare";
 
 type ConstructorParameters<CustomConfig extends Partial<AllSourcesConfig>> = {
   fetchService: IFetchService,
@@ -51,6 +52,39 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
 
   getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse>[] {
     return this.executeQuotes(request)
+      .map(({ response }) => response)
+  }
+
+  async getAllQuotes<IgnoreFailed extends boolean = true>(
+    request: QuoteRequest<SourcesBasedOnConfig<Config>>,
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
+  ): Promise<WithFailedQuotes<IgnoreFailed>[]> {
+    let successfulQuotes: QuoteResponse[]
+    let failedQuotes: FailedQuote[] = []
+    if (config?.ignoredFailed === false) {
+      const promises = this.executeQuotes(request)
+        .map(({ source, response }) => response.catch(() => ({
+          failed: true,
+          name: source.getMetadata().name,
+          logoURI: source.getMetadata().logoURI
+        })))
+      const responses = await Promise.all(promises)
+      successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response))
+      failedQuotes = responses.filter((response): response is FailedQuote => 'failed' in response)
+    } else {
+      successfulQuotes = await filterRejectedResults(this.getQuotes(request))
+    }
+    
+    const sortedQuotes = sortQuotesBy(
+      successfulQuotes,
+      config?.sort?.by ?? 'most-swapped-accounting-for-gas',
+      config?.sort?.using ?? 'sell/buy amounts'
+    )
+
+    return [
+      ...sortedQuotes,
+      ...failedQuotes
+    ] as WithFailedQuotes<IgnoreFailed>[]
   }
 
   private executeQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
@@ -66,7 +100,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
 
     // Ask for quotes
     const responses = this.getSourcesForRequest(request)
-      .map(async source => ({ source, response: await source.quote({ fetchService: this.fetchService }, sourceRequest) }))
+      .map(source => ({ source, response: source.quote({ fetchService: this.fetchService }, sourceRequest) }))
 
     // Group all value promises
     const values = Promise.all([
@@ -80,7 +114,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     ]).then(([sellToken, buyToken, gasCalculator, nativeTokenPrice]) => ({ sellToken, buyToken, gasCalculator, nativeTokenPrice }))
 
     // Map to response
-    return responses.map(responsePromise => mapSourceResponseToResponse({ request, responsePromise, values }))
+    return responses.map(({ source, response }) => ({ source, response: mapSourceResponseToResponse({ source, request, response, values }) }))
   }
 
   private getSourcesForRequest(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
@@ -111,9 +145,10 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   }
 }
 
-async function mapSourceResponseToResponse({ request, responsePromise, values }: {
+async function mapSourceResponseToResponse({ source, request, response: responsePromise, values }: {
+  source: QuoteSource<QuoteSourceSupport, any, any>,
   request: QuoteRequest<any>,
-  responsePromise: Promise<{ source: QuoteSource<QuoteSourceSupport, any, any>, response: SourceQuoteResponse }>,
+  response: Promise<SourceQuoteResponse>,
   values: Promise<{
     gasCalculator: IQuickGasCostCalculator,
     sellToken: TokenWithOptionalPrice,
@@ -121,7 +156,7 @@ async function mapSourceResponseToResponse({ request, responsePromise, values }:
     nativeTokenPrice: number | undefined
   }>
 }): Promise<QuoteResponse> {
-  const { source, response } = await responsePromise
+  const response = await responsePromise
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values
   const txData = {
     to: response.swapper.address,

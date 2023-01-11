@@ -4,6 +4,7 @@ import { BaseToken } from "@services/tokens/types"
 import { Address, Network, TimeString, TokenAddress } from "@types"
 import { Either, WithRequired } from "@utility-types"
 import { BigNumber, BigNumberish } from "ethers"
+import { CompareQuotesBy, CompareQuotesUsing } from "./quote-compare"
 import { QUOTE_SOURCES } from "./sources-list"
 
 export type GlobalQuoteSourceConfig = {
@@ -18,11 +19,17 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
   supportedSources(): SupportedSources[]
   supportedSourcesInNetwork(network: Network): SupportedSources[]
   getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse>[]
+  getAllQuotes<IgnoreFailed extends boolean = true>(
+    request: QuoteRequest<SupportedSources>,
+    config?: {
+      ignoredFailed?: IgnoreFailed,
+      sort?: {
+        by: CompareQuotesBy
+        using?: CompareQuotesUsing
+      }
+    }
+  ): Promise<WithFailedQuotes<IgnoreFailed>[]>
 }
-
-// TODO:
-// sortBy?: 'least-gas' | 'most-swapped' | 'most-profitable', MEJORAR NOMBRES
-// ignoredFailed?: boolean
 
 export type QuoteRequest<SupportedSources extends AvailableSources> = {
   network: Network,
@@ -62,9 +69,14 @@ export type QuoteResponse = {
   tx: QuoteTx
 }
 
-
 type AmountOfToken = {
   amount: BigNumber
   amountInUnits: number,
   amountInUSD?: number
 }
+
+export type WithFailedQuotes<IgnoredFailed extends boolean> = IgnoredFailed extends true
+  ? QuoteResponse
+  : QuoteResponse | FailedQuote
+
+export type FailedQuote = { failed: true, name: string, logoURI: string }

@@ -1,4 +1,4 @@
-import { BigNumber, utils } from "ethers";
+import { BigNumber, constants, utils } from "ethers";
 import ms from "ms";
 import { Network, TimeString, TokenAddress } from "@types";
 
@@ -53,4 +53,9 @@ export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<
   const results = await Promise.allSettled(promises)
   return results.filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled')
     .map(({ value }) => value)
+}
+
+export function ruleOfThree({ a, matchA, b }: { a: BigNumber, matchA: BigNumber, b: BigNumber }) {
+  if (b.isZero() || matchA.isZero()) return constants.Zero
+  return b.mul(matchA).div(a)
 }
