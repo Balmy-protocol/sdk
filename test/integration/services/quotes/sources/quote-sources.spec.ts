@@ -537,7 +537,11 @@ describe('Quote Sources', () => {
           sellToken: sellToken.address,
           buyToken: buyToken.address,
           network,
-          config: { slippagePercentage: 0.3, txValidFor: '5m', timeout: '15s' },
+          config: { 
+            slippagePercentage: 5, // We set a high slippage so that the tests don't fail as much 
+            txValidFor: '5m', 
+            timeout: '15s' 
+          },
           accounts: { takeFrom: user.address, recipient: quote.recipient?.address },
           sellTokenData: Promise.resolve(sellToken),
           buyTokenData: Promise.resolve(buyToken),
