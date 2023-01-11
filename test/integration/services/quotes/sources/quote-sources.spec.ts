@@ -67,7 +67,7 @@ const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
   ['uniswap']: [Test.BUY_WTOKEN_WITH_NATIVE, Test.BUY_NATIVE_WITH_WTOKEN, Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN, Test.WRAP_NATIVE_TOKEN_AND_TRANSFER, Test.UNWRAP_WTOKEN_AND_TRANSFER]
 }
 
-jest.setTimeout(ms('2m'))
+jest.setTimeout(ms('5m'))
 
 describe('Quote Sources', () => {
   const { sourceId, source } = getSource()
