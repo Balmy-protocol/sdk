@@ -62,7 +62,7 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
       buyAmount: BigNumber.from(buyAmount),
       calldata: data,
       estimatedGas: BigNumber.from(estimatedGas),
-      source: {
+      swapper: {
         allowanceTarget,
         address: to,
       },

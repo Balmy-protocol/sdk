@@ -124,7 +124,7 @@ async function mapSourceResponseToResponse({ request, responsePromise, values }:
   const { source, response } = await responsePromise
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values
   const txData = {
-    to: response.source.address,
+    to: response.swapper.address,
     from: request.takerAddress,
     value: response.value,
     data: response.calldata
@@ -146,7 +146,7 @@ async function mapSourceResponseToResponse({ request, responsePromise, values }:
       ...calculateGasDetails(request.network, gasCostNativeToken, nativeTokenPrice)
     },
     recipient,
-    swapper: { ...response.source, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
+    swapper: { ...response.swapper, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
     type: response.type,
     tx
   }

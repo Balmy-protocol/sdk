@@ -1,14 +1,16 @@
 import { Without } from "@utility-types";
+import { AvailableSources, GlobalQuoteSourceConfig, QuoteSourcesList } from "./types";
 import { QuoteSource, QuoteSourceSupport } from "./quote-sources/base";
 import { OdosQuoteSource } from "./quote-sources/odos";
 import { ParaswapQuoteSource } from "./quote-sources/paraswap";
 import { ZRXQuoteSource } from "./quote-sources/0x";
-import { AvailableSources, GlobalQuoteSourceConfig, QuoteSourcesList } from "./types";
+import { OneInchQuoteSource } from "./quote-sources/1inch";
 
 export const QUOTE_SOURCES = {
   odos: builderNeedsConfig<OdosQuoteSource>((config) => new OdosQuoteSource(config)),
   paraswap: builder<ParaswapQuoteSource>((config) => new ParaswapQuoteSource(config)),
   '0x': builder<ZRXQuoteSource>((config) => new ZRXQuoteSource(config)),
+  '1inch': builder<OneInchQuoteSource>((config) => new OneInchQuoteSource(config)),
 
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>
 

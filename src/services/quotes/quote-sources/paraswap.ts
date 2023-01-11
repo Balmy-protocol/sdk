@@ -37,7 +37,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       buyAmount: BigNumber.from(route.destAmount),
       calldata: data,
       estimatedGas: BigNumber.from(route.gasCost),
-      source: {
+      swapper: {
         address: route.contractAddress,
         allowanceTarget: route.tokenTransferProxy,
       },
