@@ -440,7 +440,7 @@ describe('Quote Sources', () => {
           } else {
             validateQuote(sellToken, buyToken, sellAmount!, quote.buyAmount)
           }
-          const allowedSlippage = calculatePercentage(quote.buyAmount, slippagePercentage ?? 0.3)
+          const allowedSlippage = calculatePercentage(quote.buyAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE)
           expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage))
           if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
             expect(quote.value).to.equal(quote.maxSellAmount)
@@ -456,7 +456,7 @@ describe('Quote Sources', () => {
           } else {
             validateQuote(buyToken, sellToken, buyAmount!, quote.sellAmount)
           }
-          const allowedSlippage = calculatePercentage(quote.sellAmount, slippagePercentage ?? 0.3)
+          const allowedSlippage = calculatePercentage(quote.sellAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE)
           expect(quote.maxSellAmount).to.be.lte(quote.sellAmount.add(allowedSlippage))
         }
       }
@@ -538,7 +538,7 @@ describe('Quote Sources', () => {
           buyToken: buyToken.address,
           network,
           config: { 
-            slippagePercentage: 5, // We set a high slippage so that the tests don't fail as much 
+            slippagePercentage: SLIPPAGE_PERCENTAGE,
             txValidFor: '5m', 
             timeout: '15s' 
           },
@@ -614,3 +614,4 @@ const ERC20_ABI = [
   "function transfer(address to, uint amount)",
   "function approve(address to, uint amount)",
 ];
+const SLIPPAGE_PERCENTAGE = 5  // We set a high slippage so that the tests don't fail as much 
