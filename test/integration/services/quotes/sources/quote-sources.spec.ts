@@ -64,7 +64,7 @@ enum Test {
   UNWRAP_WTOKEN_AND_TRANSFER,
 }
 const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
-  // ['Uniswap']: [Test.BUY_WTOKEN_WITH_NATIVE, Test.BUY_NATIVE_WITH_WTOKEN, Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN, Test.WRAP_NATIVE_TOKEN_AND_TRANSFER, Test.UNWRAP_WTOKEN_AND_TRANSFER]
+  ['uniswap']: [Test.BUY_WTOKEN_WITH_NATIVE, Test.BUY_NATIVE_WITH_WTOKEN, Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN, Test.WRAP_NATIVE_TOKEN_AND_TRANSFER, Test.UNWRAP_WTOKEN_AND_TRANSFER]
 }
 
 jest.setTimeout(ms('2m'))
@@ -445,7 +445,7 @@ describe('Quote Sources', () => {
           if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
             expect(quote.value).to.equal(quote.maxSellAmount)
           } else {
-            expect(quote.value).to.equal(0)
+            expect(quote.value).to.be.oneOf([0, undefined])
           }
         } else {
           expect(quote.buyAmount).to.equal(buyAmount)

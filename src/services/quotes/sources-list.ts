@@ -5,12 +5,14 @@ import { OdosQuoteSource } from "./quote-sources/odos";
 import { ParaswapQuoteSource } from "./quote-sources/paraswap";
 import { ZRXQuoteSource } from "./quote-sources/0x";
 import { OneInchQuoteSource } from "./quote-sources/1inch";
+import { UniswapQuoteSource } from "./quote-sources/uniswap";
 
 export const QUOTE_SOURCES = {
   odos: builderNeedsConfig<OdosQuoteSource>((config) => new OdosQuoteSource(config)),
   paraswap: builder<ParaswapQuoteSource>((config) => new ParaswapQuoteSource(config)),
   '0x': builder<ZRXQuoteSource>((config) => new ZRXQuoteSource(config)),
   '1inch': builder<OneInchQuoteSource>((config) => new OneInchQuoteSource(config)),
+  uniswap: builder<UniswapQuoteSource>((config) => new UniswapQuoteSource(config)),
 
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>
 

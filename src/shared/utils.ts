@@ -20,6 +20,10 @@ export function calculateDeadline(txValidFor?: TimeString) {
     : undefined
 }
 
+export function timeToSeconds(time: TimeString) {
+  return Math.floor(ms(time) / 1000)
+}
+
 export function toUnits(amount: BigNumber, decimals: number, precision: number = 5): number {
   const magnitude = Math.pow(10, precision)
   return Math.round((parseFloat(utils.formatUnits(amount, decimals)) + Number.EPSILON) * magnitude) / magnitude

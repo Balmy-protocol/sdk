@@ -3,8 +3,9 @@ import { calculatePercentage, isSameAddress } from "@shared/utils";
 import { Network, TokenAddress } from "@types";
 import { SourceQuoteResponse } from "./base";
 
-export function failed(network: Network, sellToken: TokenAddress, buyToken: TokenAddress) {
-  throw new Error(`Failed to calculate quote between ${sellToken} and ${buyToken} on ${network.name}`)
+export function failed(network: Network, sellToken: TokenAddress, buyToken: TokenAddress, error?: any) {
+  const context = error ? ` with error ${JSON.stringify(error)}` : ''
+  throw new Error(`Failed to calculate quote between ${sellToken} and ${buyToken} on ${network.name}${context}`)
 }
 
 type SlippagelessQuote = Omit<SourceQuoteResponse, 'minBuyAmount' | 'maxSellAmount' | 'type'>
