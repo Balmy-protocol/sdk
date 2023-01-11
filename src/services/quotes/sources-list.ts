@@ -21,7 +21,7 @@ export function buildSources<Config extends Partial<AllSourcesConfig>>(global: G
     const sourceId = key as AvailableSources;
     const { build, needsConfig } = QUOTE_SOURCES[sourceId] as QuoteSourceBuilder<any, any, any, any>;
     if (!needsConfig || (custom && key in custom)) {
-      sources[sourceId] = build({ global, custom: (custom as any)[key] });
+      sources[sourceId] = build({ global, custom: custom && (custom as any)[key] });
     }
   }
   return sources;

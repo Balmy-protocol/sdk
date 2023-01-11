@@ -6,13 +6,13 @@ import { QuoteSource, QuoteSourceSupport } from '../base';
 export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
   source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
 ): QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig> {
-  return {
-    ...source,
-    quote: (components, request) => {
-      const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.network.name}} for source ${
-        source.getMetadata().name
-      }`;
-      return timeoutPromise(source.quote(components, request), request.config.timeout, { description });
-    },
+  const originalQuote = source.quote.bind(source);
+
+  source.quote = (components, request) => {
+    const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.network.name}} for source ${source.getMetadata().name}`;
+
+    return timeoutPromise(originalQuote(components, request), request.config.timeout, { description });
   };
+
+  return source;
 }
