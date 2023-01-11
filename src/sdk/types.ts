@@ -5,9 +5,9 @@ import { AvailableSources, IQuoteService } from "@services/quotes/types"
 import { BaseToken, ITokenService } from "@services/tokens/types"
 
 export type ISDK<SupportedSources extends AvailableSources, Token extends BaseToken> = {
-  fetch: IFetchService,
-  gas: IGasService,
-  multicall: IMulticallService,
-  quote: IQuoteService<SupportedSources>,
-  token: ITokenService<Token>
+  fetchService: IFetchService,
+  gasService: IGasService,
+  multicallService: IMulticallService,
+  quoteService: IQuoteService<SupportedSources>,
+  tokenService: ITokenService<Token>
 }

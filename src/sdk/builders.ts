@@ -60,11 +60,11 @@ export function buildSDKWithProvider<CustomConfig extends Partial<AllSourcesConf
   })
 
   return {
-    fetch: fetchService,
-    gas: gasService,
-    multicall: multicallService,
-    quote: quoteService,
-    token: tokenService
+    fetchService,
+    gasService,
+    multicallService,
+    quoteService,
+    tokenService
   }
 }
 
