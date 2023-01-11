@@ -1,39 +1,33 @@
-import { SourceQuoteRequest, SellOrder, QuoteSourceSupport, BuyOrder, QuoteSource, QuoteComponents } from "../base"
+import { SourceQuoteRequest, SellOrder, QuoteSourceSupport, BuyOrder, QuoteSource, QuoteComponents } from '../base';
 
-type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true }
-type SellOrderQuote<Support extends QuoteSourceSupport> = SourceQuoteRequest<Support, SellOrder>
-export function buyToSellOrderWrapper<
-  Support extends QuoteSourceSupport,
-  CustomConfigNeeded extends boolean,
-  CustomQuoteSourceConfig
->(source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>): QuoteSource<AddedBuyOrderSupport<Support>, CustomConfigNeeded, CustomQuoteSourceConfig> {
+type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
+type SellOrderQuote<Support extends QuoteSourceSupport> = SourceQuoteRequest<Support, SellOrder>;
+export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
+  source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
+): QuoteSource<AddedBuyOrderSupport<Support>, CustomConfigNeeded, CustomQuoteSourceConfig> {
   return {
     ...source,
     getMetadata: () => {
-      const { supports: originalSupport, ...originalMetadata } = source.getMetadata()
+      const { supports: originalSupport, ...originalMetadata } = source.getMetadata();
       return {
         ...originalMetadata,
         supports: {
           ...originalSupport,
-          buyOrders: true
-        }
-      }
+          buyOrders: true,
+        },
+      };
     },
     quote: (components, request) => {
       if (request.order.type === 'sell') {
-        return source.quote(components, request as SourceQuoteRequest<Support>)
+        return source.quote(components, request as SourceQuoteRequest<Support>);
       } else {
-        return executeBuyOrderAsSellOrder(source, components, request as SourceQuoteRequest<AddedBuyOrderSupport<Support>, BuyOrder>)
+        return executeBuyOrderAsSellOrder(source, components, request as SourceQuoteRequest<AddedBuyOrderSupport<Support>, BuyOrder>);
       }
-    }
-  }
+    },
+  };
 }
 
-async function executeBuyOrderAsSellOrder<
-  Support extends QuoteSourceSupport,
-  CustomConfigNeeded extends boolean,
-  CustomQuoteSourceConfig
->(
+async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
   source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>,
   components: QuoteComponents,
   request: SourceQuoteRequest<AddedBuyOrderSupport<Support>, BuyOrder>
@@ -54,16 +48,16 @@ async function executeBuyOrderAsSellOrder<
     ...request,
     order: { type: 'sell', sellAmount: request.order.buyAmount },
     sellToken: request.buyToken,
-    buyToken: request.sellToken
-  } as SellOrderQuote<Support>
-  const testSellQuote = await source.quote(components, sellOrder)
-  const slippage = testSellQuote.buyAmount.sub(testSellQuote.minBuyAmount)
+    buyToken: request.sellToken,
+  } as SellOrderQuote<Support>;
+  const testSellQuote = await source.quote(components, sellOrder);
+  const slippage = testSellQuote.buyAmount.sub(testSellQuote.minBuyAmount);
   if (slippage.isZero()) {
     // If there was no slippage, then we just execute the sell order
-    return source.quote(components, { ...request, order: { type: 'sell', sellAmount: testSellQuote.sellAmount } } as SellOrderQuote<Support>)
+    return source.quote(components, { ...request, order: { type: 'sell', sellAmount: testSellQuote.sellAmount } } as SellOrderQuote<Support>);
   }
 
   // TODO: there is room for improvement, since we can make a few test quotes around this approx number and find the closest sell quote that produces the actual `buyAmount`
-  const sellAmount = testSellQuote.buyAmount.add(slippage)
-  return source.quote(components, { ...request, order: { type: 'sell', sellAmount: sellAmount } } as SellOrderQuote<Support>)
+  const sellAmount = testSellQuote.buyAmount.add(slippage);
+  return source.quote(components, { ...request, order: { type: 'sell', sellAmount: sellAmount } } as SellOrderQuote<Support>);
 }

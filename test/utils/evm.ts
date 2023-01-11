@@ -1,10 +1,10 @@
 import { Network } from '@types';
 import { network as hardhatNetwork } from 'hardhat';
 
-export const fork = async (network: Network) => {  
+export const fork = async (network: Network) => {
   const params = [
     {
-      forking: {        
+      forking: {
         jsonRpcUrl: network.publicRPCs?.[0],
       },
     },
