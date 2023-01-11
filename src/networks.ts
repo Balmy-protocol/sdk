@@ -85,7 +85,7 @@ export class Networks {
     ids: ['heco'],
     currencySymbol: 'HT',
     wToken: '0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f',
-    publicRPCs: ['https://http-mainnet.hecochain.com'],
+    publicRPCs: ['https://pub001.hg.network/rpc', 'https://http-mainnet.hecochain.com'],
   } as const) satisfies Network
 
   static readonly OKC = ({
@@ -112,7 +112,12 @@ export class Networks {
     ids: ['gnosis', 'xdai'],
     currencySymbol: 'xDAI',
     wToken: '0xe91d153e0b41518a2ce8dd3d7944fa863463a97d',
-    publicRPCs: ['https://rpc.ankr.com/gnosis', 'https://xdai-archive.blockscout.com']
+    publicRPCs: [
+      'https://rpc.gnosischain.com/',
+      'https://gnosischain-rpc.gateway.pokt.network',
+      'https://rpc.ankr.com/gnosis',
+      'https://xdai-archive.blockscout.com',
+    ]
   } as const) satisfies Network
 
   static readonly CRONOS = ({
