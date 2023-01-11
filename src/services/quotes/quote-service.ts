@@ -17,7 +17,7 @@ type ConstructorParameters<CustomConfig extends Partial<AllSourcesConfig>> = {
   fetchService: IFetchService,
   gasService: IGasService,
   tokenService: ITokenService<TokenWithOptionalPrice>,
-  config: GlobalQuoteSourceConfig & CustomConfig
+  config?: GlobalQuoteSourceConfig & CustomConfig
 }
 export class QuoteService<Config extends Partial<AllSourcesConfig>> implements IQuoteService<SourcesBasedOnConfig<Config>> {
 
@@ -27,7 +27,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   private readonly sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>>;
 
   constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters<Config>) {
-    this.sources = addForcedTimeout(buildSources(config, config))
+    this.sources = addForcedTimeout(buildSources<Config>(config ?? {}, config))
     this.fetchService = fetchService
     this.gasService = gasService
     this.tokenService = tokenService
@@ -74,7 +74,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     } else {
       successfulQuotes = await filterRejectedResults(this.getQuotes(request))
     }
-    
+
     const sortedQuotes = sortQuotesBy(
       successfulQuotes,
       config?.sort?.by ?? 'most-swapped-accounting-for-gas',

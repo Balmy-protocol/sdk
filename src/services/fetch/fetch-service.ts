@@ -1,9 +1,9 @@
 import ms from "ms";
-import { IFetchService, RequestInit } from "./types";
+import { Fetch, IFetchService, RequestInit } from "./types";
 
 export class FetchService implements IFetchService {
 
-  constructor(private readonly realFetch: typeof global.fetch) { }
+  constructor(private readonly realFetch: Fetch) { }
 
   async fetch(url: RequestInfo | URL, init?: RequestInit) {
     if (!init?.timeout) {

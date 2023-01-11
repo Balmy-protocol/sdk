@@ -6,7 +6,7 @@ import { IProviderSource } from "../types"
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given network
-export class FallbackWhenNecessarySource implements IProviderSource {
+export class FallbackWhenNetworkNotSupportedProviderSource implements IProviderSource {
 
   constructor(private readonly sources: ArrayOneOrMore<IProviderSource>) {}
 
