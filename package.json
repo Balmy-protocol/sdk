@@ -2,7 +2,8 @@
   "name": "mean-sdk",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsconfig-replace-paths -s src -p tsconfig.json",
-    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration",
+    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration --testPathIgnorePatterns=quote-sources.spec.ts",
+    "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=quote-sources.spec.ts",
     "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
   },
   "devDependencies": {
@@ -16,6 +17,7 @@
     "@types/node": "18.11.18",
     "chai": "^4.3.7",
     "cross-fetch": "^3.1.5",
+    "dotenv": "^16.0.3",
     "hardhat": "^2.12.5",
     "jest": "^29.3.1",
     "ts-jest": "^29.0.3",
