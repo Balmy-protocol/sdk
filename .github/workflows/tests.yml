@@ -10,23 +10,20 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
+      - name: Check out github repository
+        uses: actions/checkout@v3
         with:
-          node-version: 16.x
-          cache: npm
+          fetch-depth: 1
+          
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
 
-      - name: Cache node modules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
-      
-      - name: Install
-        run: yarn install
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
       
       - name: Run unit tests
         run: yarn test:unit
@@ -34,23 +31,20 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
+      - name: Check out github repository
+        uses: actions/checkout@v3
         with:
-          node-version: 16.x
-          cache: npm
+          fetch-depth: 1
+          
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
 
-      - name: Cache node modules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
-      
-      - name: Install
-        run: yarn install
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
       
       - name: Run integration tests
         run: yarn test:integration
@@ -58,23 +52,20 @@ jobs:
   integration-quotes:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v1
+      - name: Check out github repository
+        uses: actions/checkout@v3
         with:
-          node-version: 16.x
-          cache: npm
+          fetch-depth: 1
+          
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
 
-      - name: Cache node modules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
-      
-      - name: Install
-        run: yarn install
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
       
       - name: Run quotes integration tests
         run: yarn test:integration:quotes
