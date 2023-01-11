@@ -23,7 +23,7 @@ import { GasPrice } from '@services/gas/types';
 
 // It's very time expensive to test all sources for all networks, so we need to choose
 const RUN_FOR: { source: AvailableSources | undefined, networks: Network[] } = {
-  source: undefined, // If undefined, will select one random
+  source: undefined, // If undefined, will select one randomly
   networks: [Networks.POLYGON]
 }
 
