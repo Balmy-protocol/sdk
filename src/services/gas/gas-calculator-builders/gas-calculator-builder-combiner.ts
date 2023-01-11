@@ -1,13 +1,10 @@
 import { ChainId, Network } from "@types"
-import { networksIntersection, Networks } from "@networks";
-import { IMulticallService } from "@services/multicall/types";
-import { OptimismGasCalculatorBuilder } from "./optimism";
-import { GenericGasCalculatorBuilder } from "./generic-gas-calculator-builder";
-import { IGasPriceSource, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from "../types";
+import { Networks, networksUnion } from "@networks";
+import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from "../types";
 
 type ConstructorParameters = {
-  gasPriceSource: IGasPriceSource,
-  multicallService: IMulticallService
+  defaultCalculatorBuilder: IQuickGasCostCalculatorBuilder
+  calculatorBuilderOverrides: Record<ChainId, IQuickGasCostCalculatorBuilder>
 }
 
 export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuilder {
@@ -15,18 +12,16 @@ export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuil
   private readonly defaultCalculatorBuilder: IQuickGasCostCalculatorBuilder
   private readonly calculatorBuilderOverrides: Record<ChainId, IQuickGasCostCalculatorBuilder>
 
-  constructor({ gasPriceSource, multicallService }: ConstructorParameters) {
-    this.defaultCalculatorBuilder = new GenericGasCalculatorBuilder(gasPriceSource)
-    this.calculatorBuilderOverrides = {
-      [Networks.OPTIMISM.chainId]: new OptimismGasCalculatorBuilder(multicallService)
-    }
+  constructor({ defaultCalculatorBuilder, calculatorBuilderOverrides }: ConstructorParameters) {
+    this.defaultCalculatorBuilder = defaultCalculatorBuilder
+    this.calculatorBuilderOverrides = calculatorBuilderOverrides
   }
-  
+
   supportedNetworks(): Network[] {
-    return networksIntersection(
+    return networksUnion([
       this.defaultCalculatorBuilder.supportedNetworks(),
       Object.keys(this.calculatorBuilderOverrides).map(chainId => Networks.byKeyOrFail(chainId)),
-    )
+    ])
   }
 
   build(network: Network): Promise<IQuickGasCostCalculator> {

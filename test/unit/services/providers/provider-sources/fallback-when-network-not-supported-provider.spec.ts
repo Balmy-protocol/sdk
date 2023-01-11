@@ -2,13 +2,13 @@ import { expect } from 'chai';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Networks } from '@networks';
 import { then, when } from '@test-utils/bdd';
-import { FallbackWhenNecessarySource } from '@services/providers/provider-sources/fallback-when-necessary-provider '
+import { FallbackWhenNetworkNotSupportedProviderSource } from '@services/providers/provider-sources/fallback-when-network-not-supported-provider'
 import { IProviderSource } from '@services/providers/types';
 
 const PROVIDER_1 = new JsonRpcProvider()
 const PROVIDER_2 = new JsonRpcProvider()
 
-describe('Fallback When Necessary Provider', () => {
+describe('Fallback When Network Not Supported Provider', () => {
 
   const source1: IProviderSource = {
     supportedNetworks: () => [Networks.POLYGON],
@@ -18,7 +18,7 @@ describe('Fallback When Necessary Provider', () => {
     supportedNetworks: () => [Networks.POLYGON, Networks.ETHEREUM],
     getProvider: () => PROVIDER_2
   }
-  const fallbackSource = new FallbackWhenNecessarySource([source1, source2])
+  const fallbackSource = new FallbackWhenNetworkNotSupportedProviderSource([source1, source2])
 
   when('asking for supported networks', () => {
     then('the union of the given sources is returned', () => {
