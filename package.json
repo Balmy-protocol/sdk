@@ -2,7 +2,8 @@
   "name": "mean-sdk",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsconfig-replace-paths -s src -p tsconfig.json",
-    "test": "jest --forceExit --detectOpenHandles --coverage --verbose"
+    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration",
+    "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",

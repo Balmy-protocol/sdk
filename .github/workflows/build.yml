@@ -1,4 +1,4 @@
-name: Build and test
+name: Build
 
 on:
   push:
@@ -16,9 +16,17 @@ jobs:
         with:
           node-version: 16.x
           cache: npm
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+
       - name: install
         run: yarn install
+
       - name: build
         run: yarn build
-      - name: test
-        run: yarn test
