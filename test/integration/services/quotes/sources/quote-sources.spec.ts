@@ -31,6 +31,26 @@ const CONFIG: GlobalQuoteSourceConfig & AllSourcesConfig = {
   'odos': { apiKey: process.env.ODOS_API_KEY! }
 }
 
+type TokenData = { address: TokenAddress, whale: Address }
+type NetworkTokens = { WBTC: TokenData, USDC: TokenData, wToken: TokenData }
+// TODO: Add more networks
+const TOKENS: Record<ChainId, Record<string, TokenData>> = {
+  [Networks.POLYGON.chainId]: {
+    USDC: {
+      address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+      whale: '0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245',
+    },
+    WBTC: {
+      address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',
+      whale: '0x5c2ed810328349100a66b82b78a1791b101c9d61',
+    },
+    wToken: {
+      address: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+      whale: '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4',
+    }
+  }
+} satisfies Record<ChainId, NetworkTokens>
+
 enum Test {
   SELL_USDC_TO_NATIVE,
   SELL_NATIVE_TO_WBTC,
@@ -557,7 +577,7 @@ describe('Quote Sources', () => {
           await contract.transfer(user.address, amount)
           await stopImpersonatingAccount(data.whale)
         }
-      }      
+      }
     })
   })
 })
@@ -582,26 +602,6 @@ function getNetwork(source: QuoteSource<QuoteSourceSupport, any, any>): Network 
 function chooseRandom<T>(array: T[]) {
   return array[Math.floor(Math.random() * array.length)];
 }
-
-type TokenData = { address: TokenAddress, whale: Address }
-type NetworkTokens = { WBTC: TokenData, USDC: TokenData, wToken: TokenData }
-// TODO: Add more networks
-const TOKENS: Record<ChainId, Record<string, TokenData>> = {
-  [Networks.POLYGON.chainId]: {
-    USDC: {
-      address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
-      whale: '0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245',
-    },
-    WBTC: {
-      address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',
-      whale: '0x5c2ed810328349100a66b82b78a1791b101c9d61',
-    },
-    wToken: {
-      address: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
-      whale: '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4',
-    }
-  }
-} satisfies Record<ChainId, NetworkTokens>
 
 const FETCH_SERVICE = new FetchService(crossFetch)
 const ERC20_ABI = [
