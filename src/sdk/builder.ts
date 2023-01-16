@@ -35,13 +35,13 @@ import { ISDK } from './types';
 
 export function buildSDK<Params extends BuildParams<CustomConfig>, CustomConfig extends Partial<AllSourcesConfig> = {}>(
   params?: Params
-): ISDK<SourcesBasedOnConfig<CustomConfig>, CalculateTokenFromSources<Params['token']>> {
+): ISDK<SourcesBasedOnConfig<CustomConfig>, CalculateTokenFromSources<Params['tokens']>> {
   const fetchService = buildFetchService(params?.fetch);
   const providerSource = buildProviderSource(params?.provider);
   const multicallService = new MulticallService(providerSource);
   const gasService = buildGasService(params?.gas, fetchService, providerSource, multicallService);
-  const tokenService = buildTokenService(params?.token, fetchService, multicallService);
-  const quoteService = buildQuoteService(params?.quote, fetchService, gasService, tokenService);
+  const tokenService = buildTokenService(params?.tokens, fetchService, multicallService);
+  const quoteService = buildQuoteService(params?.quotes, fetchService, gasService, tokenService);
 
   return {
     fetchService,
@@ -267,6 +267,6 @@ type BuildParams<CustomConfig extends Partial<AllSourcesConfig>> = {
   fetch?: BuildFetchParams;
   provider?: BuildProviderParams;
   gas?: BuildGasParams;
-  token?: BuildTokenParams;
-  quote?: BuildQuoteParams<CustomConfig>;
+  tokens?: BuildTokenParams;
+  quotes?: BuildQuoteParams<CustomConfig>;
 };
