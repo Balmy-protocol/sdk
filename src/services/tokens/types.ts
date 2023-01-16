@@ -1,5 +1,5 @@
-import { ChainId, Chain, TokenAddress } from '@types';
-import { DefiLlamaToken } from './token-sources/defi-llama';
+import { ChainId, TokenAddress } from '@types';
+import { UnionMerge } from '@utility-types';
 
 export type ITokenService<Token extends BaseToken> = {
   supportedChains(): ChainId[];
@@ -21,3 +21,6 @@ export type BaseToken = {
   decimals: number;
   symbol: string;
 };
+
+type TokenSourcesInList<T extends ITokenSource<any>[] | []> = { [K in keyof T]: T[K] extends ITokenSource<infer R> ? R : T[K] }[number];
+export type MergeTokenTokensFromSources<Sources extends ITokenSource<any>[] | []> = UnionMerge<TokenSourcesInList<Sources>> & BaseToken;

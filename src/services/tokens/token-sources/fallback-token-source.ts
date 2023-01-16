@@ -1,14 +1,10 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { chainsUnion } from '@chains';
-import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
+import { AddedProperties, BaseToken, ITokenSource, MergeTokenTokensFromSources } from '@services/tokens/types';
 import { timeoutPromise } from '@shared/timeouts';
-import { UnionMerge } from '@utility-types';
-
-type TokenSourcesInList<T extends ITokenSource<any>[] | []> = { [K in keyof T]: T[K] extends ITokenSource<infer R> ? R : T[K] }[number];
-type Merge<Sources extends ITokenSource<any>[] | []> = UnionMerge<TokenSourcesInList<Sources>> & BaseToken;
 
 // This fallback source will use different sources and combine the results of each of them
-export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> implements ITokenSource<Merge<Sources>> {
+export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> implements ITokenSource<MergeTokenTokensFromSources<Sources>> {
   private readonly sourceQueryTimeout?: TimeString;
 
   constructor(private readonly sources: Sources, options?: { sourceQueryTimeout: TimeString }) {
@@ -19,8 +15,10 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Merge<Sources>>>> {
-    const result: Record<ChainId, Record<TokenAddress, Merge<Sources>>> = Object.fromEntries(
+  async getTokens(
+    addresses: Record<ChainId, TokenAddress[]>
+  ): Promise<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> {
+    const result: Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
 
@@ -42,8 +40,8 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
     return result;
   }
 
-  addedProperties(): AddedProperties<Merge<Sources>>[] {
-    return [...new Set(this.sources.flatMap((source) => source.addedProperties()))] as AddedProperties<Merge<Sources>>[];
+  addedProperties(): AddedProperties<MergeTokenTokensFromSources<Sources>>[] {
+    return [...new Set(this.sources.flatMap((source) => source.addedProperties()))] as AddedProperties<MergeTokenTokensFromSources<Sources>>[];
   }
 }
 
