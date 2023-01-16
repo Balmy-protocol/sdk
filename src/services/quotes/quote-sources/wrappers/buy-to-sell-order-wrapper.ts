@@ -6,7 +6,7 @@ export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, Custom
   source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
 ): QuoteSource<AddedBuyOrderSupport<Support>, CustomConfigNeeded, CustomQuoteSourceConfig> {
   return {
-    ...source,
+    getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => {
       const { supports: originalSupport, ...originalMetadata } = source.getMetadata();
       return {

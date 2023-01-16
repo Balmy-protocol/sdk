@@ -12,6 +12,7 @@
     "noImplicitReturns": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
+    "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,

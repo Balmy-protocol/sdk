@@ -7,7 +7,8 @@ export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomC
   source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
 ): QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig> {
   return {
-    ...source,
+    getCustomConfig: () => source.getCustomConfig(),
+    getMetadata: () => source.getMetadata(),
     quote: (components, request) => {
       const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.chain.name}} for source ${source.getMetadata().name}`;
       return timeoutPromise(source.quote(components, request), request.config.timeout, { description });
