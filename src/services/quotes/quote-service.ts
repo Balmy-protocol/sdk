@@ -67,10 +67,11 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     let failedQuotes: FailedQuote[] = [];
     if (config?.ignoredFailed === false) {
       const promises = this.executeQuotes(request).map(({ source, response }) =>
-        response.catch(() => ({
+        response.catch((e) => ({
           failed: true,
           name: source.getMetadata().name,
           logoURI: source.getMetadata().logoURI,
+          error: e,
         }))
       );
       const responses = await Promise.all(promises);
