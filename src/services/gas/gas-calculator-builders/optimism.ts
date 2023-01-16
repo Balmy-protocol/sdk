@@ -1,7 +1,7 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { serialize } from '@ethersproject/transactions';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
 import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
 import { ChainId } from '@types';

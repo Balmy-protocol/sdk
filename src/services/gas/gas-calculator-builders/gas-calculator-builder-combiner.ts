@@ -1,5 +1,5 @@
 import { ChainId } from '@types';
-import { chainsUnion } from 'src/chains';
+import { chainsUnion } from '@chains';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from '../types';
 
 type ConstructorParameters = {

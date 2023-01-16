@@ -1,5 +1,5 @@
 import { BigNumber, constants } from 'ethers';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { IFetchService } from '@services/fetch/types';
 import { addQuoteSlippage, failed, isNativeWrapOrUnwrap } from './utils';

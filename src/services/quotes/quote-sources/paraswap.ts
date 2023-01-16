@@ -1,4 +1,4 @@
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { Chain } from '@types';

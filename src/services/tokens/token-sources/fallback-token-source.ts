@@ -1,5 +1,5 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { chainsUnion } from 'src/chains';
+import { chainsUnion } from '@chains';
 import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
 import { timeoutPromise } from '@shared/timeouts';
 

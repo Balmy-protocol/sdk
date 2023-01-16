@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';

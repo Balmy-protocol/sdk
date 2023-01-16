@@ -1,4 +1,4 @@
-import { chainsUnion, Chains } from 'src/chains';
+import { chainsUnion, Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService, IQuickGasCostCalculator } from '@services/gas/types';
 import { ChainId, Chain } from '@types';

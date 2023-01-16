@@ -3,7 +3,7 @@ import { AbiCoder } from 'ethers/lib/utils';
 import { Address, ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { IMulticallService } from './types';
-import { chainsIntersection } from 'src/chains';
+import { chainsIntersection } from '@chains';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 export class MulticallService implements IMulticallService {

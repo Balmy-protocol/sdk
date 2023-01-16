@@ -1,5 +1,5 @@
 import { providers } from 'ethers';
-import { chainsUnion } from 'src/chains';
+import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
 import { ArrayTwoOrMore } from '@utility-types';
 import { IProviderSource } from '../types';

@@ -1,4 +1,4 @@
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { ChainId, Chain } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
 import { providers } from 'ethers';

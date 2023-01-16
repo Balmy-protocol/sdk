@@ -1,6 +1,6 @@
 import { BigNumber, utils } from 'ethers';
 import { Address } from '@types';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';

@@ -1,7 +1,7 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { BigNumber } from 'ethers';
-import { chainsIntersection } from 'src/chains';
+import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from './types';
 

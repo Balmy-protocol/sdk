@@ -1,5 +1,5 @@
 import { BigNumber, Contract } from 'ethers';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, calculatePercentage, timeToSeconds } from '@shared/utils';

@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
 import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';

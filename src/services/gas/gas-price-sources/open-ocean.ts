@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { ChainId } from '@types';
 import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 
 export class OpenOceanGasPriceSource implements IGasPriceSource {
   constructor(private readonly fetchService: IFetchService) { }

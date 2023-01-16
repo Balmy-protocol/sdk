@@ -1,6 +1,6 @@
 import { providers } from 'ethers';
 import crossFetch from 'cross-fetch';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Fetch } from '@services/fetch/types';
 import { GasCalculatorBuilderCombiner } from '@services/gas/gas-calculator-builders/gas-calculator-builder-combiner';

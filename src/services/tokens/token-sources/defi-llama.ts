@@ -1,6 +1,6 @@
 import { ChainId, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
-import { Chains } from 'src/chains';
+import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { AddedProperties, BaseToken, ITokenSource } from '../types';
 import { isSameAddress } from '@shared/utils';
