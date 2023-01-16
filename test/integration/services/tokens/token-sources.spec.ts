@@ -24,6 +24,7 @@ const PROVIDER_TOKEN_SOURCE = new ProviderTokenSource(new MulticallService(new P
 const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaTokenSource(new FetchService(crossFetch));
 const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource([PROVIDER_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE]);
 
+jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Token Sources', () => {

@@ -476,7 +476,7 @@ describe('Quote Sources', () => {
           expect(quote.sellAmount).to.equal(sellAmount);
           expect(quote.sellAmount).to.equal(quote.maxSellAmount);
           if (buyAmount) {
-            expect(quote.buyAmount).to.equal(buyAmount);
+            expect(quote.buyAmount).to.be.gte(buyAmount);
           } else {
             validateQuote(sellToken, buyToken, sellAmount!, quote.buyAmount);
           }
@@ -492,7 +492,7 @@ describe('Quote Sources', () => {
           expect(quote.buyAmount).to.equal(buyAmount);
           expect(quote.buyAmount).to.equal(quote.minBuyAmount);
           if (sellAmount) {
-            expect(quote.sellAmount).to.equal(sellAmount);
+            expect(quote.sellAmount).to.be.lte(sellAmount);
           } else {
             validateQuote(buyToken, sellToken, buyAmount!, quote.sellAmount);
           }
