@@ -1,5 +1,6 @@
 {
   "name": "@mean-finance/sdk",
+  "version": "0.0.1",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -22,6 +23,7 @@
       "url": "https://github.com/0xsambugs"
     }
   ],
+  "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsconfig-replace-paths -s src -p tsconfig.json",
     "lint:check": "prettier --check .",
