@@ -1,30 +1,30 @@
-import { ChainId, Network, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
-import { Networks } from '@networks';
+import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { AddedProperties, BaseToken, ITokenSource } from '../types';
 import { isSameAddress } from '@shared/utils';
 
-const NETWORK_KEYS: Record<ChainId, string> = {
-  [Networks.ETHEREUM.chainId]: 'ethereum',
-  [Networks.BNB_CHAIN.chainId]: 'bsc',
-  [Networks.POLYGON.chainId]: 'polygon',
-  [Networks.AVALANCHE.chainId]: 'avax',
-  [Networks.FANTOM.chainId]: 'fantom',
-  [Networks.GNOSIS.chainId]: 'xdai',
-  [Networks.HECO.chainId]: 'heco',
-  [Networks.ARBITRUM.chainId]: 'arbitrum',
-  [Networks.OPTIMISM.chainId]: 'optimism',
-  [Networks.CELO.chainId]: 'celo',
-  [Networks.CRONOS.chainId]: 'cronos',
-  [Networks.BOBA.chainId]: 'boba',
-  [Networks.MOONRIVER.chainId]: 'moonriver',
-  [Networks.OKC.chainId]: 'okexchain',
-  [Networks.ONTOLOGY.chainId]: 'ontology',
-  [Networks.KLAYTN.chainId]: 'klaytn',
-  [Networks.AURORA.chainId]: 'aurora',
+const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
+  [Chains.ETHEREUM.chainId]: 'ethereum',
+  [Chains.BNB_CHAIN.chainId]: 'bsc',
+  [Chains.POLYGON.chainId]: 'polygon',
+  [Chains.AVALANCHE.chainId]: 'avax',
+  [Chains.FANTOM.chainId]: 'fantom',
+  [Chains.GNOSIS.chainId]: 'xdai',
+  [Chains.HECO.chainId]: 'heco',
+  [Chains.ARBITRUM.chainId]: 'arbitrum',
+  [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.CELO.chainId]: 'celo',
+  [Chains.CRONOS.chainId]: 'cronos',
+  [Chains.BOBA.chainId]: 'boba',
+  [Chains.MOONRIVER.chainId]: 'moonriver',
+  [Chains.OKC.chainId]: 'okexchain',
+  [Chains.ONTOLOGY.chainId]: 'ontology',
+  [Chains.KLAYTN.chainId]: 'klaytn',
+  [Chains.AURORA.chainId]: 'aurora',
 
-  // TODO: these networks are also supported by DefiLlama. We should add them
+  // TODO: these chains are also supported by DefiLlama. We should add them
   // "harmony",
   // "kcc",
   // "kava",
@@ -40,14 +40,16 @@ const NETWORK_KEYS: Record<ChainId, string> = {
   // "milkomeda"
 };
 
+const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
+  Object.entries(CHAIN_ID_TO_KEY).map(([chainId, key]) => [key, parseInt(chainId)])
+);
+
 export type DefiLlamaToken = FetchTokenResult & BaseToken;
 export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
   constructor(private readonly fetch: IFetchService) {}
 
-  supportedNetworks(): Network[] {
-    return Object.keys(NETWORK_KEYS)
-      .map((chainId) => Networks.byKey(chainId))
-      .filter((network): network is Network => !!network);
+  supportedChains(): ChainId[] {
+    return Object.keys(CHAIN_ID_TO_KEY).map((chainId) => parseInt(chainId));
   }
 
   async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
@@ -58,8 +60,8 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     const result: Record<ChainId, Record<TokenAddress, DefiLlamaToken>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
-    for (const [tokenInNetwork, token] of Object.entries(coins)) {
-      const { chainId, address } = fromTokenId(tokenInNetwork);
+    for (const [tokenId, token] of Object.entries(coins)) {
+      const { chainId, address } = fromTokenId(tokenId);
       result[chainId][address] = { ...token, address };
     }
     return result;
@@ -89,14 +91,14 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
 
 function toTokenId(chainId: ChainId, address: TokenAddress) {
-  const key = NETWORK_KEYS[chainId];
+  const key = CHAIN_ID_TO_KEY[chainId];
   return isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address}`;
 }
 
-function fromTokenId(tokenInNetwork: TokenId): { chainId: ChainId; address: TokenAddress } {
-  const [key, address] = tokenInNetwork.split(':');
+function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddress } {
+  const [key, address] = tokenId.split(':');
   return {
-    chainId: Networks.byKeyOrFail(key).chainId,
+    chainId: KEY_TO_CHAIN_ID[key],
     address: address.replaceAll(DEFI_LLAMA_NATIVE_TOKEN, Addresses.NATIVE_TOKEN),
   };
 }

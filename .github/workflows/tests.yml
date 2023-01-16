@@ -71,3 +71,4 @@ jobs:
         run: yarn test:integration:quotes
         env:
           ODOS_API_KEY: ${{secrets.ODOS_API_KEY}}
+          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}

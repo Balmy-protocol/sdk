@@ -8,16 +8,16 @@ import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
 import { BaseToken, ITokenSource } from '@services/tokens/types';
-import { Networks } from '@networks';
+import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
-import { ChainId, Network, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string; decimals: number }> = {
-  [Networks.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI', decimals: 18 },
-  [Networks.POLYGON.chainId]: { address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', symbol: 'USDC', decimals: 6 },
-  [Networks.ARBITRUM.chainId]: { address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', symbol: 'GMX', decimals: 18 },
-  [Networks.BNB_CHAIN.chainId]: { address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', symbol: 'Cake', decimals: 18 },
-  [Networks.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC', decimals: 8 },
+  [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI', decimals: 18 },
+  [Chains.POLYGON.chainId]: { address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', symbol: 'USDC', decimals: 6 },
+  [Chains.ARBITRUM.chainId]: { address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', symbol: 'GMX', decimals: 18 },
+  [Chains.BNB_CHAIN.chainId]: { address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', symbol: 'Cake', decimals: 18 },
+  [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC', decimals: 8 },
 };
 
 const PROVIDER_TOKEN_SOURCE = new ProviderTokenSource(new MulticallService(new PublicProvidersSource()));
@@ -32,7 +32,7 @@ describe('Token Sources', () => {
   tokenSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_TOKEN_SOURCE,
-    validate: { fieldsExist: ['price', 'timestamp'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedNetworks() },
+    validate: { fieldsExist: ['price', 'timestamp'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
   });
 
   function tokenSourceTest<T extends BaseToken>({
@@ -42,14 +42,14 @@ describe('Token Sources', () => {
   }: {
     title: string;
     source: ITokenSource<T>;
-    validate?: { fieldsExist: (keyof T & string)[]; on?: Network[] };
+    validate?: { fieldsExist: (keyof T & string)[]; on?: ChainId[] };
   }) {
     describe(title, () => {
       let input: Record<ChainId, TokenAddress[]>;
       let result: Record<ChainId, Record<TokenAddress, T>>;
       beforeAll(async () => {
-        const networks = source.supportedNetworks();
-        const entries = networks.map<[ChainId, TokenAddress[]]>(({ chainId }) => {
+        const chains = source.supportedChains();
+        const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
           const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
           if (chainId in TESTS) addresses.push(TESTS[chainId].address);
           return [chainId, addresses];
@@ -59,41 +59,46 @@ describe('Token Sources', () => {
       });
 
       test(`Returned amount of chains is as expected`, () => {
-        expect(Object.keys(result)).to.have.lengthOf(source.supportedNetworks().length);
+        expect(Object.keys(result)).to.have.lengthOf(source.supportedChains().length);
       });
 
-      for (const network of source.supportedNetworks()) {
-        describe(network.name, () => {
+      for (const chainId of source.supportedChains()) {
+        const chain = Chains.byKey(chainId);
+        describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Returned amount of tokens is as expected`, () => {
-            expect(Object.keys(result[network.chainId])).to.have.lengthOf(input[network.chainId].length);
+            expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
           });
-          test(`${network.currencySymbol}`, () => {
-            validateToken({ network, address: Addresses.NATIVE_TOKEN, symbol: network.currencySymbol, decimals: 18 });
+          test(chain?.currencySymbol ?? 'Native token', () => {
+            validateToken({ chainId, address: Addresses.NATIVE_TOKEN, symbol: chain?.currencySymbol, decimals: 18 });
           });
-          if (network.chainId in TESTS) {
-            test(`${TESTS[network.chainId].symbol}`, () => {
-              validateToken({ network, ...TESTS[network.chainId] });
+          if (chainId in TESTS) {
+            test(`${TESTS[chainId].symbol}`, () => {
+              validateToken({ chainId, ...TESTS[chainId] });
             });
           }
         });
       }
 
       function validateToken({
-        network,
+        chainId,
         address,
         symbol,
         decimals,
       }: {
-        network: Network;
+        chainId: ChainId;
         address: TokenAddress;
-        symbol: string;
+        symbol?: string;
         decimals: number;
       }) {
-        const token = result[network.chainId][address];
+        const token = result[chainId][address];
         expect(token.address).to.equal(address);
         expect(token.decimals).to.equal(decimals);
-        expect(token.symbol).to.equal(symbol);
-        if (validate && (!validate.on || validate.on.some(({ chainId }) => network.chainId === chainId))) {
+        if (symbol) {
+          expect(token.symbol).to.equal(symbol);
+        } else {
+          expect(token.symbol).to.not.be.undefined;
+        }
+        if (validate && (!validate.on || validate.on.some((supportedChain) => supportedChain === chainId))) {
           for (const field of validate.fieldsExist) {
             expect(token).to.have.property(field);
           }

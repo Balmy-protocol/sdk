@@ -1,17 +1,17 @@
 import { BigNumber, Contract } from 'ethers';
-import { Networks } from '@networks';
-import { ChainId, Network, TokenAddress } from '@types';
+import { Chains } from '@chains';
+import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, calculatePercentage, timeToSeconds } from '@shared/utils';
 import { NoCustomConfigQuoteSource, QuoteSourceMetadata, QuoteComponents, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { addQuoteSlippage, failed } from './utils';
 
 const ROUTER_ADDRESS: Record<ChainId, string> = {
-  [Networks.ETHEREUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  [Networks.OPTIMISM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  [Networks.POLYGON.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  [Networks.ARBITRUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  [Networks.CELO.chainId]: '0x5615CDAb10dc425a742d643d949a7F474C01abc4',
+  [Chains.ETHEREUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  [Chains.OPTIMISM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  [Chains.POLYGON.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  [Chains.ARBITRUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  [Chains.CELO.chainId]: '0x5615CDAb10dc425a742d643d949a7F474C01abc4',
 };
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
 export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport> {
@@ -19,7 +19,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     return {
       name: 'Uniswap',
       supports: {
-        networks: Object.keys(ROUTER_ADDRESS).map((chainId) => Networks.byKeyOrFail(chainId)),
+        chains: Object.keys(ROUTER_ADDRESS).map((chainId) => Chains.byKeyOrFail(chainId)),
         swapAndTransfer: true,
         buyOrders: true,
       },
@@ -30,7 +30,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
   async quote(
     { fetchService }: QuoteComponents,
     {
-      network,
+      chain,
       sellToken,
       buyToken,
       order,
@@ -39,20 +39,20 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     }: SourceQuoteRequest<UniswapSupport>
   ): Promise<SourceQuoteResponse> {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
-    const isSellTokenNetworkToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
-    const isBuyTokenNetworkToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
-    const router = ROUTER_ADDRESS[network.chainId];
+    const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
+    const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
+    const router = ROUTER_ADDRESS[chain.chainId];
     recipient = recipient ?? takeFrom;
     const url =
       'https://api.uniswap.org/v1/quote' +
       '?protocols=v2,v3' +
-      `&tokenInAddress=${mapToWTokenIfNecessary(network, sellToken)}` +
-      `&tokenInChainId=${network.chainId}` +
-      `&tokenOutAddress=${mapToWTokenIfNecessary(network, buyToken)}` +
-      `&tokenOutChainId=${network.chainId}` +
+      `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
+      `&tokenInChainId=${chain.chainId}` +
+      `&tokenOutAddress=${mapToWTokenIfNecessary(chain, buyToken)}` +
+      `&tokenOutChainId=${chain.chainId}` +
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
-      `&recipient=${isBuyTokenNetworkToken ? router : recipient}` +
+      `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
       `&deadline=${timeToSeconds(txValidFor ?? '1y')}` +
       `&slippageTolerance=${slippagePercentage}`;
 
@@ -64,17 +64,17 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     const response = await fetchService.fetch(url, { headers, timeout });
     const body = await response.json();
     if (!response.ok) {
-      failed(network, sellToken, buyToken, body);
+      failed(chain, sellToken, buyToken, body);
     }
     let {
       quote: quoteAmount,
       methodParameters: { calldata },
       gasUseEstimate,
     } = body;
-    const value = isSellTokenNetworkToken && order.type === 'sell' ? order.sellAmount : undefined;
+    const value = isSellTokenNativeToken && order.type === 'sell' ? order.sellAmount : undefined;
     const buyAmount = order.type === 'sell' ? BigNumber.from(quoteAmount) : order.buyAmount;
 
-    if (isBuyTokenNetworkToken) {
+    if (isBuyTokenNativeToken) {
       // Use multicall to unwrap wToken
       const minBuyAmount = calculateMinBuyAmount(order.type, buyAmount, slippagePercentage);
       const routerContract = new Contract(router, ROUTER_ABI);
@@ -105,8 +105,8 @@ function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: BigNumber, slipp
   return type === 'sell' ? buyAmount.sub(calculatePercentage(buyAmount, slippagePercentage)) : buyAmount;
 }
 
-function mapToWTokenIfNecessary(network: Network, address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? network.wToken : address;
+function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? chain.wToken : address;
 }
 
 const ROUTER_ABI = [

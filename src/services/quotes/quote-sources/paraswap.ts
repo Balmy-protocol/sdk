@@ -1,7 +1,7 @@
-import { Networks } from '@networks';
+import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
-import { Network } from '@types';
+import { Chain } from '@types';
 import { BigNumber } from 'ethers';
 import {
   NoCustomConfigQuoteSource as NoCustomConfigQuoteSource,
@@ -18,15 +18,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     return {
       name: 'Paraswap',
       supports: {
-        networks: [
-          Networks.ETHEREUM,
-          Networks.POLYGON,
-          Networks.BNB_CHAIN,
-          Networks.AVALANCHE,
-          Networks.FANTOM,
-          Networks.ARBITRUM,
-          Networks.OPTIMISM,
-        ],
+        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.OPTIMISM],
         swapAndTransfer: true,
         buyOrders: true,
       },
@@ -54,7 +46,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
   private async getPrice(
     fetchService: IFetchService,
     {
-      network,
+      chain,
       sellToken,
       sellTokenData,
       buyToken,
@@ -67,7 +59,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     let url =
       'https://apiv5.paraswap.io/prices' +
-      `?network=${network.chainId}` +
+      `?network=${chain.chainId}` +
       `&srcToken=${sellToken}` +
       `&destToken=${buyToken}` +
       `&amount=${amount}` +
@@ -82,7 +74,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(network, sellToken, buyToken);
+      failed(chain, sellToken, buyToken);
     }
     const { priceRoute } = await response.json();
     return priceRoute;
@@ -91,7 +83,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
   private async getQuote(
     fetchService: IFetchService,
     {
-      network,
+      chain,
       sellToken,
       sellTokenData,
       buyToken,
@@ -102,9 +94,9 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       config: { slippagePercentage, txValidFor, timeout },
     }: SourceQuoteRequest<ParaswapSupport> & { route: any }
   ) {
-    const url = `https://apiv5.paraswap.io/transactions/${network.chainId}?ignoreChecks=true`;
+    const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
     const receiver = !!recipient && takeFrom !== recipient ? recipient : undefined;
-    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(network, route);
+    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(chain, route);
     let body: any = {
       srcToken: sellToken,
       srcDecimals: await sellTokenData.then((data) => data.decimals),
@@ -133,17 +125,17 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       timeout,
     });
     if (!response.ok) {
-      failed(network, sellToken, buyToken);
+      failed(chain, sellToken, buyToken);
     }
     const { data, value } = await response.json();
     return { usedSlippage: isWrapOrUnwrap ? 0 : slippagePercentage, data, value };
   }
 
-  private isWrapingOrUnwrapingWithWToken(network: Network, priceRoute: any) {
+  private isWrapingOrUnwrapingWithWToken(chain: Chain, priceRoute: any) {
     return (
       priceRoute.bestRoute?.[0]?.percent === 100 &&
       priceRoute.bestRoute[0].swaps?.[0]?.swapExchanges?.[0]?.percent === 100 &&
-      isSameAddress(network.wToken, priceRoute.bestRoute[0].swaps[0].swapExchanges[0].poolAddresses?.[0])
+      isSameAddress(chain.wToken, priceRoute.bestRoute[0].swaps[0].swapExchanges[0].poolAddresses?.[0])
     );
   }
 }

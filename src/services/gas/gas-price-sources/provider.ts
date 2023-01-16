@@ -1,4 +1,4 @@
-import { Network } from '@types';
+import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
 
@@ -6,12 +6,12 @@ import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
 export class ProviderGasPriceSource implements IGasPriceSource {
   constructor(private readonly providerSource: IProviderSource) {}
 
-  supportedNetworks(): Network[] {
-    return this.providerSource.supportedNetworks();
+  supportedChains(): ChainId[] {
+    return this.providerSource.supportedChains();
   }
 
-  async getGasPrice(network: Network): Promise<Record<GasSpeed, GasPrice>> {
-    const feeData = await this.providerSource.getProvider(network).getFeeData();
+  async getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>> {
+    const feeData = await this.providerSource.getProvider(chainId).getFeeData();
     const gasPrice =
       'maxFeePerGas' in feeData
         ? { maxFeePerGas: feeData.maxFeePerGas!, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas! }

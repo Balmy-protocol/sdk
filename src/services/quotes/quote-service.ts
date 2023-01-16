@@ -1,7 +1,7 @@
-import { networksUnion } from '@networks';
+import { chainsUnion, Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService, IQuickGasCostCalculator } from '@services/gas/types';
-import { Network } from '@types';
+import { ChainId, Chain } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from './quote-sources/base';
 import { AllSourcesConfig, buildSources, SourcesBasedOnConfig } from './sources-list';
@@ -40,17 +40,18 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     this.tokenService = tokenService;
   }
 
-  supportedNetworks(): Network[] {
-    return networksUnion(Object.values(this.sources).map((source) => source.getMetadata().supports.networks));
+  supportedChains(): ChainId[] {
+    const supportedChains = Object.values(this.sources).map((source) => source.getMetadata().supports.chains.map((chain) => chain.chainId));
+    return chainsUnion(supportedChains);
   }
 
   supportedSources(): SourcesBasedOnConfig<Config>[] {
     return Object.keys(this.sources) as SourcesBasedOnConfig<Config>[];
   }
 
-  supportedSourcesInNetwork(network: Network): SourcesBasedOnConfig<Config>[] {
+  supportedSourcesInChain(chainId: ChainId): SourcesBasedOnConfig<Config>[] {
     return Object.entries(this.sources)
-      .filter(([, source]) => source.getMetadata().supports.networks.includes(network))
+      .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === chainId))
       .map(([sourceId]) => sourceId as SourcesBasedOnConfig<Config>);
   }
 
@@ -90,10 +91,10 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
 
   private executeQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
     // Ask for needed values, such as token data and gas price
-    const tokensPromise = this.tokenService.getTokensForNetwork(request.network, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
+    const tokensPromise = this.tokenService.getTokensForChain(request.chainId, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
-    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator(request.network);
+    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator(request.chainId);
     const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice(request.gasSpeed));
 
     // Map request to source request
@@ -119,7 +120,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   }
 
   private getSourcesForRequest(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
-    let sourceIds: SourcesBasedOnConfig<Config>[] = this.supportedSourcesInNetwork(request.network);
+    let sourceIds: SourcesBasedOnConfig<Config>[] = this.supportedSourcesInChain(request.chainId);
 
     if (request.filters?.includeSources) {
       sourceIds = sourceIds.filter((id) => request.filters!.includeSources!.includes(id));
@@ -182,7 +183,7 @@ async function mapSourceResponseToResponse({
     minBuyAmount: toAmountOfToken(buyToken, buyToken?.price, response.minBuyAmount),
     gas: {
       estimatedGas: response.estimatedGas,
-      ...calculateGasDetails(request.network, gasCostNativeToken, nativeTokenPrice),
+      ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
     swapper: { ...response.swapper, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
@@ -227,7 +228,7 @@ function mapRequestToSourceRequest({
   gasPricePromise: Promise<GasPrice>;
 }) {
   return {
-    network: request.network,
+    chain: Chains.byKeyOrFail(request.chainId),
     sellToken: request.sellToken,
     sellTokenData: sellTokenPromise,
     buyToken: request.buyToken,

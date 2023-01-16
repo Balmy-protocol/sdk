@@ -1,6 +1,6 @@
-import { ChainId, Network } from '@types';
+import { ChainId } from '@types';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from '../types';
-import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 
 type ConstructorParameters = {
   wrapped: IQuickGasCostCalculatorBuilder;
@@ -11,31 +11,30 @@ type ConstructorParameters = {
 };
 
 export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
-  private readonly cache: Cache<Network, ChainId, IQuickGasCostCalculatorBuilder>;
+  private readonly cache: ContextlessCache<ChainId, IQuickGasCostCalculatorBuilder>;
   private readonly wrapped: IQuickGasCostCalculatorBuilder;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
   constructor({ wrapped, expiration }: ConstructorParameters) {
     this.wrapped = wrapped;
-    this.cache = new Cache<Network, ChainId, IQuickGasCostCalculatorBuilder>({
-      calculate: (network, [chainId]) => this.wrapped.build(network), // We know that we will only ask for one network at a time
-      toStorableKey: (network, chainId) => `${chainId}`,
+    this.cache = new ContextlessCache<ChainId, IQuickGasCostCalculatorBuilder>({
+      calculate: ([chainId]) => this.wrapped.build(chainId), // We know that we will only ask for one chain at a time
+      toStorableKey: (chainId) => `${chainId}`,
       expirationConfig: expiration.default,
     });
     this.expirationOverrides = expiration.overrides ?? {};
   }
 
-  supportedNetworks(): Network[] {
-    return this.wrapped.supportedNetworks();
+  supportedChains(): ChainId[] {
+    return this.wrapped.supportedChains();
   }
 
-  async build(network: Network): Promise<IQuickGasCostCalculator> {
-    const expirationConfig = this.expirationOverrides[network.chainId];
+  async build(chainId: ChainId): Promise<IQuickGasCostCalculator> {
+    const expirationConfig = this.expirationOverrides[chainId];
     const calculator = await this.cache.getOrCalculateSingle({
-      key: network.chainId,
-      context: network,
+      key: chainId,
       expirationConfig,
     });
-    return calculator!.build(network);
+    return calculator!.build(chainId);
   }
 }

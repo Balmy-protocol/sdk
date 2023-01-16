@@ -1,7 +1,7 @@
-import { Network } from '@types';
+import { ChainId } from '@types';
 import { providers } from 'ethers';
 
 export type IProviderSource = {
-  supportedNetworks(): Network[];
-  getProvider(network: Network): providers.BaseProvider;
+  supportedChains(): ChainId[];
+  getProvider(chainId: ChainId): providers.BaseProvider;
 };
