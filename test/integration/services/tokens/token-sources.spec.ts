@@ -22,7 +22,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string; decimals: 
 
 const PROVIDER_TOKEN_SOURCE = new ProviderTokenSource(new MulticallService(new PublicProvidersSource()));
 const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaTokenSource(new FetchService(crossFetch));
-const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource<Partial<DefiLlamaToken> & BaseToken>([PROVIDER_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE]);
+const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource([PROVIDER_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE]);
 
 jest.setTimeout(ms('1m'));
 

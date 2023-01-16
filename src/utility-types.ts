@@ -9,3 +9,7 @@ export type ExcludeKeysWithTypeOf<T, V> = {
 }[keyof T];
 export type Without<T, V> = Pick<T, ExcludeKeysWithTypeOf<T, V>>;
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+type UnionMapping<T> = { [K in keyof UnionToIntersection<T> | keyof T]: ValueOfUnion<T, K> };
+type ValueOfUnion<T, K> = T extends any ? (K extends keyof T ? T[K] : undefined) : never;
+export type UnionMerge<T> = Pick<UnionMapping<T>, keyof T> & Partial<UnionMapping<T>>;
