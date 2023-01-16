@@ -28,17 +28,17 @@ export class OpenOceanGasPriceSource implements IGasPriceSource {
   async getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>> {
     const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
     const body = await response.json();
-    if ('standard' in body) {
-      return {
-        standard: stringToLegacyGasPrice(body, 'standard'),
-        fast: stringToLegacyGasPrice(body, 'fast'),
-        instant: stringToLegacyGasPrice(body, 'instant'),
-      };
-    } else {
+    if ('maxPriorityFeePerGas' in body.standard) {
       return {
         standard: toEip1159GasPrice(body, 'standard'),
         fast: toEip1159GasPrice(body, 'fast'),
         instant: toEip1159GasPrice(body, 'instant'),
+      };
+    } else {
+      return {
+        standard: stringToLegacyGasPrice(body, 'standard'),
+        fast: stringToLegacyGasPrice(body, 'fast'),
+        instant: stringToLegacyGasPrice(body, 'instant'),
       };
     }
   }
