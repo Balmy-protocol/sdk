@@ -27,9 +27,10 @@ import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 
 // It's very time expensive to test all sources for all chains, so we need to choose
-const RUN_FOR: { source: AvailableSources | undefined; chain: Chain | undefined } = {
-  source: undefined, // If undefined, will select one randomly
-  chain: undefined, // If undefined, will select one randomly
+// Note: as part of the CI workflow, these values will be ignored and randomized
+const RUN_FOR: { source: AvailableSources; chain: Chain } = {
+  source: 'paraswap',
+  chain: Chains.ETHEREUM,
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
@@ -112,10 +113,9 @@ const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
 };
 
 describe('Quote Sources', () => {
-  const { sourceId, source } = getSource();
+  const { sourceId, source, chain } = getSourceAndChain();
   const metadata = source.getMetadata();
   describe(metadata.name, () => {
-    const chain = getChain(source);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
@@ -639,20 +639,23 @@ describe('Quote Sources', () => {
   });
 });
 
-function getSource() {
+function getSourceAndChain() {
   const sources = buildSources(CONFIG, CONFIG);
-  let sourceId = RUN_FOR.source;
-  if (!sourceId) {
-    // Choose one random if none is chosen
+  let sourceId: AvailableSources;
+  let source: QuoteSource<QuoteSourceSupport, any, any>;
+  let chain: Chain;
+  if (process.env.RANDOM_QUOTE_TEST) {
     const ids = Object.keys(sources) as AvailableSources[];
     sourceId = chooseRandom(ids);
+    source = sources[sourceId] as QuoteSource<QuoteSourceSupport, any, any>;
+    const possibleChains = source.getMetadata().supports.chains.filter((chain) => chain.chainId in TOKENS);
+    chain = chooseRandom(possibleChains);
+  } else {
+    sourceId = RUN_FOR.source;
+    source = sources[sourceId] as QuoteSource<QuoteSourceSupport, any, any>;
+    chain = RUN_FOR.chain;
   }
-  return { sourceId, source: sources[sourceId] };
-}
-
-function getChain(source: QuoteSource<QuoteSourceSupport, any, any>): Chain {
-  const possibleChains = source.getMetadata().supports.chains.filter((chain) => chain.chainId in TOKENS);
-  return RUN_FOR.chain ?? chooseRandom(possibleChains);
+  return { sourceId, source, chain };
 }
 
 function chooseRandom<T>(array: T[]) {
