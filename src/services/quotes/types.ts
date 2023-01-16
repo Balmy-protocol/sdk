@@ -77,4 +77,4 @@ type AmountOfToken = {
 
 export type WithFailedQuotes<IgnoredFailed extends boolean> = IgnoredFailed extends true ? QuoteResponse : QuoteResponse | FailedQuote;
 
-export type FailedQuote = { failed: true; name: string; logoURI: string };
+export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };
