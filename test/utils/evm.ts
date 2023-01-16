@@ -1,15 +1,15 @@
-import { Network } from '@types';
-import { network as hardhatNetwork } from 'hardhat';
+import { Chain } from '@types';
+import { network } from 'hardhat';
 
-export const fork = async (network: Network) => {
+export const fork = async (chain: Chain) => {
   const params = [
     {
       forking: {
-        jsonRpcUrl: network.publicRPCs?.[0],
+        jsonRpcUrl: chain.publicRPCs?.[0],
       },
     },
   ];
-  await hardhatNetwork.provider.request({
+  await network.provider.request({
     method: 'hardhat_reset',
     params,
   });

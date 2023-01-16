@@ -1,23 +1,34 @@
-import { Networks } from '@networks';
-import { Network } from '@types';
+import { Chains } from 'src/chains';
+import { ChainId, Chain } from '@types';
+import { ArrayOneOrMore } from '@utility-types';
 import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
 export class PublicProvidersSource implements IProviderSource {
-  private readonly networks: Network[];
+  private readonly publicRPCs: Record<ChainId, ArrayOneOrMore<string>>;
 
-  constructor(networks: Network[] = Networks.getAllNetworks()) {
-    this.networks = networks.filter((network) => network.publicRPCs && network.publicRPCs.length > 0);
+  constructor(publicRPCs?: Record<ChainId, ArrayOneOrMore<string>>) {
+    if (publicRPCs) {
+      this.publicRPCs = publicRPCs
+    } else {
+      // If not set, default to known chains
+      this.publicRPCs = Object.fromEntries(Chains.getAllChains()
+        .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => !!chain.publicRPCs && chain.publicRPCs.length > 0)
+        .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
+      )
+    }
   }
 
-  supportedNetworks(): Network[] {
-    return this.networks;
+  supportedChains(): ChainId[] {
+    return Object.keys(this.publicRPCs)
+      .map(chainId => parseInt(chainId));
   }
 
-  getProvider(network: Network): providers.BaseProvider {
-    if (!this.networks.includes(network)) throw new Error(`Unsupported network ${network.name}`);
-    const config = network.publicRPCs!.map((url, i) => ({
-      provider: new providers.StaticJsonRpcProvider(url, network.chainId),
+  getProvider(chainId: ChainId): providers.BaseProvider {
+    const publicRPCs = this.publicRPCs[chainId]
+    if (!publicRPCs) throw new Error(`Unsupported chain with id ${chainId}`);
+    const config = publicRPCs.map((url, i) => ({
+      provider: new providers.StaticJsonRpcProvider(url, chainId),
       priority: i,
     }));
     return new providers.FallbackProvider(config, 1);

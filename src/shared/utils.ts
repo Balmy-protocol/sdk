@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import ms from 'ms';
-import { Network, TimeString, TokenAddress } from '@types';
+import { Chain, TimeString, TokenAddress } from '@types';
 
 export function isSameAddress(tokenA: TokenAddress, tokenB: TokenAddress) {
   return tokenA.toLowerCase() === tokenB.toLowerCase();
@@ -25,12 +25,12 @@ export function toUnits(amount: BigNumber, decimals: number, precision: number =
   return Math.round((parseFloat(utils.formatUnits(amount, decimals)) + Number.EPSILON) * magnitude) / magnitude;
 }
 
-export function calculateGasDetails(network: Network, gasCostNativeToken: BigNumber, nativeTokenPrice?: number) {
+export function calculateGasDetails(chain: Chain, gasCostNativeToken: BigNumber, nativeTokenPrice?: number) {
   return {
     estimatedCost: gasCostNativeToken,
     estimatedCostInUnits: parseFloat(utils.formatUnits(gasCostNativeToken, 18)),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
-    gasTokenSymbol: network.currencySymbol,
+    gasTokenSymbol: chain.currencySymbol,
   };
 }
 

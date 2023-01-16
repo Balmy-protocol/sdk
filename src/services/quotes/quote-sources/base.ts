@@ -2,13 +2,13 @@ import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
-import { Address, Network, TimeString, TokenAddress } from '@types';
+import { Address, Chain, TimeString, TokenAddress } from '@types';
 import { BaseToken } from '@services/tokens/types';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
 export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
   name: string;
-  supports: { networks: Network[] } & Support;
+  supports: { chains: Chain[] } & Support;
   logoURI: string;
 };
 export type QuoteSource<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean = false, CustomQuoteSourceConfig = undefined> = {
@@ -26,7 +26,7 @@ export type BuyOrder = { type: 'buy'; buyAmount: BigNumber };
 type BaseOrder = SellOrder | BuyOrder;
 type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
-  network: Network;
+  chain: Chain;
   sellToken: TokenAddress;
   sellTokenData: Promise<ExtraTokenData>;
   buyToken: TokenAddress;

@@ -1,5 +1,5 @@
 import { BigNumber, constants } from 'ethers';
-import { Networks } from '@networks';
+import { Chains } from 'src/chains';
 import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { IFetchService } from '@services/fetch/types';
 import { addQuoteSlippage, failed, isNativeWrapOrUnwrap } from './utils';
@@ -10,17 +10,17 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     return {
       name: '1inch',
       supports: {
-        networks: [
-          Networks.ETHEREUM,
-          Networks.BNB_CHAIN,
-          Networks.POLYGON,
-          Networks.OPTIMISM,
-          Networks.ARBITRUM,
-          Networks.GNOSIS,
-          Networks.AVALANCHE,
-          Networks.FANTOM,
-          Networks.KLAYTN,
-          Networks.AURORA,
+        chains: [
+          Chains.ETHEREUM,
+          Chains.BNB_CHAIN,
+          Chains.POLYGON,
+          Chains.OPTIMISM,
+          Chains.ARBITRUM,
+          Chains.GNOSIS,
+          Chains.AVALANCHE,
+          Chains.FANTOM,
+          Chains.KLAYTN,
+          Chains.AURORA,
         ],
         swapAndTransfer: true,
         buyOrders: false,
@@ -47,14 +47,14 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       value: BigNumber.from(value ?? 0),
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.network, request.sellToken, request.buyToken);
+    const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, request.sellToken, request.buyToken);
     return addQuoteSlippage(quote, request.order.type, isWrapOrUnwrap ? 0 : request.config.slippagePercentage);
   }
 
   private async getQuote(
     fetchService: IFetchService,
     {
-      network,
+      chain,
       sellToken,
       buyToken,
       order,
@@ -63,7 +63,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     }: SourceQuoteRequest<OneInchSupport>
   ) {
     let url =
-      `https://api.1inch.io/v5.0/${network.chainId}/swap` +
+      `https://api.1inch.io/v5.0/${chain.chainId}/swap` +
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
@@ -80,7 +80,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(network, sellToken, buyToken);
+      failed(chain, sellToken, buyToken);
     }
     const {
       toTokenAmount,
@@ -92,10 +92,10 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
   // We can't use the gas estimate on the /swap endpoint because we need to turn the estimates off
   private async getGasEstimate(
     fetchService: IFetchService,
-    { network, sellToken, buyToken, order, config: { timeout } }: SourceQuoteRequest<OneInchSupport>
+    { chain, sellToken, buyToken, order, config: { timeout } }: SourceQuoteRequest<OneInchSupport>
   ) {
     const url =
-      `https://api.1inch.io/v5.0/${network.chainId}/quote` +
+      `https://api.1inch.io/v5.0/${chain.chainId}/quote` +
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}`;

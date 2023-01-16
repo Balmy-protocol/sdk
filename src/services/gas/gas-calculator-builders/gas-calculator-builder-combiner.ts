@@ -1,5 +1,5 @@
-import { ChainId, Network } from '@types';
-import { Networks, networksUnion } from '@networks';
+import { ChainId } from '@types';
+import { chainsUnion } from 'src/chains';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from '../types';
 
 type ConstructorParameters = {
@@ -16,15 +16,15 @@ export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuil
     this.calculatorBuilderOverrides = calculatorBuilderOverrides;
   }
 
-  supportedNetworks(): Network[] {
-    return networksUnion([
-      this.defaultCalculatorBuilder.supportedNetworks(),
-      Object.keys(this.calculatorBuilderOverrides).map((chainId) => Networks.byKeyOrFail(chainId)),
+  supportedChains(): ChainId[] {
+    return chainsUnion([
+      this.defaultCalculatorBuilder.supportedChains(),
+      Object.keys(this.calculatorBuilderOverrides).map((chainId) => parseInt(chainId)),
     ]);
   }
 
-  build(network: Network): Promise<IQuickGasCostCalculator> {
-    const builder = this.calculatorBuilderOverrides[network.chainId] ?? this.defaultCalculatorBuilder;
-    return builder.build(network);
+  build(chainId: ChainId): Promise<IQuickGasCostCalculator> {
+    const builder = this.calculatorBuilderOverrides[chainId] ?? this.defaultCalculatorBuilder;
+    return builder.build(chainId);
   }
 }

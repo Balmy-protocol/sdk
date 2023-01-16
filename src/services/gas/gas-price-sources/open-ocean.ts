@@ -1,32 +1,32 @@
 import { BigNumber } from 'ethers';
-import { Network } from '@types';
+import { ChainId } from '@types';
 import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
-import { Networks } from '@networks';
+import { Chains } from 'src/chains';
 
 export class OpenOceanGasPriceSource implements IGasPriceSource {
-  constructor(private readonly fetchService: IFetchService) {}
+  constructor(private readonly fetchService: IFetchService) { }
 
-  supportedNetworks(): Network[] {
+  supportedChains(): ChainId[] {
     return [
-      Networks.ETHEREUM,
-      Networks.POLYGON,
-      Networks.BNB_CHAIN,
-      Networks.FANTOM,
-      Networks.AVALANCHE,
-      Networks.HECO,
-      Networks.OKC,
-      Networks.GNOSIS,
-      Networks.ARBITRUM,
-      Networks.OPTIMISM,
-      Networks.CRONOS,
-      Networks.MOONRIVER,
-      Networks.BOBA,
-    ];
+      Chains.ETHEREUM,
+      Chains.POLYGON,
+      Chains.BNB_CHAIN,
+      Chains.FANTOM,
+      Chains.AVALANCHE,
+      Chains.HECO,
+      Chains.OKC,
+      Chains.GNOSIS,
+      Chains.ARBITRUM,
+      Chains.OPTIMISM,
+      Chains.CRONOS,
+      Chains.MOONRIVER,
+      Chains.BOBA,
+    ].map(({ chainId }) => chainId);
   }
 
-  async getGasPrice(network: Network): Promise<Record<GasSpeed, GasPrice>> {
-    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${network.chainId}/gas-price`);
+  async getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>> {
+    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
     const body = await response.json();
     if ('standard' in body) {
       return {

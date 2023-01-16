@@ -1,7 +1,7 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { GasPrice, GasSpeed } from '@services/gas/types';
 import { BaseToken } from '@services/tokens/types';
-import { Address, Network, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
@@ -15,9 +15,9 @@ export type QuoteSourcesList = typeof QUOTE_SOURCES;
 export type AvailableSources = keyof QuoteSourcesList & string;
 
 export type IQuoteService<SupportedSources extends AvailableSources> = {
-  supportedNetworks(): Network[];
+  supportedChains(): ChainId[];
   supportedSources(): SupportedSources[];
-  supportedSourcesInNetwork(network: Network): SupportedSources[];
+  supportedSourcesInChain(chainId: ChainId): SupportedSources[];
   getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest<SupportedSources>,
@@ -32,7 +32,7 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
 };
 
 export type QuoteRequest<SupportedSources extends AvailableSources> = {
-  network: Network;
+  chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
   order: { type: 'sell'; sellAmount: BigNumberish } | { type: 'buy'; buyAmount: BigNumberish };

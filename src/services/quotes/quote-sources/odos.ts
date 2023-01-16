@@ -1,6 +1,6 @@
 import { BigNumber, utils } from 'ethers';
 import { Address } from '@types';
-import { Networks } from '@networks';
+import { Chains } from 'src/chains';
 import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
@@ -14,7 +14,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
     return {
       name: 'Odos',
       supports: {
-        networks: [Networks.ETHEREUM, Networks.POLYGON, Networks.ARBITRUM, Networks.OPTIMISM, Networks.AVALANCHE],
+        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE],
         swapAndTransfer: false,
         buyOrders: false,
       },
@@ -25,7 +25,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
   async quote(
     { fetchService }: QuoteComponents,
     {
-      network,
+      chain,
       sellToken,
       buyToken,
       sellTokenData,
@@ -45,7 +45,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
     const checksummedBuy = checksummAndMapIfNecessary(buyToken);
     const body = {
       wallet: takeFrom,
-      chain_id: network.chainId,
+      chain_id: chain.chainId,
       gas_price,
       input_tokens: [{ tokenAddress: checksummedSell, amount: utils.formatUnits(order.sellAmount, sellTokenDataResult.decimals) }],
       output_token: checksummedBuy,
@@ -64,7 +64,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
     });
 
     if (!response.ok) {
-      failed(network, sellToken, buyToken);
+      failed(chain, sellToken, buyToken);
     }
 
     const {
@@ -86,7 +86,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
       isSwapAndTransfer: false as const,
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(network, sellToken, buyToken);
+    const isWrapOrUnwrap = isNativeWrapOrUnwrap(chain, sellToken, buyToken);
     return addQuoteSlippage(quote, 'sell', isWrapOrUnwrap ? 0 : slippagePercentage);
   }
 }

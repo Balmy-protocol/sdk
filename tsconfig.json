@@ -19,7 +19,7 @@
     "paths": {
       "@services/*": ["src/services/*"],
       "@shared/*": ["src/shared/*"],
-      "@networks": ["src/networks"],
+      "@chains": ["src/chains"],
       "@types": ["src/types"],
       "@utility-types": ["src/utility-types"],
       "@test-utils/*": ["test/utils/*"]

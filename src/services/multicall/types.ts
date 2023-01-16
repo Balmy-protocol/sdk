@@ -1,15 +1,15 @@
-import { Address, Network } from '@types';
+import { Address, ChainId } from '@types';
 
 export type IMulticallService = {
-  supportedNetworks(): Network[];
+  supportedChains(): ChainId[];
   readOnlyMulticallToSingleTarget({
-    network,
+    chainId,
     target,
     calls,
   }: {
-    network: Network;
+    chainId: ChainId;
     target: Address;
     calls: { calldata: string; decode: string }[];
   }): Promise<any[]>;
-  readOnlyMulticall({ network, calls }: { network: Network; calls: { target: Address; decode: string; calldata: string }[] }): Promise<any[]>;
+  readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; decode: string; calldata: string }[] }): Promise<any[]>;
 };

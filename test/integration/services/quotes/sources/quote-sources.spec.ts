@@ -14,10 +14,10 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
-import { Networks } from '@networks';
+import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
-import { Network, TokenAddress, ChainId, Address } from '@types';
+import { Chain, TokenAddress, ChainId, Address } from '@types';
 import { AvailableSources, GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
@@ -26,10 +26,10 @@ import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-oc
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 
-// It's very time expensive to test all sources for all networks, so we need to choose
-const RUN_FOR: { source: AvailableSources | undefined; network: Network | undefined } = {
+// It's very time expensive to test all sources for all chains, so we need to choose
+const RUN_FOR: { source: AvailableSources | undefined; chain: Chain | undefined } = {
   source: undefined, // If undefined, will select one randomly
-  network: undefined, // If undefined, will select one randomly
+  chain: undefined, // If undefined, will select one randomly
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
@@ -41,10 +41,10 @@ const CONFIG: GlobalQuoteSourceConfig & AllSourcesConfig = {
 };
 
 type TokenData = { address: TokenAddress; whale: Address };
-type NetworkTokens = { WBTC: TokenData; USDC: TokenData; wToken: TokenData };
-// TODO: Add more networks
+type ChainTokens = { WBTC: TokenData; USDC: TokenData; wToken: TokenData };
+// TODO: Add more chains
 const TOKENS: Record<ChainId, Record<string, TokenData>> = {
-  [Networks.ETHEREUM.chainId]: {
+  [Chains.ETHEREUM.chainId]: {
     USDC: {
       address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
       whale: '0xf977814e90da44bfa03b6295a0616a897441acec',
@@ -58,7 +58,7 @@ const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x08638ef1a205be6762a8b935f5da9b700cf7322c',
     },
   },
-  [Networks.OPTIMISM.chainId]: {
+  [Chains.OPTIMISM.chainId]: {
     USDC: {
       address: '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
       whale: '0xf390830df829cf22c53c8840554b98eafc5dcbc2',
@@ -72,7 +72,7 @@ const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x68f5c0a2de713a54991e01858fd27a3832401849',
     },
   },
-  [Networks.POLYGON.chainId]: {
+  [Chains.POLYGON.chainId]: {
     USDC: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       whale: '0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245',
@@ -86,7 +86,7 @@ const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4',
     },
   },
-} satisfies Record<ChainId, NetworkTokens>;
+} satisfies Record<ChainId, ChainTokens>;
 
 enum Test {
   SELL_USDC_TO_NATIVE,
@@ -115,8 +115,8 @@ describe('Quote Sources', () => {
   const { sourceId, source } = getSource();
   const metadata = source.getMetadata();
   describe(metadata.name, () => {
-    const network = getNetwork(source);
-    describe(`${network.name}`, () => {
+    const chain = getChain(source);
+    describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
       let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, USDC: DefiLlamaToken, WBTC: DefiLlamaToken;
@@ -125,12 +125,12 @@ describe('Quote Sources', () => {
       let gasPricePromise: Promise<GasPrice>;
 
       beforeAll(async () => {
-        await fork(network);
+        await fork(chain);
         [user, recipient] = await ethers.getSigners();
-        await loadTokens(network);
+        await loadTokens(chain);
         await mintTokens();
         await calculateInitialBalances();
-        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(network).then((gasPrice) => gasPrice['standard']);
+        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain.chainId).then((gasPrice) => gasPrice['standard']);
         snapshot = await takeSnapshot();
       });
 
@@ -546,16 +546,16 @@ describe('Quote Sources', () => {
         return gasSpentEach.reduce((accum, curr) => accum.add(curr), constants.Zero);
       }
 
-      async function loadTokens(network: Network) {
-        const address = (name: string) => TOKENS[network.chainId][name].address;
+      async function loadTokens(chain: Chain) {
+        const address = (name: string) => TOKENS[chain.chainId][name].address;
         const tokenSource = new DefiLlamaTokenSource(FETCH_SERVICE);
         const tokens = await tokenSource.getTokens({
-          [network.chainId]: [Addresses.NATIVE_TOKEN, network.wToken, address('USDC'), address('WBTC')],
+          [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('WBTC')],
         });
-        nativeToken = tokens[network.chainId][Addresses.NATIVE_TOKEN];
-        wToken = tokens[network.chainId][network.wToken];
-        USDC = tokens[network.chainId][address('USDC')];
-        WBTC = tokens[network.chainId][address('WBTC')];
+        nativeToken = tokens[chain.chainId][Addresses.NATIVE_TOKEN];
+        wToken = tokens[chain.chainId][chain.wToken];
+        USDC = tokens[chain.chainId][address('USDC')];
+        WBTC = tokens[chain.chainId][address('WBTC')];
       }
 
       async function mintTokens() {
@@ -587,7 +587,7 @@ describe('Quote Sources', () => {
             ...quote,
             sellToken: sellToken.address,
             buyToken: buyToken.address,
-            network,
+            chain,
             config: {
               slippagePercentage: SLIPPAGE_PERCENTAGE,
               txValidFor: '5m',
@@ -625,8 +625,8 @@ describe('Quote Sources', () => {
         if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
           await setBalance(user.address, amount);
         } else {
-          const key = isSameAddress(token.address, network.wToken) ? 'wToken' : token.symbol;
-          const data = TOKENS[network.chainId][key];
+          const key = isSameAddress(token.address, chain.wToken) ? 'wToken' : token.symbol;
+          const data = TOKENS[chain.chainId][key];
           await impersonateAccount(data.whale);
           const whale = await ethers.getSigner(data.whale);
           await setBalance(whale.address, utils.parseEther('1'));
@@ -650,9 +650,10 @@ function getSource() {
   return { sourceId, source: sources[sourceId] };
 }
 
-function getNetwork(source: QuoteSource<QuoteSourceSupport, any, any>): Network {
-  const possibleNetworks = source.getMetadata().supports.networks.filter((network) => network.chainId in TOKENS);
-  return RUN_FOR.network ?? chooseRandom(possibleNetworks);
+function getChain(source: QuoteSource<QuoteSourceSupport, any, any>): Chain {
+  const possibleChains = source.getMetadata().supports.chains
+    .filter((chain) => chain.chainId in TOKENS)
+  return RUN_FOR.chain ?? chooseRandom(possibleChains);
 }
 
 function chooseRandom<T>(array: T[]) {
