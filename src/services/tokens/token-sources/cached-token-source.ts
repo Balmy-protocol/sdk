@@ -1,47 +1,47 @@
-import { ChainId, Network, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import { BaseToken, ITokenSource } from '@services/tokens/types';
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 
 export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<Token> {
-  private readonly cache: ContextlessCache<TokenInNetwork, Token>;
+  private readonly cache: ContextlessCache<TokenInChain, Token>;
 
   constructor(private readonly source: ITokenSource<Token>, expirationConfig: ExpirationConfigOptions) {
-    this.cache = new ContextlessCache<TokenInNetwork, Token>({
-      calculate: (tokensInNetwork) => this.fetchTokens(tokensInNetwork),
-      toStorableKey: (tokenInNetwork) => tokenInNetwork,
+    this.cache = new ContextlessCache<TokenInChain, Token>({
+      calculate: (tokensInChain) => this.fetchTokens(tokensInChain),
+      toStorableKey: (tokenInChain) => tokenInChain,
       expirationConfig,
     });
   }
 
-  supportedNetworks(): Network[] {
-    return this.source.supportedNetworks();
+  supportedChains(): ChainId[] {
+    return this.source.supportedChains();
   }
 
   async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
-    const tokensInNetwork = addressesToTokensInNetwork(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInNetwork });
-    return tokenInNetworkRecordToChainAndAddress(tokens);
+    const tokensInChain = addressesToTokensInChain(addresses);
+    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain });
+    return tokenInChainRecordToChainAndAddress(tokens);
   }
 
   addedProperties(): Exclude<keyof Token, keyof BaseToken>[] {
     return this.source.addedProperties();
   }
 
-  private async fetchTokens(tokensInNetwork: TokenInNetwork[]): Promise<Record<TokenInNetwork, Token>> {
-    const input = tokensInNetworkToAddresses(tokensInNetwork);
+  private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, Token>> {
+    const input = tokensInChainToAddresses(tokensInChain);
     const tokens = await this.source.getTokens(input);
-    return chainAndAddressRecordToTokenInNetwork(tokens);
+    return chainAndAddressRecordToTokenInChain(tokens);
   }
 }
 
-function addressesToTokensInNetwork(addresses: Record<ChainId, TokenAddress[]>): TokenInNetwork[] {
-  return Object.entries(addresses).flatMap(([chainId, addresses]) => addresses.map((address) => toTokenInNetwork(parseInt(chainId), address)));
+function addressesToTokensInChain(addresses: Record<ChainId, TokenAddress[]>): TokenInChain[] {
+  return Object.entries(addresses).flatMap(([chainId, addresses]) => addresses.map((address) => toTokenInChain(parseInt(chainId), address)));
 }
 
-function tokensInNetworkToAddresses(tokensInNetwork: TokenInNetwork[]): Record<ChainId, TokenAddress[]> {
+function tokensInChainToAddresses(tokensInChain: TokenInChain[]): Record<ChainId, TokenAddress[]> {
   const result: Record<ChainId, TokenAddress[]> = {};
-  for (const tokenInNetwork of tokensInNetwork) {
-    const { chainId, address } = fromTokenInNetwork(tokenInNetwork);
+  for (const tokenInChain of tokensInChain) {
+    const { chainId, address } = fromTokenInChain(tokenInChain);
     if (chainId in result) {
       result[chainId].push(address);
     } else {
@@ -51,12 +51,12 @@ function tokensInNetworkToAddresses(tokensInNetwork: TokenInNetwork[]): Record<C
   return result;
 }
 
-function tokenInNetworkRecordToChainAndAddress<Token extends BaseToken>(
-  record: Record<TokenInNetwork, Token>
+function tokenInChainRecordToChainAndAddress<Token extends BaseToken>(
+  record: Record<TokenInChain, Token>
 ): Record<ChainId, Record<TokenAddress, Token>> {
   const result: Record<ChainId, Record<TokenAddress, Token>> = {};
-  for (const [tokenInNetwork, token] of Object.entries(record)) {
-    const { chainId, address } = fromTokenInNetwork(tokenInNetwork);
+  for (const [tokenInChain, token] of Object.entries(record)) {
+    const { chainId, address } = fromTokenInChain(tokenInChain);
     if (!(chainId in result)) {
       result[chainId] = {};
     }
@@ -65,21 +65,21 @@ function tokenInNetworkRecordToChainAndAddress<Token extends BaseToken>(
   return result;
 }
 
-function chainAndAddressRecordToTokenInNetwork<Token extends BaseToken>(
+function chainAndAddressRecordToTokenInChain<Token extends BaseToken>(
   record: Record<ChainId, Record<TokenAddress, Token>>
-): Record<TokenInNetwork, Token> {
+): Record<TokenInChain, Token> {
   const entries = Object.entries(record).flatMap(([chainId, record]) =>
-    Object.entries(record).map<[TokenInNetwork, Token]>(([address, token]) => [toTokenInNetwork(parseInt(chainId), address), token])
+    Object.entries(record).map<[TokenInChain, Token]>(([address, token]) => [toTokenInChain(parseInt(chainId), address), token])
   );
   return Object.fromEntries(entries);
 }
 
-type TokenInNetwork = `${ChainId}-${TokenAddress}`;
-function toTokenInNetwork(chainId: ChainId, address: TokenAddress): TokenInNetwork {
+type TokenInChain = `${ChainId}-${TokenAddress}`;
+function toTokenInChain(chainId: ChainId, address: TokenAddress): TokenInChain {
   return `${chainId}-${address}`;
 }
 
-function fromTokenInNetwork(tokenInNetwork: TokenAddress): { chainId: ChainId; address: TokenAddress } {
-  const [chainId, address] = tokenInNetwork.split('-');
+function fromTokenInChain(tokenInChain: TokenAddress): { chainId: ChainId; address: TokenAddress } {
+  const [chainId, address] = tokenInChain.split('-');
   return { chainId: parseInt(chainId), address };
 }

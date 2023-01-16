@@ -15,6 +15,11 @@
       "name": "0xged",
       "email": "0xged@mean.finance",
       "url": "https://github.com/0xged"
+    },
+    {
+      "name": "Sam Bugs",
+      "email": "sam@mean.finance",
+      "url": "https://github.com/0xsambugs"
     }
   ],
   "scripts": {
@@ -36,8 +41,8 @@
     "ms": "3.0.0-canary.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.4.1",
-    "@commitlint/config-conventional": "17.4.0",
+    "@commitlint/cli": "17.4.2",
+    "@commitlint/config-conventional": "17.4.2",
     "@ethersproject/abi": "5.7.0",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.5",
@@ -54,7 +59,7 @@
     "lint-staged": "13.1.0",
     "prettier": "2.8.2",
     "sort-package-json": "2.1.0",
-    "ts-jest": "29.0.3",
+    "ts-jest": "29.0.5",
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.1.2",
     "tsconfig-replace-paths": "0.0.11",

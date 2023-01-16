@@ -1,15 +1,15 @@
-import { ChainId, Network, TokenAddress } from '@types';
+import { ChainId, Chain, TokenAddress } from '@types';
 import { DefiLlamaToken } from './token-sources/defi-llama';
 
 export type ITokenService<Token extends BaseToken> = {
-  supportedNetworks(): Network[];
-  getTokensForNetwork(network: Network, addresses: TokenAddress[]): Promise<Record<TokenAddress, Token>>;
-  getTokens(...addresses: { network: Network; addresses: TokenAddress[] }[]): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  supportedChains(): ChainId[];
+  getTokensForChain(chainId: ChainId, addresses: TokenAddress[]): Promise<Record<TokenAddress, Token>>;
+  getTokens(...addresses: { chainId: ChainId; addresses: TokenAddress[] }[]): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
   getTokensByChainId(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
 };
 
 export type ITokenSource<Token extends BaseToken = BaseToken> = {
-  supportedNetworks(): Network[];
+  supportedChains(): ChainId[];
   getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
   addedProperties(): AddedProperties<Token>[];
 };

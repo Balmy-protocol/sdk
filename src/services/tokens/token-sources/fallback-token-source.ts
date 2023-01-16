@@ -1,5 +1,5 @@
-import { ChainId, Network, TimeString, TokenAddress } from '@types';
-import { networksUnion } from '@networks';
+import { ChainId, TimeString, TokenAddress } from '@types';
+import { chainsUnion } from '@chains';
 import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
 import { timeoutPromise } from '@shared/timeouts';
 
@@ -11,8 +11,8 @@ export class FallbackTokenSource<CombinedToken extends BaseToken> implements ITo
     this.sourceQueryTimeout = options?.sourceQueryTimeout;
   }
 
-  supportedNetworks(): Network[] {
-    return networksUnion(this.sources.map((source) => source.supportedNetworks()));
+  supportedChains(): ChainId[] {
+    return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
   async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, CombinedToken>>> {
@@ -47,7 +47,7 @@ function getAddressesForSource<Token extends BaseToken>(
   source: ITokenSource<Token>,
   addresses: Record<ChainId, TokenAddress[]>
 ): Record<ChainId, TokenAddress[]> {
-  const chainsForSource = new Set(source.supportedNetworks().map(({ chainId }) => `${chainId}`));
+  const chainsForSource = new Set(source.supportedChains().map((chainId) => `${chainId}`));
   const filteredEntries = Object.entries(addresses)
     .filter(([chainId]) => chainsForSource.has(chainId))
     .map<[ChainId, TokenAddress[]]>(([chainId, addresses]) => [parseInt(chainId), addresses]);

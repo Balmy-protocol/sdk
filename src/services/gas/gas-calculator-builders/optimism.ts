@@ -1,21 +1,21 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { serialize } from '@ethersproject/transactions';
-import { Networks } from '@networks';
+import { Chains } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
 import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
-import { Network } from '@types';
+import { ChainId } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
 export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
   constructor(private readonly multicallService: IMulticallService) {}
 
-  supportedNetworks(): Network[] {
-    return [Networks.OPTIMISM];
+  supportedChains(): ChainId[] {
+    return [Chains.OPTIMISM.chainId];
   }
 
-  async build(network: Network): Promise<IQuickGasCostCalculator> {
+  async build(chain: ChainId): Promise<IQuickGasCostCalculator> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
       getGasPrice: () => ({ gasPrice: l2GasPrice }),
@@ -32,7 +32,7 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
 async function getGasValues(multicallService: IMulticallService) {
   const [overhead, l1BaseFee, decimals, scalar, l2GasPrice] = await multicallService.readOnlyMulticallToSingleTarget({
     target: OPTIMISM_GAS_ORACLE_ADDRESS,
-    network: Networks.OPTIMISM,
+    chainId: Chains.OPTIMISM.chainId,
     calls: [
       { calldata: OVERHEAD_CALLDATA, decode: 'uint256' },
       { calldata: L1_BASE_FEE_CALLDATA, decode: 'uint256' },
