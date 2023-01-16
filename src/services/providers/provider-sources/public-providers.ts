@@ -9,23 +9,23 @@ export class PublicProvidersSource implements IProviderSource {
 
   constructor(publicRPCs?: Record<ChainId, ArrayOneOrMore<string>>) {
     if (publicRPCs) {
-      this.publicRPCs = publicRPCs
+      this.publicRPCs = publicRPCs;
     } else {
       // If not set, default to known chains
-      this.publicRPCs = Object.fromEntries(Chains.getAllChains()
-        .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => !!chain.publicRPCs && chain.publicRPCs.length > 0)
-        .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
-      )
+      this.publicRPCs = Object.fromEntries(
+        Chains.getAllChains()
+          .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => !!chain.publicRPCs && chain.publicRPCs.length > 0)
+          .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
+      );
     }
   }
 
   supportedChains(): ChainId[] {
-    return Object.keys(this.publicRPCs)
-      .map(chainId => parseInt(chainId));
+    return Object.keys(this.publicRPCs).map((chainId) => parseInt(chainId));
   }
 
   getProvider(chainId: ChainId): providers.BaseProvider {
-    const publicRPCs = this.publicRPCs[chainId]
+    const publicRPCs = this.publicRPCs[chainId];
     if (!publicRPCs) throw new Error(`Unsupported chain with id ${chainId}`);
     const config = publicRPCs.map((url, i) => ({
       provider: new providers.StaticJsonRpcProvider(url, chainId),

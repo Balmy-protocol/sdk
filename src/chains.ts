@@ -198,11 +198,11 @@ export function chainsIntersection(chains1: ChainId[], ...otherChains: ChainId[]
 }
 
 export function chainsUnion(chains: ChainId[][]): ChainId[] {
-  const chainSet: Set<ChainId> = new Set()
+  const chainSet: Set<ChainId> = new Set();
   for (const chainList of chains) {
     for (const chain of chainList) {
-      chainSet.add(chain)
+      chainSet.add(chain);
     }
   }
-  return [...chainSet]
+  return [...chainSet];
 }

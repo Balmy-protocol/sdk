@@ -23,8 +23,8 @@ describe('Prioritized Provider Source Combinator', () => {
     then('the union of the given sources is returned', () => {
       const supportedChains = fallbackSource.supportedChains();
       expect(supportedChains).to.have.lengthOf(2);
-      expect(supportedChains).to.include(Chains.POLYGON);
-      expect(supportedChains).to.include(Chains.ETHEREUM);
+      expect(supportedChains).to.include(Chains.POLYGON.chainId);
+      expect(supportedChains).to.include(Chains.ETHEREUM.chainId);
     });
   });
 

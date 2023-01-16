@@ -41,10 +41,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   }
 
   supportedChains(): ChainId[] {
-    const supportedChains = Object.values(this.sources)
-      .map((source) => source.getMetadata().supports.chains
-        .map(chain => chain.chainId)
-      )
+    const supportedChains = Object.values(this.sources).map((source) => source.getMetadata().supports.chains.map((chain) => chain.chainId));
     return chainsUnion(supportedChains);
   }
 

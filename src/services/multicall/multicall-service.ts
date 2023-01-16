@@ -8,13 +8,10 @@ import { chainsIntersection } from '@chains';
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 export class MulticallService implements IMulticallService {
   private readonly ABI_CODER = new AbiCoder();
-  constructor(private readonly providerSource: IProviderSource) { }
+  constructor(private readonly providerSource: IProviderSource) {}
 
   supportedChains(): ChainId[] {
-    return chainsIntersection(
-      this.providerSource.supportedChains(),
-      SUPPORTED_CHAINS
-    )
+    return chainsIntersection(this.providerSource.supportedChains(), SUPPORTED_CHAINS);
   }
 
   readOnlyMulticallToSingleTarget({

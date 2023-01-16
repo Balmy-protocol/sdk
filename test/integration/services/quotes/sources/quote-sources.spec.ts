@@ -651,8 +651,7 @@ function getSource() {
 }
 
 function getChain(source: QuoteSource<QuoteSourceSupport, any, any>): Chain {
-  const possibleChains = source.getMetadata().supports.chains
-    .filter((chain) => chain.chainId in TOKENS)
+  const possibleChains = source.getMetadata().supports.chains.filter((chain) => chain.chainId in TOKENS);
   return RUN_FOR.chain ?? chooseRandom(possibleChains);
 }
 

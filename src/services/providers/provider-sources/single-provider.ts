@@ -3,9 +3,7 @@ import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
 export class SingleProviderSource implements IProviderSource {
-
-  constructor(private readonly provider: providers.BaseProvider) {
-  }
+  constructor(private readonly provider: providers.BaseProvider) {}
 
   supportedChains(): ChainId[] {
     return [this.provider.network.chainId];

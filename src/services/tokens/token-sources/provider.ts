@@ -8,7 +8,7 @@ import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 
 export class ProviderTokenSource implements ITokenSource {
-  constructor(private readonly multicallService: IMulticallService, private readonly defaultTimeout?: TimeString) { }
+  constructor(private readonly multicallService: IMulticallService, private readonly defaultTimeout?: TimeString) {}
 
   supportedChains(): ChainId[] {
     return this.multicallService.supportedChains();

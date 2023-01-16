@@ -5,7 +5,7 @@ import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
 export class OpenOceanGasPriceSource implements IGasPriceSource {
-  constructor(private readonly fetchService: IFetchService) { }
+  constructor(private readonly fetchService: IFetchService) {}
 
   supportedChains(): ChainId[] {
     return [

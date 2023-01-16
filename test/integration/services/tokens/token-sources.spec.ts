@@ -63,7 +63,7 @@ describe('Token Sources', () => {
       });
 
       for (const chainId of source.supportedChains()) {
-        const chain = Chains.byKey(chainId)
+        const chain = Chains.byKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Returned amount of tokens is as expected`, () => {
             expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
@@ -96,7 +96,7 @@ describe('Token Sources', () => {
         if (symbol) {
           expect(token.symbol).to.equal(symbol);
         } else {
-          expect(token.symbol).to.not.be.undefined
+          expect(token.symbol).to.not.be.undefined;
         }
         if (validate && (!validate.on || validate.on.some((supportedChain) => supportedChain === chainId))) {
           for (const field of validate.fieldsExist) {

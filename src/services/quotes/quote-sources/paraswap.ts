@@ -18,15 +18,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     return {
       name: 'Paraswap',
       supports: {
-        chains: [
-          Chains.ETHEREUM,
-          Chains.POLYGON,
-          Chains.BNB_CHAIN,
-          Chains.AVALANCHE,
-          Chains.FANTOM,
-          Chains.ARBITRUM,
-          Chains.OPTIMISM,
-        ],
+        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.OPTIMISM],
         swapAndTransfer: true,
         buyOrders: true,
       },

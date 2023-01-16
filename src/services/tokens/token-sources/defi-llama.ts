@@ -42,15 +42,14 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
 
 const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
   Object.entries(CHAIN_ID_TO_KEY).map(([chainId, key]) => [key, parseInt(chainId)])
-)
+);
 
 export type DefiLlamaToken = FetchTokenResult & BaseToken;
 export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
-  constructor(private readonly fetch: IFetchService) { }
+  constructor(private readonly fetch: IFetchService) {}
 
   supportedChains(): ChainId[] {
-    return Object.keys(CHAIN_ID_TO_KEY)
-      .map((chainId) => parseInt(chainId))
+    return Object.keys(CHAIN_ID_TO_KEY).map((chainId) => parseInt(chainId));
   }
 
   async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
