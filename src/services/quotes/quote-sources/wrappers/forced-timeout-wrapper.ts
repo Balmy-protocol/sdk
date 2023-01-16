@@ -14,6 +14,4 @@ export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomC
       return timeoutPromise(source.quote(components, request), request.config.timeout, { description });
     },
   };
-
-  return source;
 }
