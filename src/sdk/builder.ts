@@ -13,13 +13,13 @@ import { FallbackSource } from '@services/providers/provider-sources/fallback-pr
 import { SingleProviderSource } from '@services/providers/provider-sources/single-provider';
 import { IMulticallService } from '@services/multicall/types';
 import { MulticallService } from '@services/multicall/multicall-service';
-import { IGasPriceSource, IGasService } from '@services/gas/types';
+import { IGasPriceSource, IGasService, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
 import { GasCalculatorBuilderCombiner } from '@services/gas/gas-calculator-builders/gas-calculator-builder-combiner';
 import { GenericGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/generic-gas-calculator-builder';
 import { OptimismGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/optimism';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
-import { CachedGasPriceSource } from '@services/gas/gas-price-sources/cached-gas-source';
+import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
 import { ProviderGasPriceSource } from '@services/gas/gas-price-sources/provider';
 import { GasService } from '@services/gas/gas-service';
 import { BaseToken, ITokenService, ITokenSource } from '@services/tokens/types';
@@ -130,12 +130,15 @@ function buildGasService(
     }
   }
 
+  let gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
   if (params?.config?.useCaching) {
     // Add caching if necessary
-    source = new CachedGasPriceSource(source, params.config.expiration, params.config.overrides);
+    gasCostCalculatorBuilder = new CachedGasCalculatorBuilder({
+      wrapped: gasCostCalculatorBuilder,
+      expiration: { default: params.config.expiration, overrides: params.config.overrides },
+    });
   }
 
-  const gasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
   return new GasService({ providerSource, gasCostCalculatorBuilder });
 }
 
