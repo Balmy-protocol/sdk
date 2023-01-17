@@ -2,9 +2,11 @@ import { TransactionRequest } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { BigNumber } from 'ethers';
 
+export const GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
-export type GasSpeed = 'standard' | 'fast' | 'instant';
+export type GasSpeed = (typeof GAS_SPEEDS)[number];
 export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: BigNumber } & ChainGasPrice;
+export type GasPriceForSpeed = Record<GasSpeed, LegacyGasPrice> | Record<GasSpeed, EIP1159GasPrice>;
 
 export type IGasService = {
   supportedChains(): ChainId[];
@@ -21,7 +23,7 @@ export type IGasService = {
 
 export type IGasPriceSource = {
   supportedChains(): ChainId[];
-  getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>>;
+  getGasPrice(chainId: ChainId): Promise<GasPriceForSpeed>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
@@ -34,5 +36,5 @@ export type IQuickGasCostCalculator = {
   calculateGasCost(tx: TransactionRequest, gasEstimation: BigNumber, speed?: GasSpeed): GasEstimation<GasPrice>;
 };
 
-type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };
-type LegacyGasPrice = { gasPrice: BigNumber };
+export type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };
+export type LegacyGasPrice = { gasPrice: BigNumber };

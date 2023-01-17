@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 import { ChainId } from '@types';
-import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
+import { IGasPriceSource, GasSpeed, GasPriceForSpeed } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
@@ -25,20 +25,20 @@ export class OpenOceanGasPriceSource implements IGasPriceSource {
     ].map(({ chainId }) => chainId);
   }
 
-  async getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>> {
+  async getGasPrice(chainId: ChainId): Promise<GasPriceForSpeed> {
     const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
     const body = await response.json();
-    if ('maxPriorityFeePerGas' in body.standard) {
-      return {
-        standard: toEip1159GasPrice(body, 'standard'),
-        fast: toEip1159GasPrice(body, 'fast'),
-        instant: toEip1159GasPrice(body, 'instant'),
-      };
-    } else {
+    if (typeof body.standard === 'string' || typeof body.standard === 'number') {
       return {
         standard: stringToLegacyGasPrice(body, 'standard'),
         fast: stringToLegacyGasPrice(body, 'fast'),
         instant: stringToLegacyGasPrice(body, 'instant'),
+      };
+    } else {
+      return {
+        standard: toEip1159GasPrice(body, 'standard'),
+        fast: toEip1159GasPrice(body, 'fast'),
+        instant: toEip1159GasPrice(body, 'instant'),
       };
     }
   }

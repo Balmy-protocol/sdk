@@ -1,16 +1,16 @@
 import { ChainId } from '@types';
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
-import { GasPrice, GasSpeed, IGasPriceSource } from '../types';
+import { GasPriceForSpeed, IGasPriceSource } from '../types';
 
 export class CachedGasPriceSource implements IGasPriceSource {
-  private readonly cache: ContextlessCache<ChainId, Record<GasSpeed, GasPrice>>;
+  private readonly cache: ContextlessCache<ChainId, GasPriceForSpeed>;
 
   constructor(
     private readonly source: IGasPriceSource,
     expirationConfig: ExpirationConfigOptions,
     private readonly overrides?: Record<ChainId, ExpirationConfigOptions>
   ) {
-    this.cache = new ContextlessCache<ChainId, Record<GasSpeed, GasPrice>>({
+    this.cache = new ContextlessCache<ChainId, GasPriceForSpeed>({
       calculate: ([chainId]) => this.source.getGasPrice(chainId),
       toStorableKey: (chainId) => `${chainId}`,
       expirationConfig,
@@ -21,7 +21,7 @@ export class CachedGasPriceSource implements IGasPriceSource {
     return this.source.supportedChains();
   }
 
-  async getGasPrice(chainId: ChainId): Promise<Record<GasSpeed, GasPrice>> {
+  async getGasPrice(chainId: ChainId) {
     const expirationConfig = this.overrides?.[chainId];
     const result = await this.cache.getOrCalculateSingle({ key: chainId, expirationConfig });
     return result!;

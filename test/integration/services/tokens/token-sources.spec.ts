@@ -2,7 +2,7 @@ import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { ProviderTokenSource } from '@services/tokens/token-sources/provider';
-import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
+import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
