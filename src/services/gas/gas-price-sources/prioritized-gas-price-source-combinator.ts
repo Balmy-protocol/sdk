@@ -13,7 +13,7 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
     const result = this.sources[0].supportedSpeeds();
     for (let i = 1; i < this.sources.length; i++) {
       const sourceSpeeds = this.sources[i].supportedSpeeds();
-      for (const speed in AVAILABLE_GAS_SPEEDS) {
+      for (const speed of AVAILABLE_GAS_SPEEDS) {
         if (result[speed] !== sourceSpeeds[speed]) {
           result[speed] = 'optional';
         }
