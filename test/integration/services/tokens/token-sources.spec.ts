@@ -27,7 +27,7 @@ const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource([PROVIDER_TOKEN_SOURCE, DE
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
-describe.skip('Token Sources', () => {
+describe('Token Sources', () => {
   tokenSourceTest({ title: 'Provider Source', source: PROVIDER_TOKEN_SOURCE });
   tokenSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE, validate: { fieldsExist: ['price', 'timestamp'] } });
   tokenSourceTest({
