@@ -96,7 +96,7 @@ function getProviderSourceForConfig(source: ProviderSource) {
 }
 
 // GAS
-type GasSource = 'open-ocean' | 'rpc' | { custom: IGasPriceSource };
+type GasSource = 'open-ocean' | 'rpc' | { custom: IGasPriceSource<any> };
 type GasSourceCalculation = 'only-first-possible-source-on-list';
 type GasSources = { source: GasSource } | { sources: ArrayTwoOrMore<GasSource>; calculation?: GasSourceCalculation; timeout?: TimeString };
 type GasSourceConfig =
@@ -113,15 +113,15 @@ function buildGasService(
   const openOceanSource = new OpenOceanGasPriceSource(fetchService);
   const providerGasSource = new ProviderGasPriceSource(providerSource);
 
-  let source: IGasPriceSource;
+  let source: IGasPriceSource<any>;
   if (!params) {
     source = new PrioritizedGasPriceSourceCombinator([openOceanSource, providerGasSource]);
   } else if ('source' in params) {
     source = getGasSourceForConfig(params.source, { openOceanSource, providerGasSource });
   } else {
-    const sources = params.sources.map((source) =>
-      getGasSourceForConfig(source, { openOceanSource, providerGasSource })
-    ) as ArrayTwoOrMore<IGasPriceSource>;
+    const sources = params.sources.map((source) => getGasSourceForConfig(source, { openOceanSource, providerGasSource })) as ArrayTwoOrMore<
+      IGasPriceSource<any>
+    >;
     switch (params.calculation) {
       case 'only-first-possible-source-on-list':
       default:
@@ -144,7 +144,7 @@ function buildGasService(
 
 function getGasSourceForConfig(
   source: GasSource,
-  { openOceanSource, providerGasSource }: { openOceanSource: IGasPriceSource; providerGasSource: IGasPriceSource }
+  { openOceanSource, providerGasSource }: { openOceanSource: OpenOceanGasPriceSource; providerGasSource: ProviderGasPriceSource }
 ) {
   if (source === 'open-ocean') {
     return openOceanSource;
@@ -159,7 +159,7 @@ function buildGasCalculatorBuilder({
   gasPriceSource,
   multicallService,
 }: {
-  gasPriceSource: IGasPriceSource;
+  gasPriceSource: IGasPriceSource<any>;
   multicallService: IMulticallService;
 }) {
   const defaultCalculatorBuilder = new GenericGasCalculatorBuilder(gasPriceSource);

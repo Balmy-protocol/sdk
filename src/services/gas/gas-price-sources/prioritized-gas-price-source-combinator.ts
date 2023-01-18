@@ -1,12 +1,17 @@
 import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
-import { ArrayTwoOrMore } from '@utility-types';
-import { IGasPriceSource } from '../types';
+import { IGasPriceSource, MergeGasSpeedsFromSources } from '../types';
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given chain
-export class PrioritizedGasPriceSourceCombinator implements IGasPriceSource {
-  constructor(private readonly sources: ArrayTwoOrMore<IGasPriceSource>) {}
+export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource<any>[] | []>
+  implements IGasPriceSource<MergeGasSpeedsFromSources<Sources>>
+{
+  constructor(private readonly sources: Sources) {}
+
+  supportedSpeeds(): ('standard' | MergeGasSpeedsFromSources<Sources>)[] {
+    return [...new Set(this.sources.flatMap((source) => source.supportedSpeeds()))];
+  }
 
   supportedChains(): ChainId[] {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
