@@ -1,14 +1,15 @@
 import { BigNumber } from 'ethers';
 import { ChainId } from '@types';
-import { IGasPriceSource, GasSpeed, GasPriceForSpeed } from '@services/gas/types';
+import { IGasPriceSource, GasSpeed } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
-export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeed> {
+type GasSpeedSupport = { standard: 'present'; fast: 'present'; instant: 'present' };
+export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
   constructor(private readonly fetchService: IFetchService) {}
 
-  supportedSpeeds(): GasSpeed[] {
-    return ['standard', 'fast', 'instant'];
+  supportedSpeeds(): GasSpeedSupport {
+    return { standard: 'present', fast: 'present', instant: 'present' };
   }
 
   supportedChains(): ChainId[] {
@@ -29,7 +30,7 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeed> {
     ].map(({ chainId }) => chainId);
   }
 
-  async getGasPrice(chainId: ChainId): Promise<GasPriceForSpeed<GasSpeed>> {
+  async getGasPrice(chainId: ChainId) {
     const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
     const body = await response.json();
     if (typeof body.standard === 'string' || typeof body.standard === 'number') {
