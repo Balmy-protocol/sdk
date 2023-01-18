@@ -60,7 +60,8 @@ function getL1GasUsed(tx: TransactionRequest, overhead: BigNumber) {
   const nonce = BigNumber.from(tx.nonce ?? 0xffffffff).toNumber();
   const value = BigNumber.from(tx.value ?? 0).toHexString();
   const gasLimit = BigNumber.from(tx.gasLimit ?? 0).toHexString();
-  const data = serialize({ ...tx, gasLimit, nonce, value });
+  const { from, ...unsignedTx } = tx;
+  const data = serialize({ ...unsignedTx, gasLimit, nonce, value });
   let total = constants.Zero;
   for (const byte of data) {
     if (byte === '0') {
