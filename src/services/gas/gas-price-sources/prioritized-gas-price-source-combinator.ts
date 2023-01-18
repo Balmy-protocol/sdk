@@ -1,8 +1,6 @@
 import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
-import { IGasPriceSource, MergeGasSpeedSupportRecord } from '../types';
-import { OpenOceanGasPriceSource } from './open-ocean';
-import { ProviderGasPriceSource } from './provider';
+import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, MergeGasSpeedSupportRecord } from '../types';
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given chain
@@ -15,13 +13,8 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
     const result = this.sources[0].supportedSpeeds();
     for (let i = 1; i < this.sources.length; i++) {
       const sourceSpeeds = this.sources[i].supportedSpeeds();
-      for (const speed in sourceSpeeds) {
-        if (result[speed] !== 'optional') {
-          result[speed] = sourceSpeeds[speed];
-        }
-      }
-      for (const speed in result) {
-        if (result[speed] === 'present' && !(speed in sourceSpeeds)) {
+      for (const speed in AVAILABLE_GAS_SPEEDS) {
+        if (result[speed] !== sourceSpeeds[speed]) {
           result[speed] = 'optional';
         }
       }
