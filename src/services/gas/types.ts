@@ -1,12 +1,15 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { BigNumber } from 'ethers';
+import { OpenOceanGasPriceSource } from './gas-price-sources/open-ocean';
 
-export const GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
+export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
-export type GasSpeed = (typeof GAS_SPEEDS)[number];
+export type GasSpeed = (typeof AVAILABLE_GAS_SPEEDS)[number];
 export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: BigNumber } & ChainGasPrice;
-export type GasPriceForSpeed = Record<GasSpeed, LegacyGasPrice> | Record<GasSpeed, EIP1159GasPrice>;
+export type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed> =
+  | Record<SupportedGasSpeed, LegacyGasPrice>
+  | Record<SupportedGasSpeed, EIP1159GasPrice>;
 
 export type IGasService = {
   supportedChains(): ChainId[];
@@ -21,9 +24,10 @@ export type IGasService = {
   getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator>;
 };
 
-export type IGasPriceSource = {
+export type IGasPriceSource<SupportedGasSpeed extends GasSpeed> = {
   supportedChains(): ChainId[];
-  getGasPrice(chainId: ChainId): Promise<GasPriceForSpeed>;
+  supportedSpeeds(): (SupportedGasSpeed | 'standard')[];
+  getGasPrice(chainId: ChainId): Promise<GasPriceForSpeed<SupportedGasSpeed | 'standard'>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
@@ -38,3 +42,9 @@ export type IQuickGasCostCalculator = {
 
 export type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };
 export type LegacyGasPrice = { gasPrice: BigNumber };
+
+export type MergeGasSpeedsFromSources<T extends IGasPriceSource<any>[] | []> = (
+  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number]
+  | 'standard'
+) &
+  GasSpeed;
