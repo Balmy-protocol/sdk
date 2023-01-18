@@ -99,7 +99,7 @@ function getProviderSourceForConfig(source: ProviderSource) {
 // GAS
 type GasSource = 'open-ocean' | 'rpc' | { custom: IGasPriceSource<any> };
 type GasSourceCalculation = 'only-first-possible-source-on-list' | 'fastest';
-type GasSources = { source: GasSource } | { sources: ArrayTwoOrMore<GasSource>; calculation?: GasSourceCalculation; timeout?: TimeString };
+type GasSources = { source: GasSource } | { sources: ArrayTwoOrMore<GasSource>; calculation?: GasSourceCalculation };
 type GasSourceConfig =
   | { useCaching: false }
   | { useCaching: true; expiration: ExpirationConfigOptions; overrides?: Record<ChainId, ExpirationConfigOptions> };
