@@ -19,6 +19,7 @@ import { GenericGasCalculatorBuilder } from '@services/gas/gas-calculator-builde
 import { OptimismGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/optimism';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
+import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
 import { ProviderGasPriceSource } from '@services/gas/gas-price-sources/provider';
 import { GasService } from '@services/gas/gas-service';
@@ -97,7 +98,7 @@ function getProviderSourceForConfig(source: ProviderSource) {
 
 // GAS
 type GasSource = 'open-ocean' | 'rpc' | { custom: IGasPriceSource<any> };
-type GasSourceCalculation = 'only-first-possible-source-on-list';
+type GasSourceCalculation = 'only-first-possible-source-on-list' | 'fastest';
 type GasSources = { source: GasSource } | { sources: ArrayTwoOrMore<GasSource>; calculation?: GasSourceCalculation; timeout?: TimeString };
 type GasSourceConfig =
   | { useCaching: false }
@@ -123,6 +124,9 @@ function buildGasService(
       IGasPriceSource<any>
     >;
     switch (params.calculation) {
+      case 'fastest':
+        source = new FastestGasPriceSourceCombinator(sources);
+        break;
       case 'only-first-possible-source-on-list':
       default:
         source = new PrioritizedGasPriceSourceCombinator(sources);

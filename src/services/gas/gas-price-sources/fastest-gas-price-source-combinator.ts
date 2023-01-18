@@ -3,9 +3,9 @@ import { ChainId } from '@types';
 import { IGasPriceSource, MergeGasSpeedSupportRecord } from '../types';
 import { combineSupportedSpeeds } from './utils';
 
-// This source will take a list of sources, sorted by priority, and use the first one possible
-// that supports the given chain
-export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource<any>[] | []>
+// This source will take a list of sources, and try to calculate the gas price on all of them, returning
+// the one that resolves first
+export class FastestGasPriceSourceCombinator<Sources extends IGasPriceSource<any>[] | []>
   implements IGasPriceSource<MergeGasSpeedSupportRecord<Sources>>
 {
   constructor(private readonly sources: Sources) {}
@@ -19,8 +19,8 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
   }
 
   getGasPrice(chainId: ChainId) {
-    const source = this.sources.find((source) => source.supportedChains().includes(chainId));
-    if (!source) throw new Error(`Chain with id ${chainId} not supported`);
-    return source.getGasPrice(chainId);
+    const sourcesInChain = this.sources.filter((source) => source.supportedChains().includes(chainId));
+    if (sourcesInChain.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
+    return Promise.any(sourcesInChain.map((source) => source.getGasPrice(chainId)));
   }
 }
