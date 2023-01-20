@@ -1,2 +1,2 @@
 export * from './chains';
-export * from './sdk/builder';
+export * from './sdk/sdk-builder';
