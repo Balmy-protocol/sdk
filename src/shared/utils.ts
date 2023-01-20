@@ -1,9 +1,9 @@
 import { BigNumber, constants, utils } from 'ethers';
 import ms from 'ms';
-import { Chain, TimeString, TokenAddress } from '@types';
+import { Address, Chain, TimeString } from '@types';
 
-export function isSameAddress(tokenA: TokenAddress, tokenB: TokenAddress) {
-  return tokenA.toLowerCase() === tokenB.toLowerCase();
+export function isSameAddress(address1: Address, address2: Address) {
+  return address1.toLowerCase() === address2.toLowerCase();
 }
 
 const PRECISION = 10000;

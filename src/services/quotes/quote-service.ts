@@ -1,13 +1,14 @@
 import { chainsUnion, Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService, IQuickGasCostCalculator } from '@services/gas/types';
-import { ChainId, Chain } from '@types';
+import { ChainId } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from './quote-sources/base';
 import { AllSourcesConfig, buildSources, SourcesBasedOnConfig } from './sources-list';
 import {
   FailedQuote,
   GlobalQuoteSourceConfig,
+  IndividualQuoteRequest,
   IQuoteService,
   QuoteRequest,
   QuoteResponse,
@@ -18,7 +19,7 @@ import { BaseToken, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
 import { forcedTimeoutWrapper } from './quote-sources/wrappers/forced-timeout-wrapper';
 import { buyToSellOrderWrapper } from './quote-sources/wrappers/buy-to-sell-order-wrapper';
-import { amountToUSD, calculateGasDetails, filterRejectedResults } from '@shared/utils';
+import { amountToUSD, calculateGasDetails, filterRejectedResults, isSameAddress } from '@shared/utils';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
 
 type ConstructorParameters<CustomConfig extends Partial<AllSourcesConfig>> = {
@@ -53,6 +54,37 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     return Object.entries(this.sources)
       .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === chainId))
       .map(([sourceId]) => sourceId as SourcesBasedOnConfig<Config>);
+  }
+
+  getQuote(sourceId: SourcesBasedOnConfig<Config>, request: IndividualQuoteRequest): Promise<QuoteResponse> {
+    const sourceSupport = this.sources[sourceId].getMetadata().supports;
+    const supportedChains = sourceSupport.chains.map(({ chainId }) => chainId);
+    if (!supportedChains.includes(request.chainId)) {
+      throw new Error(`Source with '${sourceId}' does not support chain with id ${request.chainId}`);
+    }
+    const shouldFailBecauseTransferNotSupported =
+      !sourceSupport.swapAndTransfer &&
+      !!request.recipient &&
+      !isSameAddress(request.takerAddress, request.recipient) &&
+      !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
+    if (shouldFailBecauseTransferNotSupported) {
+      throw new Error(
+        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property`
+      );
+    }
+
+    const quotes = this.getQuotes({
+      ...request,
+      includeNonTransferSourcesWhenRecipientIsSet: true,
+      estimateBuyOrdersWithSellOnlySources: request.estimateBuyOrderIfSourceDoesNotSupportIt,
+      filters: { includeSources: [sourceId] },
+    });
+
+    if (quotes.length !== 1) {
+      throw new Error('This is weird, not sure what happened');
+    }
+
+    return quotes[0];
   }
 
   getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse>[] {

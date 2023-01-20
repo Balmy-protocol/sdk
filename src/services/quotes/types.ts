@@ -18,6 +18,7 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
   supportedChains(): ChainId[];
   supportedSources(): SupportedSources[];
   supportedSourcesInChain(chainId: ChainId): SupportedSources[];
+  getQuote(sourceId: SupportedSources, request: IndividualQuoteRequest): Promise<QuoteResponse>;
   getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest<SupportedSources>,
@@ -67,6 +68,14 @@ export type QuoteResponse = {
   swapper: { address: Address; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
+};
+
+export type IndividualQuoteRequest = Omit<
+  QuoteRequest<any>,
+  'filters' | 'includeNonTransferSourcesWhenRecipientIsSet' | 'estimateBuyOrdersWithSellOnlySources'
+> & {
+  dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet?: boolean;
+  estimateBuyOrderIfSourceDoesNotSupportIt?: boolean;
 };
 
 type AmountOfToken = {
