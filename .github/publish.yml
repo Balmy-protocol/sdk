@@ -47,9 +47,7 @@ jobs:
           RELEASE_TYPE: ${{ github.event.inputs.release-type }}
       - name: Commit report
         run: |
-          git config --global user.name 'Your Name'
-          git config --global user.email 'your-username@users.noreply.github.com'
-          git commit -am "chore(*): release ${{ env.NEW_VERSION }}"
+          git commit -am "chore: release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
       - name: Publish
         run: npm publish --tag ${{ env.RELEASE_TAG }}
