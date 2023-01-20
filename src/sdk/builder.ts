@@ -11,6 +11,7 @@ import { PrioritizedProviderSourceCombinator } from '@services/providers/provide
 import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
 import { FallbackSource } from '@services/providers/provider-sources/fallback-provider ';
 import { SingleProviderSource } from '@services/providers/provider-sources/single-provider';
+import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
 import { IMulticallService } from '@services/multicall/types';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { IGasPriceSource, IGasService, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
@@ -61,7 +62,11 @@ function buildFetchService(params?: BuildFetchParams) {
 }
 
 // PROVIDER
-type ProviderSource = providers.BaseProvider | 'public-rpcs' | { custom: IProviderSource };
+type ProviderSource =
+  | providers.BaseProvider
+  | 'public-rpcs'
+  | { custom: IProviderSource }
+  | { alchemy: { key: string; supportedChains?: ChainId[] } };
 type ProviderCalculation = 'only-first-possible-provider-on-list' | 'combine-when-possible';
 type BuildProviderParams = { source: ProviderSource } | { sources: ArrayTwoOrMore<ProviderSource>; calculation?: ProviderCalculation };
 
@@ -91,6 +96,8 @@ function getProviderSourceForConfig(source: ProviderSource) {
     return new PublicProvidersSource();
   } else if ('custom' in source) {
     return source.custom;
+  } else if ('alchemy' in source) {
+    return new AlchemyProviderSource(source.alchemy.key, source.alchemy.supportedChains);
   } else {
     return new SingleProviderSource(source);
   }
@@ -176,9 +183,7 @@ function buildGasCalculatorBuilder({
 // TOKEN
 type TokenSource = 'defi-llama' | 'rpc' | { custom: ITokenSource<any> };
 type TokenSourceCalculation = 'only-first-possible-source-on-list' | 'combine-when-possible';
-type TokenSources =
-  | { source: TokenSource }
-  | { sources: ArrayTwoOrMore<TokenSource>; calculation?: TokenSourceCalculation; timeout?: TimeString };
+type TokenSources = { source: TokenSource } | { sources: ArrayTwoOrMore<TokenSource>; calculation?: TokenSourceCalculation };
 type TokenSourceConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
 type BuildTokenParams = TokenSources & { config?: TokenSourceConfig };
 

@@ -168,6 +168,15 @@ export class Chains {
     publicRPCs: ['https://mainnet.aurora.dev'],
   } as const satisfies Chain;
 
+  static readonly ASTAR = {
+    chainId: 592,
+    name: 'Astar',
+    ids: ['astar'],
+    currencySymbol: 'ASTR',
+    wToken: '0xaeaaf0e2c81af264101b9129c00f4440ccf0f720',
+    publicRPCs: ['https://evm.astar.network/', 'https://rpc.astar.network:8545', 'https://astar.api.onfinality.io/public'],
+  } as const satisfies Chain;
+
   static getAllChains(): Chain[] {
     return Object.values(Chains).filter((value): value is Chain => typeof value !== 'function');
   }
