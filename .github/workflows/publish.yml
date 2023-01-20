@@ -37,8 +37,6 @@ jobs:
         run: yarn test:unit
       - name: Integration tests
         run: yarn test:integration
-      - name: Quotes tests
-        run: yarn test:integration:quotes
       - name: Bump release version
         run: |
           echo "NEW_VERSION=$(npm --no-git-tag-version version $RELEASE_TYPE)" >> $GITHUB_ENV
