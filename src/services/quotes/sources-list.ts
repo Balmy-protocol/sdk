@@ -77,10 +77,10 @@ type GetCustomConfigNeededFomBuilder<T extends QuoteSourceBuilder<any, any, any,
 >
   ? CustomConfigNeeded
   : never;
-type GetCustomConfigNeededFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, infer CustomConfigNeeded, any>
+export type GetCustomConfigNeededFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, infer CustomConfigNeeded, any>
   ? CustomConfigNeeded
   : never;
 type GetSupportFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<infer Support, any, any> ? Support : never;
-type GetCustomConfigFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, any, infer CustomQuoteSourceConfig>
+export type GetCustomConfigFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, any, infer CustomQuoteSourceConfig>
   ? CustomQuoteSourceConfig
   : never;

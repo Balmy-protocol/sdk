@@ -1,10 +1,10 @@
-import { SourceQuoteRequest, SellOrder, QuoteSourceSupport, BuyOrder, QuoteSource, QuoteComponents } from '../base';
+import { GetCustomConfigFromSource, GetCustomConfigNeededFromSource } from '@services/quotes/sources-list';
+import { SourceQuoteRequest, QuoteSourceSupport, QuoteSource, QuoteComponents, SourceQuoteResponse, QuoteType } from '../base';
 
 type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
-type SellOrderQuote<Support extends QuoteSourceSupport> = SourceQuoteRequest<Support, SellOrder>;
-export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
-  source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
-): QuoteSource<AddedBuyOrderSupport<Support>, CustomConfigNeeded, CustomQuoteSourceConfig> {
+export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, Source extends QuoteSource<Support, any, any>>(
+  source: Source
+): QuoteSource<AddedBuyOrderSupport<Support>, GetCustomConfigNeededFromSource<Source>, GetCustomConfigFromSource<Source>> {
   return {
     getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => {
@@ -17,21 +17,30 @@ export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, Custom
         },
       };
     },
-    quote: (components, request) => {
-      if (request.order.type === 'sell') {
-        return source.quote(components, request as SourceQuoteRequest<Support>);
-      } else {
-        return executeBuyOrderAsSellOrder(source, components, request as SourceQuoteRequest<AddedBuyOrderSupport<Support>, BuyOrder>);
-      }
-    },
+    getQuote: wrapFunction((components, request) => source.getQuote(components, request)),
+    estimateQuote: wrapFunction((components, request) => source.estimateQuote(components, request)),
   };
 }
 
-async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
-  source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>,
-  components: QuoteComponents,
-  request: SourceQuoteRequest<AddedBuyOrderSupport<Support>, BuyOrder>
+function wrapFunction<Support extends QuoteSourceSupport, QuoteKind extends QuoteType>(
+  quote: (components: QuoteComponents, request: SourceQuoteRequest<Support, QuoteKind>) => Promise<SourceQuoteResponse<QuoteKind>>
 ) {
+  return (components: QuoteComponents, request: SourceQuoteRequest<AddedBuyOrderSupport<Support>, QuoteKind>) => {
+    if (request.order.type === 'sell') {
+      return quote(components, request as SourceQuoteRequest<Support, QuoteKind>);
+    } else {
+      return executeBuyOrderAsSellOrder(request, (request) => quote(components, request));
+    }
+  };
+}
+
+async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport, QuoteKind extends QuoteType>(
+  request: SourceQuoteRequest<AddedBuyOrderSupport<Support>, QuoteKind>,
+  quote: (request: SourceQuoteRequest<Support, QuoteKind>) => Promise<SourceQuoteResponse<QuoteKind>>
+) {
+  if (request.order.type === 'sell') {
+    throw new Error('We should not be able to get here');
+  }
   /*
   The idea here is that we need to buy a certain amount of tokens with our source, but there are a few drawbacks to using a buy order:
   * Not all sources support it
@@ -49,15 +58,15 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport, Cu
     order: { type: 'sell', sellAmount: request.order.buyAmount },
     sellToken: request.buyToken,
     buyToken: request.sellToken,
-  } as SellOrderQuote<Support>;
-  const testSellQuote = await source.quote(components, sellOrder);
+  } as SourceQuoteRequest<Support, QuoteKind>;
+  const testSellQuote = await quote(sellOrder);
   const slippage = testSellQuote.buyAmount.sub(testSellQuote.minBuyAmount);
   if (slippage.isZero()) {
     // If there was no slippage, then we just execute the sell order
-    return source.quote(components, { ...request, order: { type: 'sell', sellAmount: testSellQuote.sellAmount } } as SellOrderQuote<Support>);
+    return quote({ ...request, order: { type: 'sell', sellAmount: testSellQuote.sellAmount } });
   }
 
   // TODO: there is room for improvement, since we can make a few test quotes around this approx number and find the closest sell quote that produces the actual `buyAmount`
   const sellAmount = testSellQuote.buyAmount.add(slippage);
-  return source.quote(components, { ...request, order: { type: 'sell', sellAmount: sellAmount } } as SellOrderQuote<Support>);
+  return quote({ ...request, order: { type: 'sell', sellAmount: sellAmount } });
 }
