@@ -43,7 +43,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
     const router = ROUTER_ADDRESS[chain.chainId];
     recipient = recipient ?? takeFrom;
-    const url =
+    let url =
       'https://api.uniswap.org/v1/quote' +
       '?protocols=v2,v3' +
       `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
@@ -52,9 +52,14 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
       `&tokenOutChainId=${chain.chainId}` +
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
-      `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
       `&deadline=${timeToSeconds(txValidFor ?? '1y')}` +
       `&slippageTolerance=${slippagePercentage}`;
+
+    if (isBuyTokenNativeToken) {
+      url += `&recipient=${router}`;
+    } else if (takeFrom || recipient) {
+      url += `&recipient=${recipient ?? takeFrom}`;
+    }
 
     // These are needed so that the API allows us to make the call
     const headers = {
@@ -89,12 +94,12 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     const quote = {
       sellAmount: order.type === 'sell' ? order.sellAmount : BigNumber.from(quoteAmount),
       buyAmount,
-      calldata,
       estimatedGas: BigNumber.from(gasUseEstimate),
-      value,
-      swapper: {
-        address: router,
-        allowanceTarget: router,
+      allowanceTarget: router,
+      tx: {
+        to: router,
+        calldata,
+        value,
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);

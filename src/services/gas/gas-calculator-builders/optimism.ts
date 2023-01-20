@@ -19,8 +19,8 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
       getGasPrice: () => ({ gasPrice: l2GasPrice }),
-      calculateGasCost: (tx, gasEstimation) => {
-        const l1GasCost = getL1Fee(tx, l1GasValues);
+      calculateGasCost: ({ gasEstimation, tx }) => {
+        const l1GasCost = (tx && getL1Fee(tx, l1GasValues)) ?? constants.Zero;
         const l2GasCost = l2GasPrice.mul(gasEstimation);
         const gasCostNativeToken = l1GasCost.add(l2GasCost);
         return { gasCostNativeToken, gasPrice: l2GasPrice };

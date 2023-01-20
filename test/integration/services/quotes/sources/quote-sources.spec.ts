@@ -142,7 +142,7 @@ describe('Quote Sources', () => {
         if (shouldExecute(sourceId, Test.SELL_USDC_TO_NATIVE)) {
           when('swapping 1000 USDC to native token', () => {
             const SELL_AMOUNT = utils.parseUnits('1000', 6);
-            let quote: SourceQuoteResponse;
+            let quote: SourceQuoteResponse<{ type: 'quote' }>;
             let txs: TransactionResponse[];
             given(async () => {
               quote = await buildQuote(source, {
@@ -153,7 +153,7 @@ describe('Quote Sources', () => {
                   sellAmount: SELL_AMOUNT,
                 },
               });
-              txs = [await approve({ amount: SELL_AMOUNT, to: quote.swapper.allowanceTarget, for: USDC }), await execute({ quote, as: user })];
+              txs = [await approve({ amount: SELL_AMOUNT, to: quote.allowanceTarget, for: USDC }), await execute({ quote, as: user })];
             });
             then('result is as expected', async () => {
               assertQuoteIsConsistent(quote, {
@@ -169,7 +169,7 @@ describe('Quote Sources', () => {
         }
         if (shouldExecute(sourceId, Test.SELL_NATIVE_TO_WBTC)) {
           when('swapping 1 native token to WBTC', () => {
-            let quote: SourceQuoteResponse;
+            let quote: SourceQuoteResponse<{ type: 'quote' }>;
             let txs: TransactionResponse[];
             given(async () => {
               quote = await buildQuote(source, {
@@ -199,7 +199,7 @@ describe('Quote Sources', () => {
         describe('Swap and transfer', () => {
           if (shouldExecute(sourceId, Test.SELL_NATIVE_TO_USDC_AND_TRANSFER)) {
             when('swapping 1 native token to USDC', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -227,7 +227,7 @@ describe('Quote Sources', () => {
           }
           if (shouldExecute(sourceId, Test.WRAP_NATIVE_TOKEN_AND_TRANSFER)) {
             when('wrapping 1 native token and transferring', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -257,7 +257,7 @@ describe('Quote Sources', () => {
           }
           if (shouldExecute(sourceId, Test.UNWRAP_WTOKEN_AND_TRANSFER)) {
             when('unwrapping 1 wtoken and transferring', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -269,10 +269,7 @@ describe('Quote Sources', () => {
                   },
                   recipient,
                 });
-                txs = [
-                  await approve({ amount: ONE_NATIVE_TOKEN, to: quote.swapper.allowanceTarget, for: wToken }),
-                  await execute({ quote, as: user }),
-                ];
+                txs = [await approve({ amount: ONE_NATIVE_TOKEN, to: quote.allowanceTarget, for: wToken }), await execute({ quote, as: user })];
               });
               then('result is as expected', async () => {
                 assertQuoteIsConsistent(quote, {
@@ -294,7 +291,7 @@ describe('Quote Sources', () => {
         describe('Buy order', () => {
           if (shouldExecute(sourceId, Test.BUY_NATIVE_WITH_USDC)) {
             when('buying 1 native token with USDC', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -305,10 +302,7 @@ describe('Quote Sources', () => {
                     buyAmount: ONE_NATIVE_TOKEN,
                   },
                 });
-                txs = [
-                  await approve({ amount: quote.maxSellAmount, to: quote.swapper.allowanceTarget, for: USDC }),
-                  await execute({ quote, as: user }),
-                ];
+                txs = [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC }), await execute({ quote, as: user })];
               });
               then('result is as expected', async () => {
                 assertQuoteIsConsistent(quote, {
@@ -324,7 +318,7 @@ describe('Quote Sources', () => {
           }
           if (shouldExecute(sourceId, Test.BUY_WTOKEN_WITH_NATIVE)) {
             when('buying 1 wToken with native token', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -335,10 +329,7 @@ describe('Quote Sources', () => {
                     buyAmount: ONE_NATIVE_TOKEN,
                   },
                 });
-                txs = [
-                  await approve({ amount: ONE_NATIVE_TOKEN, to: quote.swapper.allowanceTarget, for: wToken }),
-                  await execute({ quote, as: user }),
-                ];
+                txs = [await approve({ amount: ONE_NATIVE_TOKEN, to: quote.allowanceTarget, for: wToken }), await execute({ quote, as: user })];
               });
               then('result is as expected', async () => {
                 assertQuoteIsConsistent(quote, {
@@ -356,7 +347,7 @@ describe('Quote Sources', () => {
           }
           if (shouldExecute(sourceId, Test.BUY_NATIVE_WITH_WTOKEN)) {
             when('buying 1 native token with wToken', () => {
-              let quote: SourceQuoteResponse;
+              let quote: SourceQuoteResponse<{ type: 'quote' }>;
               let txs: TransactionResponse[];
               given(async () => {
                 quote = await buildQuote(source, {
@@ -368,7 +359,7 @@ describe('Quote Sources', () => {
                   },
                 });
                 txs = [
-                  await approve({ amount: quote.maxSellAmount, to: quote.swapper.allowanceTarget, for: wToken }),
+                  await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: wToken }),
                   await execute({ quote, as: user }),
                 ];
               });
@@ -391,7 +382,7 @@ describe('Quote Sources', () => {
       describe('Wrap / Unwrap', () => {
         if (shouldExecute(sourceId, Test.WRAP_NATIVE_TOKEN)) {
           when('wrapping 1 native token', () => {
-            let quote: SourceQuoteResponse;
+            let quote: SourceQuoteResponse<{ type: 'quote' }>;
             let txs: TransactionResponse[];
             given(async () => {
               quote = await buildQuote(source, {
@@ -420,7 +411,7 @@ describe('Quote Sources', () => {
         }
         if (shouldExecute(sourceId, Test.UNWRAP_WTOKEN)) {
           when('unwrapping 1 wtoken', () => {
-            let quote: SourceQuoteResponse;
+            let quote: SourceQuoteResponse<{ type: 'quote' }>;
             let txs: TransactionResponse[];
             given(async () => {
               quote = await buildQuote(source, {
@@ -431,10 +422,7 @@ describe('Quote Sources', () => {
                   sellAmount: ONE_NATIVE_TOKEN,
                 },
               });
-              txs = [
-                await approve({ amount: ONE_NATIVE_TOKEN, to: quote.swapper.allowanceTarget, for: wToken }),
-                await execute({ quote, as: user }),
-              ];
+              txs = [await approve({ amount: ONE_NATIVE_TOKEN, to: quote.allowanceTarget, for: wToken }), await execute({ quote, as: user })];
             });
             then('result is as expected', async () => {
               assertQuoteIsConsistent(quote, {
@@ -453,7 +441,7 @@ describe('Quote Sources', () => {
       });
 
       function assertQuoteIsConsistent(
-        quote: SourceQuoteResponse,
+        quote: SourceQuoteResponse<{ type: 'quote' }>,
         {
           sellToken,
           sellAmount,
@@ -483,10 +471,10 @@ describe('Quote Sources', () => {
           const allowedSlippage = calculatePercentage(quote.buyAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE);
           expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage));
           if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
-            expect(quote.value).to.equal(quote.maxSellAmount);
+            expect(quote.tx.value).to.equal(quote.maxSellAmount);
           } else {
             const isValueNotSet = (value?: BigNumber) => !value || value.isZero();
-            expect(isValueNotSet(quote.value)).to.be.true;
+            expect(isValueNotSet(quote.tx.value)).to.be.true;
           }
         } else {
           expect(quote.buyAmount).to.equal(buyAmount);
@@ -514,12 +502,16 @@ describe('Quote Sources', () => {
         expect(toAmount).to.be.lte(upperThreshold).and.to.be.gte(lowerThreshold);
       }
 
-      async function assertUsersBalanceIsReduceAsExpected(txs: TransactionResponse[], sellToken: DefiLlamaToken, quote: SourceQuoteResponse) {
+      async function assertUsersBalanceIsReduceAsExpected(
+        txs: TransactionResponse[],
+        sellToken: DefiLlamaToken,
+        quote: SourceQuoteResponse<{ type: 'quote' }>
+      ) {
         const initialBalance = initialBalances[user.address][sellToken.address];
         const bal = await balance({ of: user.address, for: sellToken });
         if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
           const gasSpent = await calculateGasSpent(txs);
-          expect(bal).to.equal(initialBalance.sub(gasSpent).sub(quote.value ?? 0));
+          expect(bal).to.equal(initialBalance.sub(gasSpent).sub(quote.tx.value ?? 0));
         } else {
           expect(bal).to.be.gte(initialBalance.sub(quote.maxSellAmount));
         }
@@ -575,13 +567,13 @@ describe('Quote Sources', () => {
         }
       }
 
-      type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
+      type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }, { type: 'quote' }>, 'order'> & {
         recipient?: SignerWithAddress;
         sellToken: DefiLlamaToken;
         buyToken: DefiLlamaToken;
       };
       function buildQuote(source: QuoteSource<any, any, any>, { sellToken, buyToken, ...quote }: Quote) {
-        return source.quote(
+        return source.getQuote(
           { fetchService: FETCH_SERVICE },
           {
             ...quote,
@@ -601,8 +593,8 @@ describe('Quote Sources', () => {
         );
       }
 
-      function execute({ as, quote }: { as: SignerWithAddress; quote: SourceQuoteResponse }) {
-        return as.sendTransaction({ to: quote.swapper.address, data: quote.calldata, value: quote.value });
+      function execute({ as, quote }: { as: SignerWithAddress; quote: SourceQuoteResponse<{ type: 'quote' }> }) {
+        return as.sendTransaction(quote.tx);
       }
 
       function balance({ of, for: token }: { of: Address; for: DefiLlamaToken }) {

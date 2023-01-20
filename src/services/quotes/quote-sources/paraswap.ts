@@ -7,6 +7,7 @@ import {
   NoCustomConfigQuoteSource as NoCustomConfigQuoteSource,
   QuoteComponents,
   QuoteSourceMetadata,
+  QuoteType,
   SourceQuoteRequest,
   SourceQuoteResponse,
 } from './base';
@@ -28,18 +29,25 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<ParaswapSupport>): Promise<SourceQuoteResponse> {
     const route = await this.getPrice(fetchService, request);
-    const { data, value, usedSlippage } = await this.getQuote(fetchService, { ...request, route });
-    const quote = {
+    let quote: Omit<SourceQuoteResponse<QuoteType>, 'minBuyAmount' | 'maxSellAmount' | 'type'> = {
       sellAmount: BigNumber.from(route.srcAmount),
       buyAmount: BigNumber.from(route.destAmount),
-      calldata: data,
       estimatedGas: BigNumber.from(route.gasCost),
-      swapper: {
-        address: route.contractAddress,
-        allowanceTarget: route.tokenTransferProxy,
-      },
-      value: BigNumber.from(value ?? 0),
+      allowanceTarget: route.tokenTransferProxy,
     };
+    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
+    const usedSlippage = isWrapOrUnwrap ? 0 : request.config.slippagePercentage;
+    if (request.accounts.takeFrom) {
+      const { data, value } = await this.buildTx(fetchService, { ...request, route, isWrapOrUnwrap });
+      quote = {
+        ...quote,
+        tx: {
+          to: route.contractAddress,
+          calldata: data,
+          value,
+        },
+      };
+    }
     return addQuoteSlippage(quote, request.order.type, usedSlippage);
   }
 
@@ -80,7 +88,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     return priceRoute;
   }
 
-  private async getQuote(
+  private async buildTx(
     fetchService: IFetchService,
     {
       chain,
@@ -92,11 +100,11 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       route,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, txValidFor, timeout },
-    }: SourceQuoteRequest<ParaswapSupport> & { route: any }
+      isWrapOrUnwrap,
+    }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean }
   ) {
     const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
     const receiver = !!recipient && takeFrom !== recipient ? recipient : undefined;
-    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(chain, route);
     let body: any = {
       srcToken: sellToken,
       srcDecimals: await sellTokenData.then((data) => data.decimals),
@@ -128,7 +136,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       failed(chain, sellToken, buyToken);
     }
     const { data, value } = await response.json();
-    return { usedSlippage: isWrapOrUnwrap ? 0 : slippagePercentage, data, value };
+    return { data, value };
   }
 
   private isWrapingOrUnwrapingWithWToken(chain: Chain, priceRoute: any) {

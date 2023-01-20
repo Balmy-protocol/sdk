@@ -69,14 +69,23 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
     if (shouldFailBecauseTransferNotSupported) {
       throw new Error(
-        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property`
+        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
+      );
+    }
+
+    const shouldFailBecauseBuyOrderNotSupported =
+      !sourceSupport.buyOrders && request.order.type === 'buy' && !request.estimateBuyOrderIfSourceDoesNotSupportIt;
+
+    if (shouldFailBecauseBuyOrderNotSupported) {
+      throw new Error(
+        `Source with '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
       );
     }
 
     const quotes = this.getQuotes({
       ...request,
       includeNonTransferSourcesWhenRecipientIsSet: true,
-      estimateBuyOrdersWithSellOnlySources: request.estimateBuyOrderIfSourceDoesNotSupportIt,
+      estimateBuyOrdersWithSellOnlySources: true,
       filters: { includeSources: [sourceId] },
     });
 
@@ -136,7 +145,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     // Ask for quotes
     const responses = this.getSourcesForRequest(request).map((source) => ({
       source,
-      response: source.quote({ fetchService: this.fetchService }, sourceRequest),
+      response: source.getQuote({ fetchService: this.fetchService }, sourceRequest),
     }));
 
     // Group all value promises
@@ -188,7 +197,7 @@ async function mapSourceResponseToResponse({
 }: {
   source: QuoteSource<QuoteSourceSupport, any, any>;
   request: QuoteRequest<any>;
-  response: Promise<SourceQuoteResponse>;
+  response: Promise<SourceQuoteResponse<{ type: 'quote' }>>;
   values: Promise<{
     gasCalculator: IQuickGasCostCalculator;
     sellToken: TokenWithOptionalPrice;
@@ -198,14 +207,18 @@ async function mapSourceResponseToResponse({
 }): Promise<QuoteResponse> {
   const response = await responsePromise;
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
-  const txData = {
-    to: response.swapper.address,
+  const txData = response.tx && {
+    to: response.tx.to,
+    value: response.tx.value,
+    data: response.tx.calldata,
     from: request.takerAddress,
-    value: response.value,
-    data: response.calldata,
   };
-  const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost(txData, response.estimatedGas, request.gasSpeed);
-  const tx = { ...txData, ...gasPrice };
+  const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
+    gasEstimation: response.estimatedGas,
+    speed: request.gasSpeed,
+    tx: txData,
+  });
+  const tx = txData && { ...txData, ...gasPrice };
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
     sellToken,
@@ -219,7 +232,7 @@ async function mapSourceResponseToResponse({
       ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
-    swapper: { ...response.swapper, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
+    source: { allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
     type: response.type,
     tx,
   };
@@ -277,5 +290,5 @@ function mapRequestToSourceRequest({
       recipient: request.recipient,
     },
     context: { gasPrice: gasPricePromise },
-  } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }>;
+  } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }, { type: 'quote' }>;
 }

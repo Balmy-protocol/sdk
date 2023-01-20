@@ -32,26 +32,26 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<OneInchSupport>): Promise<SourceQuoteResponse> {
     const [estimatedGas, { toTokenAmount, to, data, value }] = await Promise.all([
       this.getGasEstimate(fetchService, request),
-      this.getQuote(fetchService, request),
+      this.fetchQuote(fetchService, request),
     ]);
 
     const quote = {
       sellAmount: request.order.sellAmount,
       buyAmount: BigNumber.from(toTokenAmount),
-      calldata: data,
       estimatedGas,
-      swapper: {
-        allowanceTarget: to,
-        address: to,
+      allowanceTarget: to,
+      tx: {
+        to,
+        calldata: data,
+        value: BigNumber.from(value ?? 0),
       },
-      value: BigNumber.from(value ?? 0),
     };
 
     const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, request.sellToken, request.buyToken);
     return addQuoteSlippage(quote, request.order.type, isWrapOrUnwrap ? 0 : request.config.slippagePercentage);
   }
 
-  private async getQuote(
+  private async fetchQuote(
     fetchService: IFetchService,
     {
       chain,
@@ -67,11 +67,14 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
-      `&fromAddress=${takeFrom}` +
       `&slippage=${slippagePercentage}` +
       `&disableEstimate=true`;
 
-    if (!!recipient && takeFrom !== recipient) {
+    if (takeFrom) {
+      url += `&fromAddress=${takeFrom}`;
+    }
+
+    if (!!recipient && !!takeFrom && takeFrom !== recipient) {
       url += `&destReceiver=${recipient}`;
     }
 

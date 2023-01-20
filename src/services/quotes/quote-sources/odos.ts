@@ -78,12 +78,12 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
       buyAmount: utils.parseUnits(parseFloat(outputToken.amount).toFixed(buyTokenDataDataResult.decimals), buyTokenDataDataResult.decimals),
       calldata: data,
       estimatedGas: BigNumber.from(gas),
-      swapper: {
-        address: to,
-        allowanceTarget: to,
+      allowanceTarget: to,
+      tx: {
+        to,
+        calldata: data,
+        value: BigNumber.from(value),
       },
-      value: BigNumber.from(value),
-      isSwapAndTransfer: false as const,
     };
 
     const isWrapOrUnwrap = isNativeWrapOrUnwrap(chain, sellToken, buyToken);

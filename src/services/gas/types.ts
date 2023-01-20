@@ -21,8 +21,8 @@ export type IGasService = {
   getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice>;
   calculateGasCost(
     chainId: ChainId,
-    tx: TransactionRequest,
     gasEstimation: BigNumber,
+    tx?: TransactionRequest,
     options?: { speed?: GasSpeed }
   ): Promise<GasEstimation<GasPrice>>;
   getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator>;
@@ -41,7 +41,7 @@ export type IQuickGasCostCalculatorBuilder = {
 
 export type IQuickGasCostCalculator = {
   getGasPrice(speed?: GasSpeed): GasPrice;
-  calculateGasCost(tx: TransactionRequest, gasEstimation: BigNumber, speed?: GasSpeed): GasEstimation<GasPrice>;
+  calculateGasCost(_: { gasEstimation: BigNumber; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
 };
 
 export type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };

@@ -38,11 +38,11 @@ export class GasService implements IGasService {
 
   async calculateGasCost(
     chainId: ChainId,
-    tx: TransactionRequest,
     gasEstimation: BigNumber,
+    tx?: TransactionRequest,
     options?: { speed?: GasSpeed }
   ): Promise<GasEstimation<GasPrice>> {
     const gasCalculator = await this.getQuickGasCalculator(chainId);
-    return gasCalculator.calculateGasCost(tx, gasEstimation, options?.speed);
+    return gasCalculator.calculateGasCost({ gasEstimation, tx, ...options });
   }
 }

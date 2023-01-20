@@ -39,10 +39,13 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
       `${api}/swap/v1/quote` +
       `?sellToken=${sellToken}` +
       `&buyToken=${buyToken}` +
-      `&takerAddress=${takeFrom}` +
       `&skipValidation=true` +
       `&slippagePercentage=${slippagePercentage / 100}` +
       `&enableSlippageProtection=false`;
+
+    if (takeFrom) {
+      url += `&takerAddress=${takeFrom}`;
+    }
 
     if (this.globalConfig.referrerAddress) {
       url += `&affiliateAddress=${this.globalConfig.referrerAddress}`;
@@ -63,13 +66,13 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
     const quote = {
       sellAmount: BigNumber.from(sellAmount),
       buyAmount: BigNumber.from(buyAmount),
-      calldata: data,
       estimatedGas: BigNumber.from(estimatedGas),
-      swapper: {
-        allowanceTarget,
-        address: to,
+      allowanceTarget,
+      tx: {
+        calldata: data,
+        to,
+        value: BigNumber.from(value ?? 0),
       },
-      value: BigNumber.from(value ?? 0),
     };
 
     return addQuoteSlippage(quote, order.type, isSameAddress(to, chain.wToken) ? 0 : slippagePercentage);
