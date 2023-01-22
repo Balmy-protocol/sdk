@@ -16,7 +16,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
-import { isSameAddress } from '@shared/utils';
+import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address } from '@types';
 import { AvailableSources } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
@@ -172,6 +172,11 @@ describe('Quote Sources', () => {
                   txs = [...approveTx, await execute({ quote, as: user })];
                 });
                 then('result is as expected', async () => {
+                  assertQuoteIsConsistent(quote, {
+                    sellToken: quoteFtn().sellToken,
+                    buyToken: quoteFtn().buyToken,
+                    ...quoteFtn().order,
+                  });
                   await assertUsersBalanceIsReduceAsExpected(txs, quoteFtn().sellToken, quote);
                   await assertRecipientsBalanceIsIncreasedAsExpected(txs, quoteFtn().buyToken, quote, quoteFtn().recipient ?? user);
                 });
@@ -179,6 +184,68 @@ describe('Quote Sources', () => {
             }
           }
         });
+      }
+
+      function assertQuoteIsConsistent(
+        quote: SourceQuoteResponse,
+        {
+          sellToken,
+          sellAmount,
+          buyToken,
+          buyAmount,
+          type,
+          slippagePercentage,
+        }: {
+          sellToken: DefiLlamaToken;
+          buyToken: DefiLlamaToken;
+          type: 'sell' | 'buy';
+          sellAmount?: BigNumber;
+          buyAmount?: BigNumber;
+          isSwapAndTransfer?: boolean;
+          slippagePercentage?: number;
+        }
+      ) {
+        expect(quote.type).to.equal(type);
+        if (type === 'sell') {
+          expect(quote.sellAmount).to.equal(sellAmount);
+          expect(quote.sellAmount).to.equal(quote.maxSellAmount);
+          if (buyAmount) {
+            expect(quote.buyAmount).to.be.gte(buyAmount);
+          } else {
+            validateQuote(sellToken, buyToken, sellAmount!, quote.buyAmount);
+          }
+          const allowedSlippage = calculatePercentage(quote.buyAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE);
+          expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage));
+        } else {
+          expect(quote.buyAmount).to.equal(buyAmount);
+          expect(quote.buyAmount).to.equal(quote.minBuyAmount);
+          if (sellAmount) {
+            expect(quote.sellAmount).to.be.lte(sellAmount);
+          } else {
+            validateQuote(buyToken, sellToken, buyAmount!, quote.sellAmount);
+          }
+          const allowedSlippage = calculatePercentage(quote.sellAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE);
+          expect(quote.maxSellAmount).to.be.lte(quote.sellAmount.add(allowedSlippage));
+        }
+        if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
+          expect(quote.tx.value).to.equal(quote.maxSellAmount);
+        } else {
+          const isValueNotSet = (value?: BigNumber) => !value || value.isZero();
+          expect(isValueNotSet(quote.tx.value)).to.be.true;
+        }
+      }
+
+      const TRESHOLD_PERCENTAGE = 3; // 3%
+      function validateQuote(from: DefiLlamaToken, to: DefiLlamaToken, fromAmount: BigNumber, toAmount: BigNumber) {
+        const fromPriceBN = utils.parseEther(`${from.price!}`);
+        const toPriceBN = utils.parseEther(`${to.price!}`);
+        const magnitudeFrom = utils.parseUnits('1', from.decimals);
+        const magnitudeTo = utils.parseUnits('1', to.decimals);
+        const expected = fromAmount.mul(fromPriceBN).mul(magnitudeTo).div(toPriceBN).div(magnitudeFrom);
+
+        const threshold = expected.mul(TRESHOLD_PERCENTAGE * 10).div(100 * 10);
+        const [upperThreshold, lowerThreshold] = [expected.add(threshold), expected.sub(threshold)];
+        expect(toAmount).to.be.lte(upperThreshold).and.to.be.gte(lowerThreshold);
       }
 
       async function assertUsersBalanceIsReduceAsExpected(txs: TransactionResponse[], sellToken: DefiLlamaToken, quote: SourceQuoteResponse) {
