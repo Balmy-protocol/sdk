@@ -17,9 +17,15 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { Chain, TokenAddress, Address } from '@types';
+import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { AvailableSources } from '@services/quotes/types';
-import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
+import {
+  QuoteSource,
+  QuoteSourceMetadata,
+  QuoteSourceSupport,
+  SourceQuoteRequest,
+  SourceQuoteResponse,
+} from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
@@ -39,9 +45,9 @@ jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 describe('Quote Sources', () => {
-  const { sourceId, source, chain } = getSourceAndChain();
-  const metadata = source.getMetadata();
-  describe(metadata.name, () => {
+  const sourcesPerChain = getSources();
+  for (const chainId of Object.keys(sourcesPerChain)) {
+    const chain = Chains.byKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
@@ -65,145 +71,120 @@ describe('Quote Sources', () => {
       });
 
       describe('Sell order', () => {
-        if (shouldExecute(sourceId, Test.SELL_USDC_TO_NATIVE)) {
-          when('swapping 1000 USDC to native token', () => {
-            const SELL_AMOUNT = utils.parseUnits('1000', 6);
-            let quote: SourceQuoteResponse;
-            let txs: TransactionResponse[];
-            given(async () => {
-              quote = await buildQuote(source, {
-                sellToken: USDC,
-                buyToken: nativeToken,
-                order: {
-                  type: 'sell',
-                  sellAmount: SELL_AMOUNT,
-                },
-              });
-              txs = [await approve({ amount: SELL_AMOUNT, to: quote.allowanceTarget, for: USDC }), await execute({ quote, as: user })];
-            });
-            then('result is as expected', async () => {
-              await assertUsersBalanceIsReduceAsExpected(txs, USDC, quote);
-              await assertRecipientsBalanceIsIncreasedAsExpected(txs, nativeToken, quote, user);
-            });
-          });
-        }
-        if (shouldExecute(sourceId, Test.SELL_NATIVE_TO_WBTC)) {
-          when('swapping 1 native token to WBTC', () => {
-            let quote: SourceQuoteResponse;
-            let txs: TransactionResponse[];
-            given(async () => {
-              quote = await buildQuote(source, {
-                sellToken: nativeToken,
-                buyToken: WBTC,
-                order: {
-                  type: 'sell',
-                  sellAmount: ONE_NATIVE_TOKEN,
-                },
-              });
-              txs = [await execute({ quote, as: user })];
-            });
-            then('result is as expected', async () => {
-              await assertUsersBalanceIsReduceAsExpected(txs, nativeToken, quote);
-              await assertRecipientsBalanceIsIncreasedAsExpected(txs, WBTC, quote, user);
-            });
-          });
-        }
+        quoteTest({
+          test: Test.SELL_USDC_TO_NATIVE,
+          when: 'swapping 1000 USDC to native token',
+          quote: () => ({
+            sellToken: USDC,
+            buyToken: nativeToken,
+            order: {
+              type: 'sell',
+              sellAmount: utils.parseUnits('1000', 6),
+            },
+          }),
+        });
+        quoteTest({
+          test: Test.SELL_NATIVE_TO_WBTC,
+          when: 'swapping 1 native token to WBTC',
+          quote: () => ({
+            sellToken: nativeToken,
+            buyToken: WBTC,
+            order: {
+              type: 'sell',
+              sellAmount: ONE_NATIVE_TOKEN,
+            },
+          }),
+        });
       });
-      if (metadata.supports.swapAndTransfer) {
-        describe('Swap and transfer', () => {
-          if (shouldExecute(sourceId, Test.SELL_NATIVE_TO_USDC_AND_TRANSFER)) {
-            when('swapping 1 native token to USDC', () => {
-              let quote: SourceQuoteResponse;
-              let txs: TransactionResponse[];
-              given(async () => {
-                quote = await buildQuote(source, {
-                  sellToken: nativeToken,
-                  buyToken: USDC,
-                  order: {
-                    type: 'sell',
-                    sellAmount: ONE_NATIVE_TOKEN,
-                  },
-                  recipient,
-                });
-                txs = [await execute({ quote, as: user })];
-              });
-              then('result is as expected', async () => {
-                await assertUsersBalanceIsReduceAsExpected(txs, nativeToken, quote);
-                await assertRecipientsBalanceIsIncreasedAsExpected(txs, USDC, quote, recipient);
-              });
-            });
-          }
+      describe('Swap and transfer', () => {
+        quoteTest({
+          test: Test.SELL_NATIVE_TO_USDC_AND_TRANSFER,
+          checkSupport: (support) => support.swapAndTransfer,
+          when: 'swapping 1 native token to USDC',
+          quote: () => ({
+            sellToken: nativeToken,
+            buyToken: USDC,
+            order: {
+              type: 'sell',
+              sellAmount: ONE_NATIVE_TOKEN,
+            },
+            recipient,
+          }),
         });
-      }
-      if (metadata.supports.buyOrders) {
-        describe('Buy order', () => {
-          if (shouldExecute(sourceId, Test.BUY_NATIVE_WITH_USDC)) {
-            when('buying 1 native token with USDC', () => {
-              let quote: SourceQuoteResponse;
-              let txs: TransactionResponse[];
-              given(async () => {
-                quote = await buildQuote(source, {
-                  sellToken: USDC,
-                  buyToken: nativeToken,
-                  order: {
-                    type: 'buy',
-                    buyAmount: ONE_NATIVE_TOKEN,
-                  },
-                });
-                txs = [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC }), await execute({ quote, as: user })];
-              });
-              then('result is as expected', async () => {
-                await assertUsersBalanceIsReduceAsExpected(txs, USDC, quote);
-                await assertRecipientsBalanceIsIncreasedAsExpected(txs, nativeToken, quote, user);
-              });
-            });
-          }
+      });
+      describe('Buy order', () => {
+        quoteTest({
+          test: Test.BUY_NATIVE_WITH_USDC,
+          checkSupport: (support) => support.buyOrders,
+          when: 'buying 1 native token with USDC',
+          quote: () => ({
+            sellToken: USDC,
+            buyToken: nativeToken,
+            order: {
+              type: 'buy',
+              buyAmount: ONE_NATIVE_TOKEN,
+            },
+          }),
         });
-      }
+      });
       describe('Wrap / Unwrap', () => {
-        if (shouldExecute(sourceId, Test.WRAP_NATIVE_TOKEN)) {
-          when('wrapping 1 native token', () => {
-            let quote: SourceQuoteResponse;
-            let txs: TransactionResponse[];
-            given(async () => {
-              quote = await buildQuote(source, {
-                sellToken: nativeToken,
-                buyToken: wToken,
-                order: {
-                  type: 'sell',
-                  sellAmount: ONE_NATIVE_TOKEN,
-                },
-              });
-              txs = [await execute({ quote, as: user })];
-            });
-            then('result is as expected', async () => {
-              await assertUsersBalanceIsReduceAsExpected(txs, nativeToken, quote);
-              await assertRecipientsBalanceIsIncreasedAsExpected(txs, wToken, quote, user);
-            });
-          });
-        }
-        if (shouldExecute(sourceId, Test.UNWRAP_WTOKEN)) {
-          when('unwrapping 1 wtoken', () => {
-            let quote: SourceQuoteResponse;
-            let txs: TransactionResponse[];
-            given(async () => {
-              quote = await buildQuote(source, {
-                sellToken: wToken,
-                buyToken: nativeToken,
-                order: {
-                  type: 'sell',
-                  sellAmount: ONE_NATIVE_TOKEN,
-                },
-              });
-              txs = [await approve({ amount: ONE_NATIVE_TOKEN, to: quote.allowanceTarget, for: wToken }), await execute({ quote, as: user })];
-            });
-            then('result is as expected', async () => {
-              await assertUsersBalanceIsReduceAsExpected(txs, wToken, quote);
-              await assertRecipientsBalanceIsIncreasedAsExpected(txs, nativeToken, quote, user);
-            });
-          });
-        }
+        quoteTest({
+          test: Test.WRAP_NATIVE_TOKEN,
+          when: 'wrapping 1 native token',
+          quote: () => ({
+            sellToken: nativeToken,
+            buyToken: wToken,
+            order: {
+              type: 'sell',
+              sellAmount: ONE_NATIVE_TOKEN,
+            },
+          }),
+        });
+        quoteTest({
+          test: Test.UNWRAP_WTOKEN,
+          when: 'unwrapping 1 wtoken',
+          quote: () => ({
+            sellToken: wToken,
+            buyToken: nativeToken,
+            order: {
+              type: 'sell',
+              sellAmount: ONE_NATIVE_TOKEN,
+            },
+          }),
+        });
       });
+
+      function quoteTest({
+        test,
+        when: title,
+        quote: quoteFtn,
+        checkSupport,
+      }: {
+        test: Test;
+        when: string;
+        checkSupport?: (support: QuoteSourceSupport) => boolean;
+        quote: () => Quote;
+      }) {
+        for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
+          if (shouldExecute(sourceId as AvailableSources, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
+            when(`${title} on ${source.getMetadata().name}`, () => {
+              let quote: SourceQuoteResponse;
+              let txs: TransactionResponse[];
+              given(async () => {
+                quote = await buildQuote(source, quoteFtn());
+                const approveTx = isSameAddress(quoteFtn().sellToken.address, Addresses.NATIVE_TOKEN)
+                  ? []
+                  : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
+                txs = [...approveTx, await execute({ quote, as: user })];
+              });
+              then('result is as expected', async () => {
+                await assertUsersBalanceIsReduceAsExpected(txs, quoteFtn().sellToken, quote);
+                await assertRecipientsBalanceIsIncreasedAsExpected(txs, quoteFtn().buyToken, quote, quoteFtn().recipient ?? user);
+              });
+            });
+          }
+        }
+      }
 
       async function assertUsersBalanceIsReduceAsExpected(txs: TransactionResponse[], sellToken: DefiLlamaToken, quote: SourceQuoteResponse) {
         const initialBalance = initialBalances[user.address][sellToken.address];
@@ -335,30 +316,27 @@ describe('Quote Sources', () => {
         }
       }
     });
-  });
+  }
 });
 
-function getSourceAndChain() {
+function getSources() {
   const sources = buildSources(CONFIG, CONFIG);
-  let sourceId: AvailableSources;
-  let source: QuoteSource<QuoteSourceSupport, any, any>;
-  let chain: Chain;
-  if (process.env.RANDOM_QUOTE_TEST) {
-    const ids = Object.keys(sources) as AvailableSources[];
-    sourceId = chooseRandom(ids);
-    source = sources[sourceId] as QuoteSource<QuoteSourceSupport, any, any>;
-    const possibleChains = source.getMetadata().supports.chains.filter((chain) => chain.chainId in TOKENS);
-    chain = chooseRandom(possibleChains);
-  } else {
-    sourceId = RUN_FOR.source;
-    source = sources[sourceId] as QuoteSource<QuoteSourceSupport, any, any>;
-    chain = RUN_FOR.chain;
+  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
+  for (const [sourceId, source] of Object.entries(sources)) {
+    const chains = source.getMetadata().supports.chains;
+    for (const chain of chains) {
+      if (!(chain.chainId in result)) {
+        result[chain.chainId] = {} as any;
+      }
+      result[chain.chainId][sourceId as AvailableSources] = source;
+    }
   }
-  return { sourceId, source, chain };
-}
-
-function chooseRandom<T>(array: T[]) {
-  return array[Math.floor(Math.random() * array.length)];
+  for (const chainId in result) {
+    if (!(chainId in TOKENS)) {
+      delete result[chainId];
+    }
+  }
+  return result;
 }
 
 const FETCH_SERVICE = new FetchService(crossFetch);
