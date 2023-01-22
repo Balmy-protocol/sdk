@@ -69,14 +69,23 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
     if (shouldFailBecauseTransferNotSupported) {
       throw new Error(
-        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property`
+        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
+      );
+    }
+
+    const shouldFailBecauseBuyOrderNotSupported =
+      !sourceSupport.buyOrders && request.order.type === 'buy' && !request.estimateBuyOrderIfSourceDoesNotSupportIt;
+
+    if (shouldFailBecauseBuyOrderNotSupported) {
+      throw new Error(
+        `Source with '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
       );
     }
 
     const quotes = this.getQuotes({
       ...request,
       includeNonTransferSourcesWhenRecipientIsSet: true,
-      estimateBuyOrdersWithSellOnlySources: request.estimateBuyOrderIfSourceDoesNotSupportIt,
+      estimateBuyOrdersWithSellOnlySources: true,
       filters: { includeSources: [sourceId] },
     });
 
@@ -199,12 +208,16 @@ async function mapSourceResponseToResponse({
   const response = await responsePromise;
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
   const txData = {
-    to: response.swapper.address,
+    to: response.tx.to,
+    value: response.tx.value,
+    data: response.tx.calldata,
     from: request.takerAddress,
-    value: response.value,
-    data: response.calldata,
   };
-  const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost(txData, response.estimatedGas, request.gasSpeed);
+  const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
+    gasEstimation: response.estimatedGas,
+    speed: request.gasSpeed,
+    tx: txData,
+  });
   const tx = { ...txData, ...gasPrice };
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
@@ -219,7 +232,7 @@ async function mapSourceResponseToResponse({
       ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
-    swapper: { ...response.swapper, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
+    source: { allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
     type: response.type,
     tx,
   };

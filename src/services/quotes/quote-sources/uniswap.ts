@@ -45,7 +45,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     recipient = recipient ?? takeFrom;
     const url =
       'https://api.uniswap.org/v1/quote' +
-      '?protocols=v2,v3' +
+      '?protocols=v2,v3,mixed' +
       `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
       `&tokenInChainId=${chain.chainId}` +
       `&tokenOutAddress=${mapToWTokenIfNecessary(chain, buyToken)}` +
@@ -89,12 +89,12 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     const quote = {
       sellAmount: order.type === 'sell' ? order.sellAmount : BigNumber.from(quoteAmount),
       buyAmount,
-      calldata,
       estimatedGas: BigNumber.from(gasUseEstimate),
-      value,
-      swapper: {
-        address: router,
-        allowanceTarget: router,
+      allowanceTarget: router,
+      tx: {
+        to: router,
+        calldata,
+        value,
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);

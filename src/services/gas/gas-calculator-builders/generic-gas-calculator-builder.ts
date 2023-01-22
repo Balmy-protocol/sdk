@@ -14,7 +14,7 @@ export class GenericGasCalculatorBuilder implements IQuickGasCostCalculatorBuild
     const gestGasPriceForSpeed = (speed?: GasSpeed) => (speed && speed in gasPriceData ? gasPriceData[speed] : gasPriceData['standard']);
     return {
       getGasPrice: (speed) => gestGasPriceForSpeed(speed),
-      calculateGasCost: (tx, gasEstimation, speed) => {
+      calculateGasCost: ({ gasEstimation, speed }) => {
         const gasPriceForSpeed = gestGasPriceForSpeed(speed);
         const actualGasPrice = 'maxFeePerGas' in gasPriceForSpeed ? gasPriceForSpeed.maxFeePerGas : gasPriceForSpeed.gasPrice;
         const gasCostNativeToken = gasEstimation.mul(actualGasPrice);

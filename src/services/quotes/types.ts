@@ -65,7 +65,7 @@ export type QuoteResponse = {
     estimatedCostInUSD?: number;
   };
   recipient: Address;
-  swapper: { address: Address; allowanceTarget: Address; name: string; logoURI: string };
+  source: { allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
 };

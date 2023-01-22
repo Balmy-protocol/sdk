@@ -63,13 +63,13 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
     const quote = {
       sellAmount: BigNumber.from(sellAmount),
       buyAmount: BigNumber.from(buyAmount),
-      calldata: data,
       estimatedGas: BigNumber.from(estimatedGas),
-      swapper: {
-        allowanceTarget,
-        address: to,
+      allowanceTarget,
+      tx: {
+        calldata: data,
+        to,
+        value: BigNumber.from(value ?? 0),
       },
-      value: BigNumber.from(value ?? 0),
     };
 
     return addQuoteSlippage(quote, order.type, isSameAddress(to, chain.wToken) ? 0 : slippagePercentage);

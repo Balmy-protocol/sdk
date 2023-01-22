@@ -28,18 +28,20 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<ParaswapSupport>): Promise<SourceQuoteResponse> {
     const route = await this.getPrice(fetchService, request);
-    const { data, value, usedSlippage } = await this.getQuote(fetchService, { ...request, route });
+    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
+    const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap });
     const quote = {
       sellAmount: BigNumber.from(route.srcAmount),
       buyAmount: BigNumber.from(route.destAmount),
-      calldata: data,
       estimatedGas: BigNumber.from(route.gasCost),
-      swapper: {
-        address: route.contractAddress,
-        allowanceTarget: route.tokenTransferProxy,
+      allowanceTarget: route.tokenTransferProxy,
+      tx: {
+        to: route.contractAddress,
+        calldata: data,
+        value,
       },
-      value: BigNumber.from(value ?? 0),
     };
+    const usedSlippage = isWrapOrUnwrap ? 0 : request.config.slippagePercentage;
     return addQuoteSlippage(quote, request.order.type, usedSlippage);
   }
 
@@ -92,11 +94,11 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       route,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, txValidFor, timeout },
-    }: SourceQuoteRequest<ParaswapSupport> & { route: any }
+      isWrapOrUnwrap,
+    }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean }
   ) {
     const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
     const receiver = !!recipient && takeFrom !== recipient ? recipient : undefined;
-    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(chain, route);
     let body: any = {
       srcToken: sellToken,
       srcDecimals: await sellTokenData.then((data) => data.decimals),
@@ -125,10 +127,10 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       timeout,
     });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
     const { data, value } = await response.json();
-    return { usedSlippage: isWrapOrUnwrap ? 0 : slippagePercentage, data, value };
+    return { data, value: BigNumber.from(value ?? 0) };
   }
 
   private isWrapingOrUnwrapingWithWToken(chain: Chain, priceRoute: any) {

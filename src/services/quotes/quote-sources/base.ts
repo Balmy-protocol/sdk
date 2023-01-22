@@ -47,10 +47,13 @@ export type SourceQuoteResponse = {
   buyAmount: BigNumber;
   minBuyAmount: BigNumber;
   type: 'sell' | 'buy';
-  swapper: { address: Address; allowanceTarget: Address };
-  calldata: string;
+  allowanceTarget: Address;
   estimatedGas: BigNumber;
-  value?: BigNumber;
+  tx: {
+    to: Address;
+    calldata: string;
+    value?: BigNumber;
+  };
 };
 
 export type SourceQuoteRequest<

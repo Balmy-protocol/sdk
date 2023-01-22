@@ -13,3 +13,4 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 type UnionMapping<T> = { [K in keyof UnionToIntersection<T> | keyof T]: ValueOfUnion<T, K> };
 type ValueOfUnion<T, K> = T extends any ? (K extends keyof T ? T[K] : undefined) : never;
 export type UnionMerge<T> = Pick<UnionMapping<T>, keyof T> & Partial<UnionMapping<T>>;
+export type PartialOnly<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

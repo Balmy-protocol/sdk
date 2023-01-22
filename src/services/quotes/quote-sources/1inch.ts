@@ -38,13 +38,13 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     const quote = {
       sellAmount: request.order.sellAmount,
       buyAmount: BigNumber.from(toTokenAmount),
-      calldata: data,
       estimatedGas,
-      swapper: {
-        allowanceTarget: to,
-        address: to,
+      allowanceTarget: to,
+      tx: {
+        to,
+        calldata: data,
+        value: BigNumber.from(value ?? 0),
       },
-      value: BigNumber.from(value ?? 0),
     };
 
     const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, request.sellToken, request.buyToken);
@@ -80,7 +80,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
     const {
       toTokenAmount,

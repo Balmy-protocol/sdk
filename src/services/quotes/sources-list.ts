@@ -16,7 +16,7 @@ export const QUOTE_SOURCES = {
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>;
 
 export function buildSources<Config extends Partial<AllSourcesConfig>>(global: GlobalQuoteSourceConfig, custom?: Config) {
-  const sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<any, any, any>> = {} as any;
+  const sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>> = {} as any;
   for (const key in QUOTE_SOURCES) {
     const sourceId = key as AvailableSources;
     const { build, needsConfig } = QUOTE_SOURCES[sourceId] as QuoteSourceBuilder<any, any, any, any>;
@@ -77,10 +77,10 @@ type GetCustomConfigNeededFomBuilder<T extends QuoteSourceBuilder<any, any, any,
 >
   ? CustomConfigNeeded
   : never;
-type GetCustomConfigNeededFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, infer CustomConfigNeeded, any>
+export type GetCustomConfigNeededFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, infer CustomConfigNeeded, any>
   ? CustomConfigNeeded
   : never;
 type GetSupportFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<infer Support, any, any> ? Support : never;
-type GetCustomConfigFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, any, infer CustomQuoteSourceConfig>
+export type GetCustomConfigFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, any, infer CustomQuoteSourceConfig>
   ? CustomQuoteSourceConfig
   : never;
