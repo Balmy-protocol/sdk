@@ -17,7 +17,7 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { Chain, TokenAddress, Address, ChainId } from '@types';
+import { Chain, TokenAddress, Address } from '@types';
 import { AvailableSources } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
@@ -25,12 +25,11 @@ import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
-import { Test, TOKENS, EXCEPTIONS, CONFIG } from './quote-tests-config';
+import { Test, TOKENS, EXCEPTIONS, CONFIG, getAllSources } from './quote-tests-config';
 
-// It's very time expensive to test all sources for all chains, so we need to choose
-// Note: as part of the CI workflow, these values will be ignored and randomized
+// This is meant to be used for local testing. On the CI, we will run all sources instead
 const RUN_FOR: { source: AvailableSources; chain: Chain } = {
-  source: '1inch',
+  source: 'paraswap',
   chain: Chains.ETHEREUM,
 };
 
@@ -167,10 +166,9 @@ describe('Quote Sources', () => {
                 let txs: TransactionResponse[];
                 given(async () => {
                   quote = await buildQuote(source, quoteFtn());
-                  const approveTx =
-                    isSameAddress(quoteFtn().sellToken.address, Addresses.NATIVE_TOKEN) && !isSameAddress(quote.tx.to, constants.AddressZero)
-                      ? []
-                      : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
+                  const approveTx = isSameAddress(quote.tx.to, chain.wToken)
+                    ? []
+                    : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
                   txs = [...approveTx, await execute({ quote, as: user })];
                 });
                 then('result is as expected', async () => {
@@ -317,23 +315,11 @@ describe('Quote Sources', () => {
 });
 
 function getSources() {
+  if (process.env.TEST_ALL_NETWORKS) {
+    return getAllSources();
+  }
   const sources = buildSources(CONFIG, CONFIG);
-  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
-  for (const [sourceId, source] of Object.entries(sources)) {
-    const chains = source.getMetadata().supports.chains;
-    for (const chain of chains) {
-      if (!(chain.chainId in result)) {
-        result[chain.chainId] = {} as any;
-      }
-      result[chain.chainId][sourceId as AvailableSources] = source;
-    }
-  }
-  for (const chainId in result) {
-    if (!(chainId in TOKENS)) {
-      delete result[chainId];
-    }
-  }
-  return result;
+  return { [RUN_FOR.chain.chainId]: { [RUN_FOR.source]: sources[RUN_FOR.source] } };
 }
 
 const FETCH_SERVICE = new FetchService(crossFetch);

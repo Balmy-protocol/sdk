@@ -7,15 +7,14 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { then, when } from '@test-utils/bdd';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
-import { Chain, ChainId } from '@types';
+import { Chain } from '@types';
 import { AvailableSources } from '@services/quotes/types';
-import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
+import { QuoteSource, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
-import { CONFIG, EXCEPTIONS, RATE_LIMITING_ISSUES, Test, TOKENS } from './quote-tests-config';
-import { buildSources } from '@services/quotes/sources-list';
+import { EXCEPTIONS, getAllSources, Test, TOKENS } from './quote-tests-config';
 import { Chains } from '@chains';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
@@ -23,7 +22,7 @@ jest.retryTimes(3);
 jest.setTimeout(ms('1m'));
 
 describe('Quote Calculation', () => {
-  const sourcesPerChain = getSources();
+  const sourcesPerChain = getAllSources(true);
 
   for (const [chainId, sources] of Object.entries(sourcesPerChain)) {
     const chain = Chains.byKeyOrFail(chainId);
@@ -313,30 +312,6 @@ describe('Quote Calculation', () => {
         WBTC = tokens[chain.chainId][address('WBTC')];
       }
     });
-  }
-  function getSources() {
-    const sources = buildSources(CONFIG, CONFIG);
-    const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
-    for (const [sourceId, source] of Object.entries(sources)) {
-      const chains = RATE_LIMITING_ISSUES.includes(sourceId as AvailableSources)
-        ? [chooseRandom(source.getMetadata().supports.chains)]
-        : source.getMetadata().supports.chains; // If the source has an issue with rate limiting, test only one random chain
-      for (const chain of chains) {
-        if (!(chain.chainId in result)) {
-          result[chain.chainId] = {} as any;
-        }
-        result[chain.chainId][sourceId as AvailableSources] = source;
-      }
-    }
-    for (const chainId in result) {
-      if (!(chainId in TOKENS)) {
-        delete result[chainId];
-      }
-    }
-    return result;
-  }
-  function chooseRandom<T>(array: T[]) {
-    return array[Math.floor(Math.random() * array.length)];
   }
 });
 const FETCH_SERVICE = new FetchService(crossFetch);

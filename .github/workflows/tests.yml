@@ -71,4 +71,4 @@ jobs:
         run: yarn test:integration:quotes
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
-          RANDOM_QUOTE_TEST: true
+          TEST_ALL_NETWORKS: true
