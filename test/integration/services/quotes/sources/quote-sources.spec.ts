@@ -19,13 +19,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { AvailableSources } from '@services/quotes/types';
-import {
-  QuoteSource,
-  QuoteSourceMetadata,
-  QuoteSourceSupport,
-  SourceQuoteRequest,
-  SourceQuoteResponse,
-} from '@services/quotes/quote-sources/base';
+import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
@@ -165,25 +159,28 @@ describe('Quote Sources', () => {
         checkSupport?: (support: QuoteSourceSupport) => boolean;
         quote: () => Quote;
       }) {
-        for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
-          if (shouldExecute(sourceId as AvailableSources, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
-            when(`${title} on ${source.getMetadata().name}`, () => {
-              let quote: SourceQuoteResponse;
-              let txs: TransactionResponse[];
-              given(async () => {
-                quote = await buildQuote(source, quoteFtn());
-                const approveTx = isSameAddress(quoteFtn().sellToken.address, Addresses.NATIVE_TOKEN)
-                  ? []
-                  : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
-                txs = [...approveTx, await execute({ quote, as: user })];
+        when(title, () => {
+          for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
+            if (shouldExecute(sourceId as AvailableSources, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
+              describe(`on ${source.getMetadata().name}`, () => {
+                let quote: SourceQuoteResponse;
+                let txs: TransactionResponse[];
+                given(async () => {
+                  quote = await buildQuote(source, quoteFtn());
+                  const approveTx =
+                    isSameAddress(quoteFtn().sellToken.address, Addresses.NATIVE_TOKEN) && !isSameAddress(quote.tx.to, constants.AddressZero)
+                      ? []
+                      : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
+                  txs = [...approveTx, await execute({ quote, as: user })];
+                });
+                then('result is as expected', async () => {
+                  await assertUsersBalanceIsReduceAsExpected(txs, quoteFtn().sellToken, quote);
+                  await assertRecipientsBalanceIsIncreasedAsExpected(txs, quoteFtn().buyToken, quote, quoteFtn().recipient ?? user);
+                });
               });
-              then('result is as expected', async () => {
-                await assertUsersBalanceIsReduceAsExpected(txs, quoteFtn().sellToken, quote);
-                await assertRecipientsBalanceIsIncreasedAsExpected(txs, quoteFtn().buyToken, quote, quoteFtn().recipient ?? user);
-              });
-            });
+            }
           }
-        }
+        });
       }
 
       async function assertUsersBalanceIsReduceAsExpected(txs: TransactionResponse[], sellToken: DefiLlamaToken, quote: SourceQuoteResponse) {
