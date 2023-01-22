@@ -6,6 +6,8 @@ import { BigNumber, utils } from 'ethers';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from './quote-sources/base';
 import { AllSourcesConfig, buildSources, SourcesBasedOnConfig } from './sources-list';
 import {
+  EstimatedQuoteResponse,
+  EstimatedQuoteRequest,
   FailedQuote,
   GlobalQuoteSourceConfig,
   IndividualQuoteRequest,
@@ -96,6 +98,18 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     return quotes[0];
   }
 
+  estimateQuotes(estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>): Promise<EstimatedQuoteResponse>[] {
+    return this.getQuotes(estimatedToQuoteRequest(estimatedRequest)).map((response) => response.then(quoteResponseToEstimated));
+  }
+
+  async estimateAllQuotes<IgnoreFailed extends boolean = true>(
+    estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>,
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
+  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
+    const allResponses = await this.getAllQuotes(estimatedToQuoteRequest(estimatedRequest), config);
+    return allResponses.map((response) => ('failed' in response ? response : quoteResponseToEstimated(response)));
+  }
+
   getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse>[] {
     return this.executeQuotes(request).map(({ response }) => response);
   }
@@ -103,7 +117,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   async getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest<SourcesBasedOnConfig<Config>>,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<WithFailedQuotes<IgnoreFailed>[]> {
+  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
     let successfulQuotes: QuoteResponse[];
     let failedQuotes: FailedQuote[] = [];
     if (config?.ignoredFailed === false) {
@@ -128,7 +142,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       config?.sort?.using ?? 'sell/buy amounts'
     );
 
-    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<IgnoreFailed>[];
+    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
   private executeQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
@@ -187,6 +201,19 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     // Cast so that even if the source doesn't support it, everything else types ok
     return sources.map((source) => source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any, any>);
   }
+}
+
+function estimatedToQuoteRequest<Config extends Partial<AllSourcesConfig>>(
+  request: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>
+): QuoteRequest<SourcesBasedOnConfig<Config>> {
+  return {
+    ...request,
+    takerAddress: '0x4675c7e5baafbffbca748158becba61ef3b0a269', // We set a random taker address so that txs can be built at the source level
+  };
+}
+
+function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
+  return response;
 }
 
 async function mapSourceResponseToResponse({

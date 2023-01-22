@@ -18,6 +18,17 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
   supportedChains(): ChainId[];
   supportedSources(): SupportedSources[];
   supportedSourcesInChain(chainId: ChainId): SupportedSources[];
+  estimateQuotes(estimatedRequest: EstimatedQuoteRequest<SupportedSources>): Promise<EstimatedQuoteResponse>[];
+  estimateAllQuotes<IgnoreFailed extends boolean = true>(
+    request: QuoteRequest<SupportedSources>,
+    config?: {
+      ignoredFailed?: IgnoreFailed;
+      sort?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+    }
+  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
   getQuote(sourceId: SupportedSources, request: IndividualQuoteRequest): Promise<QuoteResponse>;
   getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
@@ -29,7 +40,7 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
         using?: CompareQuotesUsing;
       };
     }
-  ): Promise<WithFailedQuotes<IgnoreFailed>[]>;
+  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
 
 export type QuoteRequest<SupportedSources extends AvailableSources> = {
@@ -78,12 +89,20 @@ export type IndividualQuoteRequest = Omit<
   estimateBuyOrderIfSourceDoesNotSupportIt?: boolean;
 };
 
+export type EstimatedQuoteRequest<SupportedSources extends AvailableSources> = Omit<
+  QuoteRequest<SupportedSources>,
+  'takerAddress' | 'recipient' | 'txValidFor'
+>;
+export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
+
 type AmountOfToken = {
   amount: BigNumber;
   amountInUnits: number;
   amountInUSD?: number;
 };
 
-export type WithFailedQuotes<IgnoredFailed extends boolean> = IgnoredFailed extends true ? QuoteResponse : QuoteResponse | FailedQuote;
+export type WithFailedQuotes<IgnoredFailed extends boolean, Response extends QuoteResponse | EstimatedQuoteResponse> = IgnoredFailed extends true
+  ? Response
+  : Response | FailedQuote;
 
 export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };
