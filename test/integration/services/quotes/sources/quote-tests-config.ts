@@ -33,9 +33,6 @@ export const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
   ],
 };
 
-// Due to rate limiting, we need the test to behave differently for some sources
-export const RATE_LIMITING_ISSUES: AvailableSources[] = ['1inch'];
-
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { WBTC: TokenData; USDC: TokenData; wToken: TokenData };
 // TODO: Add more chains
@@ -84,15 +81,11 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   },
 } satisfies Record<ChainId, ChainTokens>;
 
-export function getAllSources(considerRateLimiting = false) {
+export function getAllSources() {
   const sources = buildSources(CONFIG, CONFIG);
   const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
   for (const [sourceId, source] of Object.entries(sources)) {
-    const chains =
-      considerRateLimiting && RATE_LIMITING_ISSUES.includes(sourceId as AvailableSources)
-        ? [chooseRandom(source.getMetadata().supports.chains)]
-        : source.getMetadata().supports.chains; // If the source has an issue with rate limiting, test only one random chain
-    for (const chain of chains) {
+    for (const chain of source.getMetadata().supports.chains) {
       if (!(chain.chainId in result)) {
         result[chain.chainId] = {} as any;
       }
@@ -105,7 +98,4 @@ export function getAllSources(considerRateLimiting = false) {
     }
   }
   return result;
-}
-function chooseRandom<T>(array: T[]) {
-  return array[Math.floor(Math.random() * array.length)];
 }
