@@ -275,7 +275,7 @@ describe('Quote Calculation', () => {
           sellToken: DefiLlamaToken;
           buyToken: DefiLlamaToken;
         };
-        function buildQuote(source: QuoteSource<any, any, any>, { sellToken, buyToken, slippagePercentage, ...quote }: Quote) {
+        function buildQuote(source: QuoteSource<any, any, any>, { sellToken, buyToken, ...quote }: Quote) {
           return source.quote(
             { fetchService: FETCH_SERVICE },
             {
@@ -284,7 +284,7 @@ describe('Quote Calculation', () => {
               buyToken: buyToken.address,
               chain,
               config: {
-                slippagePercentage: slippagePercentage ?? SLIPPAGE_PERCENTAGE,
+                slippagePercentage: SLIPPAGE_PERCENTAGE,
                 txValidFor: '5m',
                 timeout: '15s',
               },

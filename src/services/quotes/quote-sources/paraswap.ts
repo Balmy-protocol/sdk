@@ -42,7 +42,6 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       },
     };
     const usedSlippage = isWrapOrUnwrap ? 0 : request.config.slippagePercentage;
-
     return addQuoteSlippage(quote, request.order.type, usedSlippage);
   }
 
