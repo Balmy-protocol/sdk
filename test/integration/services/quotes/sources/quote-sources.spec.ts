@@ -166,7 +166,7 @@ describe('Quote Sources', () => {
                 let txs: TransactionResponse[];
                 given(async () => {
                   quote = await buildQuote(source, quoteFtn());
-                  const approveTx = isSameAddress(quote.tx.to, chain.wToken)
+                  const approveTx = isSameAddress(quote.allowanceTarget, constants.AddressZero)
                     ? []
                     : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: USDC })];
                   txs = [...approveTx, await execute({ quote, as: user })];
