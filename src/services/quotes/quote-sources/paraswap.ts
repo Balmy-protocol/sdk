@@ -7,7 +7,6 @@ import {
   NoCustomConfigQuoteSource as NoCustomConfigQuoteSource,
   QuoteComponents,
   QuoteSourceMetadata,
-  QuoteType,
   SourceQuoteRequest,
   SourceQuoteResponse,
 } from './base';
@@ -29,25 +28,21 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<ParaswapSupport>): Promise<SourceQuoteResponse> {
     const route = await this.getPrice(fetchService, request);
-    let quote: Omit<SourceQuoteResponse<QuoteType>, 'minBuyAmount' | 'maxSellAmount' | 'type'> = {
+    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
+    const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap });
+    const quote = {
       sellAmount: BigNumber.from(route.srcAmount),
       buyAmount: BigNumber.from(route.destAmount),
       estimatedGas: BigNumber.from(route.gasCost),
       allowanceTarget: route.tokenTransferProxy,
+      tx: {
+        to: route.contractAddress,
+        calldata: data,
+        value,
+      },
     };
-    const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
     const usedSlippage = isWrapOrUnwrap ? 0 : request.config.slippagePercentage;
-    if (request.accounts.takeFrom) {
-      const { data, value } = await this.buildTx(fetchService, { ...request, route, isWrapOrUnwrap });
-      quote = {
-        ...quote,
-        tx: {
-          to: route.contractAddress,
-          calldata: data,
-          value,
-        },
-      };
-    }
+
     return addQuoteSlippage(quote, request.order.type, usedSlippage);
   }
 
@@ -88,7 +83,7 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     return priceRoute;
   }
 
-  private async buildTx(
+  private async getQuote(
     fetchService: IFetchService,
     {
       chain,
@@ -133,10 +128,10 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       timeout,
     });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
     const { data, value } = await response.json();
-    return { data, value };
+    return { data, value: BigNumber.from(value ?? 0) };
   }
 
   private isWrapingOrUnwrapingWithWToken(chain: Chain, priceRoute: any) {

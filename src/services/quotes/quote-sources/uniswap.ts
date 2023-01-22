@@ -43,23 +43,18 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
     const router = ROUTER_ADDRESS[chain.chainId];
     recipient = recipient ?? takeFrom;
-    let url =
+    const url =
       'https://api.uniswap.org/v1/quote' +
-      '?protocols=v2,v3' +
+      '?protocols=v2,v3,mixed' +
       `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
       `&tokenInChainId=${chain.chainId}` +
       `&tokenOutAddress=${mapToWTokenIfNecessary(chain, buyToken)}` +
       `&tokenOutChainId=${chain.chainId}` +
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
+      `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
       `&deadline=${timeToSeconds(txValidFor ?? '1y')}` +
       `&slippageTolerance=${slippagePercentage}`;
-
-    if (isBuyTokenNativeToken) {
-      url += `&recipient=${router}`;
-    } else if (takeFrom || recipient) {
-      url += `&recipient=${recipient ?? takeFrom}`;
-    }
 
     // These are needed so that the API allows us to make the call
     const headers = {

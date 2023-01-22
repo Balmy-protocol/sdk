@@ -4,7 +4,6 @@ import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, TimeString, TokenAddress } from '@types';
 import { BaseToken } from '@services/tokens/types';
-import { PartialOnly, WithRequired } from '@utility-types';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
 export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
@@ -15,26 +14,18 @@ export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
 export type QuoteSource<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean = false, CustomQuoteSourceConfig = undefined> = {
   getCustomConfig(): CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
-  getQuote(
-    components: QuoteComponents,
-    request: SourceQuoteRequest<Support, { type: 'quote' }>
-  ): Promise<SourceQuoteResponse<{ type: 'quote' }>>;
-  estimateQuote(
-    components: QuoteComponents,
-    request: SourceQuoteRequest<Support, { type: 'estimation' }>
-  ): Promise<SourceQuoteResponse<{ type: 'estimation' }>>;
+  quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
 };
 export type QuoteComponents = {
   fetchService: IFetchService;
 };
-export type QuoteType = { type: 'quote' | 'estimation' };
 
 type ExtraTokenData = Pick<BaseToken, 'decimals' | 'symbol'>;
 export type SellOrder = { type: 'sell'; sellAmount: BigNumber };
 export type BuyOrder = { type: 'buy'; buyAmount: BigNumber };
 type BaseOrder = SellOrder | BuyOrder;
-type BaseAccounts = { takeFrom?: Address; recipient?: Address };
-type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseAccounts> = {
+type BaseSwapAccounts = { takeFrom: Address };
+type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
   chain: Chain;
   sellToken: TokenAddress;
   sellTokenData: Promise<ExtraTokenData>;
@@ -50,10 +41,7 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseAccounts
   context: { gasPrice: Promise<GasPrice> };
 };
 
-export type SourceQuoteResponse<QuoteKind extends QuoteType = { type: 'estimation' }> = QuoteKind extends { type: 'quote' }
-  ? BaseSourceQuoteResponse
-  : PartialOnly<BaseSourceQuoteResponse, 'tx'>;
-type BaseSourceQuoteResponse = {
+export type SourceQuoteResponse = {
   sellAmount: BigNumber;
   maxSellAmount: BigNumber;
   buyAmount: BigNumber;
@@ -68,11 +56,16 @@ type BaseSourceQuoteResponse = {
   };
 };
 
-export type SourceQuoteRequest<Support extends QuoteSourceSupport, QuoteKind extends QuoteType = { type: 'estimation' }> = BaseSwapQuoteRequest<
-  ConfigurableOrder<Support>,
-  QuoteKind extends { type: 'quote' } ? WithRequired<BaseAccounts, 'takeFrom'> : BaseAccounts
->;
+export type SourceQuoteRequest<
+  Support extends QuoteSourceSupport,
+  Order extends ConfigurableOrder<Support> = ConfigurableOrder<Support>,
+  Accounts extends ConfigurableAccounts<Support> = ConfigurableAccounts<Support>
+> = BaseSwapQuoteRequest<Order, Accounts>;
 type ConfigurableOrder<Support extends QuoteSourceSupport> = IsBuyOrder<Support> extends true ? SellOrder | BuyOrder : SellOrder;
+type ConfigurableAccounts<Support extends QuoteSourceSupport> = IsSwapAndTransfer<Support> extends true
+  ? BaseSwapAccounts & { recipient?: Address }
+  : BaseSwapAccounts;
+type IsSwapAndTransfer<Support extends QuoteSourceSupport> = Support['swapAndTransfer'];
 type IsBuyOrder<Support extends QuoteSourceSupport> = Support['buyOrders'];
 
 export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>
@@ -90,29 +83,8 @@ export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, Custom
     return this.customConfig;
   }
 
-  async getQuote(
-    components: QuoteComponents,
-    request: SourceQuoteRequest<Support, { type: 'quote' }>
-  ): Promise<SourceQuoteResponse<{ type: 'quote' }>> {
-    const response = await this.quote(components, request);
-    if (!response.tx) {
-      throw new Error('This should be set');
-    }
-    return response as SourceQuoteResponse<{ type: 'quote' }>;
-  }
-
-  estimateQuote(
-    components: QuoteComponents,
-    request: SourceQuoteRequest<Support, { type: 'estimation' }>
-  ): Promise<SourceQuoteResponse<{ type: 'estimation' }>> {
-    return this.quote(components, request);
-  }
-
   abstract getMetadata(): QuoteSourceMetadata<Support>;
-  protected abstract quote(
-    components: QuoteComponents,
-    request: SourceQuoteRequest<Support, { type: 'quote' | 'estimation' }>
-  ): Promise<SourceQuoteResponse<{ type: 'estimation' }>>;
+  abstract quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
 }
 
 export abstract class NoCustomConfigQuoteSource<Support extends QuoteSourceSupport> extends BaseQuoteSource<Support, false, undefined> {

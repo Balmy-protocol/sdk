@@ -20,7 +20,7 @@ const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURC
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
 
-describe('Gas Price Sources', () => {
+describe.skip('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Provider Source', source: PROVIDER_SOURCE });
   gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });

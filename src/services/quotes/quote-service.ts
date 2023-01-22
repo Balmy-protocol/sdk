@@ -145,7 +145,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     // Ask for quotes
     const responses = this.getSourcesForRequest(request).map((source) => ({
       source,
-      response: source.getQuote({ fetchService: this.fetchService }, sourceRequest),
+      response: source.quote({ fetchService: this.fetchService }, sourceRequest),
     }));
 
     // Group all value promises
@@ -197,7 +197,7 @@ async function mapSourceResponseToResponse({
 }: {
   source: QuoteSource<QuoteSourceSupport, any, any>;
   request: QuoteRequest<any>;
-  response: Promise<SourceQuoteResponse<{ type: 'quote' }>>;
+  response: Promise<SourceQuoteResponse>;
   values: Promise<{
     gasCalculator: IQuickGasCostCalculator;
     sellToken: TokenWithOptionalPrice;
@@ -207,7 +207,7 @@ async function mapSourceResponseToResponse({
 }): Promise<QuoteResponse> {
   const response = await responsePromise;
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
-  const txData = response.tx && {
+  const txData = {
     to: response.tx.to,
     value: response.tx.value,
     data: response.tx.calldata,
@@ -218,7 +218,7 @@ async function mapSourceResponseToResponse({
     speed: request.gasSpeed,
     tx: txData,
   });
-  const tx = txData && { ...txData, ...gasPrice };
+  const tx = { ...txData, ...gasPrice };
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
     sellToken,
@@ -290,5 +290,5 @@ function mapRequestToSourceRequest({
       recipient: request.recipient,
     },
     context: { gasPrice: gasPricePromise },
-  } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }, { type: 'quote' }>;
+  } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }>;
 }

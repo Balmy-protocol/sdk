@@ -16,7 +16,7 @@ export const QUOTE_SOURCES = {
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>;
 
 export function buildSources<Config extends Partial<AllSourcesConfig>>(global: GlobalQuoteSourceConfig, custom?: Config) {
-  const sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<any, any, any>> = {} as any;
+  const sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>> = {} as any;
   for (const key in QUOTE_SOURCES) {
     const sourceId = key as AvailableSources;
     const { build, needsConfig } = QUOTE_SOURCES[sourceId] as QuoteSourceBuilder<any, any, any, any>;

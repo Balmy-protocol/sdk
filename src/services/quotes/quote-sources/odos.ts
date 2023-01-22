@@ -64,7 +64,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
     });
 
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
 
     const {

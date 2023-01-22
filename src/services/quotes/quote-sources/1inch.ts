@@ -32,7 +32,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<OneInchSupport>): Promise<SourceQuoteResponse> {
     const [estimatedGas, { toTokenAmount, to, data, value }] = await Promise.all([
       this.getGasEstimate(fetchService, request),
-      this.fetchQuote(fetchService, request),
+      this.getQuote(fetchService, request),
     ]);
 
     const quote = {
@@ -51,7 +51,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     return addQuoteSlippage(quote, request.order.type, isWrapOrUnwrap ? 0 : request.config.slippagePercentage);
   }
 
-  private async fetchQuote(
+  private async getQuote(
     fetchService: IFetchService,
     {
       chain,
@@ -67,14 +67,11 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
+      `&fromAddress=${takeFrom}` +
       `&slippage=${slippagePercentage}` +
       `&disableEstimate=true`;
 
-    if (takeFrom) {
-      url += `&fromAddress=${takeFrom}`;
-    }
-
-    if (!!recipient && !!takeFrom && takeFrom !== recipient) {
+    if (!!recipient && takeFrom !== recipient) {
       url += `&destReceiver=${recipient}`;
     }
 
@@ -83,7 +80,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
     const {
       toTokenAmount,

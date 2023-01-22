@@ -39,13 +39,10 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
       `${api}/swap/v1/quote` +
       `?sellToken=${sellToken}` +
       `&buyToken=${buyToken}` +
+      `&takerAddress=${takeFrom}` +
       `&skipValidation=true` +
       `&slippagePercentage=${slippagePercentage / 100}` +
       `&enableSlippageProtection=false`;
-
-    if (takeFrom) {
-      url += `&takerAddress=${takeFrom}`;
-    }
 
     if (this.globalConfig.referrerAddress) {
       url += `&affiliateAddress=${this.globalConfig.referrerAddress}`;
