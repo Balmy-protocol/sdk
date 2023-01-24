@@ -49,9 +49,9 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
     }
 
     if (order.type === 'sell') {
-      url += `&sellAmount=${order.sellAmount}`;
+      url += `&sellAmount=${order.sellAmount.toString()}`;
     } else {
-      url += `&buyAmount=${order.buyAmount}`;
+      url += `&buyAmount=${order.buyAmount.toString()}`;
     }
 
     const response = await fetchService.fetch(url, { timeout });

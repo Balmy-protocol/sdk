@@ -179,6 +179,15 @@ export class Chains {
     publicRPCs: ['https://evm.astar.network/', 'https://rpc.astar.network:8545', 'https://astar.api.onfinality.io/public'],
   } as const satisfies Chain;
 
+  static readonly HARMONY_SHARD_0 = {
+    chainId: 1666600000,
+    name: 'Harmony',
+    ids: ['harmony'],
+    currencySymbol: 'ONE',
+    wToken: '0xcf664087a5bb0237a0bad6742852ec6c8d69a27a',
+    publicRPCs: ['https://api.harmony.one'],
+  } as const satisfies Chain;
+
   static getAllChains(): Chain[] {
     return Object.values(Chains).filter((value): value is Chain => typeof value !== 'function');
   }
