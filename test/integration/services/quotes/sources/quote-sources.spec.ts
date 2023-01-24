@@ -39,7 +39,7 @@ const RUN_FOR: { source: AvailableSources; chain: Chain } = {
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe.skip('Quote Sources', () => {
+describe('Quote Sources', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = Chains.byKeyOrFail(chainId);
