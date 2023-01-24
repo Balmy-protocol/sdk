@@ -15,20 +15,19 @@ export const QUOTE_SOURCES = {
   uniswap: builder<UniswapQuoteSource>((config) => new UniswapQuoteSource(config)),
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>;
 
-export function buildSources<Config extends Partial<AllSourcesConfig>>(global: GlobalQuoteSourceConfig, custom?: Config) {
-  const sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>> = {} as any;
+export function buildSources(global: GlobalQuoteSourceConfig, custom?: Partial<AllSourcesConfig>) {
+  const sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>> = {} as any;
   for (const key in QUOTE_SOURCES) {
     const sourceId = key as AvailableSources;
     const { build, needsConfig } = QUOTE_SOURCES[sourceId] as QuoteSourceBuilder<any, any, any, any>;
-    if (!needsConfig || (custom && key in custom)) {
-      sources[sourceId] = build({ global, custom: custom && (custom as any)[key] });
+    if (!needsConfig || (custom && sourceId in custom)) {
+      sources[sourceId] = build({ global, custom: custom && (custom as any)[sourceId] });
     }
   }
   return sources;
 }
 
 export type AllSourcesConfig = Without<AllSourcesConfigWithNever, never>;
-export type SourcesBasedOnConfig<Config extends Partial<AllSourcesConfig>> = (keyof Config | SourcesWithoutNeededConfig) & AvailableSources;
 
 function builder<
   Source extends QuoteSource<Support, false, CustomQuoteSourceConfig>,
@@ -49,9 +48,6 @@ function builderNeedsConfig<
   return { build, needsConfig: true };
 }
 
-type SourcesWithoutNeededConfig = {
-  [K in keyof QuoteSourcesList]: GetCustomConfigNeededFomBuilder<QuoteSourcesList[K]> extends false ? K : never;
-}[AvailableSources];
 type AllSourcesConfigWithNever = {
   [K in keyof QuoteSourcesList]: GetConfigFromBuilder<QuoteSourcesList[K]> extends undefined ? never : GetConfigFromBuilder<QuoteSourcesList[K]>;
 };
@@ -68,14 +64,6 @@ type GetConfigFromBuilder<T extends QuoteSourceBuilder<any, any, any, any>> = T 
   infer CustomQuoteSourceConfig
 >
   ? CustomQuoteSourceConfig
-  : never;
-type GetCustomConfigNeededFomBuilder<T extends QuoteSourceBuilder<any, any, any, any>> = T extends QuoteSourceBuilder<
-  any,
-  any,
-  infer CustomConfigNeeded,
-  any
->
-  ? CustomConfigNeeded
   : never;
 export type GetCustomConfigNeededFromSource<T extends QuoteSource<any, any, any>> = T extends QuoteSource<any, infer CustomConfigNeeded, any>
   ? CustomConfigNeeded

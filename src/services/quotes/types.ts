@@ -14,13 +14,13 @@ export type GlobalQuoteSourceConfig = {
 export type QuoteSourcesList = typeof QUOTE_SOURCES;
 export type AvailableSources = keyof QuoteSourcesList & string;
 
-export type IQuoteService<SupportedSources extends AvailableSources> = {
+export type IQuoteService = {
   supportedChains(): ChainId[];
-  supportedSources(): SupportedSources[];
-  supportedSourcesInChain(chainId: ChainId): SupportedSources[];
-  estimateQuotes(estimatedRequest: EstimatedQuoteRequest<SupportedSources>): Promise<EstimatedQuoteResponse<SupportedSources>>[];
+  supportedSources(): AvailableSources[];
+  supportedSourcesInChain(chainId: ChainId): AvailableSources[];
+  estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<EstimatedQuoteResponse>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
-    request: EstimatedQuoteRequest<SupportedSources>,
+    request: EstimatedQuoteRequest,
     config?: {
       ignoredFailed?: IgnoreFailed;
       sort?: {
@@ -28,11 +28,11 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
         using?: CompareQuotesUsing;
       };
     }
-  ): Promise<WithFailedQuotes<IgnoreFailed, SupportedSources, EstimatedQuoteResponse<SupportedSources>>[]>;
-  getQuote(sourceId: SupportedSources, request: IndividualQuoteRequest): Promise<QuoteResponse<SupportedSources>>;
-  getQuotes(request: QuoteRequest<SupportedSources>): Promise<QuoteResponse<SupportedSources>>[];
+  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
+  getQuote(sourceId: AvailableSources, request: IndividualQuoteRequest): Promise<QuoteResponse>;
+  getQuotes(request: QuoteRequest): Promise<QuoteResponse>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
-    request: QuoteRequest<SupportedSources>,
+    request: QuoteRequest,
     config?: {
       ignoredFailed?: IgnoreFailed;
       sort?: {
@@ -40,10 +40,10 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
         using?: CompareQuotesUsing;
       };
     }
-  ): Promise<WithFailedQuotes<IgnoreFailed, SupportedSources, QuoteResponse<SupportedSources>>[]>;
+  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
 
-export type QuoteRequest<SupportedSources extends AvailableSources> = {
+export type QuoteRequest = {
   chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
@@ -54,14 +54,14 @@ export type QuoteRequest<SupportedSources extends AvailableSources> = {
   gasSpeed?: GasSpeed;
   quoteTimeout?: TimeString;
   txValidFor?: TimeString;
-  filters?: Either<{ includeSources: SupportedSources[] }, { excludeSources: SupportedSources[] }>;
+  filters?: Either<{ includeSources: AvailableSources[] }, { excludeSources: AvailableSources[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
 
 export type TokenWithOptionalPrice = BaseToken & { price?: number };
 export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice>;
-export type QuoteResponse<SupportedSources extends AvailableSources> = {
+export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
   sellAmount: AmountOfToken;
@@ -76,24 +76,21 @@ export type QuoteResponse<SupportedSources extends AvailableSources> = {
     estimatedCostInUSD?: number;
   };
   recipient: Address;
-  source: { id: SupportedSources; allowanceTarget: Address; name: string; logoURI: string };
+  source: { id: AvailableSources; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
 };
 
 export type IndividualQuoteRequest = Omit<
-  QuoteRequest<any>,
+  QuoteRequest,
   'filters' | 'includeNonTransferSourcesWhenRecipientIsSet' | 'estimateBuyOrdersWithSellOnlySources'
 > & {
   dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet?: boolean;
   estimateBuyOrderIfSourceDoesNotSupportIt?: boolean;
 };
 
-export type EstimatedQuoteRequest<SupportedSources extends AvailableSources> = Omit<
-  QuoteRequest<SupportedSources>,
-  'takerAddress' | 'recipient' | 'txValidFor'
->;
-export type EstimatedQuoteResponse<SupportedSources extends AvailableSources> = Omit<QuoteResponse<SupportedSources>, 'recipient' | 'tx'>;
+export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
+export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
 type AmountOfToken = {
   amount: BigNumber;
@@ -101,10 +98,8 @@ type AmountOfToken = {
   amountInUSD?: number;
 };
 
-export type WithFailedQuotes<
-  IgnoredFailed extends boolean,
-  SupportedSources extends AvailableSources,
-  Response extends QuoteResponse<SupportedSources> | EstimatedQuoteResponse<SupportedSources>
-> = IgnoredFailed extends true ? Response : Response | FailedQuote;
+export type WithFailedQuotes<IgnoredFailed extends boolean, Response extends QuoteResponse | EstimatedQuoteResponse> = IgnoredFailed extends true
+  ? Response
+  : Response | FailedQuote;
 
 export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };

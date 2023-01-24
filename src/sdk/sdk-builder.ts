@@ -1,4 +1,3 @@
-import { AllSourcesConfig, SourcesBasedOnConfig } from '@services/quotes/sources-list';
 import { BuildFetchParams, buildFetchService } from './builders/fetch-builder';
 import { BuildProviderParams, buildProviderSource } from './builders/provider-source-builder';
 import { buildGasService, BuildGasParams } from './builders/gas-builder';
@@ -7,9 +6,7 @@ import { BuildTokenParams, buildTokenService, CalculateTokenFromSourceParams } f
 import { BuildQuoteParams, buildQuoteService } from './builders/quote-builder';
 import { ISDK } from './types';
 
-export function buildSDK<Params extends BuildParams<CustomConfig>, CustomConfig extends Partial<AllSourcesConfig> = {}>(
-  params?: Params
-): ISDK<SourcesBasedOnConfig<CustomConfig>, CalculateTokenFromSourceParams<Params['tokens']>> {
+export function buildSDK<Params extends BuildParams = {}>(params?: Params): ISDK<CalculateTokenFromSourceParams<Params['tokens']>> {
   const fetchService = buildFetchService(params?.fetch);
   const providerSource = buildProviderSource(params?.provider);
   const multicallService = buildMulticallService(providerSource);
@@ -26,10 +23,10 @@ export function buildSDK<Params extends BuildParams<CustomConfig>, CustomConfig 
   };
 }
 
-type BuildParams<CustomConfig extends Partial<AllSourcesConfig>> = {
+type BuildParams = {
   fetch?: BuildFetchParams;
   provider?: BuildProviderParams;
   gas?: BuildGasParams;
   tokens?: BuildTokenParams;
-  quotes?: BuildQuoteParams<CustomConfig>;
+  quotes?: BuildQuoteParams;
 };
