@@ -16,6 +16,7 @@ import {
   QuoteResponse,
   TokenWithOptionalPrice,
   WithFailedQuotes,
+  QuoteTx,
 } from './types';
 import { BaseToken, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
@@ -245,7 +246,15 @@ async function mapSourceResponseToResponse({
     speed: request.gasSpeed,
     tx: txData,
   });
-  const tx = { ...txData, ...gasPrice };
+  let tx: QuoteTx = txData;
+  switch (request.chainId) {
+    case Chains.OPTIMISM.chainId:
+      // Do nothing, don't want to add the gas price here
+      // For some reason, some wallets fail when you add the gas price in Optimism
+      break;
+    default:
+      tx = { ...tx, ...gasPrice };
+  }
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
     sellToken,

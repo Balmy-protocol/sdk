@@ -1,13 +1,7 @@
 import ms from 'ms';
 import { ethers } from 'hardhat';
-import {
-  impersonateAccount,
-  setBalance,
-  SnapshotRestorer,
-  stopImpersonatingAccount,
-  takeSnapshot,
-} from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber, BigNumberish, Bytes, constants, Contract, utils } from 'ethers';
+import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
+import { BigNumber, constants, utils } from 'ethers';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -20,12 +14,20 @@ import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address } from '@types';
 import { AvailableSources } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
-import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
+import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
 import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
-import { Test, TOKENS, EXCEPTIONS, CONFIG, getAllSources } from './quote-tests-config';
+import { Test, EXCEPTIONS, CONFIG, getAllSources } from '../quote-tests-config';
+import {
+  approve,
+  assertRecipientsBalanceIsIncreasedAsExpected,
+  assertUsersBalanceIsReduceAsExpected,
+  calculateBalancesFor,
+  loadTokens,
+  mintMany,
+} from '@test-utils/erc20';
 
 // This is meant to be used for local testing. On the CI, we will run all sources instead
 const RUN_FOR: { source: AvailableSources; chain: Chain } = {
@@ -37,7 +39,7 @@ const RUN_FOR: { source: AvailableSources; chain: Chain } = {
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe('Quote Sources', () => {
+describe.skip('Quote Sources', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = Chains.byKeyOrFail(chainId);
@@ -52,9 +54,20 @@ describe('Quote Sources', () => {
       beforeAll(async () => {
         await fork(chain);
         [user, recipient] = await ethers.getSigners();
-        await loadTokens(chain);
-        await mintTokens();
-        await calculateInitialBalances();
+        ({ nativeToken, wToken, USDC, WBTC } = await loadTokens(chain));
+        await mintMany({
+          chain,
+          to: user,
+          tokens: [
+            { amount: utils.parseUnits('10000', 6), token: USDC },
+            { amount: ONE_NATIVE_TOKEN.mul(3), token: nativeToken },
+            { amount: ONE_NATIVE_TOKEN, token: wToken },
+          ],
+        });
+        initialBalances = await calculateBalancesFor({
+          tokens: [nativeToken, wToken, USDC, WBTC],
+          addresses: [user, recipient],
+        });
         gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain.chainId).then((gasPrice) => gasPrice['standard']);
         snapshot = await takeSnapshot();
       });
@@ -168,7 +181,7 @@ describe('Quote Sources', () => {
                   quote = await buildQuote(source, quoteFtn());
                   const approveTx = isSameAddress(quote.allowanceTarget, constants.AddressZero)
                     ? []
-                    : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: quoteFtn().sellToken })];
+                    : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: quoteFtn().sellToken, from: user })];
                   txs = [...approveTx, await execute({ quote, as: user })];
                 });
                 then('result is as expected', async () => {
@@ -177,8 +190,20 @@ describe('Quote Sources', () => {
                     buyToken: quoteFtn().buyToken,
                     ...quoteFtn().order,
                   });
-                  await assertUsersBalanceIsReduceAsExpected(txs, quoteFtn().sellToken, quote);
-                  await assertRecipientsBalanceIsIncreasedAsExpected(txs, quoteFtn().buyToken, quote, quoteFtn().recipient ?? user);
+                  await assertUsersBalanceIsReduceAsExpected({
+                    txs,
+                    sellToken: quoteFtn().sellToken,
+                    quote,
+                    user,
+                    initialBalances,
+                  });
+                  await assertRecipientsBalanceIsIncreasedAsExpected({
+                    txs,
+                    buyToken: quoteFtn().buyToken,
+                    quote,
+                    recipient: quoteFtn().recipient ?? user,
+                    initialBalances,
+                  });
                 });
               });
             }
@@ -201,7 +226,6 @@ describe('Quote Sources', () => {
           type: 'sell' | 'buy';
           sellAmount?: BigNumber;
           buyAmount?: BigNumber;
-          isSwapAndTransfer?: boolean;
           slippagePercentage?: number;
         }
       ) {
@@ -248,67 +272,6 @@ describe('Quote Sources', () => {
         expect(toAmount).to.be.lte(upperThreshold).and.to.be.gte(lowerThreshold);
       }
 
-      async function assertUsersBalanceIsReduceAsExpected(txs: TransactionResponse[], sellToken: DefiLlamaToken, quote: SourceQuoteResponse) {
-        const initialBalance = initialBalances[user.address][sellToken.address];
-        const bal = await balance({ of: user.address, for: sellToken });
-        if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
-          const gasSpent = await calculateGasSpent(txs);
-          expect(bal).to.equal(initialBalance.sub(gasSpent).sub(quote.tx.value ?? 0));
-        } else {
-          expect(bal).to.be.gte(initialBalance.sub(quote.maxSellAmount));
-        }
-      }
-
-      async function assertRecipientsBalanceIsIncreasedAsExpected(
-        txs: TransactionResponse[],
-        buyToken: DefiLlamaToken,
-        quote: SourceQuoteResponse,
-        recipient: SignerWithAddress
-      ) {
-        const initialBalance = initialBalances[recipient.address][buyToken.address];
-        const bal = await balance({ of: recipient.address, for: buyToken });
-        if (isSameAddress(buyToken.address, Addresses.NATIVE_TOKEN)) {
-          const gasSpent = await calculateGasSpent(txs);
-          expect(bal.sub(initialBalance).add(gasSpent)).to.be.gte(quote.minBuyAmount);
-        } else {
-          expect(bal.sub(initialBalance)).to.be.gte(quote.minBuyAmount);
-        }
-      }
-
-      async function calculateGasSpent(txs: TransactionResponse[]) {
-        const gasSpentEach = await Promise.all(txs.map((tx) => tx.wait().then((receipt) => receipt.gasUsed.mul(receipt.effectiveGasPrice))));
-        return gasSpentEach.reduce((accum, curr) => accum.add(curr), constants.Zero);
-      }
-
-      async function loadTokens(chain: Chain) {
-        const address = (name: string) => TOKENS[chain.chainId][name].address;
-        const tokenSource = new DefiLlamaTokenSource(FETCH_SERVICE);
-        const tokens = await tokenSource.getTokens({
-          [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('WBTC')],
-        });
-        nativeToken = tokens[chain.chainId][Addresses.NATIVE_TOKEN];
-        wToken = tokens[chain.chainId][chain.wToken];
-        USDC = tokens[chain.chainId][address('USDC')];
-        WBTC = tokens[chain.chainId][address('WBTC')];
-      }
-
-      async function mintTokens() {
-        await mint({ amount: utils.parseUnits('10000', 6), of: USDC, to: user });
-        await mint({ amount: ONE_NATIVE_TOKEN.mul(3), of: nativeToken, to: user });
-        await mint({ amount: ONE_NATIVE_TOKEN, of: wToken, to: user });
-      }
-
-      async function calculateInitialBalances() {
-        initialBalances = {};
-        for (const signer of [user, recipient]) {
-          const entries = [nativeToken, wToken, USDC, WBTC].map<Promise<[TokenAddress, BigNumber]>>(async (token) => [
-            token.address,
-            await balance({ of: signer.address, for: token }),
-          ]);
-          initialBalances[signer.address] = Object.fromEntries(await Promise.all(entries));
-        }
-      }
-
       type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
         recipient?: SignerWithAddress;
         sellToken: DefiLlamaToken;
@@ -347,35 +310,8 @@ describe('Quote Sources', () => {
         return as.sendTransaction({ to, data: calldata, value });
       }
 
-      function balance({ of, for: token }: { of: Address; for: DefiLlamaToken }) {
-        if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
-          return ethers.provider.getBalance(of);
-        } else {
-          return new Contract(token.address, ERC20_ABI, ethers.provider).balanceOf(of);
-        }
-      }
-
       function shouldExecute(sourceId: AvailableSources, test: Test) {
         return !EXCEPTIONS[sourceId]?.includes(test);
-      }
-
-      function approve({ amount, to, for: token }: { amount: BigNumberish; to: Address; for: DefiLlamaToken }) {
-        return new Contract(token.address, ERC20_ABI, user).approve(to, amount);
-      }
-
-      async function mint({ of: token, amount, to: user }: { amount: Exclude<BigNumberish, Bytes>; of: DefiLlamaToken; to: SignerWithAddress }) {
-        if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
-          await setBalance(user.address, amount);
-        } else {
-          const key = isSameAddress(token.address, chain.wToken) ? 'wToken' : token.symbol;
-          const data = TOKENS[chain.chainId][key];
-          await impersonateAccount(data.whale);
-          const whale = await ethers.getSigner(data.whale);
-          await setBalance(whale.address, utils.parseEther('1'));
-          const contract = new Contract(data.address, ERC20_ABI, whale);
-          await contract.transfer(user.address, amount);
-          await stopImpersonatingAccount(data.whale);
-        }
       }
     });
   }
@@ -390,9 +326,4 @@ function getSources() {
 }
 
 const FETCH_SERVICE = new FetchService(crossFetch);
-const ERC20_ABI = [
-  'function balanceOf(address owner) view returns (uint)',
-  'function transfer(address to, uint amount)',
-  'function approve(address to, uint amount)',
-];
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much

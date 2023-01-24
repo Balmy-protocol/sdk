@@ -18,12 +18,13 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
+      "@builder": ["src/sdk/sdk-builder"],
       "@services/*": ["src/services/*"],
       "@shared/*": ["src/shared/*"],
       "@chains": ["src/chains"],
       "@types": ["src/types"],
       "@utility-types": ["src/utility-types"],
-      "@test-utils/*": ["test/utils/*"]
+      "@test-utils/*": ["test/utils/*", "test/integration/utils/*"]
     }
   },
   "include": ["src"]

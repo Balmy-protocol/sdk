@@ -60,7 +60,7 @@ export type QuoteRequest<SupportedSources extends AvailableSources> = {
 };
 
 export type TokenWithOptionalPrice = BaseToken & { price?: number };
-export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & GasPrice;
+export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice>;
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
