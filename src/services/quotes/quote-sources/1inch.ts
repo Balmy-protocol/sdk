@@ -1,8 +1,9 @@
 import { BigNumber, constants } from 'ethers';
 import { Chains } from '@chains';
+import { Chain } from '@types';
 import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { IFetchService } from '@services/fetch/types';
-import { addQuoteSlippage, failed, isNativeWrapOrUnwrap } from './utils';
+import { addQuoteSlippage, failed } from './utils';
 
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
 export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport> {
@@ -30,7 +31,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
   }
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<OneInchSupport>): Promise<SourceQuoteResponse> {
-    const [estimatedGas, { toTokenAmount, to, data, value }] = await Promise.all([
+    const [estimatedGas, { toTokenAmount, to, data, value, protocols }] = await Promise.all([
       this.getGasEstimate(fetchService, request),
       this.getQuote(fetchService, request),
     ]);
@@ -47,7 +48,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       },
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, request.sellToken, request.buyToken);
+    const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, protocols);
     return addQuoteSlippage(quote, request.order.type, isWrapOrUnwrap ? 0 : request.config.slippagePercentage);
   }
 
@@ -85,8 +86,9 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     const {
       toTokenAmount,
       tx: { to, data, value },
+      protocols,
     } = await response.json();
-    return { toTokenAmount, to, data, value };
+    return { toTokenAmount, to, data, value, protocols };
   }
 
   // We can't use the gas estimate on the /swap endpoint because we need to turn the estimates off
@@ -107,4 +109,15 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
     const { estimatedGas } = await response.json();
     return BigNumber.from(estimatedGas);
   }
+}
+
+function isNativeWrapOrUnwrap(chain: Chain, protocols: any) {
+  const wTokenSymbol = `W${chain.currencySymbol.toUpperCase()}`;
+  return (
+    protocols.length === 1 &&
+    protocols[0].length === 1 &&
+    protocols[0][0].length === 1 &&
+    protocols[0][0][0].name === wTokenSymbol &&
+    protocols[0][0][0].part === 100
+  );
 }

@@ -4,7 +4,7 @@ import { Chains } from '@chains';
 import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
-import { addQuoteSlippage, failed, isNativeWrapOrUnwrap } from './utils';
+import { addQuoteSlippage, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 
 type OdosConfig = { apiKey: string };
@@ -14,7 +14,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
     return {
       name: 'Odos',
       supports: {
-        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE],
+        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE, Chains.BNB_CHAIN],
         swapAndTransfer: false,
         buyOrders: false,
       },
@@ -86,8 +86,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConf
       },
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(chain, sellToken, buyToken);
-    return addQuoteSlippage(quote, 'sell', isWrapOrUnwrap ? 0 : slippagePercentage);
+    return addQuoteSlippage(quote, 'sell', slippagePercentage);
   }
 }
 

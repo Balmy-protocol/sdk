@@ -1,5 +1,4 @@
-import { Addresses } from '@shared/constants';
-import { calculatePercentage, isSameAddress } from '@shared/utils';
+import { calculatePercentage } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './base';
 
@@ -24,9 +23,3 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
         minBuyAmount: quote.buyAmount,
       };
 }
-
-export function isNativeWrapOrUnwrap(chain: Chain, sellToken: TokenAddress, buyToken: TokenAddress) {
-  return !isSameAddress(sellToken, buyToken) && isNativeOrWToken(chain, sellToken) && isNativeOrWToken(chain, buyToken);
-}
-const isNativeOrWToken = (chain: Chain, address: TokenAddress) =>
-  isSameAddress(address, chain.wToken) || isSameAddress(address, Addresses.NATIVE_TOKEN);
