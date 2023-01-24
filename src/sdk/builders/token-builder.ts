@@ -9,25 +9,27 @@ import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-tok
 import { ProviderTokenSource } from '@services/tokens/token-sources/provider';
 import { TokenService } from '@services/tokens/token-service';
 
-type TokenSource = 'defi-llama' | 'rpc' | { custom: ITokenSource<any> };
-type TokenSourceCalculation = 'only-first-possible-source-on-list' | 'combine-when-possible';
-type TokenSources = { source: TokenSource } | { sources: ArrayTwoOrMore<TokenSource>; calculation?: TokenSourceCalculation };
+type TokenSource =
+  | { type: 'defi-llama' }
+  | { type: 'rpc' }
+  | { type: 'custom'; instance: ITokenSource<any> }
+  | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> };
 type TokenSourceConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
-export type BuildTokenParams = TokenSources & { config?: TokenSourceConfig };
-export type CalculateTokenFromSources<T extends TokenSources | undefined> = T extends undefined
-  ? DefiLlamaToken
-  : T extends { source: TokenSource }
+export type BuildTokenParams = { source: TokenSource; config?: TokenSourceConfig };
+export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefined> = T extends BuildTokenParams
   ? CalculateTokenFromSource<T['source']>
-  : T extends { sources: ArrayTwoOrMore<TokenSource> }
-  ? ExtractTokenFromSources<T['sources']>
-  : never;
+  : CalculateTokenFromSource<undefined>;
 
-type CalculateTokenFromSource<T extends TokenSource> = T extends { custom: ITokenSource<infer Token> }
-  ? Token
-  : T extends 'defi-llama'
+type CalculateTokenFromSource<T extends TokenSource | undefined> = T extends undefined
   ? DefiLlamaToken
-  : T extends 'rpc'
+  : T extends { type: 'defi-llama' }
+  ? DefiLlamaToken
+  : T extends { type: 'rpc' }
   ? BaseToken
+  : T extends { type: 'custom'; instance: ITokenService<infer Token> }
+  ? Token
+  : T extends { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> }
+  ? ExtractTokenFromSources<T['sources']>
   : never;
 
 type ExtractTokenFromSources<T extends ArrayTwoOrMore<TokenSource>> = UnionMerge<
@@ -35,52 +37,34 @@ type ExtractTokenFromSources<T extends ArrayTwoOrMore<TokenSource>> = UnionMerge
 > &
   BaseToken;
 
-export function buildTokenService<T extends BuildTokenParams>(
-  params: T | undefined,
+export function buildTokenService<T extends BuildTokenParams | undefined>(
+  params: T,
   fetchService: IFetchService,
   multicallService: IMulticallService
-): ITokenService<CalculateTokenFromSources<T>> {
+): ITokenService<CalculateTokenFromSourceParams<T>> {
   const defiLlama = new DefiLlamaTokenSource(fetchService);
-  const providerTokenSource = new ProviderTokenSource(multicallService);
+  const provider = new ProviderTokenSource(multicallService);
 
-  if (!params) {
-    return buildTokenServiceFromSource(params, defiLlama) as CalculateTokenFromSources<T>;
-  } else if ('source' in params) {
-    const source = getTokenSourceFromConfig(params.source, { defiLlama, providerTokenSource });
-    return buildTokenServiceFromSource(params, source);
-  } else {
-    const sources = params.sources.map((source) => getTokenSourceFromConfig(source, { defiLlama, providerTokenSource })) as ArrayTwoOrMore<
-      ITokenSource<any>
-    >;
-    let source: ITokenSource<any>;
-    switch (params.calculation) {
-      case 'only-first-possible-source-on-list':
-      // TODO
-      case 'combine-when-possible':
-      default:
-        source = new FallbackTokenSource(sources);
-        break;
-    }
-    return buildTokenServiceFromSource(params, source);
-  }
-}
-
-function getTokenSourceFromConfig(
-  source: TokenSource,
-  { defiLlama, providerTokenSource }: { defiLlama: ITokenSource<DefiLlamaToken>; providerTokenSource: ITokenSource }
-) {
-  if (source === 'defi-llama') {
-    return defiLlama;
-  } else if (source === 'rpc') {
-    return providerTokenSource;
-  } else {
-    return source.custom;
-  }
-}
-
-function buildTokenServiceFromSource<Token extends BaseToken>(params: BuildTokenParams | undefined, source: ITokenSource<Token>) {
+  let source = buildSource(params?.source, { defiLlama, provider });
   if (params?.config?.useCaching) {
     source = new CachedTokenSource(source, params.config.expiration);
   }
-  return new TokenService(source);
+  return new TokenService(source as unknown as ITokenSource<CalculateTokenFromSourceParams<T>>);
+}
+
+function buildSource<T extends TokenSource>(
+  source: T | undefined,
+  { defiLlama, provider }: { defiLlama: DefiLlamaTokenSource; provider: ProviderTokenSource }
+): ITokenSource<CalculateTokenFromSource<T>> {
+  switch (source?.type) {
+    case undefined:
+    case 'defi-llama':
+      return defiLlama as any;
+    case 'rpc':
+      return provider as any;
+    case 'custom':
+      return source.instance;
+    case 'combine-when-possible':
+      return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { defiLlama, provider }))) as any;
+  }
 }
