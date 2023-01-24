@@ -31,7 +31,7 @@ import {
 
 // This is meant to be used for local testing. On the CI, we will run all sources instead
 const RUN_FOR: { source: AvailableSources; chain: Chain } = {
-  source: 'paraswap',
+  source: 'li-fi',
   chain: Chains.ETHEREUM,
 };
 
