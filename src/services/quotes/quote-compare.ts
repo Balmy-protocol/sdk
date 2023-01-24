@@ -1,5 +1,5 @@
 import { ruleOfThree } from '@shared/utils';
-import { AvailableSources, QuoteResponse } from './types';
+import { QuoteResponse } from './types';
 
 export const COMPARE_BY = [
   // Compare spent gas and prioritize the ones with the least spent gas
@@ -17,11 +17,7 @@ export const COMPARE_USING = ['sell/buy amounts', 'max sell/min buy amounts'] as
 export type CompareQuotesBy = (typeof COMPARE_BY)[number];
 export type CompareQuotesUsing = (typeof COMPARE_USING)[number];
 
-export function sortQuotesBy<SupportedSources extends AvailableSources>(
-  quotes: QuoteResponse<any>[],
-  sortBy: CompareQuotesBy,
-  using: CompareQuotesUsing
-): QuoteResponse<SupportedSources>[] {
+export function sortQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): QuoteResponse[] {
   const compareFtn = getCompareFtn(sortBy);
   return quotes.sort((q1, q2) => compareFtn(q1, q2, using));
 }
@@ -42,20 +38,20 @@ function getCompareFtn(compareBy: CompareQuotesBy) {
   return mergeCompareFtns(prioritizedCompareFns);
 }
 
-function amountExtractor<SupportedSources extends AvailableSources>(using: CompareQuotesUsing) {
+function amountExtractor(using: CompareQuotesUsing) {
   return using === 'sell/buy amounts'
-    ? ({ sellAmount, buyAmount }: QuoteResponse<SupportedSources>) => ({ sellAmount, buyAmount })
-    : ({ maxSellAmount, minBuyAmount }: QuoteResponse<SupportedSources>) => ({ sellAmount: maxSellAmount, buyAmount: minBuyAmount });
+    ? ({ sellAmount, buyAmount }: QuoteResponse) => ({ sellAmount, buyAmount })
+    : ({ maxSellAmount, minBuyAmount }: QuoteResponse) => ({ sellAmount: maxSellAmount, buyAmount: minBuyAmount });
 }
 
-type Compare = (quote1: QuoteResponse<any>, quote2: QuoteResponse<any>, using: CompareQuotesUsing) => number;
+type Compare = (quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) => number;
 
 function mergeCompareFtns(prioritizedCompareFns: Compare[]): Compare {
-  return (quote1: QuoteResponse<any>, quote2: QuoteResponse<any>, using: CompareQuotesUsing) =>
+  return (quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) =>
     prioritizedCompareFns.reduce((accumCompareValue, compare) => accumCompareValue || compare(quote1, quote2, using), 0);
 }
 
-function compareMostProfit(quote1: QuoteResponse<any>, quote2: QuoteResponse<any>, using: CompareQuotesUsing) {
+function compareMostProfit(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
   const [profit1, profit2] = [calculateProfit(quote1, using), calculateProfit(quote2, using)];
   if (!profit1 || !profit2 || profit1 === profit2) {
     return 0;
@@ -67,7 +63,7 @@ function compareMostProfit(quote1: QuoteResponse<any>, quote2: QuoteResponse<any
 }
 
 // We are assuming that we are comparing two quote reponses for the same quote request
-export function compareByMostSwapped(quote1: QuoteResponse<any>, quote2: QuoteResponse<any>, using: CompareQuotesUsing) {
+export function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
   const extract = amountExtractor(using);
   const { sellAmount: sellAmount1, buyAmount: buyAmount1 } = extract(quote1);
   const { sellAmount: sellAmount2, buyAmount: buyAmount2 } = extract(quote2);
@@ -80,7 +76,7 @@ export function compareByMostSwapped(quote1: QuoteResponse<any>, quote2: QuoteRe
   return 0;
 }
 
-function compareLeastGas(quote1: QuoteResponse<any>, quote2: QuoteResponse<any>) {
+function compareLeastGas(quote1: QuoteResponse, quote2: QuoteResponse) {
   if (quote1.gas.estimatedGas.lt(quote2.gas.estimatedGas)) {
     return -1;
   } else if (quote1.gas.estimatedGas.gt(quote2.gas.estimatedGas)) {
@@ -89,7 +85,7 @@ function compareLeastGas(quote1: QuoteResponse<any>, quote2: QuoteResponse<any>)
   return 0;
 }
 
-function calculateProfit(quote: QuoteResponse<any>, using: CompareQuotesUsing) {
+function calculateProfit(quote: QuoteResponse, using: CompareQuotesUsing) {
   const { sellAmount, buyAmount } = amountExtractor(using)(quote);
   const soldUSD = sellAmount.amountInUSD;
   const boughtUSD = buyAmount.amountInUSD;

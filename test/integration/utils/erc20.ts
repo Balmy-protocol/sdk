@@ -149,7 +149,7 @@ export async function assertUsersBalanceIsReduceAsExpected({
 }: {
   txs?: TransactionResponse[];
   sellToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse<any>;
+  quote: SourceQuoteResponse | QuoteResponse;
   user: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
 }) {
@@ -173,7 +173,7 @@ export async function assertRecipientsBalanceIsIncreasedAsExpected({
 }: {
   txs?: TransactionResponse[];
   buyToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse<any>;
+  quote: SourceQuoteResponse | QuoteResponse;
   recipient: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
 }) {

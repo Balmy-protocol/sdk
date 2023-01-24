@@ -4,7 +4,7 @@ import { GasPrice, IGasService, IQuickGasCostCalculator } from '@services/gas/ty
 import { ChainId } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from './quote-sources/base';
-import { AllSourcesConfig, buildSources, SourcesBasedOnConfig } from './sources-list';
+import { AllSourcesConfig, buildSources } from './sources-list';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -26,20 +26,20 @@ import { buyToSellOrderWrapper } from './quote-sources/wrappers/buy-to-sell-orde
 import { amountToUSD, calculateGasDetails, filterRejectedResults, isSameAddress } from '@shared/utils';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
 
-type ConstructorParameters<CustomConfig extends Partial<AllSourcesConfig>> = {
+type ConstructorParameters = {
   fetchService: IFetchService;
   gasService: IGasService;
   tokenService: ITokenService<TokenWithOptionalPrice>;
-  config?: GlobalQuoteSourceConfig & CustomConfig;
+  config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>;
 };
-export class QuoteService<Config extends Partial<AllSourcesConfig>> implements IQuoteService<SourcesBasedOnConfig<Config>> {
+export class QuoteService implements IQuoteService {
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
-  private readonly sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>>;
+  private readonly sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>;
 
-  constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters<Config>) {
-    this.sources = addForcedTimeout(buildSources<Config>(config ?? {}, config));
+  constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters) {
+    this.sources = addForcedTimeout(buildSources(config ?? {}, config));
     this.fetchService = fetchService;
     this.gasService = gasService;
     this.tokenService = tokenService;
@@ -50,17 +50,17 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     return chainsUnion(supportedChains);
   }
 
-  supportedSources(): SourcesBasedOnConfig<Config>[] {
-    return Object.keys(this.sources) as SourcesBasedOnConfig<Config>[];
+  supportedSources(): AvailableSources[] {
+    return Object.keys(this.sources) as AvailableSources[];
   }
 
-  supportedSourcesInChain(chainId: ChainId): SourcesBasedOnConfig<Config>[] {
+  supportedSourcesInChain(chainId: ChainId): AvailableSources[] {
     return Object.entries(this.sources)
       .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === chainId))
-      .map(([sourceId]) => sourceId as SourcesBasedOnConfig<Config>);
+      .map(([sourceId]) => sourceId as AvailableSources);
   }
 
-  getQuote(sourceId: SourcesBasedOnConfig<Config>, request: IndividualQuoteRequest): Promise<QuoteResponse<SourcesBasedOnConfig<Config>>> {
+  getQuote(sourceId: AvailableSources, request: IndividualQuoteRequest): Promise<QuoteResponse> {
     const sourceSupport = this.sources[sourceId].getMetadata().supports;
     const supportedChains = sourceSupport.chains.map(({ chainId }) => chainId);
     if (!supportedChains.includes(request.chainId)) {
@@ -100,29 +100,27 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     return quotes[0];
   }
 
-  estimateQuotes(
-    estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>
-  ): Promise<EstimatedQuoteResponse<SourcesBasedOnConfig<Config>>>[] {
+  estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<EstimatedQuoteResponse>[] {
     return this.getQuotes(estimatedToQuoteRequest(estimatedRequest)).map((response) => response.then(quoteResponseToEstimated));
   }
 
   async estimateAllQuotes<IgnoreFailed extends boolean = true>(
-    estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>,
+    estimatedRequest: EstimatedQuoteRequest,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<WithFailedQuotes<IgnoreFailed, SourcesBasedOnConfig<Config>, EstimatedQuoteResponse<SourcesBasedOnConfig<Config>>>[]> {
+  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
     const allResponses = await this.getAllQuotes(estimatedToQuoteRequest(estimatedRequest), config);
     return allResponses.map((response) => ('failed' in response ? response : quoteResponseToEstimated(response)));
   }
 
-  getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse<SourcesBasedOnConfig<Config>>>[] {
+  getQuotes(request: QuoteRequest): Promise<QuoteResponse>[] {
     return this.executeQuotes(request).map(({ response }) => response);
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>(
-    request: QuoteRequest<SourcesBasedOnConfig<Config>>,
+    request: QuoteRequest,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<WithFailedQuotes<IgnoreFailed, SourcesBasedOnConfig<Config>, QuoteResponse<SourcesBasedOnConfig<Config>>>[]> {
-    let successfulQuotes: QuoteResponse<SourcesBasedOnConfig<Config>>[];
+  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
+    let successfulQuotes: QuoteResponse[];
     let failedQuotes: FailedQuote[] = [];
     if (config?.ignoredFailed === false) {
       const promises = this.executeQuotes(request).map(({ source, response }) =>
@@ -134,7 +132,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
         }))
       );
       const responses = await Promise.all(promises);
-      successfulQuotes = responses.filter((response): response is QuoteResponse<SourcesBasedOnConfig<Config>> => !('failed' in response));
+      successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
       failedQuotes = responses.filter((response): response is FailedQuote => 'failed' in response);
     } else {
       successfulQuotes = await filterRejectedResults(this.getQuotes(request));
@@ -146,14 +144,10 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       config?.sort?.using ?? 'sell/buy amounts'
     );
 
-    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<
-      IgnoreFailed,
-      SourcesBasedOnConfig<Config>,
-      QuoteResponse<SourcesBasedOnConfig<Config>>
-    >[];
+    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
-  private executeQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
+  private executeQuotes(request: QuoteRequest) {
     // Ask for needed values, such as token data and gas price
     const tokensPromise = this.tokenService.getTokensForChain(request.chainId, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
@@ -187,8 +181,8 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     }));
   }
 
-  private getSourcesForRequest(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
-    let sourceIds: SourcesBasedOnConfig<Config>[] = this.supportedSourcesInChain(request.chainId);
+  private getSourcesForRequest(request: QuoteRequest) {
+    let sourceIds = this.supportedSourcesInChain(request.chainId);
 
     if (request.filters?.includeSources) {
       sourceIds = sourceIds.filter((id) => request.filters!.includeSources!.includes(id));
@@ -218,33 +212,27 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
   }
 }
 
-function estimatedToQuoteRequest<Config extends Partial<AllSourcesConfig>>(
-  request: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>
-): QuoteRequest<SourcesBasedOnConfig<Config>> {
+function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
   return {
     ...request,
     takerAddress: '0x4675c7e5baafbffbca748158becba61ef3b0a269', // We set a random taker address so that txs can be built at the source level
   };
 }
 
-function quoteResponseToEstimated<SupportedSources extends AvailableSources>({
-  recipient,
-  tx,
-  ...response
-}: QuoteResponse<SupportedSources>): EstimatedQuoteResponse<SupportedSources> {
+function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
   return response;
 }
 
-async function mapSourceResponseToResponse<SupportedSources extends AvailableSources>({
+async function mapSourceResponseToResponse({
   sourceId,
   source,
   request,
   response: responsePromise,
   values,
 }: {
-  sourceId: SupportedSources;
+  sourceId: AvailableSources;
   source: QuoteSource<QuoteSourceSupport, any, any>;
-  request: QuoteRequest<any>;
+  request: QuoteRequest;
   response: Promise<SourceQuoteResponse>;
   values: Promise<{
     gasCalculator: IQuickGasCostCalculator;
@@ -252,7 +240,7 @@ async function mapSourceResponseToResponse<SupportedSources extends AvailableSou
     buyToken: TokenWithOptionalPrice;
     nativeTokenPrice: number | undefined;
   }>;
-}): Promise<QuoteResponse<SupportedSources>> {
+}): Promise<QuoteResponse> {
   const response = await responsePromise;
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
   const txData = {
@@ -303,16 +291,14 @@ function toAmountOfToken(token: BaseToken, price: number | undefined, amount: Bi
   };
 }
 
-function addForcedTimeout<Config extends Partial<AllSourcesConfig>>(
-  sources: Record<SourcesBasedOnConfig<Config>, QuoteSource<QuoteSourceSupport, any, any>>
-) {
+function addForcedTimeout(sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>) {
   return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)])) as Record<
-    SourcesBasedOnConfig<Config>,
+    AvailableSources,
     QuoteSource<QuoteSourceSupport, any, any>
   >;
 }
 
-function mapOrderToBigNumber(request: QuoteRequest<any>): BuyOrder | SellOrder {
+function mapOrderToBigNumber(request: QuoteRequest): BuyOrder | SellOrder {
   return request.order.type === 'sell'
     ? { type: 'sell', sellAmount: BigNumber.from(request.order.sellAmount) }
     : { type: 'buy', buyAmount: BigNumber.from(request.order.buyAmount) };
@@ -324,7 +310,7 @@ function mapRequestToSourceRequest({
   buyTokenPromise,
   gasPricePromise,
 }: {
-  request: QuoteRequest<any>;
+  request: QuoteRequest;
   sellTokenPromise: Promise<BaseToken>;
   buyTokenPromise: Promise<BaseToken>;
   gasPricePromise: Promise<GasPrice>;
