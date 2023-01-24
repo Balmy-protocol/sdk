@@ -64,19 +64,21 @@ export class Chains {
     ids: ['fantom'],
     currencySymbol: 'FTM',
     wToken: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-    publicRPCs: ['https://rpc.ankr.com/fantom', 'https://rpc.ftm.tools/', 'https://rpcapi.fantom.network'],
+    publicRPCs: ['https://rpc.ftm.tools/', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network'],
   } as const satisfies Chain;
+
   static readonly CELO = {
     chainId: 42220,
     name: 'Celo',
     ids: ['celo'],
     currencySymbol: 'CELO',
-    wToken: '0x3Ad443d769A07f287806874F8E5405cE3Ac902b9',
-  } as const;
+    wToken: '0x149d5bf28fbace2950b52d4aca1c79bfd9bbb6fc',
+    publicRPCs: ['https://rpc.ankr.com/celo', 'https://celo-mainnet-archive.allthatnode.com', 'https://celo-mainnet-rpc.allthatnode.com'],
+  } as const satisfies Chain;
 
   static readonly AVALANCHE = {
     chainId: 43114,
-    name: 'Avalance',
+    name: 'Avalanche',
     ids: ['avalanche', 'avax'],
     currencySymbol: 'AVAX',
     wToken: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
@@ -156,7 +158,7 @@ export class Chains {
     ids: ['klaytn'],
     currencySymbol: 'KLAY',
     wToken: '0xe4f05a66ec68b54a58b17c22107b02e0232cc817',
-    publicRPCs: ['https://public-node-api.klaytnapi.com/v1/cypress'],
+    publicRPCs: ['https://public-en-cypress.klaytn.net', 'https://public-node-api.klaytnapi.com/v1/cypress'],
   } as const satisfies Chain;
 
   static readonly AURORA = {
