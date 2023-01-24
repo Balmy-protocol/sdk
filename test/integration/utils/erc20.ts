@@ -62,6 +62,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4',
     },
   },
+  [Chains.ARBITRUM.chainId]: {
+    USDC: {
+      address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+      whale: '0x489ee077994b6658eafa855c308275ead8097c4a',
+    },
+    WBTC: {
+      address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+      whale: '0x489ee077994b6658eafa855c308275ead8097c4a',
+    },
+    wToken: {
+      address: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+      whale: '0x489ee077994b6658eafa855c308275ead8097c4a',
+    },
+  },
 } satisfies Record<ChainId, ChainTokens>;
 
 export async function calculateBalancesFor({ tokens, addresses }: { tokens: IHasAddress[]; addresses: IHasAddress[] }) {
