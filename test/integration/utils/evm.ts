@@ -19,7 +19,7 @@ export const fork = async (chain: Chain) => {
 function getUrl(chain: Chain) {
   const key = getKey(chain);
   const path = getPath(chain);
-  if (!path && !key) `https://${path}/${key}`;
+  if (path && key) return `https://${path}/${key}`;
   return chain.publicRPCs?.[0];
 }
 

@@ -146,6 +146,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x2f72278d8f8c4840a4d9e20d609fb0b6ef622904',
     },
   },
+  [Chains.AURORA.chainId]: {
+    USDC: {
+      address: '0xB12BFcA5A55806AaF64E99521918A4bf0fC40802',
+      whale: '0x2fe064b6c7d274082aa5d2624709bc9ae7d16c77',
+    },
+    RANDOM_ERC20: {
+      address: '0xf4eb217ba2454613b15dbdea6e5f22276410e89e',
+      whale: '0xe95ac3acb464edbefe58b00010833826566b6582',
+    },
+    wToken: {
+      address: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
+      whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
+    },
+  },
   // Celo can't be forked with ethers.js due to different block header structure.
   // Ref.: https://github.com/NomicFoundation/hardhat/issues/1966
   // [Chains.CELO.chainId]: {
@@ -160,21 +174,6 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   //   wToken: {
   //     address: '0x471ece3750da237f93b8e339c536989b8978a438',
   //     whale: '0xef268b5c05452d63a17da12f562368e88a036ef1',
-  //   },
-  // },
-  // Aurora throws baseFeePerGas error.
-  // [Chains.AURORA.chainId]: {
-  //   USDC: {
-  //     address: '0xB12BFcA5A55806AaF64E99521918A4bf0fC40802',
-  //     whale: '0x2fe064b6c7d274082aa5d2624709bc9ae7d16c77',
-  //   },
-  //   RANDOM_ERC20: {
-  //     address: '0xf4eb217ba2454613b15dbdea6e5f22276410e89e',
-  //     whale: '0xe95ac3acb464edbefe58b00010833826566b6582',
-  //   },
-  //   wToken: {
-  //     address: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
-  //     whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
   //   },
   // },
 } satisfies Record<ChainId, ChainTokens>;
