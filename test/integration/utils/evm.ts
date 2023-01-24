@@ -17,10 +17,24 @@ export const fork = async (chain: Chain) => {
 };
 
 function getUrl(chain: Chain) {
+  const key = getKey(chain);
   const path = getPath(chain);
-  const key = process.env.ALCHEMY_API_KEY;
-  if (!key) throw new Error('Alchemy key not set');
-  return `https://${path}/${key}`;
+  if (path && key) return `https://${path}/${key}`;
+  return chain.publicRPCs?.[0];
+}
+
+function getKey(chain: Chain): string {
+  switch (chain.chainId) {
+    case Chains.ETHEREUM.chainId:
+    case Chains.POLYGON.chainId:
+    case Chains.ARBITRUM.chainId:
+    case Chains.OPTIMISM.chainId:
+      const key = process.env.ALCHEMY_API_KEY;
+      if (!key) throw new Error('Alchemy key not set');
+      return key;
+    default:
+      return '';
+  }
 }
 
 function getPath(chain: Chain) {
@@ -34,6 +48,6 @@ function getPath(chain: Chain) {
     case Chains.OPTIMISM.chainId:
       return 'opt-mainnet.g.alchemy.com/v2';
     default:
-      return chain.publicRPCs?.[0];
+      return '';
   }
 }

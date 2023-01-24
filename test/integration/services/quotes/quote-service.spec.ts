@@ -54,7 +54,7 @@ describe('Quote Service', () => {
       });
 
       when('swapping 1 native token to USDC', () => {
-        let quote: QuoteResponse;
+        let quote: QuoteResponse<any>;
         let txs: TransactionResponse[];
         given(async () => {
           [quote] = await quoteService.getAllQuotes({

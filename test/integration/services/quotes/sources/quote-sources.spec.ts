@@ -46,7 +46,7 @@ describe('Quote Sources', () => {
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
-      let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, USDC: DefiLlamaToken, WBTC: DefiLlamaToken;
+      let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, USDC: DefiLlamaToken, RANDOM_ERC20: DefiLlamaToken;
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
       let gasPricePromise: Promise<GasPrice>;
@@ -54,7 +54,7 @@ describe('Quote Sources', () => {
       beforeAll(async () => {
         await fork(chain);
         [user, recipient] = await ethers.getSigners();
-        ({ nativeToken, wToken, USDC, WBTC } = await loadTokens(chain));
+        ({ nativeToken, wToken, USDC, RANDOM_ERC20 } = await loadTokens(chain));
         await mintMany({
           chain,
           to: user,
@@ -65,7 +65,7 @@ describe('Quote Sources', () => {
           ],
         });
         initialBalances = await calculateBalancesFor({
-          tokens: [nativeToken, wToken, USDC, WBTC],
+          tokens: [nativeToken, wToken, USDC, RANDOM_ERC20],
           addresses: [user, recipient],
         });
         gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain.chainId).then((gasPrice) => gasPrice['standard']);
@@ -90,11 +90,11 @@ describe('Quote Sources', () => {
           }),
         });
         quoteTest({
-          test: Test.SELL_NATIVE_TO_WBTC,
-          when: 'swapping 1 native token to WBTC',
+          test: Test.SELL_NATIVE_TO_RANDOM_ERC20,
+          when: 'swapping 1 native token to random token',
           quote: () => ({
             sellToken: nativeToken,
-            buyToken: WBTC,
+            buyToken: RANDOM_ERC20,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,

@@ -257,8 +257,9 @@ async function mapSourceResponseToResponse({
   let tx: QuoteTx = txData;
   switch (request.chainId) {
     case Chains.OPTIMISM.chainId:
+    case Chains.AURORA.chainId:
       // Do nothing, don't want to add the gas price here
-      // For some reason, some wallets fail when you add the gas price in Optimism
+      // For some reason, some wallets fail when you add the gas price in Optimism and Aurora
       break;
     default:
       tx = { ...tx, ...gasPrice };
