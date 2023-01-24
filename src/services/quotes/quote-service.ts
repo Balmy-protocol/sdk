@@ -17,6 +17,7 @@ import {
   TokenWithOptionalPrice,
   WithFailedQuotes,
   QuoteTx,
+  AvailableSources,
 } from './types';
 import { BaseToken, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
@@ -59,7 +60,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       .map(([sourceId]) => sourceId as SourcesBasedOnConfig<Config>);
   }
 
-  getQuote(sourceId: SourcesBasedOnConfig<Config>, request: IndividualQuoteRequest): Promise<QuoteResponse> {
+  getQuote(sourceId: SourcesBasedOnConfig<Config>, request: IndividualQuoteRequest): Promise<QuoteResponse<SourcesBasedOnConfig<Config>>> {
     const sourceSupport = this.sources[sourceId].getMetadata().supports;
     const supportedChains = sourceSupport.chains.map(({ chainId }) => chainId);
     if (!supportedChains.includes(request.chainId)) {
@@ -99,27 +100,29 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     return quotes[0];
   }
 
-  estimateQuotes(estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>): Promise<EstimatedQuoteResponse>[] {
+  estimateQuotes(
+    estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>
+  ): Promise<EstimatedQuoteResponse<SourcesBasedOnConfig<Config>>>[] {
     return this.getQuotes(estimatedToQuoteRequest(estimatedRequest)).map((response) => response.then(quoteResponseToEstimated));
   }
 
   async estimateAllQuotes<IgnoreFailed extends boolean = true>(
     estimatedRequest: EstimatedQuoteRequest<SourcesBasedOnConfig<Config>>,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
+  ): Promise<WithFailedQuotes<IgnoreFailed, SourcesBasedOnConfig<Config>, EstimatedQuoteResponse<SourcesBasedOnConfig<Config>>>[]> {
     const allResponses = await this.getAllQuotes(estimatedToQuoteRequest(estimatedRequest), config);
     return allResponses.map((response) => ('failed' in response ? response : quoteResponseToEstimated(response)));
   }
 
-  getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse>[] {
+  getQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>): Promise<QuoteResponse<SourcesBasedOnConfig<Config>>>[] {
     return this.executeQuotes(request).map(({ response }) => response);
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest<SourcesBasedOnConfig<Config>>,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
-    let successfulQuotes: QuoteResponse[];
+  ): Promise<WithFailedQuotes<IgnoreFailed, SourcesBasedOnConfig<Config>, QuoteResponse<SourcesBasedOnConfig<Config>>>[]> {
+    let successfulQuotes: QuoteResponse<SourcesBasedOnConfig<Config>>[];
     let failedQuotes: FailedQuote[] = [];
     if (config?.ignoredFailed === false) {
       const promises = this.executeQuotes(request).map(({ source, response }) =>
@@ -131,7 +134,7 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
         }))
       );
       const responses = await Promise.all(promises);
-      successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
+      successfulQuotes = responses.filter((response): response is QuoteResponse<SourcesBasedOnConfig<Config>> => !('failed' in response));
       failedQuotes = responses.filter((response): response is FailedQuote => 'failed' in response);
     } else {
       successfulQuotes = await filterRejectedResults(this.getQuotes(request));
@@ -143,7 +146,11 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       config?.sort?.using ?? 'sell/buy amounts'
     );
 
-    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<IgnoreFailed, QuoteResponse>[];
+    return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<
+      IgnoreFailed,
+      SourcesBasedOnConfig<Config>,
+      QuoteResponse<SourcesBasedOnConfig<Config>>
+    >[];
   }
 
   private executeQuotes(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
@@ -158,7 +165,8 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     const sourceRequest = mapRequestToSourceRequest({ request, sellTokenPromise, buyTokenPromise, gasPricePromise });
 
     // Ask for quotes
-    const responses = this.getSourcesForRequest(request).map((source) => ({
+    const responses = this.getSourcesForRequest(request).map(({ sourceId, source }) => ({
+      sourceId,
       source,
       response: source.quote({ fetchService: this.fetchService }, sourceRequest),
     }));
@@ -173,7 +181,10 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
     ]).then(([sellToken, buyToken, gasCalculator, nativeTokenPrice]) => ({ sellToken, buyToken, gasCalculator, nativeTokenPrice }));
 
     // Map to response
-    return responses.map(({ source, response }) => ({ source, response: mapSourceResponseToResponse({ source, request, response, values }) }));
+    return responses.map(({ sourceId, source, response }) => ({
+      source,
+      response: mapSourceResponseToResponse({ sourceId, source, request, response, values }),
+    }));
   }
 
   private getSourcesForRequest(request: QuoteRequest<SourcesBasedOnConfig<Config>>) {
@@ -185,22 +196,25 @@ export class QuoteService<Config extends Partial<AllSourcesConfig>> implements I
       sourceIds = sourceIds.filter((id) => !request.filters!.excludeSources!.includes(id));
     }
 
-    let sources = sourceIds.map((sourceId) => this.sources[sourceId]);
+    let sources = sourceIds.map((sourceId) => ({ sourceId, source: this.sources[sourceId] }));
 
     if (request.order.type === 'buy') {
       if (request.estimateBuyOrdersWithSellOnlySources) {
-        sources = sources.map(buyToSellOrderWrapper);
+        sources = sources.map(({ sourceId, source }) => ({ sourceId, source: buyToSellOrderWrapper(source) }));
       } else {
-        sources = sources.filter((source) => source.getMetadata().supports.buyOrders);
+        sources = sources.filter(({ source }) => source.getMetadata().supports.buyOrders);
       }
     }
 
     if (request.recipient && request.recipient !== request.takerAddress && !request.includeNonTransferSourcesWhenRecipientIsSet) {
-      sources = sources.filter((source) => source.getMetadata().supports.swapAndTransfer);
+      sources = sources.filter(({ source }) => source.getMetadata().supports.swapAndTransfer);
     }
 
     // Cast so that even if the source doesn't support it, everything else types ok
-    return sources.map((source) => source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any, any>);
+    return sources.map(({ sourceId, source }) => ({
+      sourceId,
+      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any, any>,
+    }));
   }
 }
 
@@ -213,16 +227,22 @@ function estimatedToQuoteRequest<Config extends Partial<AllSourcesConfig>>(
   };
 }
 
-function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
+function quoteResponseToEstimated<SupportedSources extends AvailableSources>({
+  recipient,
+  tx,
+  ...response
+}: QuoteResponse<SupportedSources>): EstimatedQuoteResponse<SupportedSources> {
   return response;
 }
 
-async function mapSourceResponseToResponse({
+async function mapSourceResponseToResponse<SupportedSources extends AvailableSources>({
+  sourceId,
   source,
   request,
   response: responsePromise,
   values,
 }: {
+  sourceId: SupportedSources;
   source: QuoteSource<QuoteSourceSupport, any, any>;
   request: QuoteRequest<any>;
   response: Promise<SourceQuoteResponse>;
@@ -232,7 +252,7 @@ async function mapSourceResponseToResponse({
     buyToken: TokenWithOptionalPrice;
     nativeTokenPrice: number | undefined;
   }>;
-}): Promise<QuoteResponse> {
+}): Promise<QuoteResponse<SupportedSources>> {
   const response = await responsePromise;
   const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
   const txData = {
@@ -268,7 +288,7 @@ async function mapSourceResponseToResponse({
       ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
-    source: { allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
+    source: { id: sourceId, allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
     type: response.type,
     tx,
   };
