@@ -20,7 +20,7 @@ export type IQuoteService<SupportedSources extends AvailableSources> = {
   supportedSourcesInChain(chainId: ChainId): SupportedSources[];
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest<SupportedSources>): Promise<EstimatedQuoteResponse>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
-    request: QuoteRequest<SupportedSources>,
+    request: EstimatedQuoteRequest<SupportedSources>,
     config?: {
       ignoredFailed?: IgnoreFailed;
       sort?: {
