@@ -16,13 +16,16 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 import { ProviderGasPriceSource } from '@services/gas/gas-price-sources/provider';
 import { GasService } from '@services/gas/gas-service';
 
-type GasSource = 'open-ocean' | 'rpc' | { custom: IGasPriceSource<any> };
-type GasSourceCalculation = 'only-first-possible-source-on-list' | 'fastest';
-type GasSources = { source: GasSource } | { sources: ArrayTwoOrMore<GasSource>; calculation?: GasSourceCalculation };
+type GasSource =
+  | { type: 'open-ocean' }
+  | { type: 'rpc' }
+  | { type: 'custom'; instance: IGasPriceSource<any> }
+  | { type: 'fastest'; sources: ArrayTwoOrMore<GasSource> }
+  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSource> };
 type GasSourceConfig =
   | { useCaching: false }
   | { useCaching: true; expiration: ExpirationConfigOptions; overrides?: Record<ChainId, ExpirationConfigOptions> };
-export type BuildGasParams = GasSources & { config?: GasSourceConfig };
+export type BuildGasParams = { source: GasSource; config?: GasSourceConfig };
 
 export function buildGasService(
   params: BuildGasParams | undefined,
@@ -30,28 +33,9 @@ export function buildGasService(
   providerSource: IProviderSource,
   multicallService: IMulticallService
 ) {
-  const openOceanSource = new OpenOceanGasPriceSource(fetchService);
-  const providerGasSource = new ProviderGasPriceSource(providerSource);
-
-  let source: IGasPriceSource<any>;
-  if (!params) {
-    source = new PrioritizedGasPriceSourceCombinator([openOceanSource, providerGasSource]);
-  } else if ('source' in params) {
-    source = getGasSourceForConfig(params.source, { openOceanSource, providerGasSource });
-  } else {
-    const sources = params.sources.map((source) => getGasSourceForConfig(source, { openOceanSource, providerGasSource })) as ArrayTwoOrMore<
-      IGasPriceSource<any>
-    >;
-    switch (params.calculation) {
-      case 'fastest':
-        source = new FastestGasPriceSourceCombinator(sources);
-        break;
-      case 'only-first-possible-source-on-list':
-      default:
-        source = new PrioritizedGasPriceSourceCombinator(sources);
-        break;
-    }
-  }
+  const openOcean = new OpenOceanGasPriceSource(fetchService);
+  const provider = new ProviderGasPriceSource(providerSource);
+  const source = buildSource(params?.source, { openOcean, provider });
 
   let gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
   if (params?.config?.useCaching) {
@@ -65,16 +49,23 @@ export function buildGasService(
   return new GasService({ providerSource, gasCostCalculatorBuilder });
 }
 
-function getGasSourceForConfig(
-  source: GasSource,
-  { openOceanSource, providerGasSource }: { openOceanSource: OpenOceanGasPriceSource; providerGasSource: ProviderGasPriceSource }
-) {
-  if (source === 'open-ocean') {
-    return openOceanSource;
-  } else if (source === 'rpc') {
-    return providerGasSource;
-  } else {
-    return source.custom;
+function buildSource(
+  source: GasSource | undefined,
+  { openOcean, provider }: { openOcean: OpenOceanGasPriceSource; provider: ProviderGasPriceSource }
+): IGasPriceSource<any> {
+  switch (source?.type) {
+    case undefined:
+      return new PrioritizedGasPriceSourceCombinator([openOcean, provider]);
+    case 'open-ocean':
+      return openOcean;
+    case 'rpc':
+      return provider;
+    case 'custom':
+      return source.instance;
+    case 'fastest':
+      return new FastestGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { openOcean, provider })));
+    case 'only-first-source-that-supports-chain':
+      return new PrioritizedGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { openOcean, provider })));
   }
 }
 

@@ -13,10 +13,12 @@ export function buildQuoteService<CustomConfig extends Partial<AllSourcesConfig>
   gasService: IGasService,
   tokenService: ITokenService<BaseToken>
 ) {
+  // If no referrer address was set, then we will use Mean's address
+  const config = { referrerAddress: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', ...params?.config } as CustomConfig & GlobalQuoteSourceConfig;
   return new QuoteService<CustomConfig>({
     fetchService,
     gasService,
     tokenService,
-    config: params?.config,
+    config,
   });
 }
