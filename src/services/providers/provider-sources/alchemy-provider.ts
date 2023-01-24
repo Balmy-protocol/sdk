@@ -4,9 +4,15 @@ import { ChainId } from '@types';
 import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
-const DEFAULT_CHAINS: ChainId[] = [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.ASTAR].map(
-  ({ chainId }) => chainId
-);
+const DEFAULT_CHAINS: ChainId[] = [
+  Chains.ETHEREUM,
+  Chains.POLYGON,
+  Chains.ARBITRUM,
+  Chains.OPTIMISM,
+  Chains.ASTAR,
+  Chains.ETHEREUM_GOERLI,
+  Chains.ETHEREUM_SEPOLIA,
+].map(({ chainId }) => chainId);
 
 export class AlchemyProviderSource implements IProviderSource {
   private readonly chains: ChainId[];

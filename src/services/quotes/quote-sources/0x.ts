@@ -14,6 +14,8 @@ const ZRX_API: Record<ChainId, string> = {
   [Chains.CELO.chainId]: 'https://celo.api.0x.org',
   [Chains.AVALANCHE.chainId]: 'https://avalanche.api.0x.org',
   [Chains.ARBITRUM.chainId]: 'https://arbitrum.api.0x.org',
+  [Chains.ETHEREUM_GOERLI.chainId]: 'https://goerli.api.0x.org',
+  [Chains.POLYGON_MUMBAI.chainId]: 'https://mumbai.api.0x.org',
 };
 
 export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {

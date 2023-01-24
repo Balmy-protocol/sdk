@@ -14,4 +14,5 @@ export type Chain = Readonly<{
   wToken: string;
   publicRPCs?: Readonly<string[]>;
   explorer: string;
+  testnet?: boolean;
 }>;

@@ -12,6 +12,8 @@ const ROUTER_ADDRESS: Record<ChainId, string> = {
   [Chains.POLYGON.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
   [Chains.ARBITRUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
   [Chains.CELO.chainId]: '0x5615CDAb10dc425a742d643d949a7F474C01abc4',
+  [Chains.ETHEREUM_GOERLI.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  [Chains.POLYGON_MUMBAI.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
 };
 
 export const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {

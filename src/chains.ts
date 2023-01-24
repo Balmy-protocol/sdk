@@ -261,6 +261,36 @@ export const Chains = {
     publicRPCs: ['https://mycrypto.rsk.co', 'https://public-node.rsk.co'],
     explorer: 'https://explorer.rsk.co/',
   },
+  ETHEREUM_GOERLI: {
+    chainId: 5,
+    name: 'Ethereum Goerli',
+    ids: ['goerli'],
+    currencySymbol: 'ETH',
+    wToken: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+    publicRPCs: ['https://rpc.ankr.com/eth_goerli', 'https://goerli.blockpi.network/v1/rpc/public'],
+    explorer: 'https://goerli.etherscan.io/',
+    testnet: true,
+  },
+  ETHEREUM_SEPOLIA: {
+    chainId: 11155111,
+    name: 'Ethereum Sepolia',
+    ids: ['sepolia'],
+    currencySymbol: 'ETH',
+    wToken: '0xf531b8f309be94191af87605cfbf600d71c2cfe0',
+    publicRPCs: ['https://rpc.sepolia.org'],
+    explorer: 'https://sepolia.etherscan.io/',
+    testnet: true,
+  },
+  POLYGON_MUMBAI: {
+    chainId: 80001,
+    name: 'Polygon Mumbai',
+    ids: ['mumbai'],
+    currencySymbol: 'MATIC',
+    wToken: '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889',
+    publicRPCs: ['https://rpc.ankr.com/polygon_mumbai', 'https://polygon-mumbai.blockpi.network/v1/rpc/public'],
+    explorer: 'https://mumbai.polygonscan.com/',
+    testnet: true,
+  },
 } satisfies Record<string, Chain>;
 
 export function getAllChains(): Chain[] {
