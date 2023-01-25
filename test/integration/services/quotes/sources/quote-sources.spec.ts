@@ -30,10 +30,10 @@ import {
   mintMany,
 } from '@test-utils/erc20';
 
-// This is meant to be used for local testing. On the CI, we will run all sources instead
+// This is meant to be used for local testing. On the CI, we will run one random chain for each source
 const RUN_FOR: { source: AvailableSources; chains: Chain[] | 'all' } = {
-  source: 'open-ocean',
-  chains: [Chains.BNB_CHAIN, Chains.AURORA],
+  source: 'kyberswap',
+  chains: [Chains.ETHEREUM],
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
