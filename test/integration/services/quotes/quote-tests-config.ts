@@ -5,6 +5,9 @@ export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {};
 if (process.env.ODOS_API_KEY) {
   CONFIG.odos = { apiKey: process.env.ODOS_API_KEY };
 }
+if (process.env.RANGO_API_KEY) {
+  CONFIG.rango = { apiKey: process.env.RANGO_API_KEY };
+}
 
 export enum Test {
   SELL_USDC_TO_NATIVE,
