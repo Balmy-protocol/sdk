@@ -41,8 +41,7 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
   So the idea is to transform the buy order into a sell order by:
   1. Executing a sell order from `buyToken` to `sellToken`, with the actual `buyAmount` as `sellAmount`
      This would allows us to figure understand how much of `sellToken` is needed to get `buyAmount`
-  2. If this quote response says that there is no slippage, then we assume that there will be no slippage when executing the actual sell order
-  3. If there was some slippage, then we will asume that the test quote's `buyAmount` + slippage will be enough to get the actual `buyAmount`
+  2. With this new information, create a sell order close to the buy order
   */
 
   // Try to sell the amount of tokens to 'buy', to get an estimate
@@ -53,13 +52,7 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
     buyToken: request.sellToken,
   } as SourceQuoteRequest<Support>;
   const testSellQuote = await quote(sellOrder);
-  const slippage = testSellQuote.buyAmount.sub(testSellQuote.minBuyAmount);
-  if (slippage.isZero()) {
-    // If there was no slippage, then we just execute the sell order
-    return quote({ ...request, order: { type: 'sell', sellAmount: testSellQuote.sellAmount } });
-  }
-
-  // TODO: there is room for improvement, since we can make a few test quotes around this approx number and find the closest sell quote that produces the actual `buyAmount`
-  const sellAmount = testSellQuote.buyAmount.add(slippage);
-  return quote({ ...request, order: { type: 'sell', sellAmount: sellAmount } });
+  // Note: there is room for improvement here. We could take into account the potential slippage to try to guarantee the buy price, or
+  // we could execute a few sell quotes to see which one is closer to the buy amount. We are starting simple
+  return quote({ ...request, order: { type: 'sell', sellAmount: testSellQuote.buyAmount } });
 }
