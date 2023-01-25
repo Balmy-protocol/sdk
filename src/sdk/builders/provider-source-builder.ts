@@ -8,6 +8,7 @@ import { PublicProvidersSource } from '@services/providers/provider-sources/publ
 import { FallbackSource } from '@services/providers/provider-sources/fallback-provider ';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
+import { JsonRPCProviderSource } from '@services/providers/provider-sources/json-rpc-provider';
 
 export type BuildProviderParams = { source: ProviderSource };
 type ProviderSource =
@@ -16,6 +17,7 @@ type ProviderSource =
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, ArrayOneOrMore<string>> }
   | { type: 'alchemy'; config: { key: string; supportedChains?: ChainId[] } }
   | { type: 'infura'; config: { key: string; supportedChains?: ChainId[] } }
+  | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
   | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<ProviderSource> }
   | { type: 'only-first-provider-that-supports-chain'; sources: ArrayTwoOrMore<ProviderSource> };
 
@@ -37,6 +39,8 @@ function buildSource(source?: ProviderSource): IProviderSource {
       return new AlchemyProviderSource(source.config.key, source.config.supportedChains);
     case 'infura':
       return new InfuraProviderSource(source.config.key, source.config.supportedChains);
+    case 'json-rpc':
+      return new JsonRPCProviderSource(source.config.url, source.config.supportedChains);
     case 'combine-when-possible':
       return new FallbackSource(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
     case 'only-first-provider-that-supports-chain':
