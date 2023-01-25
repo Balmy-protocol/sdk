@@ -9,7 +9,7 @@ import { isSameAddress } from '@shared/utils';
 
 type OdosConfig = { apiKey: string };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
-export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, true, OdosConfig> {
+export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig> {
   getMetadata(): QuoteSourceMetadata<OdosSupport> {
     return {
       name: 'Odos',

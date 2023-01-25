@@ -278,7 +278,7 @@ describe('Quote Sources', () => {
         sellToken: DefiLlamaToken;
         buyToken: DefiLlamaToken;
       };
-      function buildQuote(source: QuoteSource<any, any, any>, { sellToken, buyToken, ...quote }: Quote) {
+      function buildQuote(source: QuoteSource<any, any>, { sellToken, buyToken, ...quote }: Quote) {
         return source.quote(
           { fetchService: FETCH_SERVICE },
           {
@@ -320,7 +320,7 @@ describe('Quote Sources', () => {
 
 function getSources() {
   const sources = buildSources(CONFIG, CONFIG);
-  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
+  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>> = {};
 
   if (process.env.CI_CONTEXT) {
     // Will choose a random chain for each source

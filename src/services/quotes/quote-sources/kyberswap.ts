@@ -67,7 +67,7 @@ export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSup
     if (!response.ok) {
       failed(chain, sellToken, buyToken, await response.text());
     }
-    const { outputAmount, totalGas, encodedSwapData, routerAddress, swaps } = await response.json();
+    const { outputAmount, totalGas, encodedSwapData, routerAddress } = await response.json();
 
     const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : constants.Zero;
     const quote = {

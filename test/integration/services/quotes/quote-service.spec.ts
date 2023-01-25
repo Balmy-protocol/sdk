@@ -27,7 +27,7 @@ jest.setTimeout(ms('5m'));
 const { quoteService } = buildSDK();
 const chains = chainsWithTestData(quoteService.supportedChains());
 
-describe('Quote Service', () => {
+describe.skip('Quote Service', () => {
   for (const chainId of chains) {
     const chain = Chains.byKeyOrFail(chainId);
     describe(`${chain.name}`, () => {

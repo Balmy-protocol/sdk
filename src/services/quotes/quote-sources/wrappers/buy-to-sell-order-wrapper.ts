@@ -1,10 +1,10 @@
-import { GetCustomConfigFromSource, GetCustomConfigNeededFromSource } from '@services/quotes/sources-list';
+import { GetCustomConfigFromSource } from '@services/quotes/sources-list';
 import { SourceQuoteRequest, QuoteSourceSupport, QuoteSource, SourceQuoteResponse } from '../base';
 
 type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
-export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, Source extends QuoteSource<Support, any, any>>(
+export function buyToSellOrderWrapper<Support extends QuoteSourceSupport, Source extends QuoteSource<Support, any>>(
   source: Source
-): QuoteSource<AddedBuyOrderSupport<Support>, GetCustomConfigNeededFromSource<Source>, GetCustomConfigFromSource<Source>> {
+): QuoteSource<AddedBuyOrderSupport<Support>, GetCustomConfigFromSource<Source>> {
   return {
     getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => {

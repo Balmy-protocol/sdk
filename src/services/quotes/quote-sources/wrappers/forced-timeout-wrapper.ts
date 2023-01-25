@@ -3,9 +3,9 @@ import { QuoteSource, QuoteSourceSupport } from '../base';
 
 // We will pass the timeout to the quote sources, but sometime they don't have a way to enforce. So the idea will be to
 // add a wrapper that can enforce it
-export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>(
-  source: QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
-): QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig> {
+export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomQuoteSourceConfig>(
+  source: QuoteSource<Support, CustomQuoteSourceConfig>
+): QuoteSource<Support, CustomQuoteSourceConfig> {
   return {
     getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => source.getMetadata(),

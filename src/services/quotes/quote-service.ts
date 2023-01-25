@@ -36,7 +36,7 @@ export class QuoteService implements IQuoteService {
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
-  private readonly sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>;
+  private readonly sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>;
 
   constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters) {
     this.sources = addForcedTimeout(buildSources(config ?? {}, config));
@@ -207,7 +207,7 @@ export class QuoteService implements IQuoteService {
     // Cast so that even if the source doesn't support it, everything else types ok
     return sources.map(({ sourceId, source }) => ({
       sourceId,
-      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any, any>,
+      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any>,
     }));
   }
 }
@@ -231,7 +231,7 @@ async function mapSourceResponseToResponse({
   values,
 }: {
   sourceId: AvailableSources;
-  source: QuoteSource<QuoteSourceSupport, any, any>;
+  source: QuoteSource<QuoteSourceSupport, any>;
   request: QuoteRequest;
   response: Promise<SourceQuoteResponse>;
   values: Promise<{
@@ -292,10 +292,10 @@ function toAmountOfToken(token: BaseToken, price: number | undefined, amount: Bi
   };
 }
 
-function addForcedTimeout(sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>) {
+function addForcedTimeout(sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>) {
   return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)])) as Record<
     AvailableSources,
-    QuoteSource<QuoteSourceSupport, any, any>
+    QuoteSource<QuoteSourceSupport, any>
   >;
 }
 

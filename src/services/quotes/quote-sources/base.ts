@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
-import { GasPrice } from '@services/gas/types';
+import { GasPrice, IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, TimeString, TokenAddress } from '@types';
 import { BaseToken } from '@services/tokens/types';
@@ -11,7 +11,7 @@ export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
   supports: { chains: Chain[] } & Support;
   logoURI: string;
 };
-export type QuoteSource<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean = false, CustomQuoteSourceConfig = undefined> = {
+export type QuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig = undefined> = {
   getCustomConfig(): CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
   quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
@@ -20,7 +20,6 @@ export type QuoteComponents = {
   fetchService: IFetchService;
 };
 
-type ExtraTokenData = Pick<BaseToken, 'decimals' | 'symbol'>;
 export type SellOrder = { type: 'sell'; sellAmount: BigNumber };
 export type BuyOrder = { type: 'buy'; buyAmount: BigNumber };
 type BaseOrder = SellOrder | BuyOrder;
@@ -28,9 +27,9 @@ type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
   chain: Chain;
   sellToken: TokenAddress;
-  sellTokenData: Promise<ExtraTokenData>;
+  sellTokenData: Promise<BaseToken>;
   buyToken: TokenAddress;
-  buyTokenData: Promise<ExtraTokenData>;
+  buyTokenData: Promise<BaseToken>;
   order: Order;
   config: {
     slippagePercentage: number;
@@ -68,8 +67,8 @@ type ConfigurableAccounts<Support extends QuoteSourceSupport> = IsSwapAndTransfe
 type IsSwapAndTransfer<Support extends QuoteSourceSupport> = Support['swapAndTransfer'];
 type IsBuyOrder<Support extends QuoteSourceSupport> = Support['buyOrders'];
 
-export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, CustomConfigNeeded extends boolean, CustomQuoteSourceConfig>
-  implements QuoteSource<Support, CustomConfigNeeded, CustomQuoteSourceConfig>
+export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig>
+  implements QuoteSource<Support, CustomQuoteSourceConfig>
 {
   protected readonly globalConfig: GlobalQuoteSourceConfig;
   protected readonly customConfig: CustomQuoteSourceConfig;
@@ -87,7 +86,7 @@ export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, Custom
   abstract quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
 }
 
-export abstract class NoCustomConfigQuoteSource<Support extends QuoteSourceSupport> extends BaseQuoteSource<Support, false, undefined> {
+export abstract class NoCustomConfigQuoteSource<Support extends QuoteSourceSupport> extends BaseQuoteSource<Support, undefined> {
   constructor(config: { global: GlobalQuoteSourceConfig; custom: undefined }) {
     super(config);
   }
