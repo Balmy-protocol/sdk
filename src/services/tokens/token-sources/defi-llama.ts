@@ -23,9 +23,11 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ONTOLOGY.chainId]: 'ontology',
   [Chains.KLAYTN.chainId]: 'klaytn',
   [Chains.AURORA.chainId]: 'aurora',
+  [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
+  [Chains.MOONBEAM.chainId]: 'moonbeam',
+  [Chains.VELAS.chainId]: 'velas',
 
   // TODO: these chains are also supported by DefiLlama. We should add them
-  // "harmony",
   // "kcc",
   // "kava",
   // "rsk",
@@ -33,10 +35,8 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   // "kardia",
   // "metis",
   // "telos",
-  // "moonbeam",
   // "meter",
   // "sx",
-  // "velas",
   // "milkomeda"
 };
 
