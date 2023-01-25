@@ -14,9 +14,9 @@ import {
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReduceAsExpected,
   calculateBalancesFor,
+  chainsWithTestData,
   loadTokens,
   mint,
-  TOKENS,
 } from '@test-utils/erc20';
 import { buildSDK } from '@builder';
 
@@ -25,7 +25,7 @@ jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 const { quoteService } = buildSDK();
-const chains = quoteService.supportedChains().filter((chainId) => chainId in TOKENS);
+const chains = chainsWithTestData(quoteService.supportedChains());
 
 describe('Quote Service', () => {
   for (const chainId of chains) {
@@ -54,7 +54,7 @@ describe('Quote Service', () => {
       });
 
       when('swapping 1 native token to USDC', () => {
-        let quote: QuoteResponse<any>;
+        let quote: QuoteResponse;
         let txs: TransactionResponse[];
         given(async () => {
           [quote] = await quoteService.getAllQuotes({

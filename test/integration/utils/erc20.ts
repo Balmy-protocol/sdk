@@ -15,6 +15,7 @@ import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
+import { buildSDK } from '@builder';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; USDC: TokenData; wToken: TokenData };
@@ -96,8 +97,8 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0xfb05aedf0cac43c6ce291d2d1be1eab568d155b4',
     },
     RANDOM_ERC20: {
-      address: '0x321162cd933e2be498cd2267a90534a804051b11',
-      whale: '0xb7982a8eb703d1d5e28a294e1f5a3c9a0161f36c',
+      address: '0xb3654dc3d10ea7645f8319668e8f54d2574fbdc8',
+      whale: '0x89d9bc2f2d091cfbfc31e333d6dc555ddbc2fd29',
     },
     wToken: {
       address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
@@ -152,31 +153,32 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x2fe064b6c7d274082aa5d2624709bc9ae7d16c77',
     },
     RANDOM_ERC20: {
-      address: '0xf4eb217ba2454613b15dbdea6e5f22276410e89e',
-      whale: '0xe95ac3acb464edbefe58b00010833826566b6582',
+      address: '0xc42c30ac6cc15fac9bd938618bcaa1a1fae8501d',
+      whale: '0x8c14ea853321028a7bb5e4fb0d0147f183d3b677',
     },
     wToken: {
       address: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
       whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
     },
   },
-  // Celo can't be forked with ethers.js due to different block header structure.
-  // Ref.: https://github.com/NomicFoundation/hardhat/issues/1966
-  // [Chains.CELO.chainId]: {
-  //   USDC: {
-  //     address: '0x37f750b7cc259a2f741af45294f6a16572cf5cad',
-  //     whale: '0xed16807f3cd1ab579388e0b00394834e31eb512f',
-  //   },
-  //   RANDOM_ERC20: {
-  //     address: '0xd629eb00deced2a080b7ec630ef6ac117e614f1b',
-  //     whale: '0x2962518b087b3ae071ca4d737c7d874af04b2142',
-  //   },
-  //   wToken: {
-  //     address: '0x471ece3750da237f93b8e339c536989b8978a438',
-  //     whale: '0xef268b5c05452d63a17da12f562368e88a036ef1',
-  //   },
-  // },
 } satisfies Record<ChainId, ChainTokens>;
+
+const CHAIN_EXCEPTIONS: ChainId[] = [
+  Chains.CELO.chainId, // Celo can't be forked with ethers.js due to different block header structure (https://github.com/NomicFoundation/hardhat/issues/1966)
+];
+
+// Check that we can test all chains
+const untestable = buildSDK()
+  .quoteService.supportedChains()
+  .filter((chainId) => !(chainId in TOKENS))
+  .filter((chainId) => !CHAIN_EXCEPTIONS.includes(chainId));
+if (untestable.length > 0) {
+  // throw new Error(`Cannot test chains '${untestable.map(chainId => Chains.byKeyOrFail(chainId).name).join(',')}'`)
+}
+
+export function chainsWithTestData(chainIds: ChainId[]) {
+  return chainIds.filter((chainId) => chainId in TOKENS);
+}
 
 export async function calculateBalancesFor({ tokens, addresses }: { tokens: IHasAddress[]; addresses: IHasAddress[] }) {
   const promises = tokens.flatMap((token) =>

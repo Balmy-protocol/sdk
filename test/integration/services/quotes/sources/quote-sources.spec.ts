@@ -11,7 +11,7 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
-import { Chain, TokenAddress, Address } from '@types';
+import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { AvailableSources } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
@@ -19,20 +19,21 @@ import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
-import { Test, EXCEPTIONS, CONFIG, getAllSources } from '../quote-tests-config';
+import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';
 import {
   approve,
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReduceAsExpected,
   calculateBalancesFor,
+  chainsWithTestData,
   loadTokens,
   mintMany,
 } from '@test-utils/erc20';
 
 // This is meant to be used for local testing. On the CI, we will run all sources instead
-const RUN_FOR: { source: AvailableSources; chain: Chain } = {
-  source: 'paraswap',
-  chain: Chains.ETHEREUM,
+const RUN_FOR: { source: AvailableSources; chains: Chain[] | 'all' } = {
+  source: 'open-ocean',
+  chains: [Chains.BNB_CHAIN, Chains.AURORA],
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
@@ -318,11 +319,29 @@ describe('Quote Sources', () => {
 });
 
 function getSources() {
-  if (process.env.TEST_ALL_NETWORKS) {
-    return getAllSources();
-  }
   const sources = buildSources(CONFIG, CONFIG);
-  return { [RUN_FOR.chain.chainId]: { [RUN_FOR.source]: sources[RUN_FOR.source] } };
+  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
+
+  if (process.env.CI_CONTEXT) {
+    // Will choose a random chain for each source
+    for (const [sourceId, source] of Object.entries(sources)) {
+      const supportedChains = chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId));
+      const chainId = supportedChains[Math.floor(Math.random() * supportedChains.length)];
+      if (!(chainId in result)) result[chainId] = {} as any;
+      result[chainId][sourceId as AvailableSources] = source;
+    }
+  } else {
+    const source = sources[RUN_FOR.source];
+    const chains =
+      RUN_FOR.chains === 'all'
+        ? chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId))
+        : RUN_FOR.chains.map(({ chainId }) => chainId);
+    for (const chainId of chains) {
+      if (!(chainId in result)) result[chainId] = {} as any;
+      result[chainId][RUN_FOR.source as AvailableSources] = source;
+    }
+  }
+  return result;
 }
 
 const FETCH_SERVICE = new FetchService(crossFetch);

@@ -112,6 +112,33 @@ export class Chains {
     publicRPCs: ['https://rpc.api.moonriver.moonbeam.network/', 'https://moonriver.api.onfinality.io/public'],
   } as const satisfies Chain;
 
+  static readonly MOONBEAM = {
+    chainId: 1284,
+    name: 'Moonbeam',
+    ids: ['moonbeam'],
+    currencySymbol: 'GLMR',
+    wToken: '0xAcc15dC74880C9944775448304B263D191c6077F',
+    publicRPCs: ['https://rpc.api.moonbeam.network'],
+  } as const satisfies Chain;
+
+  static readonly FUSE = {
+    chainId: 122,
+    name: 'Fuse',
+    ids: ['fuse'],
+    currencySymbol: 'FUSE',
+    wToken: '0x0BE9e53fd7EDaC9F859882AfdDa116645287C629',
+    publicRPCs: ['https://rpc.fuse.io'],
+  } as const satisfies Chain;
+
+  static readonly VELAS = {
+    chainId: 106,
+    name: 'Velas',
+    ids: ['velas'],
+    currencySymbol: 'VLX',
+    wToken: '0xc579D1f3CF86749E05CD06f7ADe17856c2CE3126',
+    publicRPCs: ['https://evmexplorer.velas.com/rpc'],
+  } as const satisfies Chain;
+
   static readonly GNOSIS = {
     chainId: 100,
     name: 'Gnosis Chain',

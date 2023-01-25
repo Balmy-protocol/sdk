@@ -1,8 +1,5 @@
-import { ChainId } from '@types';
 import { AvailableSources, GlobalQuoteSourceConfig } from '@services/quotes/types';
-import { AllSourcesConfig, buildSources } from '@services/quotes/sources-list';
-import { QuoteSource, QuoteSourceSupport } from '@services/quotes/quote-sources/base';
-import { TOKENS } from '@test-utils/erc20';
+import { AllSourcesConfig } from '@services/quotes/sources-list';
 
 export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {};
 if (process.env.ODOS_API_KEY) {
@@ -32,22 +29,3 @@ export const EXCEPTIONS: Partial<Record<AvailableSources, Test[]>> = {
     Test.UNWRAP_WTOKEN_AND_TRANSFER,
   ],
 };
-
-export function getAllSources() {
-  const sources = buildSources(CONFIG, CONFIG);
-  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any, any>>> = {};
-  for (const [sourceId, source] of Object.entries(sources)) {
-    for (const chain of source.getMetadata().supports.chains) {
-      if (!(chain.chainId in result)) {
-        result[chain.chainId] = {} as any;
-      }
-      result[chain.chainId][sourceId as AvailableSources] = source;
-    }
-  }
-  for (const chainId in result) {
-    if (!(chainId in TOKENS)) {
-      delete result[chainId];
-    }
-  }
-  return result;
-}
