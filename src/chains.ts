@@ -215,6 +215,24 @@ export class Chains {
     publicRPCs: ['https://api.harmony.one'],
   } as const satisfies Chain;
 
+  static readonly BIT_TORRENT = {
+    chainId: 199,
+    name: 'BitTorrent',
+    ids: ['bittorrent'],
+    currencySymbol: 'BTT',
+    wToken: '0x23181f21dea5936e24163ffaba4ea3b316b57f3c',
+    publicRPCs: ['https://rpc.bittorrentchain.io'],
+  } as const satisfies Chain;
+
+  static readonly OASIS_EMERALD = {
+    chainId: 42262,
+    name: 'Oasis Emerald',
+    ids: ['oasis', 'emerald'],
+    currencySymbol: 'ROSE',
+    wToken: '0x21C718C22D52d0F3a789b752D4c2fD5908a8A733',
+    publicRPCs: ['https://emerald.oasis.dev'],
+  } as const satisfies Chain;
+
   static getAllChains(): Chain[] {
     return Object.values(Chains).filter((value): value is Chain => typeof value !== 'function');
   }

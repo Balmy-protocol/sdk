@@ -8,6 +8,7 @@ import { OneInchQuoteSource } from './quote-sources/1inch';
 import { UniswapQuoteSource } from './quote-sources/uniswap';
 import { OpenOceanQuoteSource } from './quote-sources/open-ocean';
 import { LiFiQuoteSource } from './quote-sources/li-fi';
+import { KyberswapQuoteSource } from './quote-sources/kyberswap';
 
 export const QUOTE_SOURCES = {
   odos: builderNeedsConfig<OdosQuoteSource>((config) => new OdosQuoteSource(config)),
@@ -17,6 +18,7 @@ export const QUOTE_SOURCES = {
   uniswap: builder<UniswapQuoteSource>((config) => new UniswapQuoteSource(config)),
   'open-ocean': builder<OpenOceanQuoteSource>((config) => new OpenOceanQuoteSource(config)),
   'li-fi': builder<LiFiQuoteSource>((config) => new LiFiQuoteSource(config)),
+  kyberswap: builder<KyberswapQuoteSource>((config) => new KyberswapQuoteSource(config)),
 } satisfies Record<string, QuoteSourceBuilder<any, any, any, any>>;
 
 export function buildSources(global: GlobalQuoteSourceConfig, custom?: Partial<AllSourcesConfig>) {
