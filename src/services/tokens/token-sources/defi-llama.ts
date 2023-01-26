@@ -2,7 +2,7 @@ import { ChainId, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
-import { AddedProperties, BaseToken, ITokenSource } from '../types';
+import { BaseToken, ITokenSource, PropertiesRecord } from '../types';
 import { isSameAddress } from '@shared/utils';
 
 const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
@@ -67,8 +67,14 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     return result;
   }
 
-  addedProperties(): AddedProperties<DefiLlamaToken>[] {
-    return ['price', 'timestamp'];
+  tokenProperties(): PropertiesRecord<DefiLlamaToken> {
+    return {
+      address: 'present',
+      symbol: 'present',
+      decimals: 'present',
+      price: 'present',
+      timestamp: 'present',
+    };
   }
 
   private async fetchTokens(tokens: TokenId[]) {

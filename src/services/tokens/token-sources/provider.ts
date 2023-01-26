@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains } from '@chains';
-import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
+import { BaseToken, ITokenSource, PropertiesRecord } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
@@ -22,8 +22,12 @@ export class ProviderTokenSource implements ITokenSource {
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
-  addedProperties(): AddedProperties<BaseToken>[] {
-    return [];
+  tokenProperties(): PropertiesRecord<BaseToken> {
+    return {
+      address: 'present',
+      symbol: 'present',
+      decimals: 'present',
+    };
   }
 
   private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, BaseToken>> {

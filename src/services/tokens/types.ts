@@ -11,10 +11,10 @@ export type ITokenService<Token extends BaseToken> = {
 export type ITokenSource<Token extends BaseToken = BaseToken> = {
   supportedChains(): ChainId[];
   getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
-  addedProperties(): AddedProperties<Token>[];
+  tokenProperties(): PropertiesRecord<Token>;
 };
 
-export type AddedProperties<Token extends BaseToken = BaseToken> = Exclude<keyof Token, keyof BaseToken>;
+export type PropertiesRecord<Token extends BaseToken> = { [K in keyof Token]-?: undefined extends Token[K] ? 'optional' : 'present' };
 
 export type BaseToken = {
   address: TokenAddress;
@@ -22,5 +22,5 @@ export type BaseToken = {
   symbol: string;
 };
 
-type TokenSourcesInList<T extends ITokenSource<any>[] | []> = { [K in keyof T]: T[K] extends ITokenSource<infer R> ? R : T[K] }[number];
-export type MergeTokenTokensFromSources<Sources extends ITokenSource<any>[] | []> = UnionMerge<TokenSourcesInList<Sources>> & BaseToken;
+type TokenSourcesInList<T extends ITokenSource<BaseToken>[] | []> = { [K in keyof T]: T[K] extends ITokenSource<infer R> ? R : T[K] }[number];
+export type MergeTokenTokensFromSources<Sources extends ITokenSource<BaseToken>[] | []> = UnionMerge<TokenSourcesInList<Sources>> & BaseToken;

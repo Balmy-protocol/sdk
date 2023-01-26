@@ -1,10 +1,11 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { chainsUnion } from '@chains';
-import { AddedProperties, BaseToken, ITokenSource, MergeTokenTokensFromSources } from '@services/tokens/types';
+import { BaseToken, ITokenSource, MergeTokenTokensFromSources, PropertiesRecord } from '@services/tokens/types';
 import { timeoutPromise } from '@shared/timeouts';
+import { combineTokenProperties } from './utils';
 
 // This fallback source will use different sources and combine the results of each of them
-export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> implements ITokenSource<MergeTokenTokensFromSources<Sources>> {
+export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []> implements ITokenSource<MergeTokenTokensFromSources<Sources>> {
   private readonly sourceQueryTimeout?: TimeString;
 
   constructor(private readonly sources: Sources, options?: { sourceQueryTimeout: TimeString }) {
@@ -40,8 +41,8 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
     return result;
   }
 
-  addedProperties(): AddedProperties<MergeTokenTokensFromSources<Sources>>[] {
-    return [...new Set(this.sources.flatMap((source) => source.addedProperties()))] as AddedProperties<MergeTokenTokensFromSources<Sources>>[];
+  tokenProperties(): PropertiesRecord<MergeTokenTokensFromSources<Sources>> {
+    return combineTokenProperties(this.sources);
   }
 }
 

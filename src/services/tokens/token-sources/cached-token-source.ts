@@ -23,8 +23,8 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 
-  addedProperties(): Exclude<keyof Token, keyof BaseToken>[] {
-    return this.source.addedProperties();
+  tokenProperties() {
+    return this.source.tokenProperties();
   }
 
   private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, Token>> {
