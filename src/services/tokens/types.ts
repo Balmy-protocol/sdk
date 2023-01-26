@@ -1,16 +1,25 @@
-import { ChainId, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { UnionMerge } from '@utility-types';
 
 export type ITokenService<Token extends BaseToken> = {
   supportedChains(): ChainId[];
-  getTokensForChain(chainId: ChainId, addresses: TokenAddress[]): Promise<Record<TokenAddress, Token>>;
-  getTokens(...addresses: { chainId: ChainId; addresses: TokenAddress[] }[]): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
-  getTokensByChainId(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokensForChain(chainId: ChainId, addresses: TokenAddress[], config?: { timeout?: TimeString }): Promise<Record<TokenAddress, Token>>;
+  getTokens(
+    addresses: { chainId: ChainId; addresses: TokenAddress[] }[],
+    config?: { timeout?: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokensByChainId(
+    addresses: Record<ChainId, TokenAddress[]>,
+    config?: { timeout?: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
 };
 
 export type ITokenSource<Token extends BaseToken = BaseToken> = {
   supportedChains(): ChainId[];
-  getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokens(
+    addresses: Record<ChainId, TokenAddress[]>,
+    context?: { timeout: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
   tokenProperties(): PropertiesRecord<Token>;
 };
 

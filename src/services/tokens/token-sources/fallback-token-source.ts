@@ -6,18 +6,15 @@ import { combineTokenProperties } from './utils';
 
 // This fallback source will use different sources and combine the results of each of them
 export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []> implements ITokenSource<MergeTokenTokensFromSources<Sources>> {
-  private readonly sourceQueryTimeout?: TimeString;
-
-  constructor(private readonly sources: Sources, options?: { sourceQueryTimeout: TimeString }) {
-    this.sourceQueryTimeout = options?.sourceQueryTimeout;
-  }
+  constructor(private readonly sources: Sources) {}
 
   supportedChains(): ChainId[] {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
   async getTokens(
-    addresses: Record<ChainId, TokenAddress[]>
+    addresses: Record<ChainId, TokenAddress[]>,
+    context?: { timeout?: TimeString }
   ): Promise<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> {
     const result: Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
@@ -28,7 +25,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
     // new properties, or there are some missing tokens, we would still have to wait
     const promises = this.sources.map(async (source) => {
       const addressesForSource = getAddressesForSource(source, addresses);
-      const sourceResult = await timeoutPromise(source.getTokens(addressesForSource), this.sourceQueryTimeout);
+      const sourceResult = await timeoutPromise(source.getTokens(addressesForSource), context?.timeout, { reduceBy: '100' });
       for (const chainId in sourceResult) {
         for (const token of Object.values(sourceResult[chainId])) {
           const previousToken = result[chainId][token.address];

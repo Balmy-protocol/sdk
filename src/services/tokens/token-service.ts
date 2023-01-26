@@ -1,4 +1,5 @@
-import { ChainId, TokenAddress } from '@types';
+import { timeoutPromise } from '@shared/timeouts';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { BaseToken, ITokenService, ITokenSource } from './types';
 
 export class TokenService<Token extends BaseToken> implements ITokenService<Token> {
@@ -8,18 +9,24 @@ export class TokenService<Token extends BaseToken> implements ITokenService<Toke
     return this.tokenSource.supportedChains();
   }
 
-  async getTokensForChain(chainId: ChainId, addresses: TokenAddress[]): Promise<Record<TokenAddress, Token>> {
+  async getTokensForChain(chainId: ChainId, addresses: TokenAddress[], config?: { timeout?: TimeString }): Promise<Record<TokenAddress, Token>> {
     const byChainId = { [chainId]: addresses };
-    const result = await this.getTokensByChainId(byChainId);
+    const result = await this.getTokensByChainId(byChainId, config);
     return result[chainId];
   }
 
-  getTokens(...addresses: { chainId: ChainId; addresses: TokenAddress[] }[]): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+  getTokens(
+    addresses: { chainId: ChainId; addresses: TokenAddress[] }[],
+    config?: { timeout?: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
     const byChainId = Object.fromEntries(addresses.map(({ chainId, addresses }) => [chainId, addresses]));
-    return this.getTokensByChainId(byChainId);
+    return this.getTokensByChainId(byChainId, config);
   }
 
-  getTokensByChainId(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
-    return this.tokenSource.getTokens(addresses);
+  getTokensByChainId(
+    addresses: Record<ChainId, TokenAddress[]>,
+    config?: { timeout?: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+    return timeoutPromise(this.tokenSource.getTokens(addresses), config?.timeout);
   }
 }
