@@ -12,10 +12,8 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
-import { AvailableSources } from '@services/quotes/types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
-import { buildSources } from '@services/quotes/sources-list';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
@@ -29,9 +27,10 @@ import {
   loadTokens,
   mintMany,
 } from '@test-utils/erc20';
+import { buildSources } from '@services/quotes/source-lists/default-source-list';
 
 // This is meant to be used for local testing. On the CI, we will run one random chain for each source
-const RUN_FOR: { source: AvailableSources; chains: Chain[] | 'all' } = {
+const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'kyberswap',
   chains: [Chains.ETHEREUM],
 };
@@ -174,7 +173,7 @@ describe('Quote Sources', () => {
       }) {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
-            if (shouldExecute(sourceId as AvailableSources, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
+            if (shouldExecute(sourceId, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
                 let txs: TransactionResponse[];
@@ -278,7 +277,7 @@ describe('Quote Sources', () => {
         sellToken: DefiLlamaToken;
         buyToken: DefiLlamaToken;
       };
-      function buildQuote(source: QuoteSource<any, any>, { sellToken, buyToken, ...quote }: Quote) {
+      function buildQuote(source: QuoteSource<any>, { sellToken, buyToken, ...quote }: Quote) {
         return source.quote(
           { fetchService: FETCH_SERVICE },
           {
@@ -311,7 +310,7 @@ describe('Quote Sources', () => {
         return as.sendTransaction({ to, data: calldata, value });
       }
 
-      function shouldExecute(sourceId: AvailableSources, test: Test) {
+      function shouldExecute(sourceId: string, test: Test) {
         return !EXCEPTIONS[sourceId]?.includes(test);
       }
     });
@@ -319,8 +318,8 @@ describe('Quote Sources', () => {
 });
 
 function getSources() {
-  const sources = buildSources(CONFIG, CONFIG);
-  const result: Record<ChainId, Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>> = {};
+  const sources = buildSources(CONFIG);
+  const result: Record<ChainId, Record<string, QuoteSource<QuoteSourceSupport>>> = {};
 
   if (process.env.CI_CONTEXT) {
     // Will choose a random chain for each source
@@ -328,7 +327,7 @@ function getSources() {
       const supportedChains = chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId));
       const chainId = supportedChains[Math.floor(Math.random() * supportedChains.length)];
       if (!(chainId in result)) result[chainId] = {} as any;
-      result[chainId][sourceId as AvailableSources] = source;
+      result[chainId][sourceId] = source;
     }
   } else {
     const source = sources[RUN_FOR.source];
@@ -338,7 +337,7 @@ function getSources() {
         : RUN_FOR.chains.map(({ chainId }) => chainId);
     for (const chainId of chains) {
       if (!(chainId in result)) result[chainId] = {} as any;
-      result[chainId][RUN_FOR.source as AvailableSources] = source;
+      result[chainId][RUN_FOR.source] = source;
     }
   }
   return result;

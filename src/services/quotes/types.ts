@@ -5,19 +5,20 @@ import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
-import { QUOTE_SOURCES } from './sources-list';
+import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
 
 export type GlobalQuoteSourceConfig = {
   referrerAddress?: TokenAddress;
 };
 
-export type QuoteSourcesList = typeof QUOTE_SOURCES;
-export type AvailableSources = keyof QuoteSourcesList & string;
-
+type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
+  id: string;
+  supports: QuoteSourceSupport & { chains: ChainId[] };
+};
 export type IQuoteService = {
-  supportedChains(): ChainId[];
-  supportedSources(): AvailableSources[];
-  supportedSourcesInChain(chainId: ChainId): AvailableSources[];
+  supportedChains(): Promise<ChainId[]>;
+  supportedSources(): Promise<SourceMetadata[]>;
+  supportedSourcesInChain(chainId: ChainId): Promise<SourceMetadata[]>;
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<EstimatedQuoteResponse>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
     request: EstimatedQuoteRequest,
@@ -29,7 +30,7 @@ export type IQuoteService = {
       };
     }
   ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(sourceId: AvailableSources, request: IndividualQuoteRequest): Promise<QuoteResponse>;
+  getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse>;
   getQuotes(request: QuoteRequest): Promise<QuoteResponse>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest,
@@ -54,7 +55,7 @@ export type QuoteRequest = {
   gasSpeed?: GasSpeed;
   quoteTimeout?: TimeString;
   txValidFor?: TimeString;
-  filters?: Either<{ includeSources: AvailableSources[] }, { excludeSources: AvailableSources[] }>;
+  filters?: Either<{ includeSources: string[] }, { excludeSources: string[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
@@ -76,7 +77,7 @@ export type QuoteResponse = {
     estimatedCostInUSD?: number;
   };
   recipient: Address;
-  source: { id: AvailableSources; allowanceTarget: Address; name: string; logoURI: string };
+  source: { id: string; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
 };

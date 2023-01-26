@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
-import { GasPrice, IGasService } from '@services/gas/types';
+import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, TimeString, TokenAddress } from '@types';
 import { BaseToken } from '@services/tokens/types';
@@ -66,7 +66,6 @@ type ConfigurableAccounts<Support extends QuoteSourceSupport> = IsSwapAndTransfe
   : BaseSwapAccounts;
 type IsSwapAndTransfer<Support extends QuoteSourceSupport> = Support['swapAndTransfer'];
 type IsBuyOrder<Support extends QuoteSourceSupport> = Support['buyOrders'];
-
 export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig>
   implements QuoteSource<Support, CustomQuoteSourceConfig>
 {

@@ -3,13 +3,10 @@ import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService, IQuickGasCostCalculator } from '@services/gas/types';
 import { ChainId } from '@types';
 import { BigNumber, utils } from 'ethers';
-import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from './quote-sources/base';
-import { AllSourcesConfig, buildSources } from './sources-list';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
   FailedQuote,
-  GlobalQuoteSourceConfig,
   IndividualQuoteRequest,
   IQuoteService,
   QuoteRequest,
@@ -17,7 +14,6 @@ import {
   TokenWithOptionalPrice,
   WithFailedQuotes,
   QuoteTx,
-  AvailableSources,
 } from './types';
 import { BaseToken, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
@@ -25,43 +21,54 @@ import { forcedTimeoutWrapper } from './quote-sources/wrappers/forced-timeout-wr
 import { buyToSellOrderWrapper } from './quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { amountToUSD, calculateGasDetails, filterRejectedResults, isSameAddress } from '@shared/utils';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
+import { ISourceList } from './source-lists/types';
+import { QuoteSource, QuoteSourceSupport, SourceQuoteResponse, BuyOrder, SellOrder, SourceQuoteRequest } from './quote-sources/base';
 
 type ConstructorParameters = {
   fetchService: IFetchService;
   gasService: IGasService;
   tokenService: ITokenService<TokenWithOptionalPrice>;
-  config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>;
+  sourceList: ISourceList;
 };
 export class QuoteService implements IQuoteService {
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
-  private readonly sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>;
+  private readonly sourceList: ISourceList;
+  private sources: Record<string, QuoteSource<QuoteSourceSupport>> | undefined;
 
-  constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters) {
-    this.sources = addForcedTimeout(buildSources(config ?? {}, config));
+  constructor({ fetchService, gasService, tokenService, sourceList }: ConstructorParameters) {
     this.fetchService = fetchService;
     this.gasService = gasService;
     this.tokenService = tokenService;
+    this.sourceList = sourceList;
   }
 
-  supportedChains(): ChainId[] {
-    const supportedChains = Object.values(this.sources).map((source) => source.getMetadata().supports.chains.map((chain) => chain.chainId));
+  async supportedChains() {
+    const sources = await this.getSources();
+    const supportedChains = Object.values(sources).map((source) => source.getMetadata().supports.chains.map((chain) => chain.chainId));
     return chainsUnion(supportedChains);
   }
 
-  supportedSources(): AvailableSources[] {
-    return Object.keys(this.sources) as AvailableSources[];
+  async supportedSources() {
+    const sources = await this.getSources();
+    return Object.entries(sources).map(([sourceId, source]) => buildMetadata(sourceId, source));
   }
 
-  supportedSourcesInChain(chainId: ChainId): AvailableSources[] {
-    return Object.entries(this.sources)
-      .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === chainId))
-      .map(([sourceId]) => sourceId as AvailableSources);
+  async supportedSourcesInChain(chainId: ChainId) {
+    const sources = await this.getSources();
+    return Object.entries(sources)
+      .map(([sourceId, source]) => buildMetadata(sourceId, source))
+      .filter(({ supports }) => supports.chains.includes(chainId));
   }
 
-  getQuote(sourceId: AvailableSources, request: IndividualQuoteRequest): Promise<QuoteResponse> {
-    const sourceSupport = this.sources[sourceId].getMetadata().supports;
+  async getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse> {
+    const sources = await this.getSources();
+    if (!(sourceId in sources)) {
+      throw new Error(`Could not find a source with '${sourceId}'`);
+    }
+    // Qué pasa si no está soportado el source id?
+    const sourceSupport = sources[sourceId].getMetadata().supports;
     const supportedChains = sourceSupport.chains.map(({ chainId }) => chainId);
     if (!supportedChains.includes(request.chainId)) {
       throw new Error(`Source with '${sourceId}' does not support chain with id ${request.chainId}`);
@@ -123,7 +130,8 @@ export class QuoteService implements IQuoteService {
     let successfulQuotes: QuoteResponse[];
     let failedQuotes: FailedQuote[] = [];
     if (config?.ignoredFailed === false) {
-      const promises = this.executeQuotes(request).map(({ source, response }) =>
+      const sources = await this.getSources();
+      const promises = this.executeQuotes(sources, request).map(({ source, response }) =>
         response.catch((e) => ({
           failed: true,
           name: source.getMetadata().name,
@@ -147,7 +155,7 @@ export class QuoteService implements IQuoteService {
     return [...sortedQuotes, ...failedQuotes] as WithFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
-  private executeQuotes(request: QuoteRequest) {
+  private executeQuotes(availableSources: Record<string, QuoteSource<QuoteSourceSupport>>, request: QuoteRequest) {
     // Ask for needed values, such as token data and gas price
     const tokensPromise = this.tokenService.getTokensForChain(request.chainId, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
@@ -159,11 +167,16 @@ export class QuoteService implements IQuoteService {
     const sourceRequest = mapRequestToSourceRequest({ request, sellTokenPromise, buyTokenPromise, gasPricePromise });
 
     // Ask for quotes
-    const responses = this.getSourcesForRequest(request).map(({ sourceId, source }) => ({
-      sourceId,
-      source,
-      response: source.quote({ fetchService: this.fetchService }, sourceRequest),
-    }));
+    const responses: Promise<void>[] = [];
+    const sources = this.getSourcesForRequest(availableSources, request).then((sources) =>
+      sources.forEach(({ sourceId, source }) =>
+        responses.push({
+          sourceId,
+          source,
+          response: source.quote({ fetchService: this.fetchService }, sourceRequest),
+        })
+      )
+    );
 
     // Group all value promises
     const values = Promise.all([
@@ -181,8 +194,10 @@ export class QuoteService implements IQuoteService {
     }));
   }
 
-  private getSourcesForRequest(request: QuoteRequest) {
-    let sourceIds = this.supportedSourcesInChain(request.chainId);
+  private async getSourcesForRequest(availableSources: Record<string, QuoteSource<QuoteSourceSupport>>, request: QuoteRequest) {
+    let sourceIds = Object.entries(availableSources)
+      .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === request.chainId))
+      .map(([sourceId]) => sourceId);
 
     if (request.filters?.includeSources) {
       sourceIds = sourceIds.filter((id) => request.filters!.includeSources!.includes(id));
@@ -190,7 +205,7 @@ export class QuoteService implements IQuoteService {
       sourceIds = sourceIds.filter((id) => !request.filters!.excludeSources!.includes(id));
     }
 
-    let sources = sourceIds.map((sourceId) => ({ sourceId, source: this.sources[sourceId] }));
+    let sources = sourceIds.map((sourceId) => ({ sourceId, source: availableSources[sourceId] }));
 
     if (request.order.type === 'buy') {
       if (request.estimateBuyOrdersWithSellOnlySources) {
@@ -207,8 +222,15 @@ export class QuoteService implements IQuoteService {
     // Cast so that even if the source doesn't support it, everything else types ok
     return sources.map(({ sourceId, source }) => ({
       sourceId,
-      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }, any>,
+      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>,
     }));
+  }
+
+  private async getSources() {
+    if (!this.sources) {
+      this.sources = addForcedTimeout(await this.sourceList.getSources());
+    }
+    return this.sources;
   }
 }
 
@@ -230,8 +252,8 @@ async function mapSourceResponseToResponse({
   response: responsePromise,
   values,
 }: {
-  sourceId: AvailableSources;
-  source: QuoteSource<QuoteSourceSupport, any>;
+  sourceId: string;
+  source: QuoteSource<QuoteSourceSupport>;
   request: QuoteRequest;
   response: Promise<SourceQuoteResponse>;
   values: Promise<{
@@ -292,11 +314,16 @@ function toAmountOfToken(token: BaseToken, price: number | undefined, amount: Bi
   };
 }
 
-function addForcedTimeout(sources: Record<AvailableSources, QuoteSource<QuoteSourceSupport, any>>) {
-  return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)])) as Record<
-    AvailableSources,
-    QuoteSource<QuoteSourceSupport, any>
-  >;
+function buildMetadata(sourceId: string, source: QuoteSource<QuoteSourceSupport>) {
+  const {
+    supports: { chains, ...supports },
+    ...metadata
+  } = source.getMetadata();
+  return { ...metadata, id: sourceId, supports: { ...supports, chains: chains.map(({ chainId }) => chainId) } };
+}
+
+function addForcedTimeout(sources: Record<string, QuoteSource<QuoteSourceSupport>>) {
+  return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)]));
 }
 
 function mapOrderToBigNumber(request: QuoteRequest): BuyOrder | SellOrder {

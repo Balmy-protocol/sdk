@@ -2,10 +2,12 @@ import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { ITokenService, BaseToken } from '@services/tokens/types';
-import { AllSourcesConfig } from '@services/quotes/sources-list';
+import { AllSourcesConfig, DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
 
-export type BuildQuoteParams = { config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> };
+type QuoteSourceList = { type: 'default'; withConfig?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> };
+
+export type BuildQuoteParams = { sourceList?: QuoteSourceList };
 
 export function buildQuoteService(
   params: BuildQuoteParams | undefined,
@@ -13,12 +15,24 @@ export function buildQuoteService(
   gasService: IGasService,
   tokenService: ITokenService<BaseToken>
 ) {
-  // If no referrer address was set, then we will use Mean's address
-  const config = { referrerAddress: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', ...params?.config };
+  const sourceList = buildList(params?.sourceList);
   return new QuoteService({
     fetchService,
     gasService,
     tokenService,
-    config,
+    sourceList,
   });
+}
+
+function buildList(list?: QuoteSourceList) {
+  switch (list?.type) {
+    case 'default':
+    default:
+      return new DefaultSourceList(addReferrerIfNotSet(list?.withConfig));
+  }
+}
+
+// If no referrer address was set, then we will use Mean's address
+function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
+  return { referrerAddress: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', ...config };
 }
