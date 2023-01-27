@@ -31,12 +31,12 @@ import { buildSources } from '@services/quotes/source-lists/default/source-regis
 
 // This is meant to be used for local testing. On the CI, we will run one random chain for each source
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'kyberswap',
-  chains: [Chains.ETHEREUM],
+  source: 'rango',
+  chains: [Chains.OPTIMISM],
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
-jest.retryTimes(3);
+// jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 describe('Quote Sources', () => {

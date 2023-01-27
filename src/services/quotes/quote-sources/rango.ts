@@ -73,8 +73,6 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       url += `&referrerAddress=${this.globalConfig.referrerAddress}`;
     }
 
-    console.log(url);
-
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(chain, sellToken, buyToken, await response.text());
@@ -85,7 +83,7 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
     } = await response.json();
 
     const gasCost = BigNumber.from((fee as { name: string; amount: string }[]).find((fee) => fee.name === 'Network Fee')?.amount ?? 0);
-    const estimatedGas = gasLimit ? BigNumber.from(gasLimit) : gasCost.div(gasPrice);
+    const estimatedGas = gasLimit ? BigNumber.from(gasLimit) : gasCost.div(gasPrice ?? 1);
 
     const tx = {
       to: txTo,
