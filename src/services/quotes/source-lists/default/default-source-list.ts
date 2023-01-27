@@ -1,18 +1,8 @@
-import {
-  FailedQuote,
-  GlobalQuoteSourceConfig,
-  IndividualQuoteRequest,
-  QuoteRequest,
-  QuoteResponse,
-  QuoteTx,
-  SourceMetadata,
-  TokenWithOptionalPrice,
-} from '../../types';
-import { ISourceList } from '../types';
+import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId, TokenWithOptionalPrice } from '../../types';
+import { IQuoteSourceList, SourceListRequest } from '../types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../../quote-sources/base';
-import { ChainId } from '@types';
-import { Chains, chainsUnion } from '@chains';
-import { amountToUSD, calculateGasDetails, isSameAddress } from '@shared/utils';
+import { Chains } from '@chains';
+import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { AllSourcesConfig, buildSources } from './source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
@@ -28,11 +18,11 @@ type ConstructorParameters = {
   tokenService: ITokenService<TokenWithOptionalPrice>;
   config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>;
 };
-export class DefaultSourceList implements ISourceList {
+export class DefaultSourceList implements IQuoteSourceList {
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
-  private readonly sources: Record<string, QuoteSource<QuoteSourceSupport, any>>;
+  private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
   constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters) {
     this.fetchService = fetchService;
@@ -41,74 +31,20 @@ export class DefaultSourceList implements ISourceList {
     this.sources = addForcedTimeout(buildSources(config));
   }
 
-  async supportedChains(): Promise<ChainId[]> {
-    const supportedChains = Object.values(this.sources).map((source) => source.getMetadata().supports.chains.map((chain) => chain.chainId));
-    return chainsUnion(supportedChains);
+  supportedSources() {
+    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, buildMetadata(source)]);
+    return Object.fromEntries(entries);
   }
 
-  async supportedSources(): Promise<SourceMetadata[]> {
-    return Object.entries(this.sources).map(([sourceId, source]) => buildMetadata(sourceId, source));
-  }
-
-  async getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse> {
-    if (!(sourceId in this.sources)) {
-      throw new Error(`Could not find a source with '${sourceId}'`);
-    }
-
-    const sourceSupport = this.sources[sourceId].getMetadata().supports;
-    const supportedChains = sourceSupport.chains.map(({ chainId }) => chainId);
-    if (!supportedChains.includes(request.chainId)) {
-      throw new Error(`Source with '${sourceId}' does not support chain with id ${request.chainId}`);
-    }
-    const shouldFailBecauseTransferNotSupported =
-      !sourceSupport.swapAndTransfer &&
-      !!request.recipient &&
-      !isSameAddress(request.takerAddress, request.recipient) &&
-      !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
-    if (shouldFailBecauseTransferNotSupported) {
-      throw new Error(
-        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
-      );
-    }
-
-    const shouldFailBecauseBuyOrderNotSupported =
-      !sourceSupport.buyOrders && request.order.type === 'buy' && !request.estimateBuyOrderIfSourceDoesNotSupportIt;
-
-    if (shouldFailBecauseBuyOrderNotSupported) {
-      throw new Error(
-        `Source with '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
-      );
-    }
-
-    const quotes = this.getQuotes({
-      ...request,
-      includeNonTransferSourcesWhenRecipientIsSet: true,
-      estimateBuyOrdersWithSellOnlySources: true,
-      filters: { includeSources: [sourceId] },
-    });
-
-    if (quotes.length !== 1) {
-      throw new Error('This is weird, not sure what happened');
-    }
-
-    const quote = await quotes[0];
-
-    if ('failed' in quote) {
-      throw new Error(`Failed to generate quote ${quote.error ? `'${quote.error}'` : ''}`);
-    }
-
-    return quote;
-  }
-
-  getQuotes(request: QuoteRequest): Promise<QuoteResponse | FailedQuote>[] {
+  getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
     return this.executeQuotes(request);
   }
 
-  getAllQuotes(request: QuoteRequest): Promise<(QuoteResponse | FailedQuote)[]> {
+  getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
     return Promise.all(this.getQuotes(request));
   }
 
-  private executeQuotes(request: QuoteRequest): Promise<QuoteResponse | FailedQuote>[] {
+  private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
     // Ask for needed values, such as token data and gas price
     const tokensPromise = this.tokenService.getTokensForChain(request.chainId, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
@@ -146,31 +82,19 @@ export class DefaultSourceList implements ISourceList {
     );
   }
 
-  private getSourcesForRequest(request: QuoteRequest) {
-    let sourceIds = Object.entries(this.sources)
-      .filter(([, source]) => source.getMetadata().supports.chains.some((chain) => chain.chainId === request.chainId))
-      .map(([sourceId]) => sourceId);
-
-    if (request.filters?.includeSources) {
-      sourceIds = sourceIds.filter((id) => request.filters!.includeSources!.includes(id));
-    } else if (request.filters?.excludeSources) {
-      sourceIds = sourceIds.filter((id) => !request.filters!.excludeSources!.includes(id));
-    }
-
-    let sources = sourceIds.map((sourceId) => ({ sourceId, source: this.sources[sourceId] }));
+  private getSourcesForRequest(request: SourceListRequest) {
+    let sources = request.sourceIds.map((sourceId) => ({ sourceId, source: this.sources[sourceId] })).filter(({ source }) => !!source);
 
     if (request.order.type === 'buy') {
       if (request.estimateBuyOrdersWithSellOnlySources) {
-        sources = sources.map(({ sourceId, source }) => ({ sourceId, source: buyToSellOrderWrapper(source) }));
+        sources = sources.map(({ sourceId, source }) => ({
+          sourceId,
+          source: source.getMetadata().supports.buyOrders ? source : buyToSellOrderWrapper(source),
+        }));
       } else {
         sources = sources.filter(({ source }) => source.getMetadata().supports.buyOrders);
       }
     }
-
-    if (request.recipient && request.recipient !== request.takerAddress && !request.includeNonTransferSourcesWhenRecipientIsSet) {
-      sources = sources.filter(({ source }) => source.getMetadata().supports.swapAndTransfer);
-    }
-
     // Cast so that even if the source doesn't support it, everything else types ok
     return sources.map(({ sourceId, source }) => ({
       sourceId,
@@ -186,7 +110,7 @@ async function mapSourceResponseToResponse({
   response: responsePromise,
   values,
 }: {
-  sourceId: string;
+  sourceId: SourceId;
   source: QuoteSource<QuoteSourceSupport>;
   request: QuoteRequest;
   response: Promise<SourceQuoteResponse>;
@@ -248,15 +172,15 @@ function toAmountOfToken(token: BaseToken, price: number | undefined, amount: Bi
   };
 }
 
-function buildMetadata(sourceId: string, source: QuoteSource<QuoteSourceSupport>) {
+function buildMetadata(source: QuoteSource<QuoteSourceSupport>) {
   const {
     supports: { chains, ...supports },
     ...metadata
   } = source.getMetadata();
-  return { ...metadata, id: sourceId, supports: { ...supports, chains: chains.map(({ chainId }) => chainId) } };
+  return { ...metadata, supports: { ...supports, chains: chains.map(({ chainId }) => chainId) } };
 }
 
-function addForcedTimeout(sources: Record<string, QuoteSource<QuoteSourceSupport>>) {
+function addForcedTimeout(sources: Record<SourceId, QuoteSource<QuoteSourceSupport>>) {
   return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)]));
 }
 

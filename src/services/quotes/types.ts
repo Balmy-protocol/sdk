@@ -11,14 +11,14 @@ export type GlobalQuoteSourceConfig = {
   referrerAddress?: TokenAddress;
 };
 
+export type SourceId = string;
 export type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
-  id: string;
   supports: QuoteSourceSupport & { chains: ChainId[] };
 };
 export type IQuoteService = {
-  supportedChains(): Promise<ChainId[]>;
-  supportedSources(): Promise<SourceMetadata[]>;
-  supportedSourcesInChain(chainId: ChainId): Promise<SourceMetadata[]>;
+  supportedSources(): Record<SourceId, SourceMetadata>;
+  supportedChains(): ChainId[];
+  supportedSourcesInChain(chainId: ChainId): Record<SourceId, SourceMetadata>;
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
     request: EstimatedQuoteRequest,
@@ -30,7 +30,7 @@ export type IQuoteService = {
       };
     }
   ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse>;
+  getQuote(sourceId: SourceId, request: IndividualQuoteRequest): Promise<QuoteResponse>;
   getQuotes(request: QuoteRequest): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest,
@@ -55,7 +55,7 @@ export type QuoteRequest = {
   gasSpeed?: GasSpeed;
   quoteTimeout?: TimeString;
   txValidFor?: TimeString;
-  filters?: Either<{ includeSources: string[] }, { excludeSources: string[] }>;
+  filters?: Either<{ includeSources: SourceId[] }, { excludeSources: SourceId[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
@@ -77,7 +77,7 @@ export type QuoteResponse = {
     estimatedCostInUSD?: number;
   };
   recipient: Address;
-  source: { id: string; allowanceTarget: Address; name: string; logoURI: string };
+  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
 };

@@ -1,4 +1,4 @@
-import { GlobalQuoteSourceConfig } from '../../types';
+import { GlobalQuoteSourceConfig, SourceId } from '../../types';
 import { OdosQuoteSource } from '../../quote-sources/odos';
 import { ParaswapQuoteSource } from '../../quote-sources/paraswap';
 import { ZRXQuoteSource } from '../../quote-sources/0x';
@@ -21,11 +21,11 @@ const QUOTE_SOURCES = {
   kyberswap: builder<KyberswapQuoteSource>((config) => new KyberswapQuoteSource(config)),
   odos: builderNeedsConfig<OdosQuoteSource>((config) => new OdosQuoteSource(config)),
   firebird: builderNeedsConfig<FirebirdQuoteSource>((config) => new FirebirdQuoteSource(config)),
-} satisfies Record<string, QuoteSourceBuilder<any>>;
+} satisfies Record<SourceId, QuoteSourceBuilder<any>>;
 
 export type AllSourcesConfig = Without<SourcesConfig, undefined>;
 export function buildSources(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
-  const sources: Record<string, QuoteSource<QuoteSourceSupport, any>> = {};
+  const sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>> = {};
   for (const sourceId in QUOTE_SOURCES) {
     const { build, needsConfig }: QuoteSourceBuilder<any> = QUOTE_SOURCES[sourceId as keyof typeof QUOTE_SOURCES];
     if (!needsConfig || (config && sourceId in config)) {

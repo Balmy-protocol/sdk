@@ -25,8 +25,7 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
         swapAndTransfer: true,
         buyOrders: false,
       },
-      // TODO: Update logo
-      logoURI: 'ipfs://QmTvX3XyrFDSiDAKPJg9xFgn8DgQbp31wYWE8q7VhaR2c7',
+      logoURI: 'ipfs://QmXJ92XHRWGzRFyUYYt5THiBVTiLwB1KAV35H5UyA3a8Yf',
     };
   }
 
