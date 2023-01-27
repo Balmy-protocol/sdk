@@ -163,19 +163,6 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   },
 } satisfies Record<ChainId, ChainTokens>;
 
-const CHAIN_EXCEPTIONS: ChainId[] = [
-  Chains.CELO.chainId, // Celo can't be forked with ethers.js due to different block header structure (https://github.com/NomicFoundation/hardhat/issues/1966)
-];
-
-// Check that we can test all chains
-const untestable = buildSDK()
-  .quoteService.supportedChains()
-  .filter((chainId) => !(chainId in TOKENS))
-  .filter((chainId) => !CHAIN_EXCEPTIONS.includes(chainId));
-if (untestable.length > 0) {
-  // throw new Error(`Cannot test chains '${untestable.map(chainId => Chains.byKeyOrFail(chainId).name).join(',')}'`)
-}
-
 export function chainsWithTestData(chainIds: ChainId[]) {
   return chainIds.filter((chainId) => chainId in TOKENS);
 }
