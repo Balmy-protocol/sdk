@@ -27,7 +27,7 @@ import {
   loadTokens,
   mintMany,
 } from '@test-utils/erc20';
-import { buildSources } from '@services/quotes/source-lists/default-source-list';
+import { buildSources } from '@services/quotes/source-lists/default/source-registry';
 
 // This is meant to be used for local testing. On the CI, we will run one random chain for each source
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
