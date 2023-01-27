@@ -5,29 +5,30 @@ import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, Source
 import { IFetchService } from '@services/fetch/types';
 import { addQuoteSlippage, failed } from './utils';
 
+export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
+  name: '1inch',
+  supports: {
+    chains: [
+      Chains.ETHEREUM,
+      Chains.BNB_CHAIN,
+      Chains.POLYGON,
+      Chains.OPTIMISM,
+      Chains.ARBITRUM,
+      Chains.GNOSIS,
+      Chains.AVALANCHE,
+      Chains.FANTOM,
+      Chains.KLAYTN,
+      Chains.AURORA,
+    ],
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
+};
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
 export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport> {
-  getMetadata(): QuoteSourceMetadata<OneInchSupport> {
-    return {
-      name: '1inch',
-      supports: {
-        chains: [
-          Chains.ETHEREUM,
-          Chains.BNB_CHAIN,
-          Chains.POLYGON,
-          Chains.OPTIMISM,
-          Chains.ARBITRUM,
-          Chains.GNOSIS,
-          Chains.AVALANCHE,
-          Chains.FANTOM,
-          Chains.KLAYTN,
-          Chains.AURORA,
-        ],
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
-    };
+  getMetadata() {
+    return ONE_INCH_METADATA;
   }
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<OneInchSupport>): Promise<SourceQuoteResponse> {

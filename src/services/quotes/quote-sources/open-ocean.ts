@@ -24,18 +24,19 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
 };
 
+export const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
+  name: 'Open Ocean',
+  supports: {
+    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
+};
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
 export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSupport> {
-  getMetadata(): QuoteSourceMetadata<OpenOceanSupport> {
-    return {
-      name: 'Open Ocean',
-      supports: {
-        chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
-    };
+  getMetadata() {
+    return OPEN_OCEAN_METADATA;
   }
 
   async quote(

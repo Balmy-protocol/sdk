@@ -6,35 +6,36 @@ import { BigNumber, BigNumberish, constants } from 'ethers';
 import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { failed } from './utils';
 
+export const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
+  name: 'Li.Fi',
+  supports: {
+    chains: [
+      Chains.ETHEREUM,
+      Chains.POLYGON,
+      Chains.BNB_CHAIN,
+      Chains.GNOSIS,
+      Chains.FANTOM,
+      Chains.OKC,
+      Chains.AVALANCHE,
+      Chains.ARBITRUM,
+      Chains.OPTIMISM,
+      Chains.MOONRIVER,
+      Chains.MOONBEAM,
+      Chains.CELO,
+      Chains.FUSE,
+      Chains.CRONOS,
+      Chains.VELAS,
+      Chains.AURORA,
+    ],
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmUgcnaNxsgQdjBjytxvXfeSfsDryh9bF4mNaz1Bp5QwJ4',
+};
 type LiFiSupport = { buyOrders: false; swapAndTransfer: true };
 export class LiFiQuoteSource extends NoCustomConfigQuoteSource<LiFiSupport> {
-  getMetadata(): QuoteSourceMetadata<LiFiSupport> {
-    return {
-      name: 'Li.Fi',
-      supports: {
-        chains: [
-          Chains.ETHEREUM,
-          Chains.POLYGON,
-          Chains.BNB_CHAIN,
-          Chains.GNOSIS,
-          Chains.FANTOM,
-          Chains.OKC,
-          Chains.AVALANCHE,
-          Chains.ARBITRUM,
-          Chains.OPTIMISM,
-          Chains.MOONRIVER,
-          Chains.MOONBEAM,
-          Chains.CELO,
-          Chains.FUSE,
-          Chains.CRONOS,
-          Chains.VELAS,
-          Chains.AURORA,
-        ],
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmUgcnaNxsgQdjBjytxvXfeSfsDryh9bF4mNaz1Bp5QwJ4',
-    };
+  getMetadata() {
+    return LI_FI_METADATA;
   }
 
   async quote(

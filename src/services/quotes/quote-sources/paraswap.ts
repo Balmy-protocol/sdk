@@ -12,18 +12,19 @@ import {
 } from './base';
 import { addQuoteSlippage, failed } from './utils';
 
+export const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
+  name: 'Paraswap',
+  supports: {
+    chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.OPTIMISM],
+    swapAndTransfer: true,
+    buyOrders: true,
+  },
+  logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
+};
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
 export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSupport> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
-    return {
-      name: 'Paraswap',
-      supports: {
-        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.OPTIMISM],
-        swapAndTransfer: true,
-        buyOrders: true,
-      },
-      logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
-    };
+    return PARASWAP_METADATA;
   }
 
   async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<ParaswapSupport>): Promise<SourceQuoteResponse> {

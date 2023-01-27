@@ -7,19 +7,20 @@ import { Addresses } from '@shared/constants';
 import { addQuoteSlippage, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 
+export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
+  name: 'Odos',
+  supports: {
+    chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE, Chains.BNB_CHAIN],
+    swapAndTransfer: false,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmQAAxRF6Wu5naWvqjEfqnKD8jhCfkDayNJdULgfZfxhfG',
+};
 type OdosConfig = { apiKey: string };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
 export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig> {
-  getMetadata(): QuoteSourceMetadata<OdosSupport> {
-    return {
-      name: 'Odos',
-      supports: {
-        chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE, Chains.BNB_CHAIN],
-        swapAndTransfer: false,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmQAAxRF6Wu5naWvqjEfqnKD8jhCfkDayNJdULgfZfxhfG',
-    };
+  getMetadata() {
+    return ODOS_METADATA;
   }
 
   async quote(

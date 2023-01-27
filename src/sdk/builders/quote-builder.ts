@@ -2,9 +2,9 @@ import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig, SourceId } from '@services/quotes/types';
 import { ITokenService, BaseToken } from '@services/tokens/types';
-import { DefaultSourceList } from '@services/quotes/source-lists/default/default-source-list';
+import { DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
-import { AllSourcesConfig } from '@services/quotes/source-lists/default/source-registry';
+import { AllSourcesConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
 

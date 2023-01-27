@@ -21,18 +21,19 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.OPTIMISM.chainId]: 'optimism',
 };
 
+export const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
+  name: 'Kyberswap',
+  supports: {
+    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmNcTVyqeVtNoyrT546VgJTD4vsZEkWp6zhDJ4qhgKkhbK',
+};
 type KyberswapSupport = { buyOrders: false; swapAndTransfer: true };
 export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSupport> {
-  getMetadata(): QuoteSourceMetadata<KyberswapSupport> {
-    return {
-      name: 'Kyberswap',
-      supports: {
-        chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmNcTVyqeVtNoyrT546VgJTD4vsZEkWp6zhDJ4qhgKkhbK',
-    };
+  getMetadata() {
+    return KYBERSWAP_METADATA;
   }
 
   async quote(

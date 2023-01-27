@@ -5,28 +5,29 @@ import { BigNumber, constants } from 'ethers';
 import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { addQuoteSlippage, failed } from './utils';
 
+export const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
+  name: 'Firebird',
+  supports: {
+    chains: [
+      Chains.ETHEREUM,
+      Chains.FANTOM,
+      Chains.CRONOS,
+      Chains.POLYGON,
+      Chains.BNB_CHAIN,
+      Chains.AVALANCHE,
+      Chains.ARBITRUM,
+      Chains.OPTIMISM,
+    ],
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmXJ92XHRWGzRFyUYYt5THiBVTiLwB1KAV35H5UyA3a8Yf',
+};
 type FirebirdConfig = { apiKey: string };
 type FirebirdSupport = { buyOrders: false; swapAndTransfer: true };
 export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, FirebirdConfig> {
-  getMetadata(): QuoteSourceMetadata<FirebirdSupport> {
-    return {
-      name: 'Firebird',
-      supports: {
-        chains: [
-          Chains.ETHEREUM,
-          Chains.FANTOM,
-          Chains.CRONOS,
-          Chains.POLYGON,
-          Chains.BNB_CHAIN,
-          Chains.AVALANCHE,
-          Chains.ARBITRUM,
-          Chains.OPTIMISM,
-        ],
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmXJ92XHRWGzRFyUYYt5THiBVTiLwB1KAV35H5UyA3a8Yf',
-    };
+  getMetadata() {
+    return FIREBIRD_METADATA;
   }
 
   async quote(

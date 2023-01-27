@@ -16,18 +16,19 @@ const ZRX_API: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'https://arbitrum.api.0x.org',
 };
 
+export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
+  name: '0x/Matcha',
+  supports: {
+    chains: Object.keys(ZRX_API).map((chainId) => Chains.byKeyOrFail(chainId)),
+    swapAndTransfer: false,
+    buyOrders: true,
+  },
+  logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
+};
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
 export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
-  getMetadata(): QuoteSourceMetadata<ZRXSupport> {
-    return {
-      name: '0x/Matcha',
-      supports: {
-        chains: Object.keys(ZRX_API).map((chainId) => Chains.byKeyOrFail(chainId)),
-        swapAndTransfer: false,
-        buyOrders: true,
-      },
-      logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
-    };
+  getMetadata() {
+    return ZRX_METADATA;
   }
 
   async quote(

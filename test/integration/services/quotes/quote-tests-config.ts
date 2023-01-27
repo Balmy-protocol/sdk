@@ -1,5 +1,5 @@
 import { chainsUnion } from '@chains';
-import { AllSourcesConfig, buildSources } from '@services/quotes/source-lists/default/source-registry';
+import { AllSourcesConfig, buildSources } from '@services/quotes/source-registry';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
 export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {
