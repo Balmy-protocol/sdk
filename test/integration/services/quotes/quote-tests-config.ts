@@ -2,9 +2,14 @@ import { chainsUnion } from '@chains';
 import { AllSourcesConfig, buildSources } from '@services/quotes/source-lists/default/source-registry';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
-export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {};
+export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {
+  referrerAddress: '0x0000000000000000000000000000000000000001',
+};
 if (process.env.ODOS_API_KEY) {
   CONFIG.odos = { apiKey: process.env.ODOS_API_KEY };
+}
+if (process.env.FIREBIRD_API_KEY) {
+  CONFIG.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
 }
 
 export function supportedChains() {

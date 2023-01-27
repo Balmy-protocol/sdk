@@ -9,6 +9,7 @@ import { LiFiQuoteSource } from '../../quote-sources/li-fi';
 import { KyberswapQuoteSource } from '../../quote-sources/kyberswap';
 import { Without } from '@utility-types';
 import { QuoteSource, QuoteSourceSupport } from '../../quote-sources/base';
+import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird';
 
 const QUOTE_SOURCES = {
   paraswap: builder<ParaswapQuoteSource>((config) => new ParaswapQuoteSource(config)),
@@ -19,6 +20,7 @@ const QUOTE_SOURCES = {
   'li-fi': builder<LiFiQuoteSource>((config) => new LiFiQuoteSource(config)),
   kyberswap: builder<KyberswapQuoteSource>((config) => new KyberswapQuoteSource(config)),
   odos: builderNeedsConfig<OdosQuoteSource>((config) => new OdosQuoteSource(config)),
+  firebird: builderNeedsConfig<FirebirdQuoteSource>((config) => new FirebirdQuoteSource(config)),
 } satisfies Record<string, QuoteSourceBuilder<any>>;
 
 export type AllSourcesConfig = Without<SourcesConfig, undefined>;

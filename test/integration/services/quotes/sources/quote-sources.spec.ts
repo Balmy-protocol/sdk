@@ -31,7 +31,7 @@ import { buildSources } from '@services/quotes/source-lists/default/source-regis
 
 // This is meant to be used for local testing. On the CI, we will run one random chain for each source
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'kyberswap',
+  source: 'firebird',
   chains: [Chains.ETHEREUM],
 };
 
