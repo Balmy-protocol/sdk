@@ -127,7 +127,7 @@ export class Chains {
     ids: ['fuse'],
     currencySymbol: 'FUSE',
     wToken: '0x0BE9e53fd7EDaC9F859882AfdDa116645287C629',
-    publicRPCs: ['https://rpc.fuse.io'],
+    publicRPCs: ['https://fuse-rpc.gateway.pokt.network', 'https://fuse-mainnet.chainstacklabs.com', 'https://rpc.fuse.io'],
   } as const satisfies Chain;
 
   static readonly VELAS = {

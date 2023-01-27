@@ -1,29 +1,36 @@
 import { ethers } from 'ethers';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains } from '@chains';
-import { AddedProperties, BaseToken, ITokenSource } from '@services/tokens/types';
+import { BaseToken, ITokenSource, PropertiesRecord } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 
 export class ProviderTokenSource implements ITokenSource {
-  constructor(private readonly multicallService: IMulticallService, private readonly defaultTimeout?: TimeString) {}
+  constructor(private readonly multicallService: IMulticallService) {}
 
   supportedChains(): ChainId[] {
     return this.multicallService.supportedChains();
   }
 
-  async getTokens(addresses: Record<ChainId, TokenAddress[]>, timeout?: TimeString): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
+  async getTokens(
+    addresses: Record<ChainId, TokenAddress[]>,
+    context?: { timeout: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
     const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, BaseToken>]>>(async ([chainId, addresses]) => [
       parseInt(chainId),
-      await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), timeout ?? this.defaultTimeout),
+      await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), context?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
-  addedProperties(): AddedProperties<BaseToken>[] {
-    return [];
+  tokenProperties(): PropertiesRecord<BaseToken> {
+    return {
+      address: 'present',
+      symbol: 'present',
+      decimals: 'present',
+    };
   }
 
   private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, BaseToken>> {

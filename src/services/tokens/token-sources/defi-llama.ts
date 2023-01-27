@@ -1,8 +1,8 @@
-import { ChainId, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
-import { AddedProperties, BaseToken, ITokenSource } from '../types';
+import { BaseToken, ITokenSource, PropertiesRecord } from '../types';
 import { isSameAddress } from '@shared/utils';
 
 const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
@@ -23,9 +23,11 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ONTOLOGY.chainId]: 'ontology',
   [Chains.KLAYTN.chainId]: 'klaytn',
   [Chains.AURORA.chainId]: 'aurora',
+  [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
+  [Chains.MOONBEAM.chainId]: 'moonbeam',
+  [Chains.VELAS.chainId]: 'velas',
 
   // TODO: these chains are also supported by DefiLlama. We should add them
-  // "harmony",
   // "kcc",
   // "kava",
   // "rsk",
@@ -33,10 +35,8 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   // "kardia",
   // "metis",
   // "telos",
-  // "moonbeam",
   // "meter",
   // "sx",
-  // "velas",
   // "milkomeda"
 };
 
@@ -52,11 +52,14 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     return Object.keys(CHAIN_ID_TO_KEY).map((chainId) => parseInt(chainId));
   }
 
-  async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
+  async getTokens(
+    addresses: Record<ChainId, TokenAddress[]>,
+    context?: { timeout?: TimeString }
+  ): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
     const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
       addresses.map((address) => toTokenId(parseInt(chainId), address))
     );
-    const coins = await this.fetchTokens(tokenIds);
+    const coins = await this.fetchTokens(tokenIds, context);
     const result: Record<ChainId, Record<TokenAddress, DefiLlamaToken>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
@@ -67,16 +70,22 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     return result;
   }
 
-  addedProperties(): AddedProperties<DefiLlamaToken>[] {
-    return ['price', 'timestamp'];
+  tokenProperties(): PropertiesRecord<DefiLlamaToken> {
+    return {
+      address: 'present',
+      symbol: 'present',
+      decimals: 'present',
+      price: 'present',
+      timestamp: 'present',
+    };
   }
 
-  private async fetchTokens(tokens: TokenId[]) {
+  private async fetchTokens(tokens: TokenId[], context?: { timeout?: TimeString }) {
     const chunkSize = 30;
     const chunks = [...Array(Math.ceil(tokens.length / chunkSize))].map((_) => tokens.splice(0, chunkSize));
     const requests = chunks.map(async (chunk) => {
       const url = 'https://coins.llama.fi/prices/current/' + chunk.join(',');
-      const response = await this.fetch.fetch(url);
+      const response = await this.fetch.fetch(url, { timeout: context?.timeout });
       if (!response.ok) {
         throw new Error('Request to Defi Llama API failed');
       }
