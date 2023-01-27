@@ -12,7 +12,7 @@ import { TokenService } from '@services/tokens/token-service';
 type TokenSource =
   | { type: 'defi-llama' }
   | { type: 'rpc' }
-  | { type: 'custom'; instance: ITokenSource<any> }
+  | { type: 'custom'; instance: ITokenSource<BaseToken> }
   | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> };
 type TokenSourceConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
 export type BuildTokenParams = { source: TokenSource; config?: TokenSourceConfig };
@@ -63,7 +63,7 @@ function buildSource<T extends TokenSource>(
     case 'rpc':
       return provider as any;
     case 'custom':
-      return source.instance;
+      return source.instance as any;
     case 'combine-when-possible':
       return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { defiLlama, provider }))) as any;
   }
