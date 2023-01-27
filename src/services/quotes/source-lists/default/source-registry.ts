@@ -1,15 +1,14 @@
-import { GlobalQuoteSourceConfig } from '../types';
-import { OdosQuoteSource } from '../quote-sources/odos';
-import { ParaswapQuoteSource } from '../quote-sources/paraswap';
-import { ZRXQuoteSource } from '../quote-sources/0x';
-import { OneInchQuoteSource } from '../quote-sources/1inch';
-import { UniswapQuoteSource } from '../quote-sources/uniswap';
-import { OpenOceanQuoteSource } from '../quote-sources/open-ocean';
-import { LiFiQuoteSource } from '../quote-sources/li-fi';
-import { KyberswapQuoteSource } from '../quote-sources/kyberswap';
+import { GlobalQuoteSourceConfig } from '../../types';
+import { OdosQuoteSource } from '../../quote-sources/odos';
+import { ParaswapQuoteSource } from '../../quote-sources/paraswap';
+import { ZRXQuoteSource } from '../../quote-sources/0x';
+import { OneInchQuoteSource } from '../../quote-sources/1inch';
+import { UniswapQuoteSource } from '../../quote-sources/uniswap';
+import { OpenOceanQuoteSource } from '../../quote-sources/open-ocean';
+import { LiFiQuoteSource } from '../../quote-sources/li-fi';
+import { KyberswapQuoteSource } from '../../quote-sources/kyberswap';
 import { Without } from '@utility-types';
-import { ISourceList } from './types';
-import { QuoteSource, QuoteSourceSupport } from '../quote-sources/base';
+import { QuoteSource, QuoteSourceSupport } from '../../quote-sources/base';
 
 const QUOTE_SOURCES = {
   paraswap: builder<ParaswapQuoteSource>((config) => new ParaswapQuoteSource(config)),
@@ -35,18 +34,6 @@ export function buildSources(config?: GlobalQuoteSourceConfig & Partial<AllSourc
     }
   }
   return sources;
-}
-
-export class DefaultSourceList implements ISourceList {
-  private readonly sources: Record<string, QuoteSource<QuoteSourceSupport, any>>;
-
-  constructor(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
-    this.sources = buildSources(config);
-  }
-
-  getSources(): Promise<Record<string, QuoteSource<QuoteSourceSupport, any>>> {
-    return Promise.resolve(this.sources);
-  }
 }
 
 function builder<Source extends QuoteSource<any, any>>(

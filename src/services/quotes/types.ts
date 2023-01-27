@@ -11,7 +11,7 @@ export type GlobalQuoteSourceConfig = {
   referrerAddress?: TokenAddress;
 };
 
-type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
+export type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
   id: string;
   supports: QuoteSourceSupport & { chains: ChainId[] };
 };
@@ -19,7 +19,7 @@ export type IQuoteService = {
   supportedChains(): Promise<ChainId[]>;
   supportedSources(): Promise<SourceMetadata[]>;
   supportedSourcesInChain(chainId: ChainId): Promise<SourceMetadata[]>;
-  estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<EstimatedQuoteResponse>[];
+  estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
     request: EstimatedQuoteRequest,
     config?: {
@@ -29,9 +29,9 @@ export type IQuoteService = {
         using?: CompareQuotesUsing;
       };
     }
-  ): Promise<WithFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
+  ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
   getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse>;
-  getQuotes(request: QuoteRequest): Promise<QuoteResponse>[];
+  getQuotes(request: QuoteRequest): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest,
     config?: {
@@ -41,7 +41,7 @@ export type IQuoteService = {
         using?: CompareQuotesUsing;
       };
     }
-  ): Promise<WithFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+  ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
 
 export type QuoteRequest = {
@@ -99,8 +99,9 @@ type AmountOfToken = {
   amountInUSD?: number;
 };
 
-export type WithFailedQuotes<IgnoredFailed extends boolean, Response extends QuoteResponse | EstimatedQuoteResponse> = IgnoredFailed extends true
-  ? Response
-  : Response | FailedQuote;
+export type IgnoreFailedQuotes<
+  IgnoredFailed extends boolean,
+  Response extends QuoteResponse | EstimatedQuoteResponse
+> = IgnoredFailed extends true ? Response : Response | FailedQuote;
 
 export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };
