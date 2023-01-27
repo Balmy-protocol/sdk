@@ -19,15 +19,16 @@ import {
   mint,
 } from '@test-utils/erc20';
 import { buildSDK } from '@builder';
+import { supportedChains } from './quote-tests-config';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 const { quoteService } = buildSDK();
-const chains = chainsWithTestData(quoteService.supportedChains());
+const chains = chainsWithTestData(supportedChains());
 
-describe.skip('Quote Service', () => {
+describe('Quote Service', () => {
   for (const chainId of chains) {
     const chain = Chains.byKeyOrFail(chainId);
     describe(`${chain.name}`, () => {

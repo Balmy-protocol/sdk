@@ -1,9 +1,15 @@
+import { chainsUnion } from '@chains';
+import { AllSourcesConfig, buildSources } from '@services/quotes/source-lists/default/source-registry';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
-import { AllSourcesConfig } from '@services/quotes/source-lists/default-source-list';
 
 export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {};
 if (process.env.ODOS_API_KEY) {
   CONFIG.odos = { apiKey: process.env.ODOS_API_KEY };
+}
+
+export function supportedChains() {
+  const sources = buildSources(CONFIG);
+  return chainsUnion(Object.values(sources).map((source) => source.getMetadata().supports.chains.map(({ chainId }) => chainId)));
 }
 
 export enum Test {
