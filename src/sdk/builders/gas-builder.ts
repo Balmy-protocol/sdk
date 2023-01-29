@@ -22,9 +22,10 @@ type GasSource =
   | { type: 'custom'; instance: IGasPriceSource<any> }
   | { type: 'fastest'; sources: ArrayTwoOrMore<GasSource> }
   | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSource> };
-type GasSourceConfig =
+type CachingConfig =
   | { useCaching: false }
-  | { useCaching: true; expiration: ExpirationConfigOptions; overrides?: Record<ChainId, ExpirationConfigOptions> };
+  | { useCaching: true; expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> } };
+type GasSourceConfig = { caching?: CachingConfig };
 export type BuildGasParams = { source: GasSource; config?: GasSourceConfig };
 
 export function buildGasService(
@@ -38,11 +39,11 @@ export function buildGasService(
   const source = buildSource(params?.source, { openOcean, provider });
 
   let gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
-  if (params?.config?.useCaching) {
+  if (params?.config?.caching?.useCaching) {
     // Add caching if necessary
     gasCostCalculatorBuilder = new CachedGasCalculatorBuilder({
       wrapped: gasCostCalculatorBuilder,
-      expiration: { default: params.config.expiration, overrides: params.config.overrides },
+      expiration: { default: params.config.caching.expiration, overrides: params.config.caching.expiration.overrides },
     });
   }
 

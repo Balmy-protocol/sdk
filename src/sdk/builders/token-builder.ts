@@ -14,7 +14,9 @@ type TokenSource =
   | { type: 'rpc' }
   | { type: 'custom'; instance: ITokenSource<BaseToken> }
   | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> };
-type TokenSourceConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
+
+type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
+type TokenSourceConfig = { caching?: CachingConfig };
 export type BuildTokenParams = { source: TokenSource; config?: TokenSourceConfig };
 export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefined> = T extends BuildTokenParams
   ? CalculateTokenFromSource<T['source']>
@@ -46,8 +48,8 @@ export function buildTokenService<T extends BuildTokenParams | undefined>(
   const provider = new ProviderTokenSource(multicallService);
 
   let source = buildSource(params?.source, { defiLlama, provider });
-  if (params?.config?.useCaching) {
-    source = new CachedTokenSource(source, params.config.expiration);
+  if (params?.config?.caching?.useCaching) {
+    source = new CachedTokenSource(source, params.config.caching.expiration);
   }
   return new TokenService(source as unknown as ITokenSource<CalculateTokenFromSourceParams<T>>);
 }
