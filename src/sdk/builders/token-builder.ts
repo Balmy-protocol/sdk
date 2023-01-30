@@ -23,7 +23,7 @@ export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefine
   : CalculateTokenFromSource<undefined>;
 
 type CalculateTokenFromSource<T extends TokenSource | undefined> = T extends undefined
-  ? DefiLlamaToken
+  ? UnionMerge<DefiLlamaToken | BaseToken>
   : T extends { type: 'defi-llama' }
   ? DefiLlamaToken
   : T extends { type: 'rpc' }
@@ -60,6 +60,7 @@ function buildSource<T extends TokenSource>(
 ): ITokenSource<CalculateTokenFromSource<T>> {
   switch (source?.type) {
     case undefined:
+      return new FallbackTokenSource([defiLlama, provider]) as any;
     case 'defi-llama':
       return defiLlama as any;
     case 'rpc':
