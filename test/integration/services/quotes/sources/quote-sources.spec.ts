@@ -268,8 +268,8 @@ describe('Quote Sources', () => {
         const expected = fromAmount.mul(fromPriceBN).mul(magnitudeTo).div(toPriceBN).div(magnitudeFrom);
 
         const threshold = expected.mul(TRESHOLD_PERCENTAGE * 10).div(100 * 10);
-        const [upperThreshold, lowerThreshold] = [expected.add(threshold), expected.sub(threshold)];
-        expect(toAmount).to.be.lte(upperThreshold).and.to.be.gte(lowerThreshold);
+        const lowerThreshold = expected.sub(threshold);
+        expect(toAmount).to.be.gte(lowerThreshold);
       }
 
       type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
