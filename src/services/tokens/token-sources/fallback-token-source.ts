@@ -106,7 +106,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
       for (const address of addresses) {
         for (const tokenProperty in tokenProperties) {
           const property = tokenProperty as keyof MergeTokenTokensFromSources<Sources>;
-          const counter = propertiesCounter[chainId][address]?.[property];
+          const counter = propertiesCounter[chainId]?.[address]?.[property];
           if (counter !== undefined) {
             if (counter === 1) {
               delete propertiesCounter[chainId][address][property];
