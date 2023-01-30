@@ -58,11 +58,12 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
                 // Remove from counter
                 for (const tokenProperty in token) {
                   const property = tokenProperty as keyof MergeTokenTokensFromSources<Sources>;
-                  delete propertiesCounter[chainId][token.address][property];
+                  delete propertiesCounter?.[chainId]?.[token.address]?.[property];
                 }
               }
             }
           })
+          .catch(() => {}) // Handle, but do nothing
           .finally(() => handleFulfil(source));
       });
     });
@@ -87,7 +88,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
       }
       propertiesCounter[chainId] = {};
       for (const tokenAddress of addresses[chainId]) {
-        propertiesCounter[chainId][tokenAddress] = counter;
+        propertiesCounter[chainId][tokenAddress] = { ...counter };
       }
     }
     return propertiesCounter;
@@ -105,7 +106,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
       for (const address of addresses) {
         for (const tokenProperty in tokenProperties) {
           const property = tokenProperty as keyof MergeTokenTokensFromSources<Sources>;
-          const counter = propertiesCounter[chainId][address][property];
+          const counter = propertiesCounter[chainId][address]?.[property];
           if (counter !== undefined) {
             if (counter === 1) {
               delete propertiesCounter[chainId][address][property];
@@ -114,11 +115,15 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
             }
           }
         }
-        if (Object.keys(propertiesCounter[chainId][address]).length === 0) {
+        if (
+          chainId in propertiesCounter &&
+          address in propertiesCounter[chainId] &&
+          Object.keys(propertiesCounter[chainId][address]).length === 0
+        ) {
           delete propertiesCounter[chainId][address];
         }
       }
-      if (Object.keys(propertiesCounter[chainId]).length === 0) {
+      if (chainId in propertiesCounter && Object.keys(propertiesCounter[chainId]).length === 0) {
         delete propertiesCounter[chainId];
       }
     }

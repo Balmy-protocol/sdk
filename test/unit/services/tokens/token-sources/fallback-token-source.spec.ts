@@ -1,10 +1,12 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
 import { BaseToken, ITokenSource, MergeTokenTokensFromSources, PropertiesRecord } from '@services/tokens/types';
 import { Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import ms from 'ms';
+import chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 const TOKEN_A = {
   address: '0x0000000000000000000000000000000000000001',
@@ -165,16 +167,16 @@ describe('Fallback Token Source', () => {
     then('fallback rejects', async () => {
       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
-      const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
 
       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
       expect(promise.status).to.equal('pending');
-      source1Promise.reject(result);
+      source1Promise.reject();
       await sleep('10');
       expect(promise.status).to.equal('pending');
       source2Promise.reject();
       await sleep('10');
       expect(promise.status).to.equal('rejected');
+      expect(promise.result).to.have.rejected;
     });
   });
 
