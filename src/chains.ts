@@ -91,7 +91,7 @@ export class Chains {
     ids: ['heco'],
     currencySymbol: 'HT',
     wToken: '0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f',
-    publicRPCs: ['https://pub001.hg.network/rpc', 'https://http-mainnet.hecochain.com'],
+    publicRPCs: ['https://http-mainnet.hecochain.com', 'https://pub001.hg.network/rpc'],
   } as const satisfies Chain;
 
   static readonly OKC = {
