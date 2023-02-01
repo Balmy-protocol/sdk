@@ -12,4 +12,5 @@ export type Chain = Readonly<{
   currencySymbol: string;
   wToken: string;
   publicRPCs?: Readonly<string[]>;
+  explorer: string;
 }>;
