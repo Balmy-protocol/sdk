@@ -6,7 +6,9 @@ import { combineTokenProperties } from './utils';
 
 // This fallback source will use different sources and combine the results of each of them
 export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []> implements ITokenSource<MergeTokenTokensFromSources<Sources>> {
-  constructor(private readonly sources: Sources) {}
+  constructor(private readonly sources: Sources) {
+    if (sources.length === 0) throw new Error('Need at least one source to setup a fallback token source');
+  }
 
   supportedChains(): ChainId[] {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));

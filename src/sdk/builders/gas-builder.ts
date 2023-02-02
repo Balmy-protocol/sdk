@@ -16,17 +16,17 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 import { ProviderGasPriceSource } from '@services/gas/gas-price-sources/provider';
 import { GasService } from '@services/gas/gas-service';
 
-type GasSource =
+export type GasSourceInput =
   | { type: 'open-ocean' }
   | { type: 'rpc' }
   | { type: 'custom'; instance: IGasPriceSource<any> }
-  | { type: 'fastest'; sources: ArrayTwoOrMore<GasSource> }
-  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSource> };
+  | { type: 'fastest'; sources: ArrayTwoOrMore<GasSourceInput> }
+  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSourceInput> };
 type CachingConfig =
   | { useCaching: false }
   | { useCaching: true; expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> } };
-type GasSourceConfig = { caching?: CachingConfig };
-export type BuildGasParams = { source: GasSource; config?: GasSourceConfig };
+export type GasSourceConfigInput = { caching?: CachingConfig };
+export type BuildGasParams = { source: GasSourceInput; config?: GasSourceConfigInput };
 
 export function buildGasService(
   params: BuildGasParams | undefined,
@@ -51,7 +51,7 @@ export function buildGasService(
 }
 
 function buildSource(
-  source: GasSource | undefined,
+  source: GasSourceInput | undefined,
   { openOcean, provider }: { openOcean: OpenOceanGasPriceSource; provider: ProviderGasPriceSource }
 ): IGasPriceSource<any> {
   switch (source?.type) {

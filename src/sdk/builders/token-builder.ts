@@ -9,20 +9,20 @@ import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-tok
 import { ProviderTokenSource } from '@services/tokens/token-sources/provider';
 import { TokenService } from '@services/tokens/token-service';
 
-type TokenSource =
+export type TokenSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc' }
   | { type: 'custom'; instance: ITokenSource<BaseToken> }
-  | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> };
+  | { type: 'combine-when-possible'; sources: TokenSourceInput[] };
 
 type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
-type TokenSourceConfig = { caching?: CachingConfig };
-export type BuildTokenParams = { source: TokenSource; config?: TokenSourceConfig };
+export type TokenSourceConfigInput = { caching?: CachingConfig };
+export type BuildTokenParams = { source: TokenSourceInput; config?: TokenSourceConfigInput };
 export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefined> = T extends BuildTokenParams
   ? CalculateTokenFromSource<T['source']>
   : CalculateTokenFromSource<undefined>;
 
-type CalculateTokenFromSource<T extends TokenSource | undefined> = T extends undefined
+type CalculateTokenFromSource<T extends TokenSourceInput | undefined> = T extends undefined
   ? UnionMerge<DefiLlamaToken | BaseToken>
   : T extends { type: 'defi-llama' }
   ? DefiLlamaToken
@@ -30,12 +30,12 @@ type CalculateTokenFromSource<T extends TokenSource | undefined> = T extends und
   ? BaseToken
   : T extends { type: 'custom'; instance: ITokenService<infer Token> }
   ? Token
-  : T extends { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSource> }
+  : T extends { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSourceInput> }
   ? ExtractTokenFromSources<T['sources']>
   : never;
 
-type ExtractTokenFromSources<T extends ArrayTwoOrMore<TokenSource>> = UnionMerge<
-  { [K in keyof T]: T[K] extends TokenSource ? CalculateTokenFromSource<T[K]> : T[K] }[number]
+type ExtractTokenFromSources<T extends ArrayTwoOrMore<TokenSourceInput>> = UnionMerge<
+  { [K in keyof T]: T[K] extends TokenSourceInput ? CalculateTokenFromSource<T[K]> : T[K] }[number]
 > &
   BaseToken;
 
@@ -54,7 +54,7 @@ export function buildTokenService<T extends BuildTokenParams | undefined>(
   return new TokenService(source as unknown as ITokenSource<CalculateTokenFromSourceParams<T>>);
 }
 
-function buildSource<T extends TokenSource>(
+function buildSource<T extends TokenSourceInput>(
   source: T | undefined,
   { defiLlama, provider }: { defiLlama: DefiLlamaTokenSource; provider: ProviderTokenSource }
 ): ITokenSource<CalculateTokenFromSource<T>> {

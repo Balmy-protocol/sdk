@@ -4,16 +4,17 @@ import { GlobalQuoteSourceConfig, SourceId } from '@services/quotes/types';
 import { ITokenService, BaseToken } from '@services/tokens/types';
 import { DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
-import { AllSourcesConfig } from '@services/quotes/source-registry';
+import { DefaultSourcesConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
 
-type QuoteSourceList =
+export type DefaultSourcesConfigInput = GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
+export type QuoteSourceListInput =
   | { type: 'custom'; instance: IQuoteSourceList }
-  | { type: 'default'; withConfig?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> }
-  | { type: 'overridable-source-list'; lists: { default: QuoteSourceList; overrides: Record<SourceId, QuoteSourceList> } };
+  | { type: 'default'; withConfig?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> }
+  | { type: 'overridable-source-list'; lists: { default: QuoteSourceListInput; overrides: Record<SourceId, QuoteSourceListInput> } };
 
-export type BuildQuoteParams = { sourceList?: QuoteSourceList };
+export type BuildQuoteParams = { sourceList?: QuoteSourceListInput };
 
 export function buildQuoteService(
   params: BuildQuoteParams | undefined,
@@ -26,7 +27,7 @@ export function buildQuoteService(
 }
 
 function buildList(
-  list: QuoteSourceList | undefined,
+  list: QuoteSourceListInput | undefined,
   {
     fetchService,
     gasService,
@@ -55,6 +56,6 @@ function buildList(
 }
 
 // If no referrer address was set, then we will use Mean's address
-function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
+function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>) {
   return { referrerAddress: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', ...config };
 }

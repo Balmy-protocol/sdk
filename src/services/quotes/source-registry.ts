@@ -27,8 +27,8 @@ export const SOURCES_METADATA = Object.fromEntries(
   Object.entries(QUOTE_SOURCES).map(([sourceId, { metadata }]) => [sourceId, buildMetadata(metadata)])
 ) as Record<keyof typeof QUOTE_SOURCES, SourceMetadata>;
 
-export type AllSourcesConfig = Without<SourcesConfig, undefined>;
-export function buildSources(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
+export type DefaultSourcesConfig = Without<SourcesConfig, undefined>;
+export function buildSources(config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>) {
   const sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>> = {};
   for (const sourceId in QUOTE_SOURCES) {
     const { build, needsConfig }: QuoteSourceBuilder<any> = QUOTE_SOURCES[sourceId as keyof typeof QUOTE_SOURCES];

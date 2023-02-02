@@ -8,7 +8,9 @@ import { FallbackProvider } from '@ethersproject/providers';
 // This source will take a list of sources, sorted by priority, and use Ether's fallback
 // provider on all of them (taking the priority into account)
 export class FallbackSource implements IProviderSource {
-  constructor(private readonly sources: ArrayTwoOrMore<IProviderSource>) {}
+  constructor(private readonly sources: IProviderSource[]) {
+    if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
+  }
 
   supportedChains(): ChainId[] {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));

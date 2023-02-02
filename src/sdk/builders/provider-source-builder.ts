@@ -11,8 +11,8 @@ import { InfuraProviderSource } from '@services/providers/provider-sources/infur
 import { JsonRPCProviderSource } from '@services/providers/provider-sources/json-rpc-provider';
 import { LlamaNodesProviderSource } from '@services/providers/provider-sources/llama-nodes-provider';
 
-export type BuildProviderParams = { source: ProviderSource };
-type ProviderSource =
+export type BuildProviderParams = { source: ProviderSourceInput };
+export type ProviderSourceInput =
   | { type: 'ethers'; instance: providers.BaseProvider }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, ArrayOneOrMore<string>> }
@@ -20,14 +20,14 @@ type ProviderSource =
   | { type: 'infura'; config: { key: string; supportedChains?: ChainId[] } }
   | { type: 'llama-nodes'; config: { key: string } }
   | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
-  | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<ProviderSource> }
-  | { type: 'only-first-provider-that-supports-chain'; sources: ArrayTwoOrMore<ProviderSource> };
+  | { type: 'combine-when-possible'; sources: ProviderSourceInput[] }
+  | { type: 'only-first-provider-that-supports-chain'; sources: ProviderSourceInput[] };
 
 export function buildProviderSource(params?: BuildProviderParams) {
   return buildSource(params?.source);
 }
 
-function buildSource(source?: ProviderSource): IProviderSource {
+function buildSource(source?: ProviderSourceInput): IProviderSource {
   switch (source?.type) {
     case undefined:
       return new PublicProvidersSource();

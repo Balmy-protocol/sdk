@@ -1,0 +1,1 @@
+export { IMulticallService } from './types';

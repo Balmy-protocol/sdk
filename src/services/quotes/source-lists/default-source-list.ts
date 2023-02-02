@@ -3,7 +3,7 @@ import { IQuoteSourceList, SourceListRequest } from './types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
 import { Chains } from '@chains';
 import { amountToUSD, calculateGasDetails } from '@shared/utils';
-import { AllSourcesConfig, buildSources } from '../source-registry';
+import { DefaultSourcesConfig, buildSources } from '../source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
@@ -16,7 +16,7 @@ type ConstructorParameters = {
   fetchService: IFetchService;
   gasService: IGasService;
   tokenService: ITokenService<TokenWithOptionalPrice>;
-  config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>;
+  config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly fetchService: IFetchService;
