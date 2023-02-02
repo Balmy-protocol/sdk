@@ -18,6 +18,6 @@ export class InfuraProviderSource implements IProviderSource {
   }
 
   getProvider(chainId: ChainId): providers.BaseProvider {
-    return new InfuraProvider(this.key, chainId);
+    return new InfuraProvider(chainId, this.key);
   }
 }
