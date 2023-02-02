@@ -109,7 +109,7 @@ export class Chains {
     ids: ['okc', 'okexchain'],
     currencySymbol: 'OKT',
     wToken: '0x8f8526dbfd6e38e3d8307702ca8469bae6c56c15',
-    publicRPCs: ['https://exchainrpc.okex.org'],
+    publicRPCs: ['https://exchainrpc.okex.org', 'https://okc-mainnet.gateway.pokt.network/v1/lb/6275309bea1b320039c893ff'],
     explorer: 'https://www.oklink.com/en/okc/',
   } as const satisfies Chain;
 
