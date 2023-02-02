@@ -15,6 +15,7 @@ export function buildSDK<Params extends BuildParams = {}>(params?: Params): ISDK
   const quoteService = buildQuoteService(params?.quotes, fetchService, gasService, tokenService);
 
   return {
+    providerSource,
     fetchService,
     multicallService,
     gasService,

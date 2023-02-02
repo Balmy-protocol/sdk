@@ -6,4 +6,4 @@ export type IQuoteSourceList = {
   getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]>;
 };
 
-export type SourceListRequest = Exclude<QuoteRequest, 'filters' | 'includeNonTransferSourcesWhenRecipientIsSet'> & { sourceIds: SourceId[] };
+export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'includeNonTransferSourcesWhenRecipientIsSet'> & { sourceIds: SourceId[] };

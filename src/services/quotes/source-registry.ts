@@ -23,9 +23,9 @@ const QUOTE_SOURCES = {
   firebird: builderNeedsConfig<FirebirdQuoteSource>(FIREBIRD_METADATA, (config) => new FirebirdQuoteSource(config)),
 } satisfies Record<SourceId, QuoteSourceBuilder<any>>;
 
-export const SOURCES_METADATA: Record<SourceId, SourceMetadata> = Object.fromEntries(
+export const SOURCES_METADATA = Object.fromEntries(
   Object.entries(QUOTE_SOURCES).map(([sourceId, { metadata }]) => [sourceId, buildMetadata(metadata)])
-);
+) as Record<keyof typeof QUOTE_SOURCES, SourceMetadata>;
 
 export type AllSourcesConfig = Without<SourcesConfig, undefined>;
 export function buildSources(config?: GlobalQuoteSourceConfig & Partial<AllSourcesConfig>) {
