@@ -1,8 +1,8 @@
 import { chainsUnion } from '@chains';
-import { AllSourcesConfig, buildSources } from '@services/quotes/source-registry';
+import { DefaultSourcesConfig, buildSources } from '@services/quotes/source-registry';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
-export const CONFIG: GlobalQuoteSourceConfig & Partial<AllSourcesConfig> = {
+export const CONFIG: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> = {
   referrerAddress: '0x0000000000000000000000000000000000000001',
 };
 if (process.env.ODOS_API_KEY) {
