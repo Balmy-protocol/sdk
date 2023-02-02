@@ -29,7 +29,11 @@ export class OverridableSourceList implements IQuoteSourceList {
 
   async getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
     const requests = this.getRequests(request.sourceIds);
-    const responses = await Promise.all(requests.map(({ sourceList, sourceIds }) => sourceList.getAllQuotes({ ...request, sourceIds })));
+    const promises = requests.map(({ sourceList, sourceIds }) =>
+      // We'll try to handle if the source list fails
+      this.catchAndConvertToFailedQuotes(sourceList.getAllQuotes({ ...request, sourceIds }), sourceIds)
+    );
+    const responses = await Promise.all(promises);
     return responses.flat();
   }
 
@@ -48,5 +52,17 @@ export class OverridableSourceList implements IQuoteSourceList {
 
   private getSourceListForId(sourceId: SourceId) {
     return this.overrides[sourceId] ?? this.defaultSourceList;
+  }
+
+  private catchAndConvertToFailedQuotes(promise: Promise<(QuoteResponse | FailedQuote)[]>, sourceIds: SourceId[]) {
+    const supportedSources = this.supportedSources();
+    return promise.catch((e) =>
+      sourceIds.map<FailedQuote>((sourceId) => ({
+        failed: true,
+        name: supportedSources[sourceId].name,
+        logoURI: supportedSources[sourceId].logoURI,
+        error: e,
+      }))
+    );
   }
 }
