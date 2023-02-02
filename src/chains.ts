@@ -99,7 +99,7 @@ export class Chains {
     ids: ['heco'],
     currencySymbol: 'HT',
     wToken: '0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f',
-    publicRPCs: ['https://http-mainnet.hecochain.com', 'https://pub001.hg.network/rpc'],
+    publicRPCs: ['https://http-mainnet.hecochain.com'],
     explorer: 'https://scan.hecochain.com/',
   } as const satisfies Chain;
 
