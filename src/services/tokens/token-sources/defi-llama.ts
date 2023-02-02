@@ -5,7 +5,7 @@ import { IFetchService } from '@services/fetch/types';
 import { BaseToken, ITokenSource, PropertiesRecord } from '../types';
 import { isSameAddress } from '@shared/utils';
 
-const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
+export const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.BNB_CHAIN.chainId]: 'bsc',
   [Chains.POLYGON.chainId]: 'polygon',
