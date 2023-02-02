@@ -80,7 +80,7 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigNumber.from(totalTo),
-      estimatedGas: totalGas,
+      estimatedGas: BigNumber.from(totalGas),
       allowanceTarget: router,
       tx: {
         to: router,

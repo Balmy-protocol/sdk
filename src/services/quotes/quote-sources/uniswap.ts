@@ -55,7 +55,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
       `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
-      `&deadline=${timeToSeconds(txValidFor ?? '1y')}` +
+      `&deadline=${timeToSeconds(txValidFor ?? '3h')}` +
       `&slippageTolerance=${slippagePercentage}`;
 
     // These are needed so that the API allows us to make the call

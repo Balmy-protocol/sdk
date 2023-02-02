@@ -93,7 +93,7 @@ export type IndividualQuoteRequest = Omit<
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
-type AmountOfToken = {
+export type AmountOfToken = {
   amount: BigNumber;
   amountInUnits: number;
   amountInUSD?: number;
