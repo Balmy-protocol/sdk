@@ -138,8 +138,9 @@ async function mapSourceResponseToResponse({
   switch (request.chainId) {
     case Chains.OPTIMISM.chainId:
     case Chains.AURORA.chainId:
+    case Chains.POLYGON.chainId:
       // Do nothing, don't want to add the gas price here
-      // For some reason, some wallets fail when you add the gas price in Optimism and Aurora
+      // For some reason, some wallets fail when you add the gas price on these chains
       break;
     default:
       tx = { ...tx, ...gasPrice };
