@@ -56,11 +56,10 @@ describe('Gas Price Sources', () => {
         const isGasPriceIsSetForSpeed = (gasPrice: GasSpeedPriceResult<SupportRecord>, speed: keyof SupportRecord) => {
           if (isEIP1159Compatible(gasPrice)) {
             return (
-              BigNumber.isBigNumber((gasPrice as any)[speed].maxFeePerGas) ||
-              BigNumber.isBigNumber((gasPrice as any)[speed].maxPriorityFeePerGas)
+              typeof (gasPrice as any)[speed].maxFeePerGas === 'string' || typeof (gasPrice as any)[speed].maxPriorityFeePerGas === 'string'
             );
           } else {
-            return BigNumber.isBigNumber((gasPrice as any)[speed].gasPrice);
+            return typeof (gasPrice as any)[speed].gasPrice === 'string';
           }
         };
       }
