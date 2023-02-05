@@ -7,12 +7,16 @@ import { QuoteService } from '@services/quotes/quote-service';
 import { DefaultSourcesConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
+import { ArrayOneOrMore } from '@utility-types';
 
 export type DefaultSourcesConfigInput = GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 export type QuoteSourceListInput =
   | { type: 'custom'; instance: IQuoteSourceList }
   | { type: 'default'; withConfig?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> }
-  | { type: 'overridable-source-list'; lists: { default: QuoteSourceListInput; overrides: Record<SourceId, QuoteSourceListInput> } };
+  | {
+      type: 'overridable-source-list';
+      lists: { default: QuoteSourceListInput; overrides: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }> };
+    };
 
 export type BuildQuoteParams = { sourceList?: QuoteSourceListInput };
 
@@ -46,11 +50,10 @@ function buildList(
       return new DefaultSourceList({ fetchService, gasService, tokenService, config: addReferrerIfNotSet(list?.withConfig) });
     case 'overridable-source-list':
       const defaultList = buildList(list.lists.default, { fetchService, gasService, tokenService });
-      const entries = Object.entries(list.lists.overrides).map(([sourceId, sourceList]) => [
-        sourceId,
-        buildList(sourceList, { fetchService, gasService, tokenService }),
-      ]);
-      const overrides = Object.fromEntries(entries);
+      const overrides = list.lists.overrides.map(({ list, sourceIds }) => ({
+        list: buildList(list, { fetchService, gasService, tokenService }),
+        sourceIds,
+      }));
       return new OverridableSourceList({ default: defaultList, overrides });
   }
 }
