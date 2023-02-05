@@ -1,4 +1,5 @@
 import { ruleOfThree } from '@shared/utils';
+import { BigNumber } from 'ethers';
 import { QuoteResponse } from './types';
 
 export const COMPARE_BY = [
@@ -77,9 +78,9 @@ export function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteRespons
 }
 
 function compareLeastGas(quote1: QuoteResponse, quote2: QuoteResponse) {
-  if (quote1.gas.estimatedGas.lt(quote2.gas.estimatedGas)) {
+  if (BigNumber.from(quote1.gas.estimatedGas).lt(quote2.gas.estimatedGas)) {
     return -1;
-  } else if (quote1.gas.estimatedGas.gt(quote2.gas.estimatedGas)) {
+  } else if (BigNumber.from(quote1.gas.estimatedGas).gt(quote2.gas.estimatedGas)) {
     return 1;
   }
   return 0;
@@ -87,8 +88,8 @@ function compareLeastGas(quote1: QuoteResponse, quote2: QuoteResponse) {
 
 function calculateProfit(quote: QuoteResponse, using: CompareQuotesUsing) {
   const { sellAmount, buyAmount } = amountExtractor(using)(quote);
-  const soldUSD = sellAmount.amountInUSD;
-  const boughtUSD = buyAmount.amountInUSD;
-  const gasCostUSD = quote.gas.estimatedCostInUSD;
+  const soldUSD = sellAmount.amountInUSD && Number(sellAmount.amountInUSD);
+  const boughtUSD = buyAmount.amountInUSD && Number(buyAmount.amountInUSD);
+  const gasCostUSD = quote.gas.estimatedCostInUSD && Number(quote.gas.estimatedCostInUSD);
   return !soldUSD || !boughtUSD || !gasCostUSD ? undefined : boughtUSD - soldUSD - gasCostUSD;
 }

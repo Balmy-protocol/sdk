@@ -97,9 +97,9 @@ function checksummAndMapIfNecessary(address: Address) {
 
 function eip1159ToLegacy(gasPrice: GasPrice): BigNumber {
   if ('gasPrice' in gasPrice) {
-    return gasPrice.gasPrice;
+    return BigNumber.from(gasPrice.gasPrice);
   }
-  return gasPrice.maxFeePerGas;
+  return BigNumber.from(gasPrice.maxFeePerGas);
 }
 
 type Response = {
