@@ -1,6 +1,6 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { ChainId } from '@types';
-import { BigNumber } from 'ethers';
+import { BigNumberish } from 'ethers';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from './types';
@@ -23,8 +23,11 @@ export class GasService implements IGasService {
     return chainsIntersection(this.providerSource.supportedChains(), this.gasCostCalculatorBuilder.supportedChains());
   }
 
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<BigNumber> {
-    return this.providerSource.getProvider(chainId).estimateGas(tx);
+  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<string> {
+    return this.providerSource
+      .getProvider(chainId)
+      .estimateGas(tx)
+      .then((estimate) => estimate.toString());
   }
 
   getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator> {
@@ -38,7 +41,7 @@ export class GasService implements IGasService {
 
   async calculateGasCost(
     chainId: ChainId,
-    gasEstimation: BigNumber,
+    gasEstimation: BigNumberish,
     tx?: TransactionRequest,
     options?: { speed?: GasSpeed }
   ): Promise<GasEstimation<GasPrice>> {

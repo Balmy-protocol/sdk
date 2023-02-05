@@ -1,12 +1,12 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { UnionMerge } from '@utility-types';
-import { BigNumber } from 'ethers';
+import { BigNumberish } from 'ethers';
 
 export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
 export type GasSpeed = (typeof AVAILABLE_GAS_SPEEDS)[number];
-export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: BigNumber } & ChainGasPrice;
+export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: string } & ChainGasPrice;
 export type GasSpeedSupportRecord = Partial<Record<GasSpeed, GasSpeedSupport>> & { standard: 'present' };
 export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, GasPriceVersion = GasPrice> = GasPriceForSpeed<
   PresentSpeeds<SupportRecord>,
@@ -17,11 +17,11 @@ export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, Gas
 
 export type IGasService = {
   supportedChains(): ChainId[];
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<BigNumber>;
+  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<string>;
   getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice>;
   calculateGasCost(
     chainId: ChainId,
-    gasEstimation: BigNumber,
+    gasEstimation: BigNumberish,
     tx?: TransactionRequest,
     options?: { speed?: GasSpeed }
   ): Promise<GasEstimation<GasPrice>>;
@@ -41,11 +41,11 @@ export type IQuickGasCostCalculatorBuilder = {
 
 export type IQuickGasCostCalculator = {
   getGasPrice(speed?: GasSpeed): GasPrice;
-  calculateGasCost(_: { gasEstimation: BigNumber; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
+  calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
 };
 
-export type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };
-export type LegacyGasPrice = { gasPrice: BigNumber };
+export type EIP1159GasPrice = { maxFeePerGas: string; maxPriorityFeePerGas: string };
+export type LegacyGasPrice = { gasPrice: string };
 
 type GasSpeedSupport = 'optional' | 'present';
 type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<SupportedGasSpeed, GasPriceVersion>;

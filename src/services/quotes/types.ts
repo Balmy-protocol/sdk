@@ -3,7 +3,7 @@ import { GasPrice, GasSpeed } from '@services/gas/types';
 import { BaseToken } from '@services/tokens/types';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
 
@@ -70,11 +70,11 @@ export type QuoteResponse = {
   maxSellAmount: AmountOfToken;
   minBuyAmount: AmountOfToken;
   gas: {
-    estimatedGas: BigNumber;
-    estimatedCost: BigNumber;
-    estimatedCostInUnits: number;
+    estimatedGas: string;
+    estimatedCost: string;
+    estimatedCostInUnits: string;
     gasTokenSymbol: string;
-    estimatedCostInUSD?: number;
+    estimatedCostInUSD?: string;
   };
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
@@ -94,9 +94,9 @@ export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipie
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
 export type AmountOfToken = {
-  amount: BigNumber;
-  amountInUnits: number;
-  amountInUSD?: number;
+  amount: string;
+  amountInUnits: string;
+  amountInUSD?: string;
 };
 
 export type IgnoreFailedQuotes<

@@ -18,19 +18,19 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
   async build(chain: ChainId): Promise<IQuickGasCostCalculator> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
-      getGasPrice: () => ({ gasPrice: l2GasPrice }),
+      getGasPrice: () => ({ gasPrice: l2GasPrice.toString() }),
       calculateGasCost: ({ gasEstimation, tx }) => {
         const l1GasCost = (tx && getL1Fee(tx, l1GasValues)) ?? constants.Zero;
         const l2GasCost = l2GasPrice.mul(gasEstimation);
-        const gasCostNativeToken = l1GasCost.add(l2GasCost);
-        return { gasCostNativeToken, gasPrice: l2GasPrice };
+        const gasCostNativeToken = l1GasCost.add(l2GasCost).toString();
+        return { gasCostNativeToken, gasPrice: l2GasPrice.toString() };
       },
     };
   }
 }
 
 async function getGasValues(multicallService: IMulticallService) {
-  const [overhead, l1BaseFee, decimals, scalar, l2GasPrice] = await multicallService.readOnlyMulticallToSingleTarget({
+  const [overhead, l1BaseFee, decimals, scalar, l2GasPrice]: BigNumber[] = await multicallService.readOnlyMulticallToSingleTarget({
     target: OPTIMISM_GAS_ORACLE_ADDRESS,
     chainId: Chains.OPTIMISM.chainId,
     calls: [
