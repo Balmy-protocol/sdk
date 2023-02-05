@@ -29,7 +29,7 @@ import {
 } from '@test-utils/erc20';
 import { buildSources } from '@services/quotes/source-registry';
 
-// This is meant to be used for local testing. On the CI, we will run one random chain for each source
+// This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'firebird',
   chains: [Chains.ETHEREUM],
@@ -322,10 +322,12 @@ function getSources() {
   const result: Record<ChainId, Record<string, QuoteSource<QuoteSourceSupport>>> = {};
 
   if (process.env.CI_CONTEXT) {
-    // Will choose a random chain for each source
+    // Will choose test on Ethereum or, if not supported, choose random chain
     for (const [sourceId, source] of Object.entries(sources)) {
       const supportedChains = chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId));
-      const chainId = supportedChains[Math.floor(Math.random() * supportedChains.length)];
+      const chainId = supportedChains.includes(Chains.ETHEREUM.chainId)
+        ? Chains.ETHEREUM.chainId
+        : supportedChains[Math.floor(Math.random() * supportedChains.length)];
       if (!(chainId in result)) result[chainId] = {} as any;
       result[chainId][sourceId] = source;
     }
