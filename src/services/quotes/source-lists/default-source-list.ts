@@ -77,7 +77,7 @@ export class DefaultSourceList implements IQuoteSourceList {
         failed: true,
         name: source.getMetadata().name,
         logoURI: source.getMetadata().logoURI,
-        error: e,
+        error: e instanceof Error ? e.message : JSON.stringify(e),
       }))
     );
   }

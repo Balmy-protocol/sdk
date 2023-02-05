@@ -61,7 +61,7 @@ export class OverridableSourceList implements IQuoteSourceList {
         failed: true,
         name: supportedSources[sourceId].name,
         logoURI: supportedSources[sourceId].logoURI,
-        error: e,
+        error: e instanceof Error ? e.message : JSON.stringify(e),
       }))
     );
   }
