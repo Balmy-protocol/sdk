@@ -22,6 +22,12 @@ export function sortQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy, u
   return quotes.sort((q1, q2) => compareFtn(q1, q2, using));
 }
 
+export function chooseQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): QuoteResponse {
+  if (quotes.length === 0) throw new Error(`There are no quotes to choose from`);
+  const compareFtn = getCompareFtn(sortBy);
+  return quotes.reduce((q1, q2) => (compareFtn(q1, q2, using) <= 0 ? q1 : q2));
+}
+
 function getCompareFtn(compareBy: CompareQuotesBy) {
   let prioritizedCompareFns: Compare[];
   switch (compareBy) {
