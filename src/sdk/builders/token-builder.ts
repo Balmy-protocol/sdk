@@ -6,7 +6,7 @@ import { ITokenSource, BaseToken, ITokenService } from '@services/tokens/types';
 import { CachedTokenSource } from '@services/tokens/token-sources/cached-token-source';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
-import { ProviderTokenSource } from '@services/tokens/token-sources/provider';
+import { RPCTokenSource } from '@services/tokens/token-sources/rpc-token-source';
 import { TokenService } from '@services/tokens/token-service';
 
 export type TokenSourceInput =
@@ -45,9 +45,9 @@ export function buildTokenService<T extends BuildTokenParams | undefined>(
   multicallService: IMulticallService
 ): ITokenService<CalculateTokenFromSourceParams<T>> {
   const defiLlama = new DefiLlamaTokenSource(fetchService);
-  const provider = new ProviderTokenSource(multicallService);
+  const rpc = new RPCTokenSource(multicallService);
 
-  let source = buildSource(params?.source, { defiLlama, provider });
+  let source = buildSource(params?.source, { defiLlama, rpc });
   if (params?.config?.caching?.useCaching) {
     source = new CachedTokenSource(source, params.config.caching.expiration);
   }
@@ -56,18 +56,18 @@ export function buildTokenService<T extends BuildTokenParams | undefined>(
 
 function buildSource<T extends TokenSourceInput>(
   source: T | undefined,
-  { defiLlama, provider }: { defiLlama: DefiLlamaTokenSource; provider: ProviderTokenSource }
+  { defiLlama, rpc }: { defiLlama: DefiLlamaTokenSource; rpc: RPCTokenSource }
 ): ITokenSource<CalculateTokenFromSource<T>> {
   switch (source?.type) {
     case undefined:
-      return new FallbackTokenSource([defiLlama, provider]) as any;
+      return new FallbackTokenSource([defiLlama, rpc]) as any;
     case 'defi-llama':
       return defiLlama as any;
     case 'rpc':
-      return provider as any;
+      return rpc as any;
     case 'custom':
       return source.instance as any;
     case 'combine-when-possible':
-      return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { defiLlama, provider }))) as any;
+      return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { defiLlama, rpc }))) as any;
   }
 }
