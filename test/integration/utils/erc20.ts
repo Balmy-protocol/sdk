@@ -232,9 +232,8 @@ export async function mint({
 export async function loadTokens(chain: Chain) {
   const address = (name: string) => TOKENS[chain.chainId][name].address;
   const tokenSource = new DefiLlamaTokenSource(new FetchService(crossFetch));
-  const tokens = await tokenSource.getTokens({
-    [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('RANDOM_ERC20')],
-  });
+  const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('RANDOM_ERC20')] };
+  const tokens = await tokenSource.getTokens({ addresses });
   return {
     nativeToken: tokens[chain.chainId][Addresses.NATIVE_TOKEN],
     wToken: tokens[chain.chainId][chain.wToken],

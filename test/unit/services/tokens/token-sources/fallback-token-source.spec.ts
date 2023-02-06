@@ -196,7 +196,7 @@ describe('Fallback Token Source', () => {
   }
 
   function getTokensFromSources<Sources extends ITokenSource<BaseToken>[]>(addresses: Record<ChainId, TokenAddress[]>, ...sources: Sources) {
-    const result = new FallbackTokenSource(sources).getTokens(addresses);
+    const result = new FallbackTokenSource(sources).getTokens({ addresses });
     const promiseWithState: PromiseWithState<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> = {
       result,
       status: 'pending',
