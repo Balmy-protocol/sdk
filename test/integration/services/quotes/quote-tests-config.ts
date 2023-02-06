@@ -3,7 +3,7 @@ import { DefaultSourcesConfig, buildSources } from '@services/quotes/source-regi
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
 export const CONFIG: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> = {
-  referrer: { address: '0x0000000000000000000000000000000000000001', name: 'Integration Test' },
+  referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
 };
 if (process.env.ODOS_API_KEY) {
   CONFIG.odos = { apiKey: process.env.ODOS_API_KEY };
