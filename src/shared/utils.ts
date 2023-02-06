@@ -1,4 +1,4 @@
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, BigNumberish, constants, utils } from 'ethers';
 import ms from 'ms';
 import { Address, Chain, TimeString } from '@types';
 
@@ -20,15 +20,16 @@ export function timeToSeconds(time: TimeString) {
   return Math.floor(ms(time) / 1000);
 }
 
-export function toUnits(amount: BigNumber, decimals: number, precision: number = 5): number {
-  const magnitude = Math.pow(10, precision);
-  return Math.round((parseFloat(utils.formatUnits(amount, decimals)) + Number.EPSILON) * magnitude) / magnitude;
+export function toUnits(amount: BigNumber, decimals: number, precision: number = 5): string {
+  const units = utils.formatUnits(amount, decimals);
+  const regex = new RegExp('^-?\\d+(?:.\\d{0,' + (precision || -1) + '})?');
+  return units.match(regex)![0];
 }
 
-export function calculateGasDetails(chain: Chain, gasCostNativeToken: BigNumber, nativeTokenPrice?: number) {
+export function calculateGasDetails(chain: Chain, gasCostNativeToken: string, nativeTokenPrice?: number) {
   return {
     estimatedCost: gasCostNativeToken,
-    estimatedCostInUnits: parseFloat(utils.formatUnits(gasCostNativeToken, 18)),
+    estimatedCostInUnits: utils.formatUnits(gasCostNativeToken, 18),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
     gasTokenSymbol: chain.currencySymbol,
   };
@@ -37,17 +38,17 @@ export function calculateGasDetails(chain: Chain, gasCostNativeToken: BigNumber,
 const USD_PRECISION = 8;
 export function amountToUSD<Price extends number | undefined>(
   decimals: number,
-  amount: BigNumber,
+  amount: BigNumberish,
   usdPrice: Price,
   precision: number = 3
-): Price {
+): undefined extends Price ? undefined : string {
   if (!!usdPrice) {
     const priceBN = utils.parseUnits(`${usdPrice.toFixed(USD_PRECISION)}`, USD_PRECISION);
     const magnitude = utils.parseUnits('1', decimals);
     const amountUSDBN = priceBN.mul(amount).div(magnitude);
-    return toUnits(amountUSDBN, USD_PRECISION, precision) as Price;
+    return toUnits(amountUSDBN, USD_PRECISION, precision) as undefined extends Price ? undefined : string;
   }
-  return undefined as Price;
+  return undefined as undefined extends Price ? undefined : string;
 }
 
 export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<T[]> {
@@ -55,7 +56,9 @@ export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<
   return results.filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled').map(({ value }) => value);
 }
 
-export function ruleOfThree({ a, matchA, b }: { a: BigNumber; matchA: BigNumber; b: BigNumber }) {
-  if (b.isZero() || matchA.isZero()) return constants.Zero;
-  return b.mul(matchA).div(a);
+export function ruleOfThree({ a, matchA, b }: { a: BigNumberish; matchA: BigNumberish; b: BigNumberish }) {
+  const matchABN = BigNumber.from(matchA);
+  const bBN = BigNumber.from(b);
+  if (bBN.isZero() || matchABN.isZero()) return constants.Zero;
+  return bBN.mul(matchA).div(a);
 }

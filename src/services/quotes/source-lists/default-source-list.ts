@@ -154,7 +154,7 @@ async function mapSourceResponseToResponse({
     maxSellAmount: toAmountOfToken(sellToken, sellToken?.price, response.maxSellAmount),
     minBuyAmount: toAmountOfToken(buyToken, buyToken?.price, response.minBuyAmount),
     gas: {
-      estimatedGas: response.estimatedGas,
+      estimatedGas: response.estimatedGas.toString(),
       ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
@@ -167,8 +167,8 @@ async function mapSourceResponseToResponse({
 function toAmountOfToken(token: BaseToken, price: number | undefined, amount: BigNumber) {
   const amountInUSD = amountToUSD(token.decimals, amount, price);
   return {
-    amount,
-    amountInUnits: parseFloat(utils.formatUnits(amount, token.decimals)),
+    amount: amount.toString(),
+    amountInUnits: utils.formatUnits(amount, token.decimals),
     amountInUSD,
   };
 }
