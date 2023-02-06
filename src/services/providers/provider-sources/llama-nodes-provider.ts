@@ -15,7 +15,7 @@ export class LlamaNodesProviderSource implements IProviderSource {
     return Object.keys(SUPPORTED_CHAINS).map(parseInt);
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     const rpcUrl = SUPPORTED_CHAINS[chainId];
     if (!rpcUrl) throw new Error(`Unsupported chain with id ${chainId}`);
     return new providers.JsonRpcProvider(rpcUrl + this.key);

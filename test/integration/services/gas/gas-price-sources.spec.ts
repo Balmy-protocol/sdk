@@ -38,7 +38,7 @@ describe('Gas Price Sources', () => {
         const chain = Chains.byKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test.concurrent(`Gas prices are valid values`, async () => {
-            const gasPrice = await source.getGasPrice(chainId);
+            const gasPrice = await source.getGasPrice({ chainId });
             for (const speed in source.supportedSpeeds()) {
               const support = source.supportedSpeeds()[speed];
               if (support === 'present') {

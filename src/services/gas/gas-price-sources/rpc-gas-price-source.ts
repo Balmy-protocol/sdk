@@ -15,8 +15,8 @@ export class RPCGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
     return { standard: 'present' };
   }
 
-  async getGasPrice(chainId: ChainId): Promise<GasSpeedPriceResult<GasSpeedSupport>> {
-    const feeData = await this.providerSource.getProvider(chainId).getFeeData();
+  async getGasPrice({ chainId }: { chainId: ChainId }) {
+    const feeData = await this.providerSource.getProvider({ chainId }).getFeeData();
     const gasPrice =
       !!feeData.maxFeePerGas && !!feeData.maxPriorityFeePerGas
         ? { maxFeePerGas: feeData.maxFeePerGas.toString(), maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toString() }

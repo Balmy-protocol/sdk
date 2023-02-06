@@ -14,10 +14,13 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getTokens(
-    addresses: Record<ChainId, TokenAddress[]>,
-    context?: { timeout?: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> {
+  getTokens({
+    addresses,
+    context,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    context?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> {
     return new Promise<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>>((resolve, reject) => {
       const result: Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>> = {};
       const propertiesCounter = this.buildPropertiesCounter(addresses);
@@ -45,7 +48,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
           return;
         }
 
-        timeoutPromise(source.getTokens(addressesForSource), context?.timeout, { reduceBy: '100' })
+        timeoutPromise(source.getTokens({ addresses: addressesForSource }), context?.timeout, { reduceBy: '100' })
           .then((sourceResult) => {
             successfulRequests++;
             for (const [chainIdString, tokenRecord] of Object.entries(sourceResult)) {

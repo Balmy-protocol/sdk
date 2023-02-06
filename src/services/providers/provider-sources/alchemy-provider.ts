@@ -19,7 +19,7 @@ export class AlchemyProviderSource implements IProviderSource {
     return this.chains;
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     return new AlchemyProvider(chainId, this.key);
   }
 }

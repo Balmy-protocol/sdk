@@ -68,7 +68,7 @@ describe('Quote Sources', () => {
           tokens: [nativeToken, wToken, USDC, RANDOM_ERC20],
           addresses: [user, recipient],
         });
-        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain.chainId).then((gasPrice) => gasPrice['standard']);
+        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrice) => gasPrice['standard']);
         snapshot = await takeSnapshot();
       });
 

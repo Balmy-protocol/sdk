@@ -30,19 +30,21 @@ describe('Prioritized Provider Source Combinator', () => {
 
   when('asking for a chain supported by source1', () => {
     then('provider1 is returned', () => {
-      expect(fallbackSource.getProvider(Chains.POLYGON.chainId)).to.equal(PROVIDER_1);
+      expect(fallbackSource.getProvider({ chainId: Chains.POLYGON.chainId })).to.equal(PROVIDER_1);
     });
   });
 
   when('asking for a chain not supported by source1', () => {
     then('provider2 is returned', () => {
-      expect(fallbackSource.getProvider(Chains.ETHEREUM.chainId)).to.equal(PROVIDER_2);
+      expect(fallbackSource.getProvider({ chainId: Chains.ETHEREUM.chainId })).to.equal(PROVIDER_2);
     });
   });
 
   when('asking for a chain not supported by any source', () => {
     then('an error is thrown', () => {
-      expect(() => fallbackSource.getProvider(Chains.OPTIMISM.chainId)).to.throw(`Chain with id ${Chains.OPTIMISM.chainId} not supported`);
+      expect(() => fallbackSource.getProvider({ chainId: Chains.OPTIMISM.chainId })).to.throw(
+        `Chain with id ${Chains.OPTIMISM.chainId} not supported`
+      );
     });
   });
 });

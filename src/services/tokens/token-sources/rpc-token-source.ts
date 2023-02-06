@@ -14,10 +14,13 @@ export class RPCTokenSource implements ITokenSource {
     return this.multicallService.supportedChains();
   }
 
-  async getTokens(
-    addresses: Record<ChainId, TokenAddress[]>,
-    context?: { timeout: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
+  async getTokens({
+    addresses,
+    context,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    context?: { timeout: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
     const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, BaseToken>]>>(async ([chainId, addresses]) => [
       parseInt(chainId),
       await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), context?.timeout, { reduceBy: '100' }),

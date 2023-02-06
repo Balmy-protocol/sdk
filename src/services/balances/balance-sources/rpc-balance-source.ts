@@ -45,7 +45,7 @@ export class RPCBalanceSource implements IBalanceSource {
     ]);
     const [multicallResults, nativeBalance] = await Promise.all([
       this.multicallService.readOnlyMulticall({ chainId, calls }),
-      addressesWithoutNativeToken.length !== addresses.length ? this.providerSource.getProvider(chainId).getBalance(account) : undefined,
+      addressesWithoutNativeToken.length !== addresses.length ? this.providerSource.getProvider({ chainId }).getBalance(account) : undefined,
     ]);
 
     const result: Record<TokenAddress, AmountOfToken> = {};

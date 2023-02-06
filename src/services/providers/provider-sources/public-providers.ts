@@ -24,7 +24,7 @@ export class PublicProvidersSource implements IProviderSource {
     return Object.keys(this.publicRPCs).map((chainId) => parseInt(chainId));
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     const publicRPCs = this.publicRPCs[chainId];
     if (!publicRPCs) throw new Error(`Unsupported chain with id ${chainId}`);
     const config = publicRPCs.map((url, i) => ({

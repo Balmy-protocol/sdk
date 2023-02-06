@@ -9,8 +9,8 @@ export class UpdatableProviderSource implements IProviderSource {
     return this.provider.supportedChains();
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
-    return this.provider.getProvider(chainId);
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+    return this.provider.getProvider({ chainId });
   }
 
   update(provider: IProviderSource) {

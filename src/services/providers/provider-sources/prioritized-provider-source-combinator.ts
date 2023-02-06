@@ -15,9 +15,9 @@ export class PrioritizedProviderSourceCombinator implements IProviderSource {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     const source = this.sources.find((source) => source.supportedChains().includes(chainId));
     if (!source) throw new Error(`Chain with id ${chainId} not supported`);
-    return source.getProvider(chainId);
+    return source.getProvider({ chainId });
   }
 }

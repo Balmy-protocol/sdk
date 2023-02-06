@@ -23,8 +23,8 @@ export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuil
     ]);
   }
 
-  build(chainId: ChainId): Promise<IQuickGasCostCalculator> {
+  build({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
     const builder = this.calculatorBuilderOverrides[chainId] ?? this.defaultCalculatorBuilder;
-    return builder.build(chainId);
+    return builder.build({ chainId });
   }
 }
