@@ -44,7 +44,7 @@ export class RPCBalanceSource implements IBalanceSource {
       { target: address, decode: 'uint256', calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]) },
     ]);
     const [multicallResults, nativeBalance] = await Promise.all([
-      this.multicallService.readOnlyMulticall({ chainId, calls }),
+      calls.length > 0 ? this.multicallService.readOnlyMulticall({ chainId, calls }) : [],
       addressesWithoutNativeToken.length !== addresses.length ? this.providerSource.getProvider({ chainId }).getBalance(account) : undefined,
     ]);
 
