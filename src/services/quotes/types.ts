@@ -65,10 +65,10 @@ export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> &
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
-  sellAmount: AmountOfToken;
-  buyAmount: AmountOfToken;
-  maxSellAmount: AmountOfToken;
-  minBuyAmount: AmountOfToken;
+  sellAmount: AmountsOfToken;
+  buyAmount: AmountsOfToken;
+  maxSellAmount: AmountsOfToken;
+  minBuyAmount: AmountsOfToken;
   gas: {
     estimatedGas: BigNumber;
     estimatedCost: BigNumber;
@@ -93,7 +93,7 @@ export type IndividualQuoteRequest = Omit<
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
-export type AmountOfToken = {
+export type AmountsOfToken = {
   amount: BigNumber;
   amountInUnits: number;
   amountInUSD?: number;
