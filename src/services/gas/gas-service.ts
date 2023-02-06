@@ -1,5 +1,5 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { ChainId } from '@types';
+import { AmountOfToken, ChainId } from '@types';
 import { BigNumberish } from 'ethers';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
@@ -23,7 +23,7 @@ export class GasService implements IGasService {
     return chainsIntersection(this.providerSource.supportedChains(), this.gasCostCalculatorBuilder.supportedChains());
   }
 
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<string> {
+  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
     return this.providerSource
       .getProvider(chainId)
       .estimateGas(tx)

@@ -1,12 +1,12 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { ChainId } from '@types';
+import { AmountOfToken, ChainId } from '@types';
 import { UnionMerge } from '@utility-types';
 import { BigNumberish } from 'ethers';
 
 export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
 export type GasSpeed = (typeof AVAILABLE_GAS_SPEEDS)[number];
-export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: string } & ChainGasPrice;
+export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: AmountOfToken } & ChainGasPrice;
 export type GasSpeedSupportRecord = Partial<Record<GasSpeed, GasSpeedSupport>> & { standard: 'present' };
 export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, GasPriceVersion = GasPrice> = GasPriceForSpeed<
   PresentSpeeds<SupportRecord>,
@@ -17,7 +17,7 @@ export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, Gas
 
 export type IGasService = {
   supportedChains(): ChainId[];
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<string>;
+  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken>;
   getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice>;
   calculateGasCost(
     chainId: ChainId,
@@ -44,8 +44,8 @@ export type IQuickGasCostCalculator = {
   calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
 };
 
-export type EIP1159GasPrice = { maxFeePerGas: string; maxPriorityFeePerGas: string };
-export type LegacyGasPrice = { gasPrice: string };
+export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGas: AmountOfToken };
+export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
 type GasSpeedSupport = 'optional' | 'present';
 type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<SupportedGasSpeed, GasPriceVersion>;
