@@ -70,8 +70,8 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       `&disableEstimate=true` +
       `&slippage=${slippagePercentage}`;
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&referrerAddress=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer?.address) {
+      url += `&referrerAddress=${this.globalConfig.referrer?.address}`;
     }
 
     const response = await fetchService.fetch(url, { timeout });
