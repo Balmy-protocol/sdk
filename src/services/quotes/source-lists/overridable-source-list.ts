@@ -3,7 +3,7 @@ import { IQuoteSourceList, SourceListRequest } from './types';
 
 type ConstructorParameters = {
   default: IQuoteSourceList;
-  overrides: Record<SourceId, IQuoteSourceList>;
+  overrides: { list: IQuoteSourceList; sourceIds: SourceId[] }[];
 };
 export class OverridableSourceList implements IQuoteSourceList {
   private readonly overrides: Record<SourceId, IQuoteSourceList>;
@@ -11,7 +11,15 @@ export class OverridableSourceList implements IQuoteSourceList {
 
   constructor({ default: defaultSourceList, overrides }: ConstructorParameters) {
     this.defaultSourceList = defaultSourceList;
-    this.overrides = overrides;
+    this.overrides = {};
+    for (const { list, sourceIds } of overrides) {
+      for (const sourceId of sourceIds) {
+        if (sourceId in this.overrides) {
+          throw new Error(`Source with id ${sourceId} was assigned twice`);
+        }
+        this.overrides[sourceId] = list;
+      }
+    }
   }
 
   supportedSources() {
@@ -61,7 +69,7 @@ export class OverridableSourceList implements IQuoteSourceList {
         failed: true,
         name: supportedSources[sourceId].name,
         logoURI: supportedSources[sourceId].logoURI,
-        error: e,
+        error: e instanceof Error ? e.message : JSON.stringify(e),
       }))
     );
   }

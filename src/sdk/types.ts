@@ -1,3 +1,4 @@
+import { IBalanceService } from '@services/balances/types';
 import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
 import { IMulticallService } from '@services/multicall/types';
@@ -10,6 +11,7 @@ export type ISDK<Token extends BaseToken> = {
   fetchService: IFetchService;
   gasService: IGasService;
   multicallService: IMulticallService;
+  balanceService: IBalanceService;
   quoteService: IQuoteService;
   tokenService: ITokenService<Token>;
 };

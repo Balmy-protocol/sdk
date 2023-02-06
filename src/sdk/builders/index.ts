@@ -3,3 +3,4 @@ export { BuildGasParams, GasSourceInput, GasSourceConfigInput } from './gas-buil
 export { BuildProviderParams, ProviderSourceInput } from './provider-source-builder';
 export { BuildQuoteParams, QuoteSourceListInput, DefaultSourcesConfigInput } from './quote-builder';
 export { BuildTokenParams, TokenSourceInput, TokenSourceConfigInput } from './token-builder';
+export { BuildBalancesParams, BalanceSourceInput } from './balance-builder';

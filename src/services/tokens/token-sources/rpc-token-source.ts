@@ -7,7 +7,7 @@ import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 
-export class ProviderTokenSource implements ITokenSource {
+export class RPCTokenSource implements ITokenSource {
   constructor(private readonly multicallService: IMulticallService) {}
 
   supportedChains(): ChainId[] {

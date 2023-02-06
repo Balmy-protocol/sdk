@@ -4,7 +4,7 @@ import { IGasPriceSource, GasSpeedPriceResult } from '@services/gas/types';
 
 // We are using the provider here to calculate the gas price
 type GasSpeedSupport = { standard: 'present' };
-export class ProviderGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
+export class RPCGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
   constructor(private readonly providerSource: IProviderSource) {}
 
   supportedChains(): ChainId[] {

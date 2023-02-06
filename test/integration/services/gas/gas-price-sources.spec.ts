@@ -7,21 +7,21 @@ import { FetchService } from '@services/fetch/fetch-service';
 import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
 import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeedSupportRecord, GasSpeedPriceResult } from '@services/gas/types';
 import { isEIP1159Compatible } from '@services/gas/utils';
-import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
-import { ProviderGasPriceSource } from '@services/gas/gas-price-sources/provider';
+import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
+import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
-const PROVIDER_SOURCE = new ProviderGasPriceSource(new PublicProvidersSource());
-const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, PROVIDER_SOURCE]);
-const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, PROVIDER_SOURCE]);
+const RPC_SOURCE = new RPCGasPriceSource(new PublicProvidersSource());
+const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
+const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
 
 describe('Gas Price Sources', () => {
-  gasPriceSourceTest({ title: 'Provider Source', source: PROVIDER_SOURCE });
+  gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
   gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });

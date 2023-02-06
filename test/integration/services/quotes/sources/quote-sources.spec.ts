@@ -14,7 +14,7 @@ import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
-import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
+import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';

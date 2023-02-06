@@ -11,8 +11,8 @@ export {
   TokenWithOptionalPrice,
   FailedQuote,
   GlobalQuoteSourceConfig,
-  AmountOfToken,
+  AmountsOfToken,
 } from './types';
-export { COMPARE_BY, COMPARE_USING, CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
+export { COMPARE_BY, COMPARE_USING, CompareQuotesBy, CompareQuotesUsing, sortQuotesBy, chooseQuotesBy } from './quote-compare';
 export { SOURCES_METADATA } from './source-registry';
 export * from './source-lists';

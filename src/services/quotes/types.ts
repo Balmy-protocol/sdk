@@ -1,7 +1,7 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { GasPrice, GasSpeed } from '@services/gas/types';
 import { BaseToken } from '@services/tokens/types';
-import { Address, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
@@ -65,10 +65,10 @@ export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> &
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
-  sellAmount: AmountOfToken;
-  buyAmount: AmountOfToken;
-  maxSellAmount: AmountOfToken;
-  minBuyAmount: AmountOfToken;
+  sellAmount: AmountsOfToken;
+  buyAmount: AmountsOfToken;
+  maxSellAmount: AmountsOfToken;
+  minBuyAmount: AmountsOfToken;
   gas: {
     estimatedGas: string;
     estimatedCost: string;
@@ -93,8 +93,8 @@ export type IndividualQuoteRequest = Omit<
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
-export type AmountOfToken = {
-  amount: string;
+export type AmountsOfToken = {
+  amount: AmountOfToken;
   amountInUnits: string;
   amountInUSD?: string;
 };
