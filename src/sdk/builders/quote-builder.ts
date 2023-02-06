@@ -60,5 +60,5 @@ function buildList(
 
 // If no referrer address was set, then we will use Mean's address
 function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>) {
-  return { referrerAddress: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', ...config };
+  return { referrer: { address: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', name: 'MeanFinanceSDK' }, ...config };
 }

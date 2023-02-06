@@ -52,8 +52,8 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
       `&receiver=${recipient ?? takeFrom}` +
       `&source=mean-finance-sdk`;
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&ref=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer?.address) {
+      url += `&ref=${this.globalConfig.referrer.address}`;
     }
     if (txValidFor) {
       url += `&deadline=${calculateDeadline(txValidFor)}`;

@@ -62,8 +62,9 @@ export class LiFiQuoteSource extends NoCustomConfigQuoteSource<LiFiSupport> {
       `&fromAmount=${order.sellAmount.toString()}` +
       `&slippage=${slippagePercentage / 100}`;
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&integrator=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer) {
+      url += `&integrator=${this.globalConfig.referrer.name}`;
+      url += `&referrer=${this.globalConfig.referrer.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
