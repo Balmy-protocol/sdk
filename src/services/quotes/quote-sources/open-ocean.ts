@@ -66,8 +66,8 @@ export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSup
       `&gasPrice=${gasPrice}` +
       `&account=${recipient ?? takeFrom}`;
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&referrer=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer?.address) {
+      url += `&referrer=${this.globalConfig.referrer?.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

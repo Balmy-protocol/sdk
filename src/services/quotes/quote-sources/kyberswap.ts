@@ -60,8 +60,8 @@ export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSup
       url += `&deadline=${calculateDeadline(txValidFor)}`;
     }
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&clientData={"source": "${this.globalConfig.referrerAddress}"}`;
+    if (this.globalConfig.referrer?.name) {
+      url += `&clientData={"source": "${this.globalConfig.referrer.name}"}`;
     }
 
     const response = await fetchService.fetch(url, { timeout, headers: { 'Accept-Version': 'Latest' } });

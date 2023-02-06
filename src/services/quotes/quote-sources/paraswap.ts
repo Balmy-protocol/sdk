@@ -108,7 +108,8 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       priceRoute: route,
       userAddress: takeFrom,
       receiver,
-      partnerAddress: this.globalConfig.referrerAddress,
+      partner: this.globalConfig.referrer?.name,
+      partnerAddress: this.globalConfig.referrer?.address,
       partnerFeeBps: 0,
       deadline: calculateDeadline(txValidFor),
     };

@@ -45,8 +45,8 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
       `&slippagePercentage=${slippagePercentage / 100}` +
       `&enableSlippageProtection=false`;
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&affiliateAddress=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer?.address) {
+      url += `&affiliateAddress=${this.globalConfig.referrer?.address}`;
     }
 
     if (order.type === 'sell') {
