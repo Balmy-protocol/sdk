@@ -77,8 +77,8 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       url += `&destReceiver=${recipient}`;
     }
 
-    if (this.globalConfig.referrerAddress) {
-      url += `&referrerAddress=${this.globalConfig.referrerAddress}`;
+    if (this.globalConfig.referrer?.address) {
+      url += `&referrerAddress=${this.globalConfig.referrer.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

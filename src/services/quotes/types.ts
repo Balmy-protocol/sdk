@@ -8,7 +8,10 @@ import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
 
 export type GlobalQuoteSourceConfig = {
-  referrerAddress?: TokenAddress;
+  referrer?: {
+    address: Address;
+    name: string;
+  };
 };
 
 export type SourceId = string;
