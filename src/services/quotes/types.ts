@@ -1,9 +1,9 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { GasPrice, GasSpeed } from '@services/gas/types';
 import { BaseToken } from '@services/tokens/types';
-import { Address, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
 
@@ -11,14 +11,14 @@ export type GlobalQuoteSourceConfig = {
   referrerAddress?: TokenAddress;
 };
 
+export type SourceId = string;
 export type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
-  id: string;
   supports: QuoteSourceSupport & { chains: ChainId[] };
 };
 export type IQuoteService = {
-  supportedChains(): Promise<ChainId[]>;
-  supportedSources(): Promise<SourceMetadata[]>;
-  supportedSourcesInChain(chainId: ChainId): Promise<SourceMetadata[]>;
+  supportedSources(): Record<SourceId, SourceMetadata>;
+  supportedChains(): ChainId[];
+  supportedSourcesInChain(chainId: ChainId): Record<SourceId, SourceMetadata>;
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
     request: EstimatedQuoteRequest,
@@ -30,7 +30,7 @@ export type IQuoteService = {
       };
     }
   ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse>;
+  getQuote(sourceId: SourceId, request: IndividualQuoteRequest): Promise<QuoteResponse>;
   getQuotes(request: QuoteRequest): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(
     request: QuoteRequest,
@@ -55,7 +55,7 @@ export type QuoteRequest = {
   gasSpeed?: GasSpeed;
   quoteTimeout?: TimeString;
   txValidFor?: TimeString;
-  filters?: Either<{ includeSources: string[] }, { excludeSources: string[] }>;
+  filters?: Either<{ includeSources: SourceId[] }, { excludeSources: SourceId[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
@@ -65,19 +65,19 @@ export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> &
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
-  sellAmount: AmountOfToken;
-  buyAmount: AmountOfToken;
-  maxSellAmount: AmountOfToken;
-  minBuyAmount: AmountOfToken;
+  sellAmount: AmountsOfToken;
+  buyAmount: AmountsOfToken;
+  maxSellAmount: AmountsOfToken;
+  minBuyAmount: AmountsOfToken;
   gas: {
-    estimatedGas: BigNumber;
-    estimatedCost: BigNumber;
-    estimatedCostInUnits: number;
+    estimatedGas: AmountOfToken;
+    estimatedCost: AmountOfToken;
+    estimatedCostInUnits: string;
     gasTokenSymbol: string;
-    estimatedCostInUSD?: number;
+    estimatedCostInUSD?: string;
   };
   recipient: Address;
-  source: { id: string; allowanceTarget: Address; name: string; logoURI: string };
+  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
   tx: QuoteTx;
 };
@@ -93,10 +93,10 @@ export type IndividualQuoteRequest = Omit<
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
 
-type AmountOfToken = {
-  amount: BigNumber;
-  amountInUnits: number;
-  amountInUSD?: number;
+export type AmountsOfToken = {
+  amount: AmountOfToken;
+  amountInUnits: string;
+  amountInUSD?: string;
 };
 
 export type IgnoreFailedQuotes<

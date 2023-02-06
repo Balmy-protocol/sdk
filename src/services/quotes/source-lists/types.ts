@@ -1,10 +1,9 @@
-import { ChainId } from '@types';
-import { IndividualQuoteRequest, QuoteResponse, QuoteRequest, FailedQuote, SourceMetadata } from '../types';
+import { QuoteResponse, QuoteRequest, FailedQuote, SourceMetadata, SourceId } from '../types';
 
-export type ISourceList = {
-  supportedChains(): Promise<ChainId[]>;
-  supportedSources(): Promise<SourceMetadata[]>;
-  getQuote(sourceId: string, request: IndividualQuoteRequest): Promise<QuoteResponse>;
-  getQuotes(request: QuoteRequest): Promise<QuoteResponse | FailedQuote>[];
-  getAllQuotes(request: QuoteRequest): Promise<(QuoteResponse | FailedQuote)[]>;
+export type IQuoteSourceList = {
+  supportedSources(): Record<SourceId, SourceMetadata>;
+  getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[];
+  getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]>;
 };
+
+export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'includeNonTransferSourcesWhenRecipientIsSet'> & { sourceIds: SourceId[] };

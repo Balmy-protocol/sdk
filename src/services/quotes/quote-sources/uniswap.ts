@@ -13,18 +13,20 @@ const ROUTER_ADDRESS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
   [Chains.CELO.chainId]: '0x5615CDAb10dc425a742d643d949a7F474C01abc4',
 };
+
+export const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
+  name: 'Uniswap',
+  supports: {
+    chains: Object.keys(ROUTER_ADDRESS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    swapAndTransfer: true,
+    buyOrders: true,
+  },
+  logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
+};
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
 export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport> {
-  getMetadata(): QuoteSourceMetadata<UniswapSupport> {
-    return {
-      name: 'Uniswap',
-      supports: {
-        chains: Object.keys(ROUTER_ADDRESS).map((chainId) => Chains.byKeyOrFail(chainId)),
-        swapAndTransfer: true,
-        buyOrders: true,
-      },
-      logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
-    };
+  getMetadata() {
+    return UNISWAP_METADATA;
   }
 
   async quote(
@@ -53,7 +55,7 @@ export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
       `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
-      `&deadline=${timeToSeconds(txValidFor ?? '1y')}` +
+      `&deadline=${timeToSeconds(txValidFor ?? '3h')}` +
       `&slippageTolerance=${slippagePercentage}`;
 
     // These are needed so that the API allows us to make the call

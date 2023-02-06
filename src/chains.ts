@@ -14,6 +14,7 @@ export class Chains {
       'https://main-light.eth.linkpool.io/',
       'https://api.mycryptoapi.com/eth',
     ],
+    explorer: 'https://etherscan.io/',
   } as const satisfies Chain;
 
   static readonly OPTIMISM = {
@@ -23,6 +24,7 @@ export class Chains {
     currencySymbol: 'ETH',
     wToken: '0x4200000000000000000000000000000000000006',
     publicRPCs: ['https://mainnet.optimism.io/'],
+    explorer: 'https://optimistic.etherscan.io/',
   } as const satisfies Chain;
 
   static readonly ARBITRUM = {
@@ -32,6 +34,7 @@ export class Chains {
     currencySymbol: 'ETH',
     wToken: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
     publicRPCs: ['https://arb1.arbitrum.io/rpc'],
+    explorer: 'https://arbiscan.io/',
   } as const satisfies Chain;
 
   static readonly POLYGON = {
@@ -41,6 +44,7 @@ export class Chains {
     currencySymbol: 'MATIC',
     wToken: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
     publicRPCs: ['https://polygon-rpc.com/', 'https://rpc-mainnet.maticvigil.com/'],
+    explorer: 'https://polygonscan.com/',
   } as const satisfies Chain;
 
   static readonly BNB_CHAIN = {
@@ -56,6 +60,7 @@ export class Chains {
       'https://bsc-dataseed2.defibit.io/',
       'https://bsc-dataseed2.ninicoin.io/',
     ],
+    explorer: 'https://bscscan.com/',
   } as const satisfies Chain;
 
   static readonly FANTOM = {
@@ -65,6 +70,7 @@ export class Chains {
     currencySymbol: 'FTM',
     wToken: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
     publicRPCs: ['https://rpc.ftm.tools/', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network'],
+    explorer: 'https://ftmscan.com/',
   } as const satisfies Chain;
 
   static readonly CELO = {
@@ -74,6 +80,7 @@ export class Chains {
     currencySymbol: 'CELO',
     wToken: '0x149d5bf28fbace2950b52d4aca1c79bfd9bbb6fc',
     publicRPCs: ['https://rpc.ankr.com/celo', 'https://celo-mainnet-archive.allthatnode.com', 'https://celo-mainnet-rpc.allthatnode.com'],
+    explorer: 'https://celoscan.io/',
   } as const satisfies Chain;
 
   static readonly AVALANCHE = {
@@ -83,6 +90,7 @@ export class Chains {
     currencySymbol: 'AVAX',
     wToken: '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
     publicRPCs: ['https://api.avax.network/ext/bc/C/rpc', 'https://rpc.ankr.com/avalanche'],
+    explorer: 'https://cchain.explorer.avax.network/',
   } as const satisfies Chain;
 
   static readonly HECO = {
@@ -91,7 +99,8 @@ export class Chains {
     ids: ['heco'],
     currencySymbol: 'HT',
     wToken: '0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f',
-    publicRPCs: ['https://pub001.hg.network/rpc', 'https://http-mainnet.hecochain.com'],
+    publicRPCs: ['https://http-mainnet.hecochain.com', 'https://pub001.hg.network/rpc'],
+    explorer: 'https://scan.hecochain.com/',
   } as const satisfies Chain;
 
   static readonly OKC = {
@@ -100,7 +109,8 @@ export class Chains {
     ids: ['okc', 'okexchain'],
     currencySymbol: 'OKT',
     wToken: '0x8f8526dbfd6e38e3d8307702ca8469bae6c56c15',
-    publicRPCs: ['https://exchainrpc.okex.org'],
+    publicRPCs: ['https://exchainrpc.okex.org', 'https://okc-mainnet.gateway.pokt.network/v1/lb/6275309bea1b320039c893ff'],
+    explorer: 'https://www.oklink.com/en/okc/',
   } as const satisfies Chain;
 
   static readonly MOONRIVER = {
@@ -110,6 +120,7 @@ export class Chains {
     currencySymbol: 'MOVR',
     wToken: '0x98878b06940ae243284ca214f92bb71a2b032b8a',
     publicRPCs: ['https://rpc.api.moonriver.moonbeam.network/', 'https://moonriver.api.onfinality.io/public'],
+    explorer: 'https://moonriver.moonscan.io/',
   } as const satisfies Chain;
 
   static readonly MOONBEAM = {
@@ -119,6 +130,7 @@ export class Chains {
     currencySymbol: 'GLMR',
     wToken: '0xAcc15dC74880C9944775448304B263D191c6077F',
     publicRPCs: ['https://rpc.api.moonbeam.network'],
+    explorer: 'https://moonscan.io/',
   } as const satisfies Chain;
 
   static readonly FUSE = {
@@ -128,6 +140,7 @@ export class Chains {
     currencySymbol: 'FUSE',
     wToken: '0x0BE9e53fd7EDaC9F859882AfdDa116645287C629',
     publicRPCs: ['https://fuse-rpc.gateway.pokt.network', 'https://fuse-mainnet.chainstacklabs.com', 'https://rpc.fuse.io'],
+    explorer: 'https://explorer.fuse.io/',
   } as const satisfies Chain;
 
   static readonly VELAS = {
@@ -137,6 +150,7 @@ export class Chains {
     currencySymbol: 'VLX',
     wToken: '0xc579D1f3CF86749E05CD06f7ADe17856c2CE3126',
     publicRPCs: ['https://evmexplorer.velas.com/rpc'],
+    explorer: 'https://explorer.velas.com/',
   } as const satisfies Chain;
 
   static readonly GNOSIS = {
@@ -151,6 +165,7 @@ export class Chains {
       'https://rpc.ankr.com/gnosis',
       'https://xdai-archive.blockscout.com',
     ],
+    explorer: 'https://gnosisscan.io/',
   } as const satisfies Chain;
 
   static readonly CRONOS = {
@@ -160,6 +175,7 @@ export class Chains {
     currencySymbol: 'CRO',
     wToken: '0x5c7f8a570d578ed84e63fdfa7b1ee72deae1ae23',
     publicRPCs: ['https://cronosrpc-1.xstaking.sg', 'https://evm.cronos.org', 'https://rpc.vvs.finance', 'https://evm-cronos.crypto.org'],
+    explorer: 'https://cronoscan.com/',
   } as const satisfies Chain;
 
   static readonly BOBA = {
@@ -169,6 +185,7 @@ export class Chains {
     currencySymbol: 'ETH',
     wToken: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000',
     publicRPCs: ['https://mainnet.boba.network/'],
+    explorer: 'https://bobascan.com/',
   } as const satisfies Chain;
 
   static readonly ONTOLOGY = {
@@ -177,6 +194,7 @@ export class Chains {
     ids: ['ont', 'ontology'],
     currencySymbol: 'ONG',
     wToken: '0xd8bc24cfd45452ef2c8bc7618e32330b61f2691b',
+    explorer: 'https://explorer.ont.io/',
   } as const satisfies Chain;
 
   static readonly KLAYTN = {
@@ -186,6 +204,7 @@ export class Chains {
     currencySymbol: 'KLAY',
     wToken: '0xe4f05a66ec68b54a58b17c22107b02e0232cc817',
     publicRPCs: ['https://public-en-cypress.klaytn.net', 'https://public-node-api.klaytnapi.com/v1/cypress'],
+    explorer: 'https://scope.klaytn.com/',
   } as const satisfies Chain;
 
   static readonly AURORA = {
@@ -195,6 +214,7 @@ export class Chains {
     currencySymbol: 'ETH',
     wToken: '0xc9bdeed33cd01541e1eed10f90519d2c06fe3feb',
     publicRPCs: ['https://mainnet.aurora.dev'],
+    explorer: 'https://explorer.mainnet.aurora.dev/',
   } as const satisfies Chain;
 
   static readonly ASTAR = {
@@ -204,6 +224,7 @@ export class Chains {
     currencySymbol: 'ASTR',
     wToken: '0xaeaaf0e2c81af264101b9129c00f4440ccf0f720',
     publicRPCs: ['https://evm.astar.network/', 'https://rpc.astar.network:8545', 'https://astar.api.onfinality.io/public'],
+    explorer: 'https://astar.subscan.io/',
   } as const satisfies Chain;
 
   static readonly HARMONY_SHARD_0 = {
@@ -213,6 +234,7 @@ export class Chains {
     currencySymbol: 'ONE',
     wToken: '0xcf664087a5bb0237a0bad6742852ec6c8d69a27a',
     publicRPCs: ['https://api.harmony.one'],
+    explorer: 'https://explorer.harmony.one/',
   } as const satisfies Chain;
 
   static readonly BIT_TORRENT = {
@@ -222,6 +244,7 @@ export class Chains {
     currencySymbol: 'BTT',
     wToken: '0x23181f21dea5936e24163ffaba4ea3b316b57f3c',
     publicRPCs: ['https://rpc.bittorrentchain.io'],
+    explorer: 'https://bttcscan.com/',
   } as const satisfies Chain;
 
   static readonly OASIS_EMERALD = {
@@ -231,6 +254,7 @@ export class Chains {
     currencySymbol: 'ROSE',
     wToken: '0x21C718C22D52d0F3a789b752D4c2fD5908a8A733',
     publicRPCs: ['https://emerald.oasis.dev'],
+    explorer: 'https://explorer.emerald.oasis.dev/',
   } as const satisfies Chain;
 
   static getAllChains(): Chain[] {

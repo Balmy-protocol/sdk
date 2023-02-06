@@ -7,17 +7,20 @@ import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 
-export class ProviderTokenSource implements ITokenSource {
+export class RPCTokenSource implements ITokenSource {
   constructor(private readonly multicallService: IMulticallService) {}
 
   supportedChains(): ChainId[] {
     return this.multicallService.supportedChains();
   }
 
-  async getTokens(
-    addresses: Record<ChainId, TokenAddress[]>,
-    context?: { timeout: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
+  async getTokens({
+    addresses,
+    context,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    context?: { timeout: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, BaseToken>>> {
     const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, BaseToken>]>>(async ([chainId, addresses]) => [
       parseInt(chainId),
       await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), context?.timeout, { reduceBy: '100' }),

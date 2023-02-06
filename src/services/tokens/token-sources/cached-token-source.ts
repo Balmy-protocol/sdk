@@ -17,7 +17,7 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
     return this.source.supportedChains();
   }
 
-  async getTokens(addresses: Record<ChainId, TokenAddress[]>): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+  async getTokens({ addresses }: { addresses: Record<ChainId, TokenAddress[]> }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
     const tokensInChain = addressesToTokensInChain(addresses);
     const tokens = await this.cache.getOrCalculate({ keys: tokensInChain });
     return tokenInChainRecordToChainAndAddress(tokens);
@@ -28,8 +28,8 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
   }
 
   private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, Token>> {
-    const input = tokensInChainToAddresses(tokensInChain);
-    const tokens = await this.source.getTokens(input);
+    const addresses = tokensInChainToAddresses(tokensInChain);
+    const tokens = await this.source.getTokens({ addresses });
     return chainAndAddressRecordToTokenInChain(tokens);
   }
 }

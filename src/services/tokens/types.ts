@@ -3,23 +3,23 @@ import { UnionMerge } from '@utility-types';
 
 export type ITokenService<Token extends BaseToken> = {
   supportedChains(): ChainId[];
-  getTokensForChain(chainId: ChainId, addresses: TokenAddress[], config?: { timeout?: TimeString }): Promise<Record<TokenAddress, Token>>;
-  getTokens(
-    addresses: { chainId: ChainId; addresses: TokenAddress[] }[],
-    config?: { timeout?: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
-  getTokensByChainId(
-    addresses: Record<ChainId, TokenAddress[]>,
-    config?: { timeout?: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokensForChain(_: { chainId: ChainId; addresses: TokenAddress[]; config?: { timeout?: TimeString } }): Promise<Record<TokenAddress, Token>>;
+  getTokens(_: {
+    addresses: { chainId: ChainId; addresses: TokenAddress[] }[];
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokensByChainId(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
 };
 
 export type ITokenSource<Token extends BaseToken = BaseToken> = {
   supportedChains(): ChainId[];
-  getTokens(
-    addresses: Record<ChainId, TokenAddress[]>,
-    context?: { timeout: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
+  getTokens(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    context?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Token>>>;
   tokenProperties(): PropertiesRecord<Token>;
 };
 

@@ -48,6 +48,7 @@ jobs:
 
       - name: Run integration tests
         run: yarn test:integration
+        timeout-minutes: 15
 
   integration-quotes:
     runs-on: ubuntu-latest
@@ -69,6 +70,7 @@ jobs:
 
       - name: Run quotes integration tests
         run: yarn test:integration:quotes
+        timeout-minutes: 15
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
           CI_CONTEXT: true

@@ -9,7 +9,7 @@ export class SingleProviderSource implements IProviderSource {
     return [this.provider.network.chainId];
   }
 
-  getProvider(chainId: ChainId): providers.BaseProvider {
+  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     return this.provider;
   }
 }

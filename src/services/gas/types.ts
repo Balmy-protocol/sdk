@@ -1,12 +1,12 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { ChainId } from '@types';
+import { AmountOfToken, ChainId } from '@types';
 import { UnionMerge } from '@utility-types';
-import { BigNumber } from 'ethers';
+import { BigNumberish } from 'ethers';
 
 export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
 export type GasSpeed = (typeof AVAILABLE_GAS_SPEEDS)[number];
-export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: BigNumber } & ChainGasPrice;
+export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: AmountOfToken } & ChainGasPrice;
 export type GasSpeedSupportRecord = Partial<Record<GasSpeed, GasSpeedSupport>> & { standard: 'present' };
 export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, GasPriceVersion = GasPrice> = GasPriceForSpeed<
   PresentSpeeds<SupportRecord>,
@@ -17,35 +17,35 @@ export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, Gas
 
 export type IGasService = {
   supportedChains(): ChainId[];
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<BigNumber>;
-  getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice>;
-  calculateGasCost(
-    chainId: ChainId,
-    gasEstimation: BigNumber,
-    tx?: TransactionRequest,
-    options?: { speed?: GasSpeed }
-  ): Promise<GasEstimation<GasPrice>>;
-  getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator>;
+  estimateGas(_: { chainId: ChainId; tx: TransactionRequest }): Promise<AmountOfToken>;
+  getGasPrice(_: { chainId: ChainId; options?: { speed?: GasSpeed } }): Promise<GasPrice>;
+  calculateGasCost(_: {
+    chainId: ChainId;
+    gasEstimation: BigNumberish;
+    tx?: TransactionRequest;
+    options?: { speed?: GasSpeed };
+  }): Promise<GasEstimation<GasPrice>>;
+  getQuickGasCalculator(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IGasPriceSource<SupportRecord extends GasSpeedSupportRecord> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): SupportRecord;
-  getGasPrice(chainId: ChainId): Promise<GasSpeedPriceResult<SupportRecord>>;
+  getGasPrice(_: { chainId: ChainId }): Promise<GasSpeedPriceResult<SupportRecord>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
   supportedChains(): ChainId[];
-  build(chainId: ChainId): Promise<IQuickGasCostCalculator>;
+  build(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IQuickGasCostCalculator = {
-  getGasPrice(speed?: GasSpeed): GasPrice;
-  calculateGasCost(_: { gasEstimation: BigNumber; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
+  getGasPrice(_: { speed?: GasSpeed }): GasPrice;
+  calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
 };
 
-export type EIP1159GasPrice = { maxFeePerGas: BigNumber; maxPriorityFeePerGas: BigNumber };
-export type LegacyGasPrice = { gasPrice: BigNumber };
+export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGas: AmountOfToken };
+export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
 type GasSpeedSupport = 'optional' | 'present';
 type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<SupportedGasSpeed, GasPriceVersion>;

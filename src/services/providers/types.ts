@@ -3,5 +3,5 @@ import { providers } from 'ethers';
 
 export type IProviderSource = {
   supportedChains(): ChainId[];
-  getProvider(chainId: ChainId): providers.BaseProvider;
+  getProvider(_: { chainId: ChainId }): providers.BaseProvider;
 };

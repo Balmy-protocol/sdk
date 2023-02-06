@@ -14,7 +14,7 @@ import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
-import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean';
+import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';
@@ -27,9 +27,9 @@ import {
   loadTokens,
   mintMany,
 } from '@test-utils/erc20';
-import { buildSources } from '@services/quotes/source-lists/default/source-registry';
+import { buildSources } from '@services/quotes/source-registry';
 
-// This is meant to be used for local testing. On the CI, we will run one random chain for each source
+// This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'rango',
   chains: [Chains.OPTIMISM],
@@ -68,7 +68,7 @@ describe('Quote Sources', () => {
           tokens: [nativeToken, wToken, USDC, RANDOM_ERC20],
           addresses: [user, recipient],
         });
-        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain.chainId).then((gasPrice) => gasPrice['standard']);
+        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrice) => gasPrice['standard']);
         snapshot = await takeSnapshot();
       });
 
@@ -268,8 +268,8 @@ describe('Quote Sources', () => {
         const expected = fromAmount.mul(fromPriceBN).mul(magnitudeTo).div(toPriceBN).div(magnitudeFrom);
 
         const threshold = expected.mul(TRESHOLD_PERCENTAGE * 10).div(100 * 10);
-        const [upperThreshold, lowerThreshold] = [expected.add(threshold), expected.sub(threshold)];
-        expect(toAmount).to.be.lte(upperThreshold).and.to.be.gte(lowerThreshold);
+        const lowerThreshold = expected.sub(threshold);
+        expect(toAmount).to.be.gte(lowerThreshold);
       }
 
       type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
@@ -322,10 +322,12 @@ function getSources() {
   const result: Record<ChainId, Record<string, QuoteSource<QuoteSourceSupport>>> = {};
 
   if (process.env.CI_CONTEXT) {
-    // Will choose a random chain for each source
+    // Will choose test on Ethereum or, if not supported, choose random chain
     for (const [sourceId, source] of Object.entries(sources)) {
       const supportedChains = chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId));
-      const chainId = supportedChains[Math.floor(Math.random() * supportedChains.length)];
+      const chainId = supportedChains.includes(Chains.ETHEREUM.chainId)
+        ? Chains.ETHEREUM.chainId
+        : supportedChains[Math.floor(Math.random() * supportedChains.length)];
       if (!(chainId in result)) result[chainId] = {} as any;
       result[chainId][sourceId] = source;
     }

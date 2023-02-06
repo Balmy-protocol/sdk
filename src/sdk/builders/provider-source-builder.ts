@@ -9,23 +9,25 @@ import { FallbackSource } from '@services/providers/provider-sources/fallback-pr
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
 import { JsonRPCProviderSource } from '@services/providers/provider-sources/json-rpc-provider';
+import { LlamaNodesProviderSource } from '@services/providers/provider-sources/llama-nodes-provider';
 
-export type BuildProviderParams = { source: ProviderSource };
-type ProviderSource =
+export type BuildProviderParams = { source: ProviderSourceInput };
+export type ProviderSourceInput =
   | { type: 'ethers'; instance: providers.BaseProvider }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, ArrayOneOrMore<string>> }
   | { type: 'alchemy'; config: { key: string; supportedChains?: ChainId[] } }
   | { type: 'infura'; config: { key: string; supportedChains?: ChainId[] } }
+  | { type: 'llama-nodes'; config: { key: string } }
   | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
-  | { type: 'combine-when-possible'; sources: ArrayTwoOrMore<ProviderSource> }
-  | { type: 'only-first-provider-that-supports-chain'; sources: ArrayTwoOrMore<ProviderSource> };
+  | { type: 'combine-when-possible'; sources: ProviderSourceInput[] }
+  | { type: 'only-first-provider-that-supports-chain'; sources: ProviderSourceInput[] };
 
 export function buildProviderSource(params?: BuildProviderParams) {
   return buildSource(params?.source);
 }
 
-function buildSource(source?: ProviderSource): IProviderSource {
+function buildSource(source?: ProviderSourceInput): IProviderSource {
   switch (source?.type) {
     case undefined:
       return new PublicProvidersSource();
@@ -37,6 +39,8 @@ function buildSource(source?: ProviderSource): IProviderSource {
       return new PublicProvidersSource(source.rpcsPerChain);
     case 'alchemy':
       return new AlchemyProviderSource(source.config.key, source.config.supportedChains);
+    case 'llama-nodes':
+      return new LlamaNodesProviderSource(source.config.key);
     case 'infura':
       return new InfuraProviderSource(source.config.key, source.config.supportedChains);
     case 'json-rpc':

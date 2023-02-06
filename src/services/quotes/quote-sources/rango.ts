@@ -27,19 +27,20 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.HECO.chainId]: 'HECO',
 };
 
+export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
+  name: 'Rango',
+  supports: {
+    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    swapAndTransfer: true,
+    buyOrders: false,
+  },
+  logoURI: 'ipfs://QmTvX3XyrFDSiDAKPJg9xFgn8DgQbp31wYWE8q7VhaR2c7',
+};
 type RangoConfig = { apiKey: string };
 type RangoSupport = { buyOrders: false; swapAndTransfer: true };
 export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig> {
-  getMetadata(): QuoteSourceMetadata<RangoSupport> {
-    return {
-      name: 'Rango',
-      supports: {
-        chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
-        swapAndTransfer: true,
-        buyOrders: false,
-      },
-      logoURI: 'ipfs://QmTvX3XyrFDSiDAKPJg9xFgn8DgQbp31wYWE8q7VhaR2c7',
-    };
+  getMetadata() {
+    return RANGO_METADATA;
   }
 
   async quote(

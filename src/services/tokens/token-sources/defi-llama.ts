@@ -52,10 +52,13 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     return Object.keys(CHAIN_ID_TO_KEY).map((chainId) => parseInt(chainId));
   }
 
-  async getTokens(
-    addresses: Record<ChainId, TokenAddress[]>,
-    context?: { timeout?: TimeString }
-  ): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
+  async getTokens({
+    addresses,
+    context,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    context?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
     const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
       addresses.map((address) => toTokenId(parseInt(chainId), address))
     );

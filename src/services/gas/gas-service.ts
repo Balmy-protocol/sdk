@@ -1,6 +1,6 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { ChainId } from '@types';
-import { BigNumber } from 'ethers';
+import { AmountOfToken, ChainId } from '@types';
+import { BigNumberish } from 'ethers';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from './types';
@@ -23,26 +23,34 @@ export class GasService implements IGasService {
     return chainsIntersection(this.providerSource.supportedChains(), this.gasCostCalculatorBuilder.supportedChains());
   }
 
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<BigNumber> {
-    return this.providerSource.getProvider(chainId).estimateGas(tx);
+  estimateGas({ chainId, tx }: { chainId: ChainId; tx: TransactionRequest }): Promise<AmountOfToken> {
+    return this.providerSource
+      .getProvider({ chainId })
+      .estimateGas(tx)
+      .then((estimate) => estimate.toString());
   }
 
-  getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator> {
-    return this.gasCostCalculatorBuilder.build(chainId);
+  getQuickGasCalculator({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
+    return this.gasCostCalculatorBuilder.build({ chainId });
   }
 
-  async getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice> {
-    const gasCalculator = await this.getQuickGasCalculator(chainId);
-    return gasCalculator.getGasPrice(options?.speed);
+  async getGasPrice({ chainId, options }: { chainId: ChainId; options?: { speed?: GasSpeed } }): Promise<GasPrice> {
+    const gasCalculator = await this.getQuickGasCalculator({ chainId });
+    return gasCalculator.getGasPrice({ speed: options?.speed });
   }
 
-  async calculateGasCost(
-    chainId: ChainId,
-    gasEstimation: BigNumber,
-    tx?: TransactionRequest,
-    options?: { speed?: GasSpeed }
-  ): Promise<GasEstimation<GasPrice>> {
-    const gasCalculator = await this.getQuickGasCalculator(chainId);
+  async calculateGasCost({
+    chainId,
+    gasEstimation,
+    tx,
+    options,
+  }: {
+    chainId: ChainId;
+    gasEstimation: BigNumberish;
+    tx?: TransactionRequest;
+    options?: { speed?: GasSpeed };
+  }): Promise<GasEstimation<GasPrice>> {
+    const gasCalculator = await this.getQuickGasCalculator({ chainId });
     return gasCalculator.calculateGasCost({ gasEstimation, tx, ...options });
   }
 }
