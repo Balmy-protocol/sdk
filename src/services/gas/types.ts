@@ -17,30 +17,30 @@ export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, Gas
 
 export type IGasService = {
   supportedChains(): ChainId[];
-  estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken>;
-  getGasPrice(chainId: ChainId, options?: { speed?: GasSpeed }): Promise<GasPrice>;
-  calculateGasCost(
-    chainId: ChainId,
-    gasEstimation: BigNumberish,
-    tx?: TransactionRequest,
-    options?: { speed?: GasSpeed }
-  ): Promise<GasEstimation<GasPrice>>;
-  getQuickGasCalculator(chainId: ChainId): Promise<IQuickGasCostCalculator>;
+  estimateGas(_: { chainId: ChainId; tx: TransactionRequest }): Promise<AmountOfToken>;
+  getGasPrice(_: { chainId: ChainId; options?: { speed?: GasSpeed } }): Promise<GasPrice>;
+  calculateGasCost(_: {
+    chainId: ChainId;
+    gasEstimation: BigNumberish;
+    tx?: TransactionRequest;
+    options?: { speed?: GasSpeed };
+  }): Promise<GasEstimation<GasPrice>>;
+  getQuickGasCalculator(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IGasPriceSource<SupportRecord extends GasSpeedSupportRecord> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): SupportRecord;
-  getGasPrice(chainId: ChainId): Promise<GasSpeedPriceResult<SupportRecord>>;
+  getGasPrice(_: { chainId: ChainId }): Promise<GasSpeedPriceResult<SupportRecord>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
   supportedChains(): ChainId[];
-  build(chainId: ChainId): Promise<IQuickGasCostCalculator>;
+  build(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IQuickGasCostCalculator = {
-  getGasPrice(speed?: GasSpeed): GasPrice;
+  getGasPrice(_: { speed?: GasSpeed }): GasPrice;
   calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
 };
 

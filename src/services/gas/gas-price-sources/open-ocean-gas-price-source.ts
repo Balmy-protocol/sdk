@@ -29,7 +29,7 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeedSupport>
     ].map(({ chainId }) => chainId);
   }
 
-  async getGasPrice(chainId: ChainId) {
+  async getGasPrice({ chainId }: { chainId: ChainId }) {
     const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
     const body = await response.json();
     if (typeof body.standard === 'string' || typeof body.standard === 'number') {

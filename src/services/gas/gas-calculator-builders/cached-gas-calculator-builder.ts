@@ -18,7 +18,7 @@ export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilde
   constructor({ wrapped, expiration }: ConstructorParameters) {
     this.wrapped = wrapped;
     this.cache = new ContextlessCache<ChainId, IQuickGasCostCalculatorBuilder>({
-      calculate: ([chainId]) => this.wrapped.build(chainId), // We know that we will only ask for one chain at a time
+      calculate: ([chainId]) => this.wrapped.build({ chainId }), // We know that we will only ask for one chain at a time
       toStorableKey: (chainId) => `${chainId}`,
       expirationConfig: expiration.default,
     });
@@ -29,12 +29,12 @@ export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilde
     return this.wrapped.supportedChains();
   }
 
-  async build(chainId: ChainId): Promise<IQuickGasCostCalculator> {
+  async build({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
     const expirationConfig = this.expirationOverrides[chainId];
     const calculator = await this.cache.getOrCalculateSingle({
       key: chainId,
       expirationConfig,
     });
-    return calculator!.build(chainId);
+    return calculator!.build({ chainId });
   }
 }

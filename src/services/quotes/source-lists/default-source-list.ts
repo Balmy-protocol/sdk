@@ -46,11 +46,14 @@ export class DefaultSourceList implements IQuoteSourceList {
 
   private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
     // Ask for needed values, such as token data and gas price
-    const tokensPromise = this.tokenService.getTokensForChain(request.chainId, [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN]);
+    const tokensPromise = this.tokenService.getTokensForChain({
+      chainId: request.chainId,
+      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+    });
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
-    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator(request.chainId);
-    const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice(request.gasSpeed));
+    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({ chainId: request.chainId });
+    const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice({ speed: request.gasSpeed }));
 
     // Map request to source request
     const sourceRequest = mapRequestToSourceRequest({ request, sellTokenPromise, buyTokenPromise, gasPricePromise });

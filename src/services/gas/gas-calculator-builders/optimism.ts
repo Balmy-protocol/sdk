@@ -15,7 +15,7 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
     return [Chains.OPTIMISM.chainId];
   }
 
-  async build(chain: ChainId): Promise<IQuickGasCostCalculator> {
+  async build(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
       getGasPrice: () => ({ gasPrice: l2GasPrice.toString() }),

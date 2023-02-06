@@ -56,7 +56,7 @@ describe('Token Sources', () => {
           return [chainId, addresses];
         });
         input = Object.fromEntries(entries);
-        result = await source.getTokens(input, { timeout: '30s' });
+        result = await source.getTokens({ addresses: input, context: { timeout: '30s' } });
       });
 
       test(`Returned amount of chains is as expected`, () => {

@@ -28,8 +28,8 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
   }
 
   private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, Token>> {
-    const input = tokensInChainToAddresses(tokensInChain);
-    const tokens = await this.source.getTokens(input);
+    const addresses = tokensInChainToAddresses(tokensInChain);
+    const tokens = await this.source.getTokens({ addresses });
     return chainAndAddressRecordToTokenInChain(tokens);
   }
 }

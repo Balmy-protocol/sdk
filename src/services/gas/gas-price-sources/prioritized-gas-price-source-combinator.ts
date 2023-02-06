@@ -18,9 +18,9 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getGasPrice(chainId: ChainId) {
+  getGasPrice({ chainId }: { chainId: ChainId }) {
     const source = this.sources.find((source) => source.supportedChains().includes(chainId));
     if (!source) throw new Error(`Chain with id ${chainId} not supported`);
-    return source.getGasPrice(chainId);
+    return source.getGasPrice({ chainId });
   }
 }

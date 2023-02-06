@@ -45,7 +45,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<BaseToken>[] | []>
           return;
         }
 
-        timeoutPromise(source.getTokens(addressesForSource), context?.timeout, { reduceBy: '100' })
+        timeoutPromise(source.getTokens({ addresses: addressesForSource }), context?.timeout, { reduceBy: '100' })
           .then((sourceResult) => {
             successfulRequests++;
             for (const [chainIdString, tokenRecord] of Object.entries(sourceResult)) {

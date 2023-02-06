@@ -10,11 +10,11 @@ export class GenericGasCalculatorBuilder implements IQuickGasCostCalculatorBuild
     return this.gasPriceSource.supportedChains();
   }
 
-  async build(chainId: ChainId): Promise<IQuickGasCostCalculator> {
-    const gasPriceData = await this.gasPriceSource.getGasPrice(chainId);
+  async build({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
+    const gasPriceData = await this.gasPriceSource.getGasPrice({ chainId });
     const getGasPriceForSpeed = (speed?: GasSpeed) => (speed && speed in gasPriceData ? gasPriceData[speed] : gasPriceData['standard']);
     return {
-      getGasPrice: (speed) => getGasPriceForSpeed(speed),
+      getGasPrice: ({ speed }) => getGasPriceForSpeed(speed),
       calculateGasCost: ({ gasEstimation, speed }) => {
         const gasPriceForSpeed = getGasPriceForSpeed(speed);
         const actualGasPrice = 'maxFeePerGas' in gasPriceForSpeed ? gasPriceForSpeed.maxFeePerGas : gasPriceForSpeed.gasPrice;
