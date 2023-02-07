@@ -50,9 +50,11 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
       `&amount=${order.sellAmount.toString()}` +
       `&slippage=${slippagePercentage / 100}` +
       `&receiver=${recipient ?? takeFrom}` +
-      `&source=mean-finance-sdk`;
+      `&saveGas=0` +
+      `&gasInclude=1`;
 
-    if (this.globalConfig.referrer?.address) {
+    if (this.globalConfig.referrer) {
+      url += `&source=${this.globalConfig.referrer.name}`;
       url += `&ref=${this.globalConfig.referrer.address}`;
     }
     if (txValidFor) {
