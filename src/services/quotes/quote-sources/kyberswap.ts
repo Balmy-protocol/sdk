@@ -54,7 +54,8 @@ export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSup
       `&tokenOut=${buyToken}` +
       `&amountIn=${order.sellAmount.toString()}` +
       `&slippageTolerance=${slippagePercentage * 100}` +
-      `&to=${recipient ?? takeFrom}`;
+      `&to=${recipient ?? takeFrom}` +
+      `&gasInclude=1`;
 
     if (txValidFor) {
       url += `&deadline=${calculateDeadline(txValidFor)}`;
