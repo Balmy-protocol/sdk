@@ -8,6 +8,9 @@ export const CONFIG: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> = {
 if (process.env.ODOS_API_KEY) {
   CONFIG.odos = { apiKey: process.env.ODOS_API_KEY };
 }
+if (process.env.RANGO_API_KEY) {
+  CONFIG.rango = { apiKey: process.env.RANGO_API_KEY };
+}
 if (process.env.FIREBIRD_API_KEY) {
   CONFIG.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
 }
