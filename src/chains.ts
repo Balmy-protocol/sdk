@@ -69,7 +69,7 @@ export class Chains {
     ids: ['fantom'],
     currencySymbol: 'FTM',
     wToken: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-    publicRPCs: ['https://rpc.ftm.tools/', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network'],
+    publicRPCs: ['https://rpc.ankr.com/fantom', 'https://rpc.ftm.tools/', 'https://rpcapi.fantom.network'],
     explorer: 'https://ftmscan.com/',
   } as const satisfies Chain;
 

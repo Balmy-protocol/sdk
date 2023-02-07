@@ -72,5 +72,6 @@ jobs:
         run: yarn test:integration:quotes
         timeout-minutes: 15
         env:
-          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
+          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}          
+          RANGO_API_KEY: ${{secrets.RANGO_API_KEY}}          
           CI_CONTEXT: true
