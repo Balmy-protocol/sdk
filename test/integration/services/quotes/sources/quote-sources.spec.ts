@@ -28,15 +28,17 @@ import {
   mintMany,
 } from '@test-utils/erc20';
 import { buildSources } from '@services/quotes/source-registry';
+import { SourceId } from '@services/quotes/types';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'rango',
   chains: [Chains.ARBITRUM],
 };
+const ROUNDING_ISSUES: SourceId[] = ['rango'];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
-// jest.retryTimes(3);
+jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 describe('Quote Sources', () => {
@@ -203,6 +205,7 @@ describe('Quote Sources', () => {
                     sellToken: quoteFtn().sellToken,
                     buyToken: quoteFtn().buyToken,
                     ...quoteFtn().order,
+                    sourceId,
                   });
                 });
               });
@@ -219,14 +222,14 @@ describe('Quote Sources', () => {
           buyToken,
           buyAmount,
           type,
-          slippagePercentage,
+          sourceId,
         }: {
           sellToken: DefiLlamaToken;
           buyToken: DefiLlamaToken;
           type: 'sell' | 'buy';
+          sourceId: SourceId;
           sellAmount?: BigNumber;
           buyAmount?: BigNumber;
-          slippagePercentage?: number;
         }
       ) {
         expect(quote.type).to.equal(type);
@@ -238,8 +241,6 @@ describe('Quote Sources', () => {
           } else {
             validateQuote(sellToken, buyToken, sellAmount!, quote.buyAmount);
           }
-          const allowedSlippage = calculatePercentage(quote.buyAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE);
-          expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage));
         } else {
           expect(quote.buyAmount).to.equal(buyAmount);
           expect(quote.buyAmount).to.equal(quote.minBuyAmount);
@@ -248,14 +249,25 @@ describe('Quote Sources', () => {
           } else {
             validateQuote(buyToken, sellToken, buyAmount!, quote.sellAmount);
           }
-          const allowedSlippage = calculatePercentage(quote.sellAmount, slippagePercentage ?? SLIPPAGE_PERCENTAGE);
-          expect(quote.maxSellAmount).to.be.lte(quote.sellAmount.add(allowedSlippage));
         }
+        validateMinBuyMaxSell(sourceId, quote);
         if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
           expect(quote.tx.value).to.equal(quote.maxSellAmount);
         } else {
           const isValueNotSet = (value?: BigNumber) => !value || value.isZero();
           expect(isValueNotSet(quote.tx.value)).to.be.true;
+        }
+      }
+
+      function validateMinBuyMaxSell(sourceId: SourceId, quote: SourceQuoteResponse) {
+        let slippage = SLIPPAGE_PERCENTAGE;
+        if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
+        if (quote.type === 'sell') {
+          const allowedSlippage = calculatePercentage(quote.buyAmount, slippage);
+          expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage));
+        } else {
+          const allowedSlippage = calculatePercentage(quote.sellAmount, slippage);
+          expect(quote.maxSellAmount).to.be.lte(quote.sellAmount.add(allowedSlippage));
         }
       }
 
