@@ -32,7 +32,7 @@ import { buildSources } from '@services/quotes/source-registry';
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'rango',
-  chains: [Chains.OPTIMISM],
+  chains: [Chains.ARBITRUM],
 };
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
@@ -185,11 +185,6 @@ describe('Quote Sources', () => {
                   txs = [...approveTx, await execute({ quote, as: user })];
                 });
                 then('result is as expected', async () => {
-                  assertQuoteIsConsistent(quote, {
-                    sellToken: quoteFtn().sellToken,
-                    buyToken: quoteFtn().buyToken,
-                    ...quoteFtn().order,
-                  });
                   await assertUsersBalanceIsReduceAsExpected({
                     txs,
                     sellToken: quoteFtn().sellToken,
@@ -203,6 +198,11 @@ describe('Quote Sources', () => {
                     quote,
                     recipient: quoteFtn().recipient ?? user,
                     initialBalances,
+                  });
+                  assertQuoteIsConsistent(quote, {
+                    sellToken: quoteFtn().sellToken,
+                    buyToken: quoteFtn().buyToken,
+                    ...quoteFtn().order,
                   });
                 });
               });

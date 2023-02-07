@@ -80,7 +80,7 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
     }
     const {
       route: { outputAmount, outputAmountMin, fee },
-      tx: { approveTo, txTo, txData, value, gasLimit, gasPrice },
+      tx: { txTo, txData, value, gasLimit, gasPrice },
     } = await response.json();
 
     const gasCost = BigNumber.from((fee as { name: string; amount: string }[]).find((fee) => fee.name === 'Network Fee')?.amount ?? 0);
@@ -99,7 +99,7 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       minBuyAmount: BigNumber.from(outputAmountMin),
       type: 'sell',
       estimatedGas,
-      allowanceTarget: approveTo ?? constants.AddressZero,
+      allowanceTarget: txTo ?? constants.AddressZero,
       tx,
     };
   }
