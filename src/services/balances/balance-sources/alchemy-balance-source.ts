@@ -1,11 +1,8 @@
-import { BigNumber } from 'ethers';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains } from '@chains';
-import { Addresses } from '@shared/constants';
-import { filterRejectedResults, isSameAddress } from '@shared/utils';
-import { timeoutPromise } from '@shared/timeouts';
-import { BalanceQueriesSupport, IBalanceSource } from '../types';
+import { BalanceQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
+import { BaseBalanceSource } from './base-balance-source';
 
 const URLs: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth-mainnet.g.alchemy.com/v2',
@@ -15,62 +12,21 @@ const URLs: Record<ChainId, string> = {
 };
 
 // Note: when checking tokens held by an account, Alchemy returns about 300 tokens max
-export class AlchemyBalanceSource implements IBalanceSource {
-  constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {}
+export class AlchemyBalanceSource extends BaseBalanceSource {
+  constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {
+    super();
+  }
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
     const entries = Object.keys(URLs).map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: true }]);
     return Object.fromEntries(entries);
   }
 
-  async getTokensHeldByAccount({
-    account,
-    chains,
-    context,
-  }: {
-    account: Address;
-    chains: ChainId[];
-    context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    const promises = chains.map(async (chainId) => [
-      chainId,
-      await timeoutPromise(this.fetchTokensHeldByAccountInChain(chainId, account, context), context?.timeout, { reduceBy: '100' }),
-    ]);
-    return Object.fromEntries(await filterRejectedResults(promises));
-  }
-
-  async getBalancesForTokens({
-    account,
-    tokens,
-    context,
-  }: {
-    account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    const promises = Object.entries(tokens).map(async ([chainId, addresses]) => [
-      parseInt(chainId),
-      await timeoutPromise(this.fetchBalancesInChain(parseInt(chainId), account, addresses, context), context?.timeout, { reduceBy: '100' }),
-    ]);
-    return Object.fromEntries(await filterRejectedResults(promises));
-  }
-
-  private async fetchTokensHeldByAccountInChain(
+  protected async fetchERC20TokensHeldByAccountInChain(
     chainId: ChainId,
     account: Address,
     context?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
-    const [tokenBalances, nativeBalance] = await Promise.all([
-      this.fetchERC20sHeldByAccountInChain(chainId, account, context?.timeout),
-      this.getNativeBalance(chainId, account),
-    ]);
-    if (!BigNumber.from(nativeBalance).isZero()) {
-      tokenBalances[Addresses.NATIVE_TOKEN] = nativeBalance.toString();
-    }
-    return tokenBalances;
-  }
-
-  private async fetchERC20sHeldByAccountInChain(chainId: ChainId, account: Address, timeout?: TimeString) {
     const allBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] = [];
     let pageKey: string | undefined = undefined;
     do {
@@ -81,7 +37,7 @@ export class AlchemyBalanceSource implements IBalanceSource {
           chainId,
           'alchemy_getTokenBalances',
           args,
-          timeout
+          context?.timeout
         );
         allBalances.push(...result.tokenBalances);
         pageKey = result.pageKey;
@@ -92,46 +48,23 @@ export class AlchemyBalanceSource implements IBalanceSource {
     return toRecord(allBalances);
   }
 
-  private async fetchBalancesInChain(
+  protected async fetchERC20BalancesInChain(
     chainId: ChainId,
     account: Address,
-    addresses: Address[],
+    addresses: TokenAddress[],
     context?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
-    const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
+    const { tokenBalances } = await this.callRPC<{ tokenBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] }>(
+      chainId,
+      'alchemy_getTokenBalances',
+      [account, addresses],
+      context?.timeout
+    );
 
-    const [tokenBalances, nativeBalance] = await Promise.all([
-      addressesWithoutNativeToken.length > 0
-        ? this.callRPC<{ tokenBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] }>(
-            chainId,
-            'alchemy_getTokenBalances',
-            [account, addressesWithoutNativeToken],
-            context?.timeout
-          )
-        : { tokenBalances: [] },
-      addressesWithoutNativeToken.length !== addresses.length ? this.getNativeBalance(chainId, account) : undefined,
-    ]);
-
-    const tokenBalancesRecord = toRecord(tokenBalances.tokenBalances);
-
-    // We do this extra mapping to return the tokens in the addresses they were provided
-    const result: Record<TokenAddress, AmountOfToken> = {};
-    for (const address of addresses) {
-      const value = tokenBalancesRecord[address.toLowerCase()];
-      if (value) {
-        result[address] = value;
-      }
-    }
-
-    if (nativeBalance) {
-      const nativeAddressUsed = addresses.find((address) => isSameAddress(Addresses.NATIVE_TOKEN, address))!;
-      result[nativeAddressUsed] = nativeBalance.toString();
-    }
-
-    return result;
+    return toRecord(tokenBalances);
   }
 
-  private getNativeBalance(chainId: ChainId, account: Address): Promise<AmountOfToken> {
+  protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
     return this.callRPC(chainId, 'eth_getBalance', [account, 'latest']);
   }
 
@@ -159,15 +92,6 @@ export class AlchemyBalanceSource implements IBalanceSource {
   }
 }
 
-function toRecord(balances: { contractAddress: TokenAddress; tokenBalance: string | null }[]) {
-  const tokenBalancesRecord: Record<TokenAddress, AmountOfToken> = {};
-  for (const { contractAddress, tokenBalance } of balances) {
-    try {
-      // We've seen some weird values as amount, so we add the try/catch
-      if (tokenBalance && !BigNumber.from(tokenBalance).isZero()) {
-        tokenBalancesRecord[contractAddress.toLowerCase()] = tokenBalance;
-      }
-    } catch {}
-  }
-  return tokenBalancesRecord;
+function toRecord(balances: { contractAddress: TokenAddress; tokenBalance: string | null }[]): Record<TokenAddress, AmountOfToken> {
+  return Object.fromEntries(balances.map(({ contractAddress, tokenBalance }) => [contractAddress, tokenBalance ?? '0']));
 }

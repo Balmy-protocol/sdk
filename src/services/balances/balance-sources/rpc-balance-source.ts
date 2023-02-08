@@ -2,14 +2,14 @@ import { BigNumber, ethers } from 'ethers';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
-import { Addresses } from '@shared/constants';
-import { filterRejectedResults, isSameAddress } from '@shared/utils';
-import { timeoutPromise } from '@shared/timeouts';
-import { BalanceQueriesSupport, IBalanceSource } from '../types';
+import { BalanceQueriesSupport } from '../types';
 import { IProviderSource } from '@services/providers/types';
+import { BaseBalanceSource } from './base-balance-source';
 
-export class RPCBalanceSource implements IBalanceSource {
-  constructor(private readonly providerSource: IProviderSource, private readonly multicallService: IMulticallService) {}
+export class RPCBalanceSource extends BaseBalanceSource {
+  constructor(private readonly providerSource: IProviderSource, private readonly multicallService: IMulticallService) {
+    super();
+  }
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
     const supportedChains = chainsIntersection(this.providerSource.supportedChains(), this.multicallService.supportedChains());
@@ -17,49 +17,36 @@ export class RPCBalanceSource implements IBalanceSource {
     return Object.fromEntries(entries);
   }
 
-  getTokensHeldByAccount(_: { account: Address; chains: ChainId[] }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    return Promise.reject(new Error('Operation not supported'));
+  protected fetchERC20TokensHeldByAccountInChain(
+    chainId: ChainId,
+    account: Address,
+    context?: { timeout?: TimeString }
+  ): Promise<Record<TokenAddress, AmountOfToken>> {
+    throw new Error('Operation not supported');
   }
 
-  async getBalancesForTokens({
-    account,
-    tokens,
-    context,
-  }: {
-    account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    const promises = Object.entries(tokens).map(async ([chainId, addresses]) => [
-      parseInt(chainId),
-      await timeoutPromise(this.fetchBalancesInChain(parseInt(chainId), account, addresses), context?.timeout, { reduceBy: '100' }),
-    ]);
-    return Object.fromEntries(await filterRejectedResults(promises));
-  }
-
-  private async fetchBalancesInChain(chainId: ChainId, account: Address, addresses: Address[]): Promise<Record<TokenAddress, AmountOfToken>> {
-    const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
-
-    const calls: { target: Address; decode: string; calldata: string }[] = addressesWithoutNativeToken.flatMap((address) => [
+  protected async fetchERC20BalancesInChain(
+    chainId: ChainId,
+    account: Address,
+    addresses: TokenAddress[],
+    context?: { timeout?: TimeString }
+  ): Promise<Record<TokenAddress, AmountOfToken>> {
+    const calls: { target: Address; decode: string; calldata: string }[] = addresses.flatMap((address) => [
       { target: address, decode: 'uint256', calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]) },
     ]);
-    const [multicallResults, nativeBalance] = await Promise.all([
-      calls.length > 0 ? this.multicallService.readOnlyMulticall({ chainId, calls }) : [],
-      addressesWithoutNativeToken.length !== addresses.length ? this.providerSource.getProvider({ chainId }).getBalance(account) : undefined,
-    ]);
-
+    const multicallResults: BigNumber[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, AmountOfToken> = {};
-    for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
-      const address = addressesWithoutNativeToken[i];
-      const balanceOf: BigNumber = multicallResults[i];
-      result[address] = balanceOf.toString();
+    for (let i = 0; i < addresses.length; i++) {
+      result[addresses[i]] = multicallResults[i].toString();
     }
-    if (nativeBalance) {
-      const nativeAddressUsed = addresses.find((address) => isSameAddress(Addresses.NATIVE_TOKEN, address))!;
-      result[nativeAddressUsed] = nativeBalance.toString();
-    }
-
     return result;
+  }
+
+  protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
+    return this.providerSource
+      .getProvider({ chainId })
+      .getBalance(account)
+      .then((balance) => balance.toString());
   }
 }
 

@@ -52,6 +52,7 @@ const FETCH_SERVICE = new FetchService(crossFetch);
 const PROVIDER_SOURCE = new PublicProvidersSource();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+// const MORALIS_BALANCE_SOURCE = new MoralisBalanceSource(FETCH_SERVICE, process.env.MORALIS_API_KEY!);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -59,6 +60,7 @@ jest.setTimeout(ms('1m'));
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
