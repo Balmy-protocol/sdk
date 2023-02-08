@@ -213,7 +213,7 @@ export class Chains {
     ids: ['aurora'],
     currencySymbol: 'ETH',
     wToken: '0xc9bdeed33cd01541e1eed10f90519d2c06fe3feb',
-    publicRPCs: ['https://mainnet.aurora.dev'],
+    publicRPCs: ['https://endpoints.omniatech.io/v1/aurora/mainnet/public', 'https://mainnet.aurora.dev'],
     explorer: 'https://explorer.mainnet.aurora.dev/',
   } as const satisfies Chain;
 
