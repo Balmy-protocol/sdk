@@ -13,7 +13,6 @@ import {
   FailedSimulation,
   ISimulationSource,
   NativeTransferStateChange,
-  SimulationResult,
   SuccessfulSimulation,
 } from '@services/simulations/types';
 import { then, when } from '@test-utils/bdd';

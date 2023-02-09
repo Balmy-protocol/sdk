@@ -124,18 +124,23 @@ describe('Balance Sources', () => {
           const chain = Chains.byKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
             test(`Returned amount of tokens is as expected`, () => {
-              const expectedTokenAmount = chainId in TESTS ? 2 : 1;
+              let expectedTokenAmount = CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? 0 : 1;
+              if (chainId in TESTS) expectedTokenAmount++;
               expect(Object.keys(result()[chainId]).length).to.be.gte(expectedTokenAmount);
             });
             test(chain?.currencySymbol ?? 'Native token', () => {
-              // In this case, make sure there is some native balance
-              validateTokenBalance({
-                result: result(),
-                chainId,
-                address: Addresses.NATIVE_TOKEN,
-                decimals: 18,
-                minAmount: CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? '0' : formatUnits(1, 18),
-              });
+              if (CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId))) {
+                expect(result()).to.not.have.keys([Addresses.NATIVE_TOKEN]);
+              } else {
+                // In this case, make sure there is some native balance
+                validateTokenBalance({
+                  result: result(),
+                  chainId,
+                  address: Addresses.NATIVE_TOKEN,
+                  decimals: 18,
+                  minAmount: formatUnits(1, 18),
+                });
+              }
             });
             if (chainId in TESTS) {
               test(`${TESTS[chainId].symbol}`, () => {
