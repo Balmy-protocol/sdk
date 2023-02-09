@@ -3,7 +3,7 @@ import { FallbackSource } from './fallback-provider ';
 import { InfuraProviderSource } from './infura-provider';
 import { JsonRPCProviderSource } from './json-rpc-provider';
 import { PrioritizedProviderSourceCombinator } from './prioritized-provider-source-combinator';
-import { PublicProvidersSource } from './public-providers';
+import { PublicRPCsSource } from './public-providers';
 import { SingleProviderSource } from './single-provider';
 
 export default {
@@ -12,6 +12,6 @@ export default {
   InfuraProviderSource,
   JsonRPCProviderSource,
   PrioritizedProviderSourceCombinator,
-  PublicProvidersSource,
+  PublicRPCsSource,
   SingleProviderSource,
 };

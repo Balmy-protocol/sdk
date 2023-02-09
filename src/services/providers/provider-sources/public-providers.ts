@@ -4,7 +4,7 @@ import { ArrayOneOrMore } from '@utility-types';
 import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
-export class PublicProvidersSource implements IProviderSource {
+export class PublicRPCsSource implements IProviderSource {
   private readonly publicRPCs: Record<ChainId, ArrayOneOrMore<string>>;
 
   constructor(publicRPCs?: Record<ChainId, ArrayOneOrMore<string>>) {

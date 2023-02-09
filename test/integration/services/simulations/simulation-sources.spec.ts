@@ -1,11 +1,9 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
-import { AlchemySimulationSource } from '@services/simulations/simulation-sources/alchemy-simulation-source';
+import { RPCSimulationSource } from '@services/simulations/simulation-sources/rpc-simulation-source';
 import { Chains } from '@chains';
 import { BigNumber, utils } from 'ethers';
 import chaiAsPromised from 'chai-as-promised';
-import { FetchService } from '@services/fetch/fetch-service';
-import crossFetch from 'cross-fetch';
 import dotenv from 'dotenv';
 import {
   ERC20ApprovalStateChange,
@@ -16,12 +14,14 @@ import {
   SuccessfulSimulation,
 } from '@services/simulations/types';
 import { then, when } from '@test-utils/bdd';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 dotenv.config();
 chai.use(chaiAsPromised);
 
-const FETCH_SERVICE = new FetchService(crossFetch);
-const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+// const FETCH_SERVICE = new FetchService(crossFetch);
+// const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
 // const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);
+const RPC_SIMULATION_SOURCE = new RPCSimulationSource(new PublicRPCsSource());
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -31,9 +31,9 @@ const TAKER = '0x0000000000000000000000000000000000000002';
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 const ONE_ETHER = utils.parseEther('1').toString();
 
-// Skipped due to rate limiting issues
-describe.skip('Simulation Sources', () => {
-  simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE });
+describe('Simulation Sources', () => {
+  // simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE }); Skipped due to rate limiting issues
+  simulationSourceTest({ title: 'RPC Source', source: RPC_SIMULATION_SOURCE });
   // simulationSourceTest({ title: 'Blowfish Source', source: BLOWFISH_SIMULATION_SOURCE });
 
   function simulationSourceTest({ title, source }: { title: string; source: ISimulationSource }) {
