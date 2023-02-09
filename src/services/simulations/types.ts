@@ -19,14 +19,14 @@ export type SuccessfulSimulation = {
 };
 export type FailedSimulation = {
   successful: false;
-  kind: 'invalid-tx' | 'simulation-failed' | 'unknown-error';
+  kind: 'INVALID_TRANSACTION' | 'SIMULATION_FAILED' | 'UNKNOWN_ERROR';
   message?: string;
 };
 export type SimulationResult = SuccessfulSimulation | FailedSimulation;
 export type StateChange =
-  | ({ type: 'erc20-transfer' } & ERC20TransferStateChange)
-  | ({ type: 'native-asset-transfer' } & NativeTransferStateChange)
-  | ({ type: 'erc20-approval' } & ERC20ApprovalStateChange);
+  | ({ type: 'ERC20_TRANSFER' } & ERC20TransferStateChange)
+  | ({ type: 'NATIVE_ASSET_TRANSFER' } & NativeTransferStateChange)
+  | ({ type: 'ERC20_APPROVAL' } & ERC20ApprovalStateChange);
 
 export type ERC20TransferStateChange = {
   from: Address;

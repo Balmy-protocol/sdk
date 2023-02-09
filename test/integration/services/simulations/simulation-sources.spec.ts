@@ -21,6 +21,7 @@ chai.use(chaiAsPromised);
 
 const FETCH_SERVICE = new FetchService(crossFetch);
 const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+// const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -30,9 +31,10 @@ const TAKER = '0x0000000000000000000000000000000000000002';
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 const ONE_ETHER = utils.parseEther('1').toString();
 
-// Skipped due to rate limiting issues with Alchemy
+// Skipped due to rate limiting issues
 describe.skip('Simulation Sources', () => {
   simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE });
+  // simulationSourceTest({ title: 'Blowfish Source', source: BLOWFISH_SIMULATION_SOURCE });
 
   function simulationSourceTest({ title, source }: { title: string; source: ISimulationSource }) {
     describe(title, () => {
@@ -50,7 +52,7 @@ describe.skip('Simulation Sources', () => {
           });
           expect(simulationResult.successful).to.be.false;
           const failed = simulationResult as FailedSimulation;
-          expect(failed.kind).to.equal('invalid-tx');
+          expect(failed.kind).to.equal('INVALID_TRANSACTION');
           expect(failed.message).to.not.be.undefined;
         });
       });
@@ -63,7 +65,7 @@ describe.skip('Simulation Sources', () => {
           });
           expect(simulationResult.successful).to.be.false;
           const failed = simulationResult as FailedSimulation;
-          expect(failed.kind).to.equal('simulation-failed');
+          expect(failed.kind).to.equal('SIMULATION_FAILED');
           expect(failed.message).to.not.be.undefined;
         });
       });
@@ -72,7 +74,7 @@ describe.skip('Simulation Sources', () => {
         then('result is ok', async () => {
           const simulationResult = await source.simulateTransaction({
             chainId: Chains.ETHEREUM.chainId,
-            tx: { from: TAKER, to: DAI, data: BALANCE_OF_DATA },
+            tx: { from: TAKER, to: MULTICALL_ADDRESS, data: AGGREGATE_DATA },
           });
           expect(simulationResult.successful).to.be.true;
           const success = simulationResult as SuccessfulSimulation;
@@ -94,7 +96,7 @@ describe.skip('Simulation Sources', () => {
             expect(success.stageChanges).to.be.empty;
           } else {
             expect(success.stageChanges).to.have.lengthOf(1);
-            expect(success.stageChanges[0].type).to.equal('erc20-approval');
+            expect(success.stageChanges[0].type).to.equal('ERC20_APPROVAL');
             const stateChange = success.stageChanges[0] as ERC20ApprovalStateChange;
             expect(stateChange.owner).to.equal(OWNER);
             expect(stateChange.spender).to.equal(TAKER);
@@ -121,7 +123,7 @@ describe.skip('Simulation Sources', () => {
             expect(success.stageChanges).to.be.empty;
           } else {
             expect(success.stageChanges).to.have.lengthOf(1);
-            expect(success.stageChanges[0].type).to.equal('native-asset-transfer');
+            expect(success.stageChanges[0].type).to.equal('NATIVE_ASSET_TRANSFER');
             const stateChange = success.stageChanges[0] as NativeTransferStateChange;
             expect(stateChange.from).to.equal(OWNER);
             expect(stateChange.to).to.equal(TAKER);
@@ -147,7 +149,7 @@ describe.skip('Simulation Sources', () => {
             expect(success.stageChanges).to.be.empty;
           } else {
             expect(success.stageChanges).to.have.lengthOf(1);
-            expect(success.stageChanges[0].type).to.equal('erc20-transfer');
+            expect(success.stageChanges[0].type).to.equal('ERC20_TRANSFER');
             const stateChange = success.stageChanges[0] as ERC20TransferStateChange;
             expect(stateChange.from).to.equal(OWNER);
             expect(stateChange.to).to.equal(TAKER);
@@ -191,4 +193,10 @@ const ERC_20_INTERFACE = new utils.Interface(ERC20_ABI);
 const APPROVE_DATA = ERC_20_INTERFACE.encodeFunctionData('approve', [TAKER, ONE_ETHER]);
 const TRANSFER_FROM_DATA = ERC_20_INTERFACE.encodeFunctionData('transferFrom', [OWNER, TAKER, ONE_ETHER]);
 const TRANSFER_DATA = ERC_20_INTERFACE.encodeFunctionData('transfer', [TAKER, ONE_ETHER]);
-const BALANCE_OF_DATA = ERC_20_INTERFACE.encodeFunctionData('balanceOf', [OWNER]);
+
+const MULTICALL_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
+const MULTICALL_ABI = [
+  'function aggregate(tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)',
+];
+const MULTICALL_INTERFACE = new utils.Interface(MULTICALL_ABI);
+const AGGREGATE_DATA = MULTICALL_INTERFACE.encodeFunctionData('aggregate', [[]]);

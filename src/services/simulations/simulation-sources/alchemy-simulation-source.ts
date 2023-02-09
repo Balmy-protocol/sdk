@@ -33,13 +33,13 @@ export class AlchemySimulationSource implements ISimulationSource {
         } = await response.json();
         return {
           successful: false,
-          kind: 'invalid-tx',
+          kind: 'INVALID_TRANSACTION',
           message,
         };
       } else {
         return {
           successful: false,
-          kind: 'unknown-error',
+          kind: 'UNKNOWN_ERROR',
           message: await response.text(),
         };
       }
@@ -49,7 +49,7 @@ export class AlchemySimulationSource implements ISimulationSource {
       const message = 'message' in result.error ? result.error.message : result.error;
       return {
         successful: false,
-        kind: 'simulation-failed',
+        kind: 'SIMULATION_FAILED',
         message,
       };
     }
@@ -102,13 +102,13 @@ function mapStateChange(stateChange: AlchemyStateChange): StateChange {
         decimals: stateChange.decimals!,
       };
       if (stateChange.changeType === 'APPROVE') {
-        return { type: 'erc20-approval', owner: stateChange.from, spender: stateChange.to, amount, asset };
+        return { type: 'ERC20_APPROVAL', owner: stateChange.from, spender: stateChange.to, amount, asset };
       } else {
-        return { type: 'erc20-transfer', from: stateChange.from, to: stateChange.to, amount, asset };
+        return { type: 'ERC20_TRANSFER', from: stateChange.from, to: stateChange.to, amount, asset };
       }
     case 'NATIVE':
       return {
-        type: 'native-asset-transfer',
+        type: 'NATIVE_ASSET_TRANSFER',
         from: stateChange.from,
         to: stateChange.to,
         amount: {
