@@ -257,6 +257,16 @@ export class Chains {
     explorer: 'https://explorer.emerald.oasis.dev/',
   } as const satisfies Chain;
 
+  static readonly RSK = {
+    chainId: 30,
+    name: 'RSK',
+    ids: ['rsk'],
+    currencySymbol: 'RBTC',
+    wToken: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
+    publicRPCs: ['https://mycrypto.rsk.co', 'https://public-node.rsk.co'],
+    explorer: 'https://explorer.rsk.co/',
+  } as const satisfies Chain;
+
   static getAllChains(): Chain[] {
     return Object.values(Chains).filter((value): value is Chain => typeof value !== 'function');
   }

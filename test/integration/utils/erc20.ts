@@ -147,6 +147,22 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x2f72278d8f8c4840a4d9e20d609fb0b6ef622904',
     },
   },
+  [Chains.RSK.chainId]: {
+    USDC: {
+      // DOC
+      address: '0xe700691da7b9851f2f35f8b8182c69c53ccad9db',
+      whale: '0xDEe95AdbA0583b4dC2a2B80dfd1880a09192C265',
+    },
+    RANDOM_ERC20: {
+      // SOV
+      address: '0xefc78fc7d48b64958315949279ba181c2114abbd',
+      whale: '0x7f02eC1dF0238feB228e1062Bd2c5279a712D6Af',
+    },
+    wToken: {
+      address: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
+      whale: '0xA9c3D9681215eF7623Dc28eA6B75BF87FdF285D9',
+    },
+  },
   [Chains.AURORA.chainId]: {
     USDC: {
       address: '0xB12BFcA5A55806AaF64E99521918A4bf0fC40802',
