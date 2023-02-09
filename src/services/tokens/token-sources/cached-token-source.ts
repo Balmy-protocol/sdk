@@ -1,4 +1,4 @@
-import { ChainId, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { BaseToken, ITokenSource } from '@services/tokens/types';
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 
@@ -17,9 +17,15 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
     return this.source.supportedChains();
   }
 
-  async getTokens({ addresses }: { addresses: Record<ChainId, TokenAddress[]> }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+  async getTokens({
+    addresses,
+    config,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
     const tokensInChain = addressesToTokensInChain(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain });
+    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: config?.timeout });
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 

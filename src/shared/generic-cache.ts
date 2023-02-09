@@ -1,4 +1,6 @@
+import { TimeString } from '@types';
 import ms, { StringValue } from 'ms';
+import { timeoutPromise } from './timeouts';
 
 export type ExpirationConfigOptions = {
   useCachedValue: 'always' | { ifUnder: StringValue };
@@ -36,15 +38,25 @@ export class ContextlessCache<Key extends ValidKey, Value> {
   async getOrCalculateSingle({
     key,
     expirationConfig,
+    timeout,
   }: {
     key: Key;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Value | undefined> {
-    return this.cache.getOrCalculateSingle({ context: undefined, key, expirationConfig });
+    return this.cache.getOrCalculateSingle({ context: undefined, key, expirationConfig, timeout });
   }
 
-  async getOrCalculate({ keys, expirationConfig }: { keys: Key[]; expirationConfig?: Partial<ExpirationConfigOptions> }) {
-    return this.cache.getOrCalculate({ context: undefined, keys, expirationConfig });
+  async getOrCalculate({
+    keys,
+    expirationConfig,
+    timeout,
+  }: {
+    keys: Key[];
+    expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
+  }) {
+    return this.cache.getOrCalculate({ context: undefined, keys, expirationConfig, timeout });
   }
 }
 
@@ -72,12 +84,14 @@ export class Cache<Context, Key extends ValidKey, Value> {
     key,
     context,
     expirationConfig,
+    timeout,
   }: {
     key: Key;
     context: Context;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Value | undefined> {
-    const result = await this.getOrCalculate({ keys: [key], context, expirationConfig });
+    const result = await this.getOrCalculate({ keys: [key], context, expirationConfig, timeout });
     return result[key];
   }
 
@@ -85,10 +99,12 @@ export class Cache<Context, Key extends ValidKey, Value> {
     keys,
     context,
     expirationConfig,
+    timeout,
   }: {
     keys: Key[];
     context: Context;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Record<Key, Value>> {
     const options = { ...this.expirationConfig, ...expirationConfig };
 
@@ -115,7 +131,7 @@ export class Cache<Context, Key extends ValidKey, Value> {
     // Try to calculate missing values
     const toCalculate = notInCache.filter((key) => !this.beingCalculated.has(storableKeys[key]));
     if (toCalculate.length > 0) {
-      const calculated = this.calculate(context, toCalculate);
+      const calculated = timeoutPromise(this.calculate(context, toCalculate), timeout);
       for (const key of toCalculate) {
         const storableKey = storableKeys[key];
         const promise = calculated
