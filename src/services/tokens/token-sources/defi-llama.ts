@@ -44,7 +44,7 @@ const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
   Object.entries(CHAIN_ID_TO_KEY).map(([chainId, key]) => [key, parseInt(chainId)])
 );
 
-export type DefiLlamaToken = FetchTokenResult & BaseToken;
+export type DefiLlamaToken = Pick<FetchTokenResult, 'price'> & BaseToken;
 export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
   constructor(private readonly fetch: IFetchService) {}
 
@@ -66,7 +66,7 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     const result: Record<ChainId, Record<TokenAddress, DefiLlamaToken>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
-    for (const [tokenId, token] of Object.entries(coins)) {
+    for (const [tokenId, { timestamp, confidence, ...token }] of Object.entries(coins)) {
       const { chainId, address } = fromTokenId(tokenId);
       result[chainId][address] = { ...token, address };
     }
@@ -79,7 +79,6 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
       symbol: 'present',
       decimals: 'present',
       price: 'present',
-      timestamp: 'present',
     };
   }
 
@@ -120,5 +119,6 @@ type FetchTokenResult = {
   price: number;
   symbol: string;
   timestamp: number;
+  confidence: number;
 };
 type TokenId = string;
