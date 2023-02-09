@@ -1,15 +1,8 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
-import { Chains } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
 import { BaseBalanceSource } from './base-balance-source';
-
-const URLs: Record<ChainId, string> = {
-  [Chains.ETHEREUM.chainId]: 'eth-mainnet.g.alchemy.com/v2',
-  [Chains.POLYGON.chainId]: 'polygon-mainnet.g.alchemy.com/v2',
-  [Chains.OPTIMISM.chainId]: 'opt-mainnet.g.alchemy.com/v2',
-  [Chains.ARBITRUM.chainId]: 'arb-mainnet.g.alchemy.com/v2',
-};
+import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
 
 // Note: when checking tokens held by an account, Alchemy returns about 300 tokens max
 export class AlchemyBalanceSource extends BaseBalanceSource {
@@ -18,7 +11,7 @@ export class AlchemyBalanceSource extends BaseBalanceSource {
   }
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    const entries = Object.keys(URLs).map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: true }]);
+    const entries = alchemySupportedChains().map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: true }]);
     return Object.fromEntries(entries);
   }
 
@@ -69,26 +62,9 @@ export class AlchemyBalanceSource extends BaseBalanceSource {
   }
 
   private async callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
-    const url = this.getUrl(chainId);
-    const response = await this.fetchService.fetch(url, {
-      method: 'POST',
-      headers: { accept: 'application/json', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        id: 1,
-        jsonrpc: '2.0',
-        method,
-        params: params,
-      }),
-      timeout,
-    });
+    const response = await callAlchemyRPC(this.fetchService, this.alchemyKey, chainId, method, params, timeout);
     const { result } = await response.json();
     return result;
-  }
-
-  private getUrl(chainId: ChainId) {
-    const url = URLs[chainId];
-    if (!url) throw new Error(`Unsupported chain with id ${chainId}`);
-    return `https://${url}/${this.alchemyKey}`;
   }
 }
 

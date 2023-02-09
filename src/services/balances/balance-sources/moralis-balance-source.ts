@@ -55,10 +55,7 @@ export class MoralisBalanceSource extends BaseBalanceSource {
       headers: { 'X-API-Key': this.apiKey },
       timeout,
     });
-    const body = await response.json();
-    console.log(url);
-    console.log(body);
-    return body;
+    return response.json();
   }
 }
 
