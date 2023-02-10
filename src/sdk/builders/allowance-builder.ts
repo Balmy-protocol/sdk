@@ -5,8 +5,9 @@ import { IAllowanceService, IAllowanceSource } from '@services/allowances/types'
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { AllowanceService } from '@services/allowances/allowance-service';
 import { CachedAllowanceSource } from '@services/allowances/allowance-sources/cached-allowance-source';
+import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/alchemy-allowance-source';
 
-export type AllowanceSourceInput = { type: 'rpc' } | { type: 'custom'; instance: IAllowanceSource };
+export type AllowanceSourceInput = { type: 'rpc' } | { type: 'custom'; instance: IAllowanceSource } | { type: 'alchemy'; key: string };
 type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
 export type AllowanceSourceConfigInput = { caching?: CachingConfig };
 export type BuildAllowancesParams = { source: AllowanceSourceInput; config?: AllowanceSourceConfigInput };
@@ -33,5 +34,7 @@ function buildSource(
       return new RPCAllowanceSource(multicallService);
     case 'custom':
       return source.instance;
+    case 'alchemy':
+      return new AlchemyAllowanceSource(fetchService, source.key);
   }
 }

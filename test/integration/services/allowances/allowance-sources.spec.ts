@@ -3,11 +3,16 @@ import { expect } from 'chai';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
-import { RPCAllowanceSource } from '@services/allowances//allowance-sources/rpc-allowance-source';
+import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
+import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/alchemy-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
+import { FetchService } from '@services/fetch/fetch-service';
+import dotenv from 'dotenv';
+import crossFetch from 'cross-fetch';
+dotenv.config();
 
 const OWNER = '0x49c590F6a2dfB0f809E82B9e2BF788C0Dd1c31f9'; // DCAHubCompanion
 const SPENDER = '0xA5AdC5484f9997fBF7D405b9AA62A7d88883C345'; // DCAHub
@@ -30,6 +35,8 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
     symbol: 'waUSDC',
   },
 };
+const FETCH_SERVICE = new FetchService(crossFetch);
+const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(new PublicRPCsSource()));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   useCachedValue: 'always',
@@ -42,6 +49,7 @@ jest.setTimeout(ms('1m'));
 describe('Allowance Sources', () => {
   allowanceSourceTest({ title: 'RPC Source', source: RPC_ALLOWANCE_SOURCE });
   allowanceSourceTest({ title: 'Cached RPC Source', source: CACHED_ALLOWANCE_SOURCE });
+  allowanceSourceTest({ title: 'Alchemy RPC Source', source: ALCHEMY_ALLOWANCE_SOURCE });
 
   function allowanceSourceTest({ title, source }: { title: string; source: IAllowanceSource }) {
     describe(title, () => {
