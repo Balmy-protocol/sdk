@@ -4,6 +4,7 @@ import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
+import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -52,7 +53,10 @@ const FETCH_SERVICE = new FetchService(crossFetch);
 const PROVIDER_SOURCE = new PublicRPCsSource();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
-// const MORALIS_BALANCE_SOURCE = new MoralisBalanceSource(FETCH_SERVICE, process.env.MORALIS_API_KEY!);
+const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
+  useCachedValue: 'always',
+  useCachedValueIfCalculationFailed: 'always',
+});
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -60,6 +64,7 @@ jest.setTimeout(ms('1m'));
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
