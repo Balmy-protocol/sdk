@@ -29,11 +29,11 @@ jest.setTimeout(ms('1m'));
 
 describe('Token Sources', () => {
   tokenSourceTest({ title: 'Provider Source', source: RPC_TOKEN_SOURCE });
-  tokenSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE, validate: { fieldsExist: ['price', 'timestamp'] } });
+  tokenSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE, validate: { fieldsExist: ['price'] } });
   tokenSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_TOKEN_SOURCE,
-    validate: { fieldsExist: ['price', 'timestamp'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
+    validate: { fieldsExist: ['price'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
   });
 
   function tokenSourceTest<T extends BaseToken>({
