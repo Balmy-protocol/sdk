@@ -4,6 +4,7 @@ import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances//allowance-sources/rpc-allowance-source';
+import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
@@ -30,12 +31,17 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   },
 };
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(new PublicRPCsSource()));
+const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
+  useCachedValue: 'always',
+  useCachedValueIfCalculationFailed: 'always',
+});
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Allowance Sources', () => {
   allowanceSourceTest({ title: 'RPC Source', source: RPC_ALLOWANCE_SOURCE });
+  allowanceSourceTest({ title: 'Cached RPC Source', source: CACHED_ALLOWANCE_SOURCE });
 
   function allowanceSourceTest({ title, source }: { title: string; source: IAllowanceSource }) {
     describe(title, () => {
