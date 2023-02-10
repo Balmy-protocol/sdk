@@ -25,8 +25,8 @@ export function buildBalanceService(
   multicallService: IMulticallService
 ): IBalanceService {
   let source = buildSource(params?.source, { fetchService, providerSource, multicallService });
-  if (params?.config?.caching) {
-    source = new CachedBalanceSource(source);
+  if (params?.config?.caching?.useCaching) {
+    source = new CachedBalanceSource(source, params.config.caching.expiration);
   }
   return new BalanceService(source);
 }
