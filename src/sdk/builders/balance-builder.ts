@@ -8,7 +8,7 @@ import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy
 import { MoralisBalanceSource } from '@services/balances/balance-sources/moralis-balance-source';
 
 export type BalanceSourceInput =
-  | { type: 'rpc' }
+  | { type: 'rpc-multicall' }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string }
   | { type: 'moralis'; key: string };
@@ -35,7 +35,7 @@ function buildSource(
 ): IBalanceSource {
   switch (source?.type) {
     case undefined:
-    case 'rpc':
+    case 'rpc-multicall':
       return new RPCBalanceSource(providerSource, multicallService);
     case 'custom':
       return source.instance;

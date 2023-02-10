@@ -11,7 +11,7 @@ import { TokenService } from '@services/tokens/token-service';
 
 export type TokenSourceInput =
   | { type: 'defi-llama' }
-  | { type: 'rpc' }
+  | { type: 'rpc-multicall' }
   | { type: 'custom'; instance: ITokenSource<BaseToken> }
   | { type: 'combine-when-possible'; sources: TokenSourceInput[] };
 
@@ -26,7 +26,7 @@ type CalculateTokenFromSource<T extends TokenSourceInput | undefined> = T extend
   ? UnionMerge<DefiLlamaToken | BaseToken>
   : T extends { type: 'defi-llama' }
   ? DefiLlamaToken
-  : T extends { type: 'rpc' }
+  : T extends { type: 'rpc-multicall' }
   ? BaseToken
   : T extends { type: 'custom'; instance: ITokenService<infer Token> }
   ? Token
@@ -63,7 +63,7 @@ function buildSource<T extends TokenSourceInput>(
       return new FallbackTokenSource([defiLlama, rpc]) as any;
     case 'defi-llama':
       return defiLlama as any;
-    case 'rpc':
+    case 'rpc-multicall':
       return rpc as any;
     case 'custom':
       return source.instance as any;
