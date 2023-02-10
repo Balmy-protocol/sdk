@@ -2,7 +2,6 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 import { BalanceQueriesSupport, IBalanceSource } from '../types';
 
-// Note: this source assumes that the queries support of the underlying source cannot change over time
 export class CachedBalanceSource implements IBalanceSource {
   private readonly cacheHeldByAccount: ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>;
   private readonly cacheAmounInChain: ContextlessCache<KeyTokenInChain, AmountOfToken>;
