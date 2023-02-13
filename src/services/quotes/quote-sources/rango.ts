@@ -19,7 +19,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.OPTIMISM.chainId]: 'OPTIMISM',
   [Chains.GNOSIS.chainId]: 'GNOSIS',
   [Chains.HARMONY_SHARD_0.chainId]: 'HARMONY',
-  [Chains.HARMONY_SHARD_0.chainId]: 'AVAX_CCHAIN',
+  [Chains.AVALANCHE.chainId]: 'AVAX_CCHAIN',
   [Chains.FUSE.chainId]: 'FUSE',
   [Chains.CRONOS.chainId]: 'CRONOS',
   [Chains.BOBA.chainId]: 'BOBA',
