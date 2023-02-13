@@ -14,6 +14,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.FANTOM.chainId]: 'FANTOM',
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
   [Chains.CELO.chainId]: 'CELO',
+  [Chains.OKC.chainId]: 'OKC',
   [Chains.MOONRIVER.chainId]: 'MOONRIVER',
   [Chains.MOONBEAM.chainId]: 'MOONBEAM',
   [Chains.OPTIMISM.chainId]: 'OPTIMISM',
