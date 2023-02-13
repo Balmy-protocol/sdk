@@ -25,6 +25,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BOBA.chainId]: 'BOBA',
   [Chains.AURORA.chainId]: 'AURORA',
   [Chains.HECO.chainId]: 'HECO',
+  [Chains.EVMOS.chainId]: 'EVMOS',
 };
 
 export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {

@@ -257,6 +257,16 @@ export class Chains {
     explorer: 'https://explorer.emerald.oasis.dev/',
   } as const satisfies Chain;
 
+  static readonly EVMOS = {
+    chainId: 9001,
+    name: 'EVMOS',
+    ids: ['evmos'],
+    currencySymbol: 'EVMOS',
+    wToken: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517',
+    publicRPCs: ['https://evmos-evm.publicnode.com', 'https://eth.bd.evmos.org:8545', 'https://evmos-mainnet.public.blastapi.io'],
+    explorer: 'https://escan.live/',
+  } as const satisfies Chain;
+
   static getAllChains(): Chain[] {
     return Object.values(Chains).filter((value): value is Chain => typeof value !== 'function');
   }
