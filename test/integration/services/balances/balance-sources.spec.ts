@@ -5,7 +5,7 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import { utils } from 'ethers';
@@ -111,7 +111,7 @@ describe('Balance Sources', () => {
           .filter(([, support]) => !support.getTokensHeldByAccount)
           .map(([chainId]) => Number(chainId));
         for (const chainId of unsupportedChains) {
-          const chain = Chains.byKey(chainId);
+          const chain = getChainByKey(chainId);
           test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, () => {
             expect(source.getTokensHeldByAccount({ account: DEAD_ADDRESS, chains: [chainId] })).to.eventually.be.rejectedWith(
               'Operation not supported'
@@ -126,7 +126,7 @@ describe('Balance Sources', () => {
         });
 
         for (const chainId of chains) {
-          const chain = Chains.byKey(chainId);
+          const chain = getChainByKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
             test(`Returned amount of tokens is as expected`, () => {
               let expectedTokenAmount = CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? 0 : 1;

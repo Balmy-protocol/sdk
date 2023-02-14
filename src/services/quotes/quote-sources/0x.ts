@@ -19,7 +19,7 @@ const ZRX_API: Record<ChainId, string> = {
 export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   name: '0x/Matcha',
   supports: {
-    chains: Object.keys(ZRX_API).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(ZRX_API).map(Number),
     swapAndTransfer: false,
     buyOrders: true,
   },

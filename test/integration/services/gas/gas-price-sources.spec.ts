@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeedSupportRecord, GasSpeedPriceResult } from '@services/gas/types';
@@ -34,7 +34,7 @@ describe('Gas Price Sources', () => {
   }) {
     describe(title, () => {
       for (const chainId of source.supportedChains()) {
-        const chain = Chains.byKey(chainId);
+        const chain = getChainByKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test.concurrent(`Gas prices are valid values`, async () => {
             const gasPrice = await source.getGasPrice({ chainId });

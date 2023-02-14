@@ -6,7 +6,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
-import { Chains } from '@chains';
+import { getChainByKeyOrFail } from '@chains';
 import { TokenAddress, Address } from '@types';
 import { QuoteResponse } from '@services/quotes/types';
 import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
@@ -30,7 +30,7 @@ const chains = chainsWithTestData(supportedChains());
 
 describe('Quote Service', () => {
   for (const chainId of chains) {
-    const chain = Chains.byKeyOrFail(chainId);
+    const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress;

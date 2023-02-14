@@ -8,7 +8,7 @@ import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { BaseToken, ITokenSource } from '@services/tokens/types';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
 
@@ -64,7 +64,7 @@ describe('Token Sources', () => {
       });
 
       for (const chainId of source.supportedChains()) {
-        const chain = Chains.byKey(chainId);
+        const chain = getChainByKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Returned amount of tokens is as expected`, () => {
             expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);

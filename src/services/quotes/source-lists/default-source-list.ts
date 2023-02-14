@@ -1,7 +1,7 @@
 import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId, TokenWithOptionalPrice } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
-import { Chains } from '@chains';
+import { Chains, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { DefaultSourcesConfig, buildSources } from '../source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
@@ -32,7 +32,7 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   supportedSources() {
-    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, buildMetadata(source)]);
+    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, source.getMetadata()]);
     return Object.fromEntries(entries);
   }
 
@@ -158,7 +158,7 @@ async function mapSourceResponseToResponse({
     minBuyAmount: toAmountOfToken(buyToken, buyToken?.price, response.minBuyAmount),
     gas: {
       estimatedGas: response.estimatedGas.toString(),
-      ...calculateGasDetails(Chains.byKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
+      ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
     },
     recipient,
     source: { id: sourceId, allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
@@ -174,14 +174,6 @@ function toAmountOfToken(token: BaseToken, price: number | undefined, amount: Bi
     amountInUnits: utils.formatUnits(amount, token.decimals),
     amountInUSD,
   };
-}
-
-function buildMetadata(source: QuoteSource<QuoteSourceSupport>) {
-  const {
-    supports: { chains, ...supports },
-    ...metadata
-  } = source.getMetadata();
-  return { ...metadata, supports: { ...supports, chains: chains.map(({ chainId }) => chainId) } };
 }
 
 function addForcedTimeout(sources: Record<SourceId, QuoteSource<QuoteSourceSupport>>) {
@@ -206,7 +198,7 @@ function mapRequestToSourceRequest({
   gasPricePromise: Promise<GasPrice>;
 }) {
   return {
-    chain: Chains.byKeyOrFail(request.chainId),
+    chain: getChainByKeyOrFail(request.chainId),
     sellToken: request.sellToken,
     sellTokenData: sellTokenPromise,
     buyToken: request.buyToken,
