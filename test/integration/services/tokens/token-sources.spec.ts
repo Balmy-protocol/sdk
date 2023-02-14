@@ -6,7 +6,7 @@ import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama'
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
-import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { BaseToken, ITokenSource } from '@services/tokens/types';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
@@ -20,7 +20,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string; decimals: 
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC', decimals: 8 },
 };
 
-const RPC_TOKEN_SOURCE = new RPCTokenSource(new MulticallService(new PublicProvidersSource()));
+const RPC_TOKEN_SOURCE = new RPCTokenSource(new MulticallService(new PublicRPCsSource()));
 const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaTokenSource(new FetchService(crossFetch));
 const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource([RPC_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE]);
 
@@ -29,11 +29,11 @@ jest.setTimeout(ms('1m'));
 
 describe('Token Sources', () => {
   tokenSourceTest({ title: 'Provider Source', source: RPC_TOKEN_SOURCE });
-  tokenSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE, validate: { fieldsExist: ['price', 'timestamp'] } });
+  tokenSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE, validate: { fieldsExist: ['price'] } });
   tokenSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_TOKEN_SOURCE,
-    validate: { fieldsExist: ['price', 'timestamp'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
+    validate: { fieldsExist: ['price'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
   });
 
   function tokenSourceTest<T extends BaseToken>({

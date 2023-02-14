@@ -14,7 +14,7 @@ export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
     swapAndTransfer: false,
     buyOrders: false,
   },
-  logoURI: 'ipfs://QmQAAxRF6Wu5naWvqjEfqnKD8jhCfkDayNJdULgfZfxhfG',
+  logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
 type OdosConfig = { apiKey: string };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };

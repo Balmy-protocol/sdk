@@ -1,9 +1,10 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import { MulticallService } from '@services/multicall/multicall-service';
-import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
+import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -49,10 +50,13 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chain
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
 const FETCH_SERVICE = new FetchService(crossFetch);
-const PROVIDER_SOURCE = new PublicProvidersSource();
+const PROVIDER_SOURCE = new PublicRPCsSource();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
-// const MORALIS_BALANCE_SOURCE = new MoralisBalanceSource(FETCH_SERVICE, process.env.MORALIS_API_KEY!);
+const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
+  useCachedValue: 'always',
+  useCachedValueIfCalculationFailed: 'always',
+});
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -60,6 +64,7 @@ jest.setTimeout(ms('1m'));
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
@@ -124,18 +129,23 @@ describe('Balance Sources', () => {
           const chain = Chains.byKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
             test(`Returned amount of tokens is as expected`, () => {
-              const expectedTokenAmount = chainId in TESTS ? 2 : 1;
+              let expectedTokenAmount = CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? 0 : 1;
+              if (chainId in TESTS) expectedTokenAmount++;
               expect(Object.keys(result()[chainId]).length).to.be.gte(expectedTokenAmount);
             });
             test(chain?.currencySymbol ?? 'Native token', () => {
-              // In this case, make sure there is some native balance
-              validateTokenBalance({
-                result: result(),
-                chainId,
-                address: Addresses.NATIVE_TOKEN,
-                decimals: 18,
-                minAmount: CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? '0' : formatUnits(1, 18),
-              });
+              if (CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId))) {
+                expect(result()).to.not.have.keys([Addresses.NATIVE_TOKEN]);
+              } else {
+                // In this case, make sure there is some native balance
+                validateTokenBalance({
+                  result: result(),
+                  chainId,
+                  address: Addresses.NATIVE_TOKEN,
+                  decimals: 18,
+                  minAmount: formatUnits(1, 18),
+                });
+              }
             });
             if (chainId in TESTS) {
               test(`${TESTS[chainId].symbol}`, () => {

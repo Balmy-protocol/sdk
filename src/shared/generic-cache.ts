@@ -1,4 +1,6 @@
+import { TimeString } from '@types';
 import ms, { StringValue } from 'ms';
+import { timeoutPromise } from './timeouts';
 
 export type ExpirationConfigOptions = {
   useCachedValue: 'always' | { ifUnder: StringValue };
@@ -6,11 +8,11 @@ export type ExpirationConfigOptions = {
 };
 type Timestamp = number;
 type StorableKey = string;
-type ToStorableKey<Context, Key extends ValidKey> = (context: Context, key: Key) => StorableKey;
+type ToStorableKey<Key extends ValidKey> = (key: Key) => StorableKey;
 type ValidKey = string | number | symbol;
 type CacheConfig<Context, Key extends ValidKey, Value> = {
   calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
-  toStorableKey: ToStorableKey<Context, Key>;
+  toStorableKey: ToStorableKey<Key>;
   expirationConfig: ExpirationConfigOptions;
 };
 
@@ -28,7 +30,7 @@ export class ContextlessCache<Key extends ValidKey, Value> {
   }) {
     this.cache = new Cache({
       calculate: (_, keys) => calculate(keys),
-      toStorableKey: (_, key) => toStorableKey(key),
+      toStorableKey,
       expirationConfig,
     });
   }
@@ -36,28 +38,46 @@ export class ContextlessCache<Key extends ValidKey, Value> {
   async getOrCalculateSingle({
     key,
     expirationConfig,
+    timeout,
   }: {
     key: Key;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Value | undefined> {
-    return this.cache.getOrCalculateSingle({ context: undefined, key, expirationConfig });
+    return this.cache.getOrCalculateSingle({ context: undefined, key, expirationConfig, timeout });
   }
 
-  async getOrCalculate({ keys, expirationConfig }: { keys: Key[]; expirationConfig?: Partial<ExpirationConfigOptions> }) {
-    return this.cache.getOrCalculate({ context: undefined, keys, expirationConfig });
+  async getOrCalculate({
+    keys,
+    expirationConfig,
+    timeout,
+  }: {
+    keys: Key[];
+    expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
+  }) {
+    return this.cache.getOrCalculate({ context: undefined, keys, expirationConfig, timeout });
+  }
+
+  holdsValidValue(key: Key, expirationConfig?: ExpirationConfigOptions): boolean {
+    return this.cache.holdsValidValue(key, expirationConfig);
+  }
+
+  holdsValidValues(keys: Key[], expirationConfig?: ExpirationConfigOptions): Record<Key, boolean> {
+    return this.cache.holdsValidValues(keys, expirationConfig);
   }
 }
 
 export class Cache<Context, Key extends ValidKey, Value> {
   private readonly calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
-  private readonly storableKeyMapper: ToStorableKey<Context, Key>;
+  private readonly storableKeyMapper: ToStorableKey<Key>;
   private readonly expirationConfig: ExpirationConfigOptions;
   private readonly cache: Map<StorableKey, { lastUpdated: Timestamp; value: Value }> = new Map();
   private readonly beingCalculated: Map<StorableKey, Promise<any>> = new Map();
 
   constructor({ calculate, toStorableKey, expirationConfig }: CacheConfig<Context, Key, Value>) {
     this.calculate = calculate;
-    this.storableKeyMapper = (context, key) => toStorableKey(context, key).toLowerCase();
+    this.storableKeyMapper = (key) => toStorableKey(key).toLowerCase();
     this.expirationConfig = expirationConfig;
 
     const isInvalid =
@@ -72,12 +92,14 @@ export class Cache<Context, Key extends ValidKey, Value> {
     key,
     context,
     expirationConfig,
+    timeout,
   }: {
     key: Key;
     context: Context;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Value | undefined> {
-    const result = await this.getOrCalculate({ keys: [key], context, expirationConfig });
+    const result = await this.getOrCalculate({ keys: [key], context, expirationConfig, timeout });
     return result[key];
   }
 
@@ -85,14 +107,16 @@ export class Cache<Context, Key extends ValidKey, Value> {
     keys,
     context,
     expirationConfig,
+    timeout,
   }: {
     keys: Key[];
     context: Context;
     expirationConfig?: Partial<ExpirationConfigOptions>;
+    timeout?: TimeString;
   }): Promise<Record<Key, Value>> {
     const options = { ...this.expirationConfig, ...expirationConfig };
 
-    const storableKeys = Object.fromEntries(keys.map((key) => [key, this.storableKeyMapper(context, key)])) as Record<Key, StorableKey>;
+    const storableKeys = Object.fromEntries(keys.map((key) => [key, this.storableKeyMapper(key)])) as Record<Key, StorableKey>;
     const now = Date.now();
     const useCachedValue = ({ lastUpdated }: { lastUpdated: Timestamp }) =>
       options.useCachedValue === 'always' || lastUpdated >= now - ms(options.useCachedValue.ifUnder);
@@ -115,7 +139,7 @@ export class Cache<Context, Key extends ValidKey, Value> {
     // Try to calculate missing values
     const toCalculate = notInCache.filter((key) => !this.beingCalculated.has(storableKeys[key]));
     if (toCalculate.length > 0) {
-      const calculated = this.calculate(context, toCalculate);
+      const calculated = timeoutPromise(this.calculate(context, toCalculate), timeout);
       for (const key of toCalculate) {
         const storableKey = storableKeys[key];
         const promise = calculated
@@ -157,10 +181,30 @@ export class Cache<Context, Key extends ValidKey, Value> {
     return result;
   }
 
+  holdsValidValue(key: Key, expirationConfig?: ExpirationConfigOptions): boolean {
+    const { [key]: holdsValidValue } = this.holdsValidValues([key], expirationConfig);
+    return holdsValidValue;
+  }
+
+  holdsValidValues(keys: Key[], expirationConfig?: ExpirationConfigOptions): Record<Key, boolean> {
+    const options = { ...this.expirationConfig, ...expirationConfig };
+    const now = Date.now();
+
+    const isValidEntry = ({ lastUpdated }: { lastUpdated: Timestamp }) =>
+      options.useCachedValue === 'always' || lastUpdated >= now - ms(options.useCachedValue.ifUnder);
+
+    const entries = keys.map((key) => {
+      const entry = this.cache.get(this.storableKeyMapper(key));
+      const holdsValidValue = entry ? isValidEntry(entry) : false;
+      return [key, holdsValidValue];
+    });
+    return Object.fromEntries(entries);
+  }
+
   populate(context: Context, values: Record<Key, Value>) {
     const now = Date.now();
     for (const key in values) {
-      const storableKey = this.storableKeyMapper(context, key);
+      const storableKey = this.storableKeyMapper(key);
       this.cache.set(storableKey, { lastUpdated: now, value: values[key] });
     }
   }

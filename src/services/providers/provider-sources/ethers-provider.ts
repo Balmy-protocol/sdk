@@ -2,7 +2,7 @@ import { ChainId } from '@types';
 import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
-export class SingleProviderSource implements IProviderSource {
+export class EthersProviderSource implements IProviderSource {
   constructor(private readonly provider: providers.BaseProvider) {}
 
   supportedChains(): ChainId[] {

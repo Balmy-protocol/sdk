@@ -2,9 +2,9 @@ import { providers } from 'ethers';
 import { ChainId } from '@types';
 import { ArrayOneOrMore, ArrayTwoOrMore } from '@utility-types';
 import { IProviderSource } from '@services/providers/types';
-import { SingleProviderSource } from '@services/providers/provider-sources/single-provider';
+import { EthersProviderSource } from '@services/providers/provider-sources/ethers-provider';
 import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
-import { PublicProvidersSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { FallbackSource } from '@services/providers/provider-sources/fallback-provider ';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
@@ -30,13 +30,13 @@ export function buildProviderSource(params?: BuildProviderParams) {
 function buildSource(source?: ProviderSourceInput): IProviderSource {
   switch (source?.type) {
     case undefined:
-      return new PublicProvidersSource();
+      return new PublicRPCsSource();
     case 'ethers':
-      return new SingleProviderSource(source.instance);
+      return new EthersProviderSource(source.instance);
     case 'custom':
       return source.instance;
     case 'public-rpcs':
-      return new PublicProvidersSource(source.rpcsPerChain);
+      return new PublicRPCsSource(source.rpcsPerChain);
     case 'alchemy':
       return new AlchemyProviderSource(source.config.key, source.config.supportedChains);
     case 'llama-nodes':
