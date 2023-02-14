@@ -149,9 +149,9 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   },
   [Chains.RSK.chainId]: {
     USDC: {
-      // DOC
-      address: '0xe700691da7b9851f2f35f8b8182c69c53ccad9db',
-      whale: '0xDEe95AdbA0583b4dC2a2B80dfd1880a09192C265',
+      // XUSD
+      address: '0xb5999795be0ebb5bab23144aa5fd6a02d080299f',
+      whale: '0x100ae71cbE5D2f678F9aE938909a8d8dc004aa41',
     },
     RANDOM_ERC20: {
       // SOV
