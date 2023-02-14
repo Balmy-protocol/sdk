@@ -27,6 +27,7 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.MOONBEAM.chainId]: 'moonbeam',
   [Chains.VELAS.chainId]: 'velas',
   [Chains.EVMOS.chainId]: 'evmos',
+  [Chains.CANTO.chainId]: 'canto',
 
   // TODO: these chains are also supported by DefiLlama. We should add them
   // "kcc",
