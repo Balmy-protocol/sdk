@@ -1,4 +1,4 @@
-import { Chains } from '@chains';
+import { getAllChains } from '@chains';
 import { ChainId, Chain } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
 import { providers } from 'ethers';
@@ -13,7 +13,7 @@ export class PublicRPCsSource implements IProviderSource {
     } else {
       // If not set, default to known chains
       this.publicRPCs = Object.fromEntries(
-        Chains.getAllChains()
+        getAllChains()
           .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => !!chain.publicRPCs && chain.publicRPCs.length > 0)
           .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
       );

@@ -10,7 +10,14 @@ import { isSameAddress } from '@shared/utils';
 export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   name: 'Odos',
   supports: {
-    chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBITRUM, Chains.OPTIMISM, Chains.AVALANCHE, Chains.BNB_CHAIN],
+    chains: [
+      Chains.ETHEREUM.chainId,
+      Chains.POLYGON.chainId,
+      Chains.ARBITRUM.chainId,
+      Chains.OPTIMISM.chainId,
+      Chains.AVALANCHE.chainId,
+      Chains.BNB_CHAIN.chainId,
+    ],
     swapAndTransfer: false,
     buyOrders: false,
   },

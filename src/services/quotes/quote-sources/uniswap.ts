@@ -17,7 +17,7 @@ const ROUTER_ADDRESS: Record<ChainId, string> = {
 export const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   name: 'Uniswap',
   supports: {
-    chains: Object.keys(ROUTER_ADDRESS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(ROUTER_ADDRESS).map(Number),
     swapAndTransfer: true,
     buyOrders: true,
   },
