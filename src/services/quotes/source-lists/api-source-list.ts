@@ -35,22 +35,21 @@ export class APISourceList implements IQuoteSourceList {
     return response.json();
   }
 
-  private getUrl({ order, ...request }: SourceListRequest) {
+  private getUrl({ order, sourceIds, ...request }: SourceListRequest) {
     const record: Record<string, string> = {};
     for (const [key, value] of Object.entries(request)) {
       if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
         record[key] = `${value}`;
-      } else if (Array.isArray(value)) {
-        record[key] = value.join(',');
       }
     }
+    record.includeSources = sourceIds.join(',');
     if (order.type === 'sell') {
       record.sellAmount = BigNumber.from(order.sellAmount).toString();
     } else {
       record.buyAmount = BigNumber.from(order.buyAmount).toString();
     }
     const params = new URLSearchParams(record).toString();
-    const uri = this.baseUri({ order, ...request });
+    const uri = this.baseUri({ order, sourceIds, ...request });
     return `${uri}?${params}`;
   }
 }
