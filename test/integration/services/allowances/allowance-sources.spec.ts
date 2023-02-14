@@ -6,7 +6,7 @@ import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/alchemy-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
 import { FetchService } from '@services/fetch/fetch-service';
@@ -67,7 +67,7 @@ describe('Allowance Sources', () => {
       });
 
       for (const chainId of chains) {
-        const chain = Chains.byKey(chainId);
+        const chain = getChainByKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Returned amount of tokens is as expected`, () => {
             expect(Object.keys(result[chainId])).to.have.lengthOf(1);
