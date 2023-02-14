@@ -234,6 +234,15 @@ export const Chains = {
     publicRPCs: ['https://emerald.oasis.dev'],
     explorer: 'https://explorer.emerald.oasis.dev/',
   },
+  CANTO: {
+    chainId: 7700,
+    name: 'Canto',
+    ids: ['canto'],
+    currencySymbol: 'CANTO',
+    wToken: '0x826551890Dc65655a0Aceca109aB11AbDbD7a07B',
+    publicRPCs: ['https://canto.slingshot.finance'],
+    explorer: 'https://evm.explorer.canto.io/',
+  },
 } satisfies Record<string, Chain>;
 
 export function getAllChains(): Chain[] {
