@@ -243,6 +243,15 @@ export const Chains = {
     publicRPCs: ['https://canto.slingshot.finance'],
     explorer: 'https://evm.explorer.canto.io/',
   },
+  EVMOS: {
+    chainId: 9001,
+    name: 'EVMOS',
+    ids: ['evmos'],
+    currencySymbol: 'EVMOS',
+    wToken: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517',
+    publicRPCs: ['https://evmos-evm.publicnode.com', 'https://eth.bd.evmos.org:8545', 'https://evmos-mainnet.public.blastapi.io'],
+    explorer: 'https://escan.live/',
+  },
 } satisfies Record<string, Chain>;
 
 export function getAllChains(): Chain[] {

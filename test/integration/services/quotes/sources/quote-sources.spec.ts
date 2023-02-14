@@ -33,7 +33,7 @@ import { SourceId } from '@services/quotes/types';
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'rango',
-  chains: [Chains.ARBITRUM],
+  chains: [Chains.EVMOS],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
 
