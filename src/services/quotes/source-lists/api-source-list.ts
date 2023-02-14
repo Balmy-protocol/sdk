@@ -2,6 +2,7 @@ import { reduceTimeout } from '@shared/timeouts';
 import { FailedQuote, QuoteResponse, SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 import { IFetchService } from '@services/fetch/types';
+import { BigNumber } from 'ethers';
 
 export type URIGenerator = (request: SourceListRequest) => string;
 type ConstructorParameters = {
@@ -34,9 +35,22 @@ export class APISourceList implements IQuoteSourceList {
     return response.json();
   }
 
-  private getUrl(request: SourceListRequest) {
-    const params = new URLSearchParams(request as any).toString();
-    const uri = this.baseUri(request);
+  private getUrl({ order, ...request }: SourceListRequest) {
+    const record: Record<string, string> = {};
+    for (const [key, value] of Object.entries(request)) {
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        record[key] = `${value}`;
+      } else if (Array.isArray(value)) {
+        record[key] = value.join(',');
+      }
+    }
+    if (order.type === 'sell') {
+      record.sellAmount = BigNumber.from(order.sellAmount).toString();
+    } else {
+      record.buyAmount = BigNumber.from(order.buyAmount).toString();
+    }
+    const params = new URLSearchParams(record).toString();
+    const uri = this.baseUri({ order, ...request });
     return `${uri}?${params}`;
   }
 }
