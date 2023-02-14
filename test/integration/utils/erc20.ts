@@ -15,7 +15,6 @@ import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
-import { buildSDK } from '@builder';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; USDC: TokenData; wToken: TokenData };
@@ -24,7 +23,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
     USDC: {
       address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      whale: '0xf977814e90da44bfa03b6295a0616a897441acec',
+      whale: '0x0a59649758aa4d66e25f08dd01271e891fe52199',
     },
     RANDOM_ERC20: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
