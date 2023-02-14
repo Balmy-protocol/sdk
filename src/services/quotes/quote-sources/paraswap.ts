@@ -15,7 +15,15 @@ import { addQuoteSlippage, failed } from './utils';
 export const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   name: 'Paraswap',
   supports: {
-    chains: [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.OPTIMISM],
+    chains: [
+      Chains.ETHEREUM.chainId,
+      Chains.POLYGON.chainId,
+      Chains.BNB_CHAIN.chainId,
+      Chains.AVALANCHE.chainId,
+      Chains.FANTOM.chainId,
+      Chains.ARBITRUM.chainId,
+      Chains.OPTIMISM.chainId,
+    ],
     swapAndTransfer: true,
     buyOrders: true,
   },

@@ -24,7 +24,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 export const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
   name: 'Kyberswap',
   supports: {
-    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },

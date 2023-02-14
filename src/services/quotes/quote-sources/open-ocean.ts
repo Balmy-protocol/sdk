@@ -27,7 +27,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 export const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   name: 'Open Ocean',
   supports: {
-    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },

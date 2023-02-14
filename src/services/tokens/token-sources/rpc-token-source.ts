@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { BaseToken, ITokenSource, PropertiesRecord } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
@@ -37,7 +37,7 @@ export class RPCTokenSource implements ITokenSource {
   }
 
   private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, BaseToken>> {
-    const chain = Chains.byKey(chainId);
+    const chain = getChainByKey(chainId);
     const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
 
     const calls: { target: Address; decode: string; calldata: string }[] = addressesWithoutNativeToken.flatMap((address) => [

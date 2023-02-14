@@ -14,6 +14,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.FANTOM.chainId]: 'FANTOM',
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
   [Chains.CELO.chainId]: 'CELO',
+  [Chains.OKC.chainId]: 'OKC',
   [Chains.MOONRIVER.chainId]: 'MOONRIVER',
   [Chains.MOONBEAM.chainId]: 'MOONBEAM',
   [Chains.OPTIMISM.chainId]: 'OPTIMISM',
@@ -31,7 +32,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
   name: 'Rango',
   supports: {
-    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },
