@@ -32,10 +32,10 @@ import { SourceId } from '@services/quotes/types';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'sovryn',
-  chains: [Chains.RSK],
+  source: 'rango',
+  chains: [Chains.ARBITRUM],
 };
-const ROUNDING_ISSUES: SourceId[] = [];
+const ROUNDING_ISSUES: SourceId[] = ['rango'];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
