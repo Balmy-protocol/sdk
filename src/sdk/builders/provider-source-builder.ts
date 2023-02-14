@@ -10,10 +10,12 @@ import { PrioritizedProviderSourceCombinator } from '@services/providers/provide
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
 import { JsonRPCProviderSource } from '@services/providers/provider-sources/json-rpc-provider';
 import { LlamaNodesProviderSource } from '@services/providers/provider-sources/llama-nodes-provider';
+import { UpdatableEthersProviderSource } from '@services/providers/provider-sources/updatable-ethers-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'ethers'; instance: providers.BaseProvider }
+  | { type: 'updatable-ethers'; provider: () => providers.BaseProvider | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, ArrayOneOrMore<string>> }
   | { type: 'alchemy'; config: { key: string; supportedChains?: ChainId[] } }
@@ -33,6 +35,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new PublicRPCsSource();
     case 'ethers':
       return new EthersProviderSource(source.instance);
+    case 'updatable-ethers':
+      return new UpdatableEthersProviderSource(source.provider);
     case 'custom':
       return source.instance;
     case 'public-rpcs':
