@@ -15,7 +15,6 @@ import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
-import { buildSDK } from '@builder';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; USDC: TokenData; wToken: TokenData };
@@ -24,7 +23,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
     USDC: {
       address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      whale: '0xf977814e90da44bfa03b6295a0616a897441acec',
+      whale: '0x0a59649758aa4d66e25f08dd01271e891fe52199',
     },
     RANDOM_ERC20: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
@@ -177,6 +176,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
     },
   },
+  [Chains.EVMOS.chainId]: {
+    USDC: {
+      address: '0x51e44ffad5c2b122c8b635671fcc8139dc636e82',
+      whale: '0xa8d87759fc80e08d40c6ee7857652f38e5c39aa8',
+    },
+    RANDOM_ERC20: {
+      address: '0x3f75ceabcdfed1aca03257dc6bdc0408e2b4b026',
+      whale: '0x8e000833c11e0643ab41264bd41547cb077a5003',
+    },
+    wToken: {
+      address: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517',
+      whale: '0xfcd2ce20ef8ed3d43ab4f8c2da13bbf1c6d9512f',
+    },
+  },
 } satisfies Record<ChainId, ChainTokens>;
 
 export function chainsWithTestData(chainIds: ChainId[]) {
@@ -250,6 +263,12 @@ export async function loadTokens(chain: Chain) {
   const tokenSource = new DefiLlamaTokenSource(new FetchService(crossFetch));
   const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('RANDOM_ERC20')] };
   const tokens = await tokenSource.getTokens({ addresses });
+  if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
+    tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
+      ...tokens[chain.chainId][chain.wToken],
+      symbol: chain.currencySymbol,
+    };
+  }
   return {
     nativeToken: tokens[chain.chainId][Addresses.NATIVE_TOKEN],
     wToken: tokens[chain.chainId][chain.wToken],

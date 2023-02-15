@@ -1,3 +1,4 @@
+import { timeoutPromise } from '@shared/timeouts';
 import { FailedQuote, QuoteResponse, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 
@@ -32,14 +33,16 @@ export class OverridableSourceList implements IQuoteSourceList {
 
   getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
     const requests = this.getRequests(request.sourceIds);
-    return requests.flatMap(({ sourceList, sourceIds }) => sourceList.getQuotes({ ...request, sourceIds }));
+    return requests
+      .flatMap(({ sourceList, sourceIds }) => sourceList.getQuotes({ ...request, sourceIds }))
+      .map((promise) => timeoutPromise(promise, request.quoteTimeout));
   }
 
   async getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
     const requests = this.getRequests(request.sourceIds);
     const promises = requests.map(({ sourceList, sourceIds }) =>
       // We'll try to handle if the source list fails
-      this.catchAndConvertToFailedQuotes(sourceList.getAllQuotes({ ...request, sourceIds }), sourceIds)
+      this.catchAndConvertToFailedQuotes(timeoutPromise(sourceList.getAllQuotes({ ...request, sourceIds }), request.quoteTimeout), sourceIds)
     );
     const responses = await Promise.all(promises);
     return responses.flat();

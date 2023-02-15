@@ -26,12 +26,13 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BOBA.chainId]: 'BOBA',
   [Chains.AURORA.chainId]: 'AURORA',
   [Chains.HECO.chainId]: 'HECO',
+  [Chains.EVMOS.chainId]: 'EVMOS',
 };
 
 export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
   name: 'Rango',
   supports: {
-    chains: Object.keys(SUPPORTED_CHAINS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },

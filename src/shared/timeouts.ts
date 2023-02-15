@@ -20,7 +20,7 @@ export function timeoutPromise<T>(
   });
 }
 
-function reduceTimeout<T extends TimeString | undefined>(timeout: T, reduceBy: TimeString): T {
+export function reduceTimeout<T extends TimeString | undefined>(timeout: T, reduceBy: TimeString): T {
   if (!timeout) return undefined as T;
   const millisTimeout = ms(timeout);
   const millisToTakeOut = ms(reduceBy);

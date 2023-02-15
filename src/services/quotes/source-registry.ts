@@ -28,7 +28,7 @@ const QUOTE_SOURCES = {
 } satisfies Record<SourceId, QuoteSourceBuilder<any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(
-  Object.entries(QUOTE_SOURCES).map(([sourceId, { metadata }]) => [sourceId, buildMetadata(metadata)])
+  Object.entries(QUOTE_SOURCES).map(([sourceId, { metadata }]) => [sourceId, metadata])
 ) as Record<keyof typeof QUOTE_SOURCES, SourceMetadata>;
 
 export type DefaultSourcesConfig = Without<SourcesConfig, undefined>;
@@ -44,14 +44,6 @@ export function buildSources(config?: GlobalQuoteSourceConfig & Partial<DefaultS
     }
   }
   return sources;
-}
-
-function buildMetadata(metadata: QuoteSourceMetadata<QuoteSourceSupport>) {
-  const {
-    supports: { chains, ...supports },
-    ...rest
-  } = metadata;
-  return { ...rest, supports: { ...supports, chains: chains.map(({ chainId }) => chainId) } };
 }
 
 function builder<Source extends QuoteSource<any, any>>(

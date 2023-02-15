@@ -17,7 +17,7 @@ if (process.env.FIREBIRD_API_KEY) {
 
 export function supportedChains() {
   const sources = buildSources(CONFIG);
-  return chainsUnion(Object.values(sources).map((source) => source.getMetadata().supports.chains.map(({ chainId }) => chainId)));
+  return chainsUnion(Object.values(sources).map((source) => source.getMetadata().supports.chains));
 }
 
 export enum Test {

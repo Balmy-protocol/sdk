@@ -8,7 +8,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
-import { Chains } from '@chains';
+import { Chains, getChainByKey, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
@@ -33,7 +33,7 @@ import { SourceId } from '@services/quotes/types';
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
   source: 'rango',
-  chains: [Chains.ARBITRUM],
+  chains: [Chains.EVMOS],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
 
@@ -44,7 +44,7 @@ jest.setTimeout(ms('5m'));
 describe('Quote Sources', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
-    const chain = Chains.byKeyOrFail(chainId);
+    const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
@@ -336,7 +336,7 @@ function getSources() {
   if (process.env.CI_CONTEXT) {
     // Will choose test on Ethereum or, if not supported, choose random chain
     for (const [sourceId, source] of Object.entries(sources)) {
-      const supportedChains = chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId));
+      const supportedChains = chainsWithTestData(source.getMetadata().supports.chains);
       const chainId = supportedChains.includes(Chains.ETHEREUM.chainId)
         ? Chains.ETHEREUM.chainId
         : supportedChains[Math.floor(Math.random() * supportedChains.length)];
@@ -346,9 +346,7 @@ function getSources() {
   } else {
     const source = sources[RUN_FOR.source];
     const chains =
-      RUN_FOR.chains === 'all'
-        ? chainsWithTestData(source.getMetadata().supports.chains.map(({ chainId }) => chainId))
-        : RUN_FOR.chains.map(({ chainId }) => chainId);
+      RUN_FOR.chains === 'all' ? chainsWithTestData(source.getMetadata().supports.chains) : RUN_FOR.chains.map(({ chainId }) => chainId);
     for (const chainId of chains) {
       if (!(chainId in result)) result[chainId] = {} as any;
       result[chainId][RUN_FOR.source] = source;

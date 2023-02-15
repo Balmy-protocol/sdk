@@ -1,6 +1,6 @@
 import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
-import { GlobalQuoteSourceConfig, SourceId } from '@services/quotes/types';
+import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from '@services/quotes/types';
 import { ITokenService, BaseToken } from '@services/tokens/types';
 import { DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
@@ -8,11 +8,13 @@ import { DefaultSourcesConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
 import { ArrayOneOrMore } from '@utility-types';
+import { APISourceList, URIGenerator } from '@services/quotes/source-lists/api-source-list';
 
 export type DefaultSourcesConfigInput = GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 export type QuoteSourceListInput =
   | { type: 'custom'; instance: IQuoteSourceList }
   | { type: 'default'; withConfig?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> }
+  | { type: 'api'; baseUri: URIGenerator; sources: Record<SourceId, SourceMetadata> }
   | {
       type: 'overridable-source-list';
       lists: { default: QuoteSourceListInput; overrides: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }> };
@@ -48,6 +50,8 @@ function buildList(
     case 'default':
     case undefined:
       return new DefaultSourceList({ fetchService, gasService, tokenService, config: addReferrerIfNotSet(list?.withConfig) });
+    case 'api':
+      return new APISourceList({ fetchService, ...list });
     case 'overridable-source-list':
       const defaultList = buildList(list.lists.default, { fetchService, gasService, tokenService });
       const overrides = list.lists.overrides.map(({ list, sourceIds }) => ({

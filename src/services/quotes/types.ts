@@ -15,9 +15,7 @@ export type GlobalQuoteSourceConfig = {
 };
 
 export type SourceId = string;
-export type SourceMetadata = Omit<QuoteSourceMetadata<QuoteSourceSupport>, 'supports'> & {
-  supports: QuoteSourceSupport & { chains: ChainId[] };
-};
+export type SourceMetadata = QuoteSourceMetadata<QuoteSourceSupport>;
 export type IQuoteService = {
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
