@@ -11,20 +11,24 @@ import { BaseToken, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
+import { IProviderSource } from '@services/providers';
 
 type ConstructorParameters = {
+  providerSource: IProviderSource;
   fetchService: IFetchService;
   gasService: IGasService;
   tokenService: ITokenService<TokenWithOptionalPrice>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
+  private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
-  constructor({ fetchService, gasService, tokenService, config }: ConstructorParameters) {
+  constructor({ providerSource, fetchService, gasService, tokenService, config }: ConstructorParameters) {
+    this.providerSource = providerSource;
     this.fetchService = fetchService;
     this.gasService = gasService;
     this.tokenService = tokenService;
@@ -62,7 +66,7 @@ export class DefaultSourceList implements IQuoteSourceList {
     const responses = this.getSourcesForRequest(request).map(({ sourceId, source }) => ({
       sourceId,
       source,
-      response: source.quote({ fetchService: this.fetchService }, sourceRequest),
+      response: source.quote({ providerSource: this.providerSource, fetchService: this.fetchService }, sourceRequest),
     }));
 
     // Group all value promises

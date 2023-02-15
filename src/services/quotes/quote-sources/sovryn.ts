@@ -1,24 +1,21 @@
 import { BigNumber, Contract, PopulatedTransaction, constants, ethers } from 'ethers';
 import { Chains } from '@chains';
-import { ChainId, Chain, TokenAddress } from '@types';
+import { Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
-import { isSameAddress, calculatePercentage, timeToSeconds } from '@shared/utils';
+import { isSameAddress, calculatePercentage } from '@shared/utils';
 import { NoCustomConfigQuoteSource, QuoteSourceMetadata, QuoteComponents, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { addQuoteSlippage, failed } from './utils';
-
-const ROUTER_ADDRESS: Record<ChainId, string> = {
-  [Chains.RSK.chainId]: '0x98aCE08D2b759a265ae326F010496bcD63C15afc',
-};
 
 export const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
   name: 'Sovryn',
   supports: {
-    chains: Object.keys(ROUTER_ADDRESS).map((chainId) => Chains.byKeyOrFail(chainId)),
+    chains: [Chains.ROOTSTOCK.chainId],
     swapAndTransfer: true,
     buyOrders: false,
   },
   logoURI: 'ipfs://QmUpdb1zxtB2kUSjR1Qs1QMFPsSeZNkL21fMzGUfdjkXQA',
 };
+
 type SovrynSupport = { buyOrders: false; swapAndTransfer: true };
 export class SovrynQuoteSource extends NoCustomConfigQuoteSource<SovrynSupport> {
   getMetadata() {
@@ -26,21 +23,17 @@ export class SovrynQuoteSource extends NoCustomConfigQuoteSource<SovrynSupport> 
   }
 
   async quote(
-    _: QuoteComponents,
+    { providerSource }: QuoteComponents,
     { chain, sellToken, buyToken, order, config: { slippagePercentage }, accounts: { takeFrom, recipient } }: SourceQuoteRequest<SovrynSupport>
   ): Promise<SourceQuoteResponse> {
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
-    const router = ROUTER_ADDRESS[chain.chainId];
-
-    const sovrynContract = new Contract(router, SOVRYN_ABI, new ethers.providers.JsonRpcProvider(chain.publicRPCs![0]));
-
-    let swapTransaction: PopulatedTransaction | undefined;
-    let outputAmount: BigNumber = constants.Zero;
+    const routerAddress = '0x98aCE08D2b759a265ae326F010496bcD63C15afc';
+    const sovrynContract = new Contract(routerAddress, SOVRYN_ABI, providerSource.getProvider({ chainId: Chains.ROOTSTOCK.chainId }));
 
     try {
       const path = await sovrynContract.conversionPath(mapToWTokenIfNecessary(chain, sellToken), mapToWTokenIfNecessary(chain, buyToken));
-      outputAmount = await sovrynContract.rateByPath(path, order.sellAmount);
-      swapTransaction = await sovrynContract.populateTransaction.convertByPath(
+      const outputAmount = await sovrynContract.rateByPath(path, order.sellAmount);
+      const swapTransaction = await sovrynContract.populateTransaction.convertByPath(
         path,
         order.sellAmount,
         outputAmount,
@@ -51,28 +44,24 @@ export class SovrynQuoteSource extends NoCustomConfigQuoteSource<SovrynSupport> 
           value: isSellTokenNativeToken ? order.sellAmount : constants.Zero,
         }
       );
+
+      const estimatedGas = swapTransaction?.gasLimit?.mul(1.5) ?? BigNumber.from(1);
+
+      const quote = {
+        sellAmount: order.sellAmount,
+        buyAmount: outputAmount,
+        estimatedGas,
+        allowanceTarget: routerAddress,
+        tx: {
+          to: routerAddress,
+          calldata: swapTransaction.data!,
+          value: BigNumber.from(swapTransaction?.value ?? 0),
+        },
+      };
+      return addQuoteSlippage(quote, 'sell', isSameAddress(buyToken, chain.wToken) ? 0 : slippagePercentage);
     } catch (err: any) {
       failed(chain, sellToken, buyToken, err.message);
     }
-
-    const estimatedGas = swapTransaction?.gasLimit?.mul(1.5) ?? BigNumber.from(1);
-
-    const tx = {
-      to: router,
-      calldata: swapTransaction?.data ?? '',
-      value: BigNumber.from(swapTransaction?.value ?? 0),
-    };
-
-    return {
-      sellAmount: order.sellAmount,
-      maxSellAmount: order.sellAmount,
-      buyAmount: outputAmount,
-      minBuyAmount: calculateMinBuyAmount('sell', outputAmount, slippagePercentage),
-      type: 'sell',
-      estimatedGas,
-      allowanceTarget: router,
-      tx,
-    };
   }
 }
 
