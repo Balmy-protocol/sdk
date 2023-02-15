@@ -70,7 +70,7 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     );
     for (const [tokenId, { timestamp, confidence, ...token }] of Object.entries(coins)) {
       const { chainId, address } = fromTokenId(tokenId);
-      result[chainId][address] = { ...token, address };
+      result[chainId][address] = { decimals: 18, ...token, address };
     }
     return result;
   }
@@ -102,14 +102,22 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
 }
 
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
+const MAPPINGS: Record<string, string> = {
+  'evmos:0x0000000000000000000000000000000000000000': 'coingecko:evmos',
+  'coingecko:evmos': 'evmos:0x0000000000000000000000000000000000000000',
+  'coingecko:rootstock': 'rsk:0x0000000000000000000000000000000000000000',
+  'rsk:0x0000000000000000000000000000000000000000': 'coingecko:rootstock',
+};
 
 function toTokenId(chainId: ChainId, address: TokenAddress) {
   const key = CHAIN_ID_TO_KEY[chainId];
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address}`;
+  const mappedNativeToken = isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address}`;
+  return MAPPINGS[mappedNativeToken] ?? mappedNativeToken;
 }
 
 function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddress } {
-  const [key, address] = tokenId.split(':');
+  const mappedTokenId = MAPPINGS[tokenId] ?? tokenId;
+  const [key, address] = mappedTokenId.split(':');
   return {
     chainId: KEY_TO_CHAIN_ID[key],
     address: address.replaceAll(DEFI_LLAMA_NATIVE_TOKEN, Addresses.NATIVE_TOKEN),
@@ -117,7 +125,7 @@ function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddres
 }
 
 type FetchTokenResult = {
-  decimals: number;
+  decimals?: number;
   price: number;
   symbol: string;
   timestamp: number;
