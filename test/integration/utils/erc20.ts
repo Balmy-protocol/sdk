@@ -146,20 +146,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x2f72278d8f8c4840a4d9e20d609fb0b6ef622904',
     },
   },
-  [Chains.RSK.chainId]: {
+  [Chains.ROOTSTOCK.chainId]: {
     USDC: {
       // XUSD
       address: '0xb5999795be0ebb5bab23144aa5fd6a02d080299f',
-      whale: '0x100ae71cbE5D2f678F9aE938909a8d8dc004aa41',
+      whale: '0x100aE71cBE5D2F678F9ae938909a8d8Dc004AA41',
     },
     RANDOM_ERC20: {
       // SOV
       address: '0xefc78fc7d48b64958315949279ba181c2114abbd',
-      whale: '0x7f02eC1dF0238feB228e1062Bd2c5279a712D6Af',
+      whale: '0x7f02eC1dF0238fEB228E1062BD2c5279A712d6aF',
     },
     wToken: {
       address: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
-      whale: '0xA9c3D9681215eF7623Dc28eA6B75BF87FdF285D9',
+      whale: '0xA9c3D9681215eF7623dc28eA6b75bF87fDf285D9',
     },
   },
   [Chains.AURORA.chainId]: {
@@ -248,7 +248,7 @@ export async function mint({
     await setBalance(user.address, amount);
   } else {
     const key = isSameAddress(token.address, chain.wToken) ? 'wToken' : token.symbol;
-    const data = TOKENS[chain.chainId][key];
+    const data = TOKENS[chain.chainId][key == 'XUSD' ? 'USDC' : key];
     await impersonateAccount(data.whale);
     const whale = await ethers.getSigner(data.whale);
     await setBalance(whale.address, utils.parseEther('1'));

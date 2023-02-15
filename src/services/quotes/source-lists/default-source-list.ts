@@ -66,7 +66,10 @@ export class DefaultSourceList implements IQuoteSourceList {
     const responses = this.getSourcesForRequest(request).map(({ sourceId, source }) => ({
       sourceId,
       source,
-      response: source.quote({ providerSource: this.providerSource, fetchService: this.fetchService }, sourceRequest),
+      response: source.quote(
+        { providerSource: this.providerSource, gasService: this.gasService, fetchService: this.fetchService },
+        sourceRequest
+      ),
     }));
 
     // Group all value promises

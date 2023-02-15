@@ -23,34 +23,51 @@ export class SovrynQuoteSource extends NoCustomConfigQuoteSource<SovrynSupport> 
   }
 
   async quote(
-    { providerSource }: QuoteComponents,
+    { providerSource, gasService }: QuoteComponents,
     { chain, sellToken, buyToken, order, config: { slippagePercentage }, accounts: { takeFrom, recipient } }: SourceQuoteRequest<SovrynSupport>
   ): Promise<SourceQuoteResponse> {
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
+    const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
     const routerAddress = '0x98aCE08D2b759a265ae326F010496bcD63C15afc';
     const sovrynContract = new Contract(routerAddress, SOVRYN_ABI, providerSource.getProvider({ chainId: Chains.ROOTSTOCK.chainId }));
 
     try {
-      const path = await sovrynContract.conversionPath(mapToWTokenIfNecessary(chain, sellToken), mapToWTokenIfNecessary(chain, buyToken));
-      const outputAmount = await sovrynContract.rateByPath(path, order.sellAmount);
+      let path: string[] = [];
+      // console.log('ether tokens', await sovrynContract.etherTokens(sellToken), await sovrynContract.etherTokens(buyToken))
+      // if (isSellTokenNativeToken) {
+      //   const wrapPath = await sovrynContract.conversionPath(Addresses.NATIVE_TOKEN, Chains.ROOTSTOCK.wToken);
+      //   path.push(...wrapPath);
+      // }
+      const cpPath = await sovrynContract.conversionPath(sellToken, buyToken);
+      path.push(...cpPath);
+      // if (isBuyTokenNativeToken) {
+      //   const unwrapPath = await sovrynContract.conversionPath(Chains.ROOTSTOCK.wToken, Addresses.NATIVE_TOKEN);
+      //   path.push(...unwrapPath);
+      // }
+      // console.log(sellToken, buyToken, path);
+      const outputAmount = await sovrynContract.rateByPath(path, order.sellAmount, {
+        value: isSellTokenNativeToken ? order.sellAmount : constants.Zero,
+      });
       const swapTransaction = await sovrynContract.populateTransaction.convertByPath(
         path,
         order.sellAmount,
         outputAmount,
         recipient ?? takeFrom,
-        this.globalConfig.referrer?.address ?? constants.AddressZero,
-        constants.Zero,
+        constants.AddressZero,
+        0,
+        // this.globalConfig.referrer?.address ?? constants.AddressZero,
+        // 1_000_000,
         {
           value: isSellTokenNativeToken ? order.sellAmount : constants.Zero,
         }
       );
 
-      const estimatedGas = swapTransaction?.gasLimit?.mul(1.5) ?? BigNumber.from(1);
+      const estimatedGas = await gasService.estimateGas({ chainId: Chains.ROOTSTOCK.chainId, tx: swapTransaction });
 
       const quote = {
         sellAmount: order.sellAmount,
         buyAmount: outputAmount,
-        estimatedGas,
+        estimatedGas: BigNumber.from(estimatedGas),
         allowanceTarget: routerAddress,
         tx: {
           to: routerAddress,
@@ -65,15 +82,12 @@ export class SovrynQuoteSource extends NoCustomConfigQuoteSource<SovrynSupport> 
   }
 }
 
-function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: BigNumber, slippagePercentage: number) {
-  return type === 'sell' ? buyAmount.sub(calculatePercentage(buyAmount, slippagePercentage)) : buyAmount;
-}
-
 function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {
   return isSameAddress(address, Addresses.NATIVE_TOKEN) ? chain.wToken : address;
 }
 
 const SOVRYN_ABI = [
+  'function etherTokens(address) public view returns(bool)',
   'function rateByPath(address[] _path, uint256 _amount) public view returns (uint256)',
   'function conversionPath(address _sourceToken, address _targetToken) public view returns (address[])',
   'function convertByPath(address[] _path, uint256 _amount, uint256 _minReturn, address _receiver, address _affiliateAccount, uint256 _affiliateFee) public payable returns (uint256)',

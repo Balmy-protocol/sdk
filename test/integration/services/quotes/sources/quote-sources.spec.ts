@@ -30,13 +30,16 @@ import {
 import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { buildSDK } from '@builder';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { GasService } from '@services/gas/gas-service';
+import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'rango',
-  chains: [Chains.ARBITRUM],
+  source: 'sovryn',
+  chains: [Chains.ROOTSTOCK],
 };
-const ROUNDING_ISSUES: SourceId[] = ['rango'];
+const ROUNDING_ISSUES: SourceId[] = [];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
@@ -292,7 +295,7 @@ describe('Quote Sources', () => {
       };
       function buildQuote(source: QuoteSource<any>, { sellToken, buyToken, ...quote }: Quote) {
         return source.quote(
-          { providerSource: PROVIDER_SOURCE, fetchService: FETCH_SERVICE },
+          { providerSource: PROVIDER_SOURCE, gasService: GAS_SERVICE, fetchService: FETCH_SERVICE },
           {
             ...quote,
             sellToken: sellToken.address,
@@ -356,6 +359,7 @@ function getSources() {
   return result;
 }
 
+const PROVIDER_SOURCE = new PublicRPCsSource();
+const GAS_SERVICE = buildSDK().gasService;
 const FETCH_SERVICE = new FetchService(crossFetch);
-const PROVIDER_SOURCE = buildSDK().providerSource;
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much
