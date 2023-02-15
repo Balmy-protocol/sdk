@@ -36,8 +36,8 @@ import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'sovryn',
-  chains: [Chains.ROOTSTOCK],
+  source: 'rango',
+  chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = [];
 

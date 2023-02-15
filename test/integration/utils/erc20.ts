@@ -248,7 +248,7 @@ export async function mint({
     await setBalance(user.address, amount);
   } else {
     const key = isSameAddress(token.address, chain.wToken) ? 'wToken' : token.symbol;
-    const data = TOKENS[chain.chainId][key == 'XUSD' ? 'USDC' : key];
+    const data = TOKENS[chain.chainId][key];
     await impersonateAccount(data.whale);
     const whale = await ethers.getSigner(data.whale);
     await setBalance(whale.address, utils.parseEther('1'));
