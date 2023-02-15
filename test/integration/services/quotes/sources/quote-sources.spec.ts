@@ -8,7 +8,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
-import { Chains, getChainByKey, getChainByKeyOrFail } from '@chains';
+import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
@@ -29,11 +29,15 @@ import {
 } from '@test-utils/erc20';
 import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
+import { buildSDK } from '@builder';
+import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { GasService } from '@services/gas/gas-service';
+import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'firebird',
-  chains: [Chains.CANTO],
+  source: 'rango',
+  chains: [Chains.ARBITRUM]
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
 
@@ -291,7 +295,7 @@ describe('Quote Sources', () => {
       };
       function buildQuote(source: QuoteSource<any>, { sellToken, buyToken, ...quote }: Quote) {
         return source.quote(
-          { fetchService: FETCH_SERVICE },
+          { providerSource: PROVIDER_SOURCE, gasService: GAS_SERVICE, fetchService: FETCH_SERVICE },
           {
             ...quote,
             sellToken: sellToken.address,
@@ -355,5 +359,7 @@ function getSources() {
   return result;
 }
 
+const PROVIDER_SOURCE = new PublicRPCsSource();
+const GAS_SERVICE = buildSDK().gasService;
 const FETCH_SERVICE = new FetchService(crossFetch);
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much

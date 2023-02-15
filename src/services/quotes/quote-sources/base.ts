@@ -1,9 +1,10 @@
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
-import { GasPrice } from '@services/gas/types';
+import { GasPrice, IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { BaseToken } from '@services/tokens/types';
+import { IProviderSource } from '@services/providers';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
 export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
@@ -16,7 +17,10 @@ export type QuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceCon
   getMetadata(): QuoteSourceMetadata<Support>;
   quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
 };
+
 export type QuoteComponents = {
+  providerSource: IProviderSource;
+  gasService: IGasService;
   fetchService: IFetchService;
 };
 

@@ -252,6 +252,15 @@ export const Chains = {
     publicRPCs: ['https://evmos-evm.publicnode.com', 'https://eth.bd.evmos.org:8545', 'https://evmos-mainnet.public.blastapi.io'],
     explorer: 'https://escan.live/',
   },
+  ROOTSTOCK: {
+    chainId: 30,
+    name: 'Rootstock',
+    ids: ['rsk'],
+    currencySymbol: 'RBTC',
+    wToken: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
+    publicRPCs: ['https://mycrypto.rsk.co', 'https://public-node.rsk.co'],
+    explorer: 'https://explorer.rsk.co/',
+  },
 } satisfies Record<string, Chain>;
 
 export function getAllChains(): Chain[] {
