@@ -174,6 +174,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0xfcd2ce20ef8ed3d43ab4f8c2da13bbf1c6d9512f',
     },
   },
+  [Chains.CANTO.chainId]: {
+    USDC: {
+      address: '0x80b5a32e4f032b2a058b4f29ec95eefeeb87adcd',
+      whale: '0xdE59F060D7ee2b612E7360E6C1B97c4d8289Ca2e',
+    },
+    RANDOM_ERC20: {
+      address: '0x7264610a66eca758a8ce95cf11ff5741e1fd0455',
+      whale: '0xF0e4e74Ce34738826477b9280776fc797506fE13',
+    },
+    wToken: {
+      address: '0x826551890Dc65655a0Aceca109aB11AbDbD7a07B',
+      whale: '0x1D20635535307208919f0b67c3B2065965A85aA9',
+    },
+  },
 } satisfies Record<ChainId, ChainTokens>;
 
 export function chainsWithTestData(chainIds: ChainId[]) {
