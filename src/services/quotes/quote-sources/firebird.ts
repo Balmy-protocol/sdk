@@ -16,8 +16,8 @@ export const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
       Chains.BNB_CHAIN.chainId,
       Chains.AVALANCHE.chainId,
       Chains.ARBITRUM.chainId,
-      Chains.OPTIMISM.chainId,
       Chains.CANTO.chainId,
+      Chains.OPTIMISM.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
@@ -61,6 +61,7 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
     if (txValidFor) {
       url += `&deadline=${calculateDeadline(txValidFor)}`;
     }
+    console.log(url);
 
     const quoteResponse = await fetchService.fetch(url, { timeout, headers });
     if (!quoteResponse.ok) {

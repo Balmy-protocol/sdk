@@ -21,12 +21,12 @@ export function supportedChains() {
 }
 
 export enum Test {
-  SELL_USDC_TO_NATIVE,
+  SELL_STABLE_TO_NATIVE,
   SELL_NATIVE_TO_RANDOM_ERC20,
-  BUY_NATIVE_WITH_USDC,
+  BUY_NATIVE_WITH_STABLE,
   WRAP_NATIVE_TOKEN,
   UNWRAP_WTOKEN,
-  SELL_NATIVE_TO_USDC_AND_TRANSFER,
+  SELL_NATIVE_TO_STABLE_AND_TRANSFER,
 }
 
 export const EXCEPTIONS: Partial<Record<string, Test[]>> = {
