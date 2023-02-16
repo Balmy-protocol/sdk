@@ -3,6 +3,7 @@ import { FailedQuote, QuoteResponse, SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { BigNumber } from 'ethers';
+import queryString from 'query-string-esm';
 
 export type URIGenerator = (request: SourceListRequest) => string;
 type ConstructorParameters = {
@@ -36,21 +37,16 @@ export class APISourceList implements IQuoteSourceList {
     return response.json();
   }
 
-  private getUrl({ order, sourceIds, ...request }: SourceListRequest) {
-    const record: Record<string, string> = {};
-    for (const [key, value] of Object.entries(request)) {
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        record[key] = `${value}`;
-      }
-    }
-    record.includeSources = sourceIds.join(',');
+  private getUrl({ order, ...request }: SourceListRequest) {
+    const requestToParse: any = request;
     if (order.type === 'sell') {
-      record.sellAmount = BigNumber.from(order.sellAmount).toString();
+      requestToParse.sellAmount = BigNumber.from(order.sellAmount).toString();
     } else {
-      record.buyAmount = BigNumber.from(order.buyAmount).toString();
+      requestToParse.buyAmount = BigNumber.from(order.buyAmount).toString();
     }
-    const params = new URLSearchParams(record).toString();
-    const uri = this.baseUri({ order, sourceIds, ...request });
-    return `${uri}?${params}`;
+
+    const params = queryString.stringify(requestToParse, { arrayFormat: 'comma', skipEmptyString: true, skipNull: true });
+    const uri = this.baseUri({ order, ...request });
+    return uri.includes('?') ? uri + '&' + params : uri + '?' + params;
   }
 }

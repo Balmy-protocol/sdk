@@ -1,7 +1,7 @@
 import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId, TokenWithOptionalPrice } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
-import { Chains, getChainByKeyOrFail } from '@chains';
+import { getChainByKeyOrFail } from '@chains';
 import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { DefaultSourcesConfig, buildSources } from '../source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
@@ -49,6 +49,9 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
+    const filteredSourceIds = request.sourceIds.filter((sourceId) => sourceId in this.sources);
+    if (filteredSourceIds.length === 0) return [];
+
     // Ask for needed values, such as token data and gas price
     const tokensPromise = this.tokenService.getTokensForChain({
       chainId: request.chainId,
@@ -131,8 +134,7 @@ async function mapSourceResponseToResponse({
     nativeTokenPrice: number | undefined;
   }>;
 }): Promise<QuoteResponse> {
-  const response = await responsePromise;
-  const { sellToken, buyToken, gasCalculator, nativeTokenPrice } = await values;
+  const [response, { sellToken, buyToken, gasCalculator, nativeTokenPrice }] = await Promise.all([responsePromise, values]);
   const txData = {
     to: response.tx.to,
     value: response.tx.value,

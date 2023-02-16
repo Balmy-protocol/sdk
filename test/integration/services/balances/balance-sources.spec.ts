@@ -112,8 +112,8 @@ describe('Balance Sources', () => {
           .map(([chainId]) => Number(chainId));
         for (const chainId of unsupportedChains) {
           const chain = getChainByKey(chainId);
-          test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, () => {
-            expect(source.getTokensHeldByAccount({ account: DEAD_ADDRESS, chains: [chainId] })).to.eventually.be.rejectedWith(
+          test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, async () => {
+            await expect(source.getTokensHeldByAccount({ account: DEAD_ADDRESS, chains: [chainId] })).to.eventually.be.rejectedWith(
               'Operation not supported'
             );
           });
