@@ -31,7 +31,8 @@ export class APISourceList implements IQuoteSourceList {
 
   async getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
     const url = this.getUrl(request);
-    const response = await this.fetchService.fetch(url, { timeout: reduceTimeout(request.quoteTimeout, '100') });
+    // We reduce 0.5 seconds because calling the API might have this overhead in slow connections
+    const response = await this.fetchService.fetch(url, { timeout: reduceTimeout(request.quoteTimeout, '0.5s') });
     return response.json();
   }
 
