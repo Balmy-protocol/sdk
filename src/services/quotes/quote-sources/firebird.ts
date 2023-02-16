@@ -61,7 +61,6 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
     if (txValidFor) {
       url += `&deadline=${calculateDeadline(txValidFor)}`;
     }
-    console.log(url);
 
     const quoteResponse = await fetchService.fetch(url, { timeout, headers });
     if (!quoteResponse.ok) {
