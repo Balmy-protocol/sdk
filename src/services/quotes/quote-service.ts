@@ -147,7 +147,7 @@ export class QuoteService implements IQuoteService {
 function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
   return {
     ...request,
-    takerAddress: '0x000000000000000000000000000000000000dead', // We set a random taker address so that txs can be built at the source level
+    takerAddress: '0x000000000000000000000000000000000000dEaD', // We set a random taker address so that txs can be built at the source level
   };
 }
 
