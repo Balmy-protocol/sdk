@@ -31,12 +31,10 @@ import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { buildSDK } from '@builder';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { GasService } from '@services/gas/gas-service';
-import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'rango',
+  source: 'li-fi',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
@@ -52,7 +50,7 @@ describe('Quote Sources', () => {
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
-      let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, USDC: DefiLlamaToken, RANDOM_ERC20: DefiLlamaToken;
+      let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, STABLE_ERC20: DefiLlamaToken, RANDOM_ERC20: DefiLlamaToken;
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
       let gasPricePromise: Promise<GasPrice>;
@@ -60,18 +58,17 @@ describe('Quote Sources', () => {
       beforeAll(async () => {
         await fork(chain);
         [user, recipient] = await ethers.getSigners();
-        ({ nativeToken, wToken, USDC, RANDOM_ERC20 } = await loadTokens(chain));
+        ({ nativeToken, wToken, STABLE_ERC20, RANDOM_ERC20 } = await loadTokens(chain));
         await mintMany({
-          chain,
           to: user,
           tokens: [
-            { amount: utils.parseUnits('10000', 6), token: USDC },
+            { amount: utils.parseUnits('10000', STABLE_ERC20.decimals), token: STABLE_ERC20 },
             { amount: ONE_NATIVE_TOKEN.mul(3), token: nativeToken },
             { amount: ONE_NATIVE_TOKEN, token: wToken },
           ],
         });
         initialBalances = await calculateBalancesFor({
-          tokens: [nativeToken, wToken, USDC, RANDOM_ERC20],
+          tokens: [nativeToken, wToken, STABLE_ERC20, RANDOM_ERC20],
           addresses: [user, recipient],
         });
         gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrice) => gasPrice['standard']);
@@ -84,10 +81,10 @@ describe('Quote Sources', () => {
 
       describe('Sell order', () => {
         quoteTest({
-          test: Test.SELL_USDC_TO_NATIVE,
-          when: 'swapping 1000 USDC to native token',
+          test: Test.SELL_STABLE_TO_NATIVE,
+          when: 'swapping 1000 of stables to native token',
           quote: () => ({
-            sellToken: USDC,
+            sellToken: STABLE_ERC20,
             buyToken: nativeToken,
             order: {
               type: 'sell',
@@ -110,12 +107,12 @@ describe('Quote Sources', () => {
       });
       describe('Swap and transfer', () => {
         quoteTest({
-          test: Test.SELL_NATIVE_TO_USDC_AND_TRANSFER,
+          test: Test.SELL_NATIVE_TO_STABLE_AND_TRANSFER,
           checkSupport: (support) => support.swapAndTransfer,
-          when: 'swapping 1 native token to USDC',
+          when: 'swapping 1 native token to stable',
           quote: () => ({
             sellToken: nativeToken,
-            buyToken: USDC,
+            buyToken: STABLE_ERC20,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,
@@ -126,11 +123,11 @@ describe('Quote Sources', () => {
       });
       describe('Buy order', () => {
         quoteTest({
-          test: Test.BUY_NATIVE_WITH_USDC,
+          test: Test.BUY_NATIVE_WITH_STABLE,
           checkSupport: (support) => support.buyOrders,
-          when: 'buying 1 native token with USDC',
+          when: 'buying 1 native token with stables',
           quote: () => ({
-            sellToken: USDC,
+            sellToken: STABLE_ERC20,
             buyToken: nativeToken,
             order: {
               type: 'buy',
