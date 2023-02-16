@@ -1,6 +1,4 @@
-import { getChainByKey } from '@chains';
 import { expect } from 'chai';
-import { buildSources, DefaultSourcesConfig } from '@services/quotes/source-registry';
 import { APISourceList } from '@services/quotes/source-lists/api-source-list';
 import { SourceId, SourceMetadata } from '@services/quotes/types';
 import { ZRX_METADATA } from '@services/quotes/quote-sources/0x';

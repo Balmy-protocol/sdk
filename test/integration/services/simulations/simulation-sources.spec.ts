@@ -165,8 +165,8 @@ describe('Simulation Sources', () => {
 
       if (sourceSupport.bundle === 'none') {
         when('bundles are not supported', () => {
-          then('trying to execute a bundle simulation will fail', () => {
-            expect(
+          then('trying to execute a bundle simulation will fail', async () => {
+            await expect(
               source.simulateTransactionBundle({
                 chainId: Chains.ETHEREUM.chainId,
                 bundle: [{ from: OWNER, to: DAI, data: TRANSFER_DATA }],
