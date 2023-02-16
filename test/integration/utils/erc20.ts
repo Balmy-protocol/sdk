@@ -17,11 +17,11 @@ import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
 
 type TokenData = { address: TokenAddress; whale: Address };
-type ChainTokens = { RANDOM_ERC20: TokenData; USDC: TokenData; wToken: TokenData };
+type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
 
 export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
       whale: '0x0a59649758aa4d66e25f08dd01271e891fe52199',
     },
@@ -35,7 +35,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.OPTIMISM.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
       whale: '0xf390830df829cf22c53c8840554b98eafc5dcbc2',
     },
@@ -49,7 +49,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.POLYGON.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
       whale: '0xe7804c37c13166ff0b37f5ae0bb07a3aebb6e245',
     },
@@ -63,7 +63,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.ARBITRUM.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
       whale: '0x489ee077994b6658eafa855c308275ead8097c4a',
     },
@@ -77,7 +77,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.GNOSIS.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0xddafbb505ad214d7b80b1f830fccc89b60fb7a83',
       whale: '0xc66825c5c04b3c2ccd536d626934e16248a63f68',
     },
@@ -91,7 +91,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.FANTOM.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',
       whale: '0xfb05aedf0cac43c6ce291d2d1be1eab568d155b4',
     },
@@ -105,7 +105,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.BNB_CHAIN.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
       whale: '0xc2f5b9a3d9138ab2b74d581fc11346219ebf43fe',
     },
@@ -119,7 +119,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.AVALANCHE.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e',
       whale: '0x4aefa39caeadd662ae31ab0ce7c8c2c9c0a013e8',
     },
@@ -133,7 +133,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.KLAYTN.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x6270b58be569a7c0b8f47594f191631ae5b2c86c',
       whale: '0x7d274dce8e2467fc4cdb6e8e1755db5686daebbb',
     },
@@ -147,7 +147,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.ROOTSTOCK.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       // XUSD
       address: '0xb5999795be0ebb5bab23144aa5fd6a02d080299f',
       whale: '0x100aE71cBE5D2F678F9ae938909a8d8Dc004AA41',
@@ -163,7 +163,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.AURORA.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0xB12BFcA5A55806AaF64E99521918A4bf0fC40802',
       whale: '0x2fe064b6c7d274082aa5d2624709bc9ae7d16c77',
     },
@@ -177,7 +177,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.EVMOS.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x51e44ffad5c2b122c8b635671fcc8139dc636e82',
       whale: '0xa8d87759fc80e08d40c6ee7857652f38e5c39aa8',
     },
@@ -191,7 +191,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
   },
   [Chains.CANTO.chainId]: {
-    USDC: {
+    STABLE_ERC20: {
       address: '0x80b5a32e4f032b2a058b4f29ec95eefeeb87adcd',
       whale: '0xdE59F060D7ee2b612E7360E6C1B97c4d8289Ca2e',
     },
@@ -236,46 +236,41 @@ export function approve({ amount, to, for: token, from }: { amount: BigNumberish
 }
 
 export async function mintMany({
-  chain,
   to,
   tokens,
 }: {
-  chain: Chain;
   to: IHasAddress;
-  tokens: { token: BaseToken; amount: Exclude<BigNumberish, Bytes> }[];
+  tokens: { token: BaseToken & { whale?: Address }; amount: Exclude<BigNumberish, Bytes> }[];
 }) {
-  await Promise.all(tokens.map(({ token, amount }) => mint({ amount, of: token, to, on: chain })));
+  await Promise.all(tokens.map(({ token, amount }) => mint({ amount, of: token, to })));
 }
 
 export async function mint({
   of: token,
   amount,
   to: user,
-  on: chain,
 }: {
   amount: Exclude<BigNumberish, Bytes>;
-  of: BaseToken;
+  of: BaseToken & { whale?: Address };
   to: IHasAddress;
-  on: Chain;
 }) {
   if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
     await setBalance(user.address, amount);
   } else {
-    const key = isSameAddress(token.address, chain.wToken) ? 'wToken' : token.symbol;
-    const data = TOKENS[chain.chainId][key];
-    await impersonateAccount(data.whale);
-    const whale = await ethers.getSigner(data.whale);
-    await setBalance(whale.address, utils.parseEther('1'));
-    const contract = new Contract(data.address, ERC20_ABI, whale);
+    await impersonateAccount(token.whale!);
+    const whaleSigner = await ethers.getSigner(token.whale!);
+    await setBalance(whaleSigner.address, utils.parseEther('1'));
+    const contract = new Contract(token.address, ERC20_ABI, whaleSigner);
     await contract.transfer(user.address, amount);
-    await stopImpersonatingAccount(data.whale);
+    await stopImpersonatingAccount(token.whale!);
   }
 }
 
 export async function loadTokens(chain: Chain) {
   const address = (name: string) => TOKENS[chain.chainId][name].address;
+  const whale = (name: string) => TOKENS[chain.chainId][name].whale;
   const tokenSource = new DefiLlamaTokenSource(new FetchService(crossFetch));
-  const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('USDC'), address('RANDOM_ERC20')] };
+  const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')] };
   const tokens = await tokenSource.getTokens({ addresses });
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
     tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
@@ -285,9 +280,9 @@ export async function loadTokens(chain: Chain) {
   }
   return {
     nativeToken: tokens[chain.chainId][Addresses.NATIVE_TOKEN],
-    wToken: tokens[chain.chainId][chain.wToken],
-    USDC: tokens[chain.chainId][address('USDC')],
-    RANDOM_ERC20: tokens[chain.chainId][address('RANDOM_ERC20')],
+    wToken: { ...tokens[chain.chainId][chain.wToken], whale: whale('wToken') },
+    STABLE_ERC20: { ...tokens[chain.chainId][address('STABLE_ERC20')], whale: whale('STABLE_ERC20') },
+    RANDOM_ERC20: { ...tokens[chain.chainId][address('RANDOM_ERC20')], whale: whale('RANDOM_ERC20') },
   };
 }
 

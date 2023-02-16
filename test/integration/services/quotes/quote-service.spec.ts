@@ -34,17 +34,17 @@ describe('Quote Service', () => {
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress;
-      let nativeToken: DefiLlamaToken, USDC: DefiLlamaToken;
+      let nativeToken: DefiLlamaToken, STABLE_ERC20: DefiLlamaToken;
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
 
       beforeAll(async () => {
         await fork(chain);
         [user] = await ethers.getSigners();
-        ({ nativeToken, USDC } = await loadTokens(chain));
-        await mint({ amount: ONE_NATIVE_TOKEN.mul(3), of: nativeToken, to: user, on: chain });
+        ({ nativeToken, STABLE_ERC20 } = await loadTokens(chain));
+        await mint({ amount: ONE_NATIVE_TOKEN.mul(3), of: nativeToken, to: user });
         initialBalances = await calculateBalancesFor({
-          tokens: [nativeToken, USDC],
+          tokens: [nativeToken, STABLE_ERC20],
           addresses: [user],
         });
         snapshot = await takeSnapshot();
@@ -54,14 +54,14 @@ describe('Quote Service', () => {
         await snapshot.restore();
       });
 
-      when('swapping 1 native token to USDC', () => {
+      when('swapping 1 native token to stables', () => {
         let quote: QuoteResponse;
         let txs: TransactionResponse[];
         given(async () => {
           [quote] = await quoteService.getAllQuotes({
             chainId,
             sellToken: nativeToken.address,
-            buyToken: USDC.address,
+            buyToken: STABLE_ERC20.address,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,
@@ -82,7 +82,7 @@ describe('Quote Service', () => {
           });
           await assertRecipientsBalanceIsIncreasedAsExpected({
             txs,
-            buyToken: USDC,
+            buyToken: STABLE_ERC20,
             quote,
             recipient: user,
             initialBalances,
