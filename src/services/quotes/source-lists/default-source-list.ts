@@ -145,16 +145,7 @@ async function mapSourceResponseToResponse({
     tx: txData,
   });
   let tx: QuoteTx = txData;
-  switch (request.chainId) {
-    case Chains.OPTIMISM.chainId:
-    case Chains.AURORA.chainId:
-    case Chains.POLYGON.chainId:
-      // Do nothing, don't want to add the gas price here
-      // For some reason, some wallets fail when you add the gas price on these chains
-      break;
-    default:
-      tx = { ...tx, ...gasPrice };
-  }
+  // TODO: We should add the gas price to the tx, but if we do, we get some weird errors. Investigate and add it to to the tx
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
     sellToken,
