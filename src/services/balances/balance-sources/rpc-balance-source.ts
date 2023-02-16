@@ -4,9 +4,9 @@ import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IProviderSource } from '@services/providers/types';
-import { BaseBalanceSource } from './base-balance-source';
+import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 
-export class RPCBalanceSource extends BaseBalanceSource {
+export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   constructor(private readonly providerSource: IProviderSource, private readonly multicallService: IMulticallService) {
     super();
   }
@@ -17,33 +17,46 @@ export class RPCBalanceSource extends BaseBalanceSource {
     return Object.fromEntries(entries);
   }
 
-  protected fetchERC20TokensHeldByAccountInChain(
+  protected fetchERC20TokensHeldByAccountsInChain(
     chainId: ChainId,
-    account: Address,
+    accounts: Address[],
     context?: { timeout?: TimeString }
-  ): Promise<Record<TokenAddress, AmountOfToken>> {
+  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     throw new Error('Operation not supported');
   }
 
-  protected async fetchERC20BalancesInChain(
+  protected async fetchERC20BalancesForAccountsInChain(
     chainId: ChainId,
-    account: Address,
-    addresses: TokenAddress[],
+    accounts: Record<Address, TokenAddress[]>,
     context?: { timeout?: TimeString }
-  ): Promise<Record<TokenAddress, AmountOfToken>> {
-    const calls: { target: Address; decode: string; calldata: string }[] = addresses.flatMap((address) => [
-      { target: address, decode: 'uint256', calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]) },
-    ]);
+  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
+    const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
+    const calls: { target: Address; decode: string; calldata: string }[] = pairs.map(({ account, token }) => ({
+      target: token,
+      decode: 'uint256',
+      calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]),
+    }));
     const multicallResults: BigNumber[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
-    const result: Record<TokenAddress, AmountOfToken> = {};
-    for (let i = 0; i < addresses.length; i++) {
-      result[addresses[i]] = multicallResults[i].toString();
+    const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
+    for (let i = 0; i < pairs.length; i++) {
+      const { account, token } = pairs[i];
+      if (!(account in result)) result[account] = {};
+      result[account][token] = multicallResults[i].toString();
     }
     return result;
   }
 
-  protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
-    return this.providerSource
+  protected async fetchNativeBalancesInChain(
+    chainId: ChainId,
+    accounts: Address[],
+    context?: { timeout?: TimeString }
+  ): Promise<Record<Address, AmountOfToken>> {
+    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalance(chainId, account)]);
+    return Object.fromEntries(await Promise.all(entries));
+  }
+
+  private fetchNativeBalance(chainId: ChainId, account: Address) {
+    this.providerSource
       .getProvider({ chainId })
       .getBalance(account)
       .then((balance) => balance.toString());

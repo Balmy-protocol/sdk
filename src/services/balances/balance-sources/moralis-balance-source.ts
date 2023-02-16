@@ -2,12 +2,12 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { Chains } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
-import { BaseBalanceSource } from './base-balance-source';
 import { utils } from 'ethers';
+import { SingleAccountAndChainBaseBalanceSource } from './base/single-account-and-chain-base-balance-source';
 
 const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.CRONOS];
 
-export class MoralisBalanceSource extends BaseBalanceSource {
+export class MoralisBalanceSource extends SingleAccountAndChainBaseBalanceSource {
   constructor(private readonly fetchService: IFetchService, private readonly apiKey: string) {
     super();
   }
@@ -29,7 +29,7 @@ export class MoralisBalanceSource extends BaseBalanceSource {
     return toRecord(balances);
   }
 
-  protected async fetchERC20BalancesInChain(
+  protected async fetchERC20BalancesForAccountInChain(
     chainId: ChainId,
     account: Address,
     addresses: TokenAddress[],

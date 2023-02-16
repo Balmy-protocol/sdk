@@ -1,11 +1,11 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
-import { BaseBalanceSource } from './base-balance-source';
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { SingleAccountAndChainBaseBalanceSource } from './base/single-account-and-chain-base-balance-source';
 
 // Note: when checking tokens held by an account, Alchemy returns about 300 tokens max
-export class AlchemyBalanceSource extends BaseBalanceSource {
+export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource {
   constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {
     super();
   }
@@ -41,7 +41,7 @@ export class AlchemyBalanceSource extends BaseBalanceSource {
     return toRecord(allBalances);
   }
 
-  protected async fetchERC20BalancesInChain(
+  protected async fetchERC20BalancesForAccountInChain(
     chainId: ChainId,
     account: Address,
     addresses: TokenAddress[],
