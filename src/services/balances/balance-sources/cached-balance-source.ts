@@ -136,7 +136,10 @@ export class CachedBalanceSource implements IBalanceSource {
     const result: Record<KeyTokenInChain, AmountOfToken> = {};
     for (const key of keys) {
       const { chainId, account, token } = fromKeyTokenInChain(key as KeyTokenInChain);
-      result[key as KeyTokenInChain] = balances[chainId][account][token];
+      const balance = balances?.[chainId]?.[account]?.[token];
+      if (balance !== undefined) {
+        result[key as KeyTokenInChain] = balance;
+      }
     }
     return result;
   }
