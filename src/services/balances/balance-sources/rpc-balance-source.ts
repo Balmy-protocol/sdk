@@ -51,20 +51,15 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     accounts: Address[],
     context?: { timeout?: TimeString }
   ): Promise<Record<Address, AmountOfToken>> {
-    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalance(chainId, account)]);
+    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]);
     return Object.fromEntries(await Promise.all(entries));
   }
 
-  private fetchNativeBalance(chainId: ChainId, account: Address) {
-    try {
-      return this.providerSource
-        .getProvider({ chainId })
-        .getBalance(account)
-        .then((balance) => balance.toString());
-    } catch (e) {
-      console.log(e);
-      throw e;
-    }
+  private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
+    return this.providerSource
+      .getProvider({ chainId })
+      .getBalance(account)
+      .then((balance) => balance.toString());
   }
 }
 
