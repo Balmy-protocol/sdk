@@ -41,7 +41,6 @@ describe('API Source List', () => {
       order: { type: 'sell', sellAmount: 1000 },
       slippagePercentage: 1,
       takerAddress: 'takerAddress',
-      quoteTimeout: '10m',
       estimateBuyOrdersWithSellOnlySources: true,
       sourceIds: ['source1', 'source2'],
     },
@@ -50,7 +49,32 @@ describe('API Source List', () => {
       '?buyToken=buyToken' +
       '&chainId=1' +
       '&estimateBuyOrdersWithSellOnlySources=true' +
-      '&quoteTimeout=10m' +
+      '&sellAmount=1000' +
+      '&sellToken=sellToken' +
+      '&slippagePercentage=1' +
+      '&sourceIds=source1,source2' +
+      '&takerAddress=takerAddress',
+  });
+
+  urlTest({
+    when: 'when setting a quote timeout',
+    request: {
+      chainId: 1,
+      sellToken: 'sellToken',
+      buyToken: 'buyToken',
+      order: { type: 'sell', sellAmount: 1000 },
+      slippagePercentage: 1,
+      takerAddress: 'takerAddress',
+      quoteTimeout: '5m',
+      estimateBuyOrdersWithSellOnlySources: true,
+      sourceIds: ['source1', 'source2'],
+    },
+    expected:
+      BASE_URI +
+      '?buyToken=buyToken' +
+      '&chainId=1' +
+      '&estimateBuyOrdersWithSellOnlySources=true' +
+      '&quoteTimeout=299500' +
       '&sellAmount=1000' +
       '&sellToken=sellToken' +
       '&slippagePercentage=1' +

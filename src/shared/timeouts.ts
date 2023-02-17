@@ -24,5 +24,7 @@ export function reduceTimeout<T extends TimeString | undefined>(timeout: T, redu
   if (!timeout) return undefined as T;
   const millisTimeout = ms(timeout);
   const millisToTakeOut = ms(reduceBy);
-  return millisTimeout > millisToTakeOut ? (ms(millisTimeout - millisToTakeOut) as T) : (ms(Math.floor((millisTimeout * 3) / 4)) as T);
+  return millisTimeout > millisToTakeOut
+    ? ((millisTimeout - millisToTakeOut).toString() as T)
+    : (Math.floor((millisTimeout * 3) / 4).toString() as T);
 }
