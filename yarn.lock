@@ -5268,10 +5268,10 @@ tsconfig-paths@4.1.2:
     minimist "^1.2.6"
     strip-bom "^3.0.0"
 
-tsconfig-replace-paths@0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/tsconfig-replace-paths/-/tsconfig-replace-paths-0.0.11.tgz#0059a5ba5b6c156b00038ce46842e3d4d801a33b"
-  integrity sha512-BX10vOJL/kTZExQwj22FJgxCpneNYKfXvujBKGFpnvaKWl4/9Cpd678ZvKF+CX5NdxbKphscwtc8QzFA7zhVsA==
+tsconfig-replace-paths@0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/tsconfig-replace-paths/-/tsconfig-replace-paths-0.0.12.tgz#8ec55a13095bfcf938267e9fce86270ecdb0e7d5"
+  integrity sha512-3gqd6MM+7grW5cZd8BpTLWqcbZtz87Li0SbqzG/INJKbhKoDbR52WEal+gOFnp3EXahzaueE1SWAgPU7w7+lrw==
   dependencies:
     commander "^3.0.2"
     globby "^10.0.1"
