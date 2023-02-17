@@ -1,5 +1,7 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 
+type Account = Address;
+
 export type BalanceQueriesSupport = {
   getTokensHeldByAccount: boolean;
   getBalancesForTokens: true;
@@ -18,18 +20,24 @@ export type IBalanceService = {
     tokens: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>>;
+  getTokensHeldByAccounts(_: {
+    accounts: Record<ChainId, Account[]>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
+  getBalancesForTokensForAccounts(_: {
+    tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
 };
 
 export type IBalanceSource = {
   supportedQueries(): Record<ChainId, BalanceQueriesSupport>;
-  getTokensHeldByAccount(_: {
-    account: Address;
-    chains: ChainId[];
+  getTokensHeldByAccounts(_: {
+    accounts: Record<ChainId, Account[]>;
     context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>>;
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
   getBalancesForTokens(_: {
-    account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
     context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>>;
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
 };
