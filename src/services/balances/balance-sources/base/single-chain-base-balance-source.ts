@@ -72,16 +72,18 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
         .map(([address, balance]) => [address.toLowerCase(), balance]);
       const lowercased: Record<TokenAddress, AmountOfToken> = Object.fromEntries(lowercasedEntries);
 
-      for (const token of tokensWithoutNativeToken[account]) {
+      for (const token of tokensWithoutNativeToken[account] ?? []) {
         const balance = lowercased[token.toLowerCase()];
         if (balance) {
+          if (!(account in result)) result[account] = {};
           result[account][token] = balance;
         }
       }
 
       if (isValidBalance(nativeResult[account])) {
         const nativeAddressUsed = tokens[account].find((address) => isSameAddress(Addresses.NATIVE_TOKEN, address))!;
-        result[nativeAddressUsed] = nativeResult;
+        if (!(account in result)) result[account] = {};
+        result[account][nativeAddressUsed] = nativeResult[account];
       }
     }
 
@@ -99,10 +101,10 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
 
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (const account of accounts) {
-      const entries = Object.entries(erc20Result[account]).filter(([, balance]) => isValidBalance(balance));
+      const entries = Object.entries(erc20Result[account]).filter(([, balance]) => isValidBalanceAndNonZero(balance));
       result[account] = Object.fromEntries(entries);
-      if (isValidBalance(nativeResult[account])) {
-        result[Addresses.NATIVE_TOKEN] = nativeResult;
+      if (isValidBalanceAndNonZero(nativeResult[account])) {
+        result[account][Addresses.NATIVE_TOKEN] = nativeResult[account];
       }
     }
 
@@ -128,6 +130,10 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
 }
 
 function isValidBalance(text: AmountOfToken | undefined) {
+  return !!toBigNumber(text);
+}
+
+function isValidBalanceAndNonZero(text: AmountOfToken | undefined) {
   const bn = toBigNumber(text);
   return bn && bn.gt(0);
 }

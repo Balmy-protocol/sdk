@@ -56,10 +56,15 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   }
 
   private fetchNativeBalance(chainId: ChainId, account: Address) {
-    this.providerSource
-      .getProvider({ chainId })
-      .getBalance(account)
-      .then((balance) => balance.toString());
+    try {
+      return this.providerSource
+        .getProvider({ chainId })
+        .getBalance(account)
+        .then((balance) => balance.toString());
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
   }
 }
 

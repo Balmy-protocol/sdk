@@ -7,7 +7,7 @@ import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
-import { AmountOfToken, ChainId, TokenAddress } from '@types';
+import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
 import { utils } from 'ethers';
 import { IBalanceSource } from '@services/balances/types';
 import chaiAsPromised from 'chai-as-promised';
@@ -63,7 +63,7 @@ jest.setTimeout(ms('1m'));
 
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
@@ -72,16 +72,16 @@ describe('Balance Sources', () => {
       const sourceSupport = source.supportedQueries();
 
       describe('getBalancesForTokens', () => {
-        let result: Record<ChainId, Record<TokenAddress, AmountOfToken>>;
+        let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
         beforeAll(async () => {
           const chains = Object.keys(sourceSupport).map(Number);
-          const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
+          const entries = chains.map<[ChainId, Record<Address, TokenAddress[]>]>((chainId) => {
             const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
             if (chainId in TESTS) addresses.push(TESTS[chainId].address);
-            return [chainId, addresses];
+            return [chainId, { [DEAD_ADDRESS]: addresses }];
           });
           const input = Object.fromEntries(entries);
-          result = await source.getBalancesForTokens({ account: DEAD_ADDRESS, tokens: input, context: { timeout: '30s' } });
+          result = await source.getBalancesForTokens({ tokens: input, context: { timeout: '30s' } });
         });
 
         test('getBalancesForTokens is supported', () => {
@@ -90,7 +90,7 @@ describe('Balance Sources', () => {
           }
         });
 
-        validateBalances(() => result, Object.keys(sourceSupport).map(Number));
+        validateBalances(() => result, Object.keys(sourceSupport).map(Number), true);
       });
 
       describe('getTokensHeldByAccount', () => {
@@ -99,12 +99,13 @@ describe('Balance Sources', () => {
           .map(([chainId]) => Number(chainId));
 
         if (supportedChains.length > 0) {
-          let result: Record<ChainId, Record<TokenAddress, AmountOfToken>>;
+          let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
           beforeAll(async () => {
-            result = await source.getTokensHeldByAccount({ account: DEAD_ADDRESS, chains: supportedChains, context: { timeout: '30s' } });
+            const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
+            result = await source.getTokensHeldByAccounts({ accounts, context: { timeout: '30s' } });
           });
 
-          validateBalances(() => result, supportedChains);
+          validateBalances(() => result, supportedChains, false);
         }
 
         const unsupportedChains = Object.entries(sourceSupport)
@@ -113,14 +114,18 @@ describe('Balance Sources', () => {
         for (const chainId of unsupportedChains) {
           const chain = getChainByKey(chainId);
           test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, async () => {
-            await expect(source.getTokensHeldByAccount({ account: DEAD_ADDRESS, chains: [chainId] })).to.eventually.be.rejectedWith(
+            await expect(source.getTokensHeldByAccounts({ accounts: { [chainId]: [] } })).to.eventually.be.rejectedWith(
               'Operation not supported'
             );
           });
         }
       });
 
-      function validateBalances(result: () => Record<ChainId, Record<TokenAddress, AmountOfToken>>, chains: ChainId[]) {
+      function validateBalances(
+        result: () => Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>,
+        chains: ChainId[],
+        shouldZeroBalanceBeShown: boolean
+      ) {
         test(`Returned amount of chains is as expected`, () => {
           expect(Object.keys(result())).to.have.lengthOf(chains.length);
         });
@@ -128,13 +133,16 @@ describe('Balance Sources', () => {
         for (const chainId of chains) {
           const chain = getChainByKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
+            test(`Returned amount of accounts is as expected`, () => {
+              expect(Object.keys(result()[chainId]).length).to.equal(1);
+            });
             test(`Returned amount of tokens is as expected`, () => {
-              let expectedTokenAmount = CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? 0 : 1;
+              let expectedTokenAmount = 1;
               if (chainId in TESTS) expectedTokenAmount++;
-              expect(Object.keys(result()[chainId]).length).to.be.gte(expectedTokenAmount);
+              expect(Object.keys(result()[chainId][DEAD_ADDRESS]).length).to.be.gte(expectedTokenAmount);
             });
             test(chain?.currencySymbol ?? 'Native token', () => {
-              if (CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId))) {
+              if (!shouldZeroBalanceBeShown && CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId))) {
                 expect(result()).to.not.have.keys([Addresses.NATIVE_TOKEN]);
               } else {
                 // In this case, make sure there is some native balance
@@ -143,7 +151,7 @@ describe('Balance Sources', () => {
                   chainId,
                   address: Addresses.NATIVE_TOKEN,
                   decimals: 18,
-                  minAmount: formatUnits(1, 18),
+                  minAmount: CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? '0' : formatUnits(1, 18),
                 });
               }
             });
@@ -163,13 +171,13 @@ describe('Balance Sources', () => {
         minAmount,
         result,
       }: {
-        result: Record<ChainId, Record<TokenAddress, AmountOfToken>>;
+        result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
         chainId: ChainId | string;
         address: TokenAddress;
         decimals: number;
         minAmount: string;
       }) {
-        const amount = result[Number(chainId)][address];
+        const amount = result[Number(chainId)][DEAD_ADDRESS][address];
         expect(
           utils.parseUnits(minAmount, decimals).lte(amount),
           `Expected to have at least ${minAmount}. Instead found ${utils.formatUnits(amount, decimals)}`

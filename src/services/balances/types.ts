@@ -20,6 +20,14 @@ export type IBalanceService = {
     tokens: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>>;
+  getTokensHeldByAccounts(_: {
+    accounts: Record<ChainId, Account[]>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
+  getBalancesForTokensForAccounts(_: {
+    tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
 };
 
 export type IBalanceSource = {

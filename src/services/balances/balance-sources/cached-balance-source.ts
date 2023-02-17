@@ -4,7 +4,7 @@ import { BalanceQueriesSupport, IBalanceSource } from '../types';
 
 export class CachedBalanceSource implements IBalanceSource {
   private readonly cacheHeldByAccount: ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>;
-  private readonly cacheAmounInChain: ContextlessCache<KeyTokenInChain, AmountOfToken>;
+  private readonly cacheAmountInChain: ContextlessCache<KeyTokenInChain, AmountOfToken>;
 
   constructor(private readonly source: IBalanceSource, expirationConfig: ExpirationConfigOptions) {
     this.cacheHeldByAccount = new ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>({
@@ -13,7 +13,7 @@ export class CachedBalanceSource implements IBalanceSource {
       expirationConfig,
     });
 
-    this.cacheAmounInChain = new ContextlessCache<KeyTokenInChain, AmountOfToken>({
+    this.cacheAmountInChain = new ContextlessCache<KeyTokenInChain, AmountOfToken>({
       calculate: (keysTokenInChain) => this.fetchBalancesForTokens(keysTokenInChain),
       toStorableKey: (keyTokenInChain) => keyTokenInChain,
       expirationConfig,
@@ -24,71 +24,77 @@ export class CachedBalanceSource implements IBalanceSource {
     return this.source.supportedQueries();
   }
 
-  async getTokensHeldByAccount({
-    account,
-    chains,
+  async getTokensHeldByAccounts({
+    accounts,
     context,
   }: {
-    account: Address;
-    chains: ChainId[];
+    accounts: Record<ChainId, Address[]>;
     context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const support = this.supportedQueries();
-    for (const chainId of chains) {
+    for (const chainId in accounts) {
       if (!support[chainId]?.getTokensHeldByAccount) {
         return Promise.reject(new Error('Operation not supported'));
       }
     }
-    const keys: KeyHeldByAccount[] = chains.map((chainId) => toKeyHeldByAccount(chainId, account));
-    const results = await this.cacheHeldByAccount.getOrCalculate({
+    const keys: KeyHeldByAccount[] = Object.entries(accounts).flatMap(([chainId, accounts]) =>
+      accounts.map((account) => toKeyHeldByAccount(Number(chainId), account))
+    );
+    const cacheResults = await this.cacheHeldByAccount.getOrCalculate({
       keys,
       timeout: context?.timeout,
     });
-    const entries: [ChainId, Record<TokenAddress, AmountOfToken>][] = Object.entries(results).map(([key, tokens]) => [
-      fromKeyHeldByAccount(key as KeyTokenInChain).chainId,
-      tokens,
-    ]);
-    return Object.fromEntries(entries);
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+    for (const key in cacheResults) {
+      const { chainId, account } = fromKeyHeldByAccount(key as KeyTokenInChain);
+      if (!(chainId in result)) result[chainId] = {};
+      result[chainId][account] = cacheResults[key as KeyTokenInChain];
+    }
+    return result;
   }
 
   async getBalancesForTokens({
-    account,
     tokens,
     context,
   }: {
-    account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    const allChains = Object.keys(tokens).map(Number);
-    const chainsWithTokensHeldByAccount = allChains.filter((chainId) =>
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+    const allChainAndAccountPairs = Object.entries(tokens).flatMap(([chainId, tokens]) =>
+      Object.keys(tokens).map((account) => ({ chainId: Number(chainId), account }))
+    );
+    const accountsWithHeldByAccount = allChainAndAccountPairs.filter(({ chainId, account }) =>
       this.cacheHeldByAccount.holdsValidValue(toKeyHeldByAccount(chainId, account))
     );
-    const chainsWithoutTokensHeldByAccount = allChains.filter((chainId) => !chainsWithTokensHeldByAccount.includes(chainId));
+    const accountsWithoutHeldByAccount = allChainAndAccountPairs.filter(
+      ({ chainId, account }) => !this.cacheHeldByAccount.holdsValidValue(toKeyHeldByAccount(chainId, account))
+    );
 
-    const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = Object.fromEntries(allChains.map((chainId) => [chainId, {}]));
-    if (chainsWithTokensHeldByAccount.length > 0) {
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+    if (accountsWithHeldByAccount.length > 0) {
       // Note: we know these values are cached, so no sense in parallelizing with the query below
-      const tokensHeldByAccount = await this.getTokensHeldByAccount({ account, chains: chainsWithTokensHeldByAccount, context });
-      for (const chainId of chainsWithTokensHeldByAccount) {
-        const tokenAddresses = tokens[chainId];
-        for (const token of tokenAddresses) {
-          result[chainId][token] = tokensHeldByAccount[chainId][token] ?? '0';
-        }
+      const keys = accountsWithHeldByAccount.map(({ chainId, account }) => toKeyHeldByAccount(chainId, account));
+      const tokensHeldByAccount = await this.cacheHeldByAccount.getOrCalculate({ keys, timeout: context?.timeout });
+      for (const key of keys) {
+        const { chainId, account } = fromKeyHeldByAccount(key);
+        if (!(chainId in result)) result[chainId] = {};
+        result[chainId][account] = tokensHeldByAccount[key];
       }
     }
 
-    if (chainsWithoutTokensHeldByAccount.length > 0) {
-      const keys = Object.entries(tokens).flatMap(([chainId, addresses]) =>
-        addresses.map((token) => toKeyTokenInChain(Number(chainId), account, token))
+    if (accountsWithoutHeldByAccount.length > 0) {
+      const keys = accountsWithoutHeldByAccount.flatMap(({ chainId, account }) =>
+        tokens[chainId][account].map((token) => toKeyTokenInChain(chainId, account, token))
       );
-      const results = await this.cacheAmounInChain.getOrCalculate({
+      const amountsInChain = await this.cacheAmountInChain.getOrCalculate({
         keys,
         timeout: context?.timeout,
       });
-      for (const key in results) {
-        const { chainId, token } = fromKeyTokenInChain(key as KeyTokenInChain);
-        result[chainId][token] = results[key as KeyTokenInChain];
+      for (const key in amountsInChain) {
+        const { chainId, account, token } = fromKeyTokenInChain(key as KeyTokenInChain);
+        if (!(chainId in result)) result[chainId] = {};
+        if (!(account in result[chainId])) result[chainId][account] = {};
+        result[chainId][account][token] = amountsInChain[key as KeyTokenInChain];
       }
     }
 
@@ -96,30 +102,41 @@ export class CachedBalanceSource implements IBalanceSource {
   }
 
   private async fetchTokensHeldByAccount(keys: KeyHeldByAccount[]): Promise<Record<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>> {
-    const account = fromKeyHeldByAccount(keys[0]).account;
-    const chains = [...new Set(keys.map((key) => fromKeyHeldByAccount(key).chainId))];
+    const accounts: Record<ChainId, Address[]> = {};
+    for (const key of keys) {
+      const { chainId, account } = fromKeyHeldByAccount(key);
+      if (!(chainId in accounts)) accounts[chainId] = [];
+      accounts[chainId].push(account);
+    }
 
-    const balances = await this.source.getTokensHeldByAccount({ account, chains });
+    const balances = await this.source.getTokensHeldByAccounts({ accounts });
 
-    const entries = Object.entries(balances).map(([chainId, tokens]) => [toKeyHeldByAccount(Number(chainId), account), tokens]);
-    return Object.fromEntries(entries);
+    const result: Record<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>> = {};
+    for (const chainId in balances) {
+      for (const account in balances[chainId]) {
+        const key = toKeyHeldByAccount(Number(chainId), account);
+        result[key] = balances[chainId][account];
+      }
+    }
+
+    return result;
   }
 
   private async fetchBalancesForTokens(keys: KeyTokenInChain[]): Promise<Record<KeyTokenInChain, AmountOfToken>> {
-    const account = fromKeyTokenInChain(keys[0]).account;
-    const tokens: Record<ChainId, TokenAddress[]> = {};
+    const tokens: Record<ChainId, Record<Address, TokenAddress[]>> = {};
     for (const key of keys) {
-      const { chainId, token } = fromKeyTokenInChain(key);
-      if (!(chainId in tokens)) tokens[chainId] = [];
-      tokens[chainId].push(token);
+      const { chainId, account, token } = fromKeyTokenInChain(key);
+      if (!(chainId in tokens)) tokens[chainId] = {};
+      if (!(account in tokens[chainId])) tokens[chainId][account] = [];
+      tokens[chainId][account].push(token);
     }
 
-    const balances = await this.source.getBalancesForTokens({ account, tokens });
+    const balances = await this.source.getBalancesForTokens({ tokens });
 
     const result: Record<KeyTokenInChain, AmountOfToken> = {};
     for (const key of keys) {
-      const { chainId, token } = fromKeyTokenInChain(key as KeyTokenInChain);
-      result[key as KeyTokenInChain] = balances[chainId][token];
+      const { chainId, account, token } = fromKeyTokenInChain(key as KeyTokenInChain);
+      result[key as KeyTokenInChain] = balances[chainId][account][token];
     }
     return result;
   }

@@ -51,7 +51,7 @@ export const Chains = {
     currencySymbol: 'BNB',
     wToken: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
     publicRPCs: [
-      'https://bsc-dataseed.binance.org/',
+      'https://rpc.ankr.com/bsc',
       'https://bsc-dataseed1.defibit.io/',
       'https://bsc-dataseed1.ninicoin.io/',
       'https://bsc-dataseed2.defibit.io/',

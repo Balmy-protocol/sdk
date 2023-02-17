@@ -15,7 +15,7 @@ export class BalanceService implements IBalanceService {
     return this.source.supportedQueries();
   }
 
-  getTokensHeldByAccount({
+  async getTokensHeldByAccount({
     account,
     chains,
     config,
@@ -24,10 +24,17 @@ export class BalanceService implements IBalanceService {
     chains: ChainId[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    return timeoutPromise(this.source.getTokensHeldByAccount({ account, chains, context: config }), config?.timeout);
+    const entries = chains.map((chainId) => [chainId, [account]]);
+    const accounts = Object.fromEntries(entries);
+    const resultsPerAccounts = await this.getTokensHeldByAccounts({ accounts, config });
+    const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
+    for (const chainId of chains) {
+      result[chainId] = resultsPerAccounts[chainId][account];
+    }
+    return result;
   }
 
-  getBalancesForTokens({
+  async getBalancesForTokens({
     account,
     tokens,
     config,
@@ -36,6 +43,35 @@ export class BalanceService implements IBalanceService {
     tokens: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
-    return timeoutPromise(this.source.getBalancesForTokens({ account, tokens, context: config }), config?.timeout);
+    const entries = Object.entries(tokens).map<[ChainId, Record<Address, TokenAddress[]>]>(([chainId, tokens]) => [
+      Number(chainId),
+      { account: tokens },
+    ]);
+    const resultsPerAccounts = await this.getBalancesForTokensForAccounts({ tokens: Object.fromEntries(entries), config });
+    const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
+    for (const chainId in tokens) {
+      result[chainId] = resultsPerAccounts[chainId][account];
+    }
+    return result;
+  }
+
+  getTokensHeldByAccounts({
+    accounts,
+    config,
+  }: {
+    accounts: Record<ChainId, Address[]>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+    return timeoutPromise(this.source.getTokensHeldByAccounts({ accounts, context: config }), config?.timeout);
+  }
+
+  getBalancesForTokensForAccounts({
+    tokens,
+    config,
+  }: {
+    tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+    return timeoutPromise(this.source.getBalancesForTokens({ tokens, context: config }), config?.timeout);
   }
 }

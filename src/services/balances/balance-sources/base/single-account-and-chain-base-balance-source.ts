@@ -7,7 +7,7 @@ export abstract class SingleAccountAndChainBaseBalanceSource extends SingleChain
     accounts: Address[],
     context?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
-    const entries = accounts.map((account) => [account, this.fetchERC20TokensHeldByAccountInChain(chainId, account, context)]);
+    const entries = accounts.map(async (account) => [account, await this.fetchERC20TokensHeldByAccountInChain(chainId, account, context)]);
     return Object.fromEntries(await Promise.all(entries));
   }
 
@@ -16,9 +16,9 @@ export abstract class SingleAccountAndChainBaseBalanceSource extends SingleChain
     accounts: Record<Address, TokenAddress[]>,
     context?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
-    const entries = Object.entries(accounts).map(([account, tokens]) => [
+    const entries = Object.entries(accounts).map(async ([account, tokens]) => [
       account,
-      this.fetchERC20BalancesForAccountInChain(chainId, account, tokens, context),
+      await this.fetchERC20BalancesForAccountInChain(chainId, account, tokens, context),
     ]);
     return Object.fromEntries(await Promise.all(entries));
   }
@@ -28,7 +28,7 @@ export abstract class SingleAccountAndChainBaseBalanceSource extends SingleChain
     accounts: Address[],
     context?: { timeout?: TimeString }
   ): Promise<Record<Address, AmountOfToken>> {
-    const entries = accounts.map((account) => [account, this.fetchNativeBalanceInChain(chainId, account, context)]);
+    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account, context)]);
     return Object.fromEntries(await Promise.all(entries));
   }
 
