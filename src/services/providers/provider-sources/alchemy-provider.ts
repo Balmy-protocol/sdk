@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { AlchemyProvider } from '@ethersproject/providers';
+import { buildAlchemyProvider } from '@shared/alchemy-rpc';
 import { ChainId } from '@types';
 import { providers } from 'ethers';
 import { IProviderSource } from '../types';
@@ -11,7 +11,7 @@ const DEFAULT_CHAINS: ChainId[] = [Chains.ETHEREUM, Chains.POLYGON, Chains.ARBIT
 export class AlchemyProviderSource implements IProviderSource {
   private readonly chains: ChainId[];
 
-  constructor(private readonly key: string, chains?: ChainId[]) {
+  constructor(private readonly key: string, private readonly protocol: 'https' | 'wss', chains?: ChainId[]) {
     this.chains = chains ?? DEFAULT_CHAINS;
   }
 
@@ -20,6 +20,6 @@ export class AlchemyProviderSource implements IProviderSource {
   }
 
   getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
-    return new AlchemyProvider(chainId, this.key);
+    return buildAlchemyProvider(this.key, this.protocol, chainId);
   }
 }

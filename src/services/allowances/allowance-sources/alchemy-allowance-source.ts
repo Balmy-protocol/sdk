@@ -1,12 +1,11 @@
 import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
-import { IFetchService } from '@services/fetch';
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 
 export class AlchemyAllowanceSource implements IAllowanceSource {
-  constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {}
+  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {}
 
   supportedChains(): ChainId[] {
     return alchemySupportedChains();
@@ -50,9 +49,7 @@ export class AlchemyAllowanceSource implements IAllowanceSource {
     return this.callRPC<AmountOfToken>(chainId, 'alchemy_getTokenAllowance', [{ contract: token, owner, spender }], context?.timeout);
   }
 
-  private async callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
-    const response = await callAlchemyRPC(this.fetchService, this.alchemyKey, chainId, method, params, timeout);
-    const { result } = await response.json();
-    return result;
+  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {
+    return timeoutPromise(callAlchemyRPC(this.alchemyKey, this.protocol, chainId, method, params), timeout);
   }
 }

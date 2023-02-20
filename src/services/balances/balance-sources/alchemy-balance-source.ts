@@ -1,12 +1,12 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport } from '../types';
-import { IFetchService } from '@services/fetch';
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
 import { SingleAccountAndChainBaseBalanceSource } from './base/single-account-and-chain-base-balance-source';
+import { timeoutPromise } from '@shared/timeouts';
 
 // Note: when checking tokens held by an account, Alchemy returns about 300 tokens max
 export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource {
-  constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {
+  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {
     super();
   }
 
@@ -58,13 +58,11 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
   }
 
   protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
-    return this.callRPC(chainId, 'eth_getBalance', [account, 'latest']);
+    return this.callRPC(chainId, 'eth_getBalance', [account, 'latest'], context?.timeout);
   }
 
-  private async callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
-    const response = await callAlchemyRPC(this.fetchService, this.alchemyKey, chainId, method, params, timeout);
-    const { result } = await response.json();
-    return result;
+  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {
+    return timeoutPromise(callAlchemyRPC(this.alchemyKey, this.protocol, chainId, method, params), timeout);
   }
 }
 
