@@ -102,12 +102,7 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
 }
 
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
-const MAPPINGS: Record<string, string> = {
-  'evmos:0x0000000000000000000000000000000000000000': 'coingecko:evmos',
-  'coingecko:evmos': 'evmos:0x0000000000000000000000000000000000000000',
-  'coingecko:rootstock': 'rsk:0x0000000000000000000000000000000000000000',
-  'rsk:0x0000000000000000000000000000000000000000': 'coingecko:rootstock',
-};
+const MAPPINGS: Record<string, string> = {};
 
 function toTokenId(chainId: ChainId, address: TokenAddress) {
   const key = CHAIN_ID_TO_KEY[chainId];
