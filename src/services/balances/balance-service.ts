@@ -45,7 +45,7 @@ export class BalanceService implements IBalanceService {
   }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
     const entries = Object.entries(tokens).map<[ChainId, Record<Address, TokenAddress[]>]>(([chainId, tokens]) => [
       Number(chainId),
-      { account: tokens },
+      { [account]: tokens },
     ]);
     const resultsPerAccounts = await this.getBalancesForTokensForAccounts({ tokens: Object.fromEntries(entries), config });
     const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
