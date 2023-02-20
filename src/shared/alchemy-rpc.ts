@@ -19,7 +19,7 @@ export function buildAlchemyProvider(alchemyKey: string, protocol: 'https' | 'ws
 }
 
 export function callAlchemyRPC(alchemyKey: string, protocol: 'https' | 'wss', chainId: ChainId, method: string, params: any) {
-  return buildAlchemyProvider(alchemyKey, params, chainId).send(method, params);
+  return buildAlchemyProvider(alchemyKey, protocol, chainId).send(method, params);
 }
 
 function getPath(alchemyKey: string, chainId: ChainId) {
