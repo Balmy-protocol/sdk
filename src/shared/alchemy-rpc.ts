@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
-import { IFetchService } from '@services/fetch';
-import { ChainId, TimeString } from '@types';
+import { ChainId } from '@types';
+import { ethers } from 'ethers';
 
 const URLs: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth-mainnet.g.alchemy.com/v2',
@@ -13,30 +13,17 @@ export function alchemySupportedChains(): ChainId[] {
   return Object.keys(URLs).map(Number);
 }
 
-export function callAlchemyRPC(
-  fetchService: IFetchService,
-  alchemyKey: string,
-  chainId: ChainId,
-  method: string,
-  params: any,
-  timeout?: TimeString
-) {
-  const url = getUrl(alchemyKey, chainId);
-  return fetchService.fetch(url, {
-    method: 'POST',
-    headers: { accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify({
-      id: 1,
-      jsonrpc: '2.0',
-      method,
-      params: params,
-    }),
-    timeout,
-  });
+export function buildAlchemyProvider(alchemyKey: string, protocol: 'https' | 'wss', chainId: ChainId) {
+  const url = `${protocol}://${getPath(alchemyKey, chainId)}`;
+  return protocol === 'https' ? new ethers.providers.JsonRpcProvider(url, chainId) : new ethers.providers.WebSocketProvider(url, chainId);
 }
 
-function getUrl(alchemyKey: string, chainId: ChainId) {
+export function callAlchemyRPC(alchemyKey: string, protocol: 'https' | 'wss', chainId: ChainId, method: string, params: any) {
+  return buildAlchemyProvider(alchemyKey, params, chainId).send(method, params);
+}
+
+function getPath(alchemyKey: string, chainId: ChainId) {
   const url = URLs[chainId];
   if (!url) throw new Error(`Unsupported chain with id ${chainId}`);
-  return `https://${url}/${alchemyKey}`;
+  return `${url}/${alchemyKey}`;
 }

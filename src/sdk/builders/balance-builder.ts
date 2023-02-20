@@ -12,7 +12,7 @@ import { CachedBalanceSource } from '@services/balances/balance-sources/cached-b
 export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'custom'; instance: IBalanceSource }
-  | { type: 'alchemy'; key: string }
+  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
   | { type: 'moralis'; key: string };
 type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
 export type BalanceSourceConfigInput = { caching?: CachingConfig };
@@ -46,7 +46,7 @@ function buildSource(
     case 'custom':
       return source.instance;
     case 'alchemy':
-      return new AlchemyBalanceSource(fetchService, source.key);
+      return new AlchemyBalanceSource(source.key, source.protocol ?? 'https');
     case 'moralis':
       return new MoralisBalanceSource(fetchService, source.key);
   }

@@ -19,7 +19,7 @@ dotenv.config();
 chai.use(chaiAsPromised);
 
 // const FETCH_SERVICE = new FetchService(crossFetch);
-// const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+// const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(process.env.ALCHEMY_API_KEY!, 'https);
 // const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);
 const RPC_SIMULATION_SOURCE = new RPCSimulationSource(new PublicRPCsSource());
 

@@ -11,6 +11,7 @@ import { InfuraProviderSource } from '@services/providers/provider-sources/infur
 import { JsonRPCProviderSource } from '@services/providers/provider-sources/json-rpc-provider';
 import { LlamaNodesProviderSource } from '@services/providers/provider-sources/llama-nodes-provider';
 import { UpdatableEthersProviderSource } from '@services/providers/provider-sources/updatable-ethers-provider';
+import { WebSocketProviderSource } from '@services/providers/provider-sources/web-sockets-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -18,10 +19,11 @@ export type ProviderSourceInput =
   | { type: 'updatable-ethers'; provider: () => providers.BaseProvider | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, ArrayOneOrMore<string>> }
-  | { type: 'alchemy'; config: { key: string; supportedChains?: ChainId[] } }
+  | { type: 'alchemy'; config: { key: string; protocol?: 'https' | 'wss'; supportedChains?: ChainId[] } }
   | { type: 'infura'; config: { key: string; supportedChains?: ChainId[] } }
   | { type: 'llama-nodes'; config: { key: string } }
   | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
+  | { type: 'web-socket'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
   | { type: 'combine-when-possible'; sources: ProviderSourceInput[] }
   | { type: 'only-first-provider-that-supports-chain'; sources: ProviderSourceInput[] };
 
@@ -42,13 +44,15 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'public-rpcs':
       return new PublicRPCsSource(source.rpcsPerChain);
     case 'alchemy':
-      return new AlchemyProviderSource(source.config.key, source.config.supportedChains);
+      return new AlchemyProviderSource(source.config.key, source.config.protocol ?? 'https', source.config.supportedChains);
     case 'llama-nodes':
       return new LlamaNodesProviderSource(source.config.key);
     case 'infura':
       return new InfuraProviderSource(source.config.key, source.config.supportedChains);
     case 'json-rpc':
       return new JsonRPCProviderSource(source.config.url, source.config.supportedChains);
+    case 'web-socket':
+      return new WebSocketProviderSource(source.config.url, source.config.supportedChains);
     case 'combine-when-possible':
       return new FallbackSource(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
     case 'only-first-provider-that-supports-chain':

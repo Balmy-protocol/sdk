@@ -9,9 +9,7 @@ import { CachedAllowanceSource } from '@services/allowances//allowance-sources/c
 import { Chains, getChainByKey } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
-import { FetchService } from '@services/fetch/fetch-service';
 import dotenv from 'dotenv';
-import crossFetch from 'cross-fetch';
 dotenv.config();
 
 const OWNER = '0x49c590F6a2dfB0f809E82B9e2BF788C0Dd1c31f9'; // DCAHubCompanion
@@ -35,8 +33,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
     symbol: 'waUSDC',
   },
 };
-const FETCH_SERVICE = new FetchService(crossFetch);
-const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(new PublicRPCsSource()));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   useCachedValue: 'always',

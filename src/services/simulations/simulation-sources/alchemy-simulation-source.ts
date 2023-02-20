@@ -1,12 +1,12 @@
-import { IFetchService } from '@services/fetch';
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { timeoutPromise } from '@shared/timeouts';
 import { Address, AmountOfToken, ChainId, TimeString } from '@types';
 import { BigNumber } from 'ethers';
 import { hexValue } from 'ethers/lib/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, Transaction, StateChange } from '../types';
 
 export class AlchemySimulationSource implements ISimulationSource {
-  constructor(private readonly fetchService: IFetchService, private readonly alchemyKey: string) {}
+  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = alchemySupportedChains().map<[ChainId, SimulationQueriesSupport]>((chainId) => [
@@ -25,12 +25,29 @@ export class AlchemySimulationSource implements ISimulationSource {
     tx: Transaction;
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult> {
-    const response = await this.callRPC<Result>(chainId, 'alchemy_simulateAssetChanges', [fixTransaction(tx)], config?.timeout);
-    if (!response.ok) {
-      if (response.status === 400) {
+    try {
+      const result = await this.callRPC<Result>(chainId, 'alchemy_simulateAssetChanges', [fixTransaction(tx)], config?.timeout);
+      if (result.error) {
+        const message = 'message' in result.error ? result.error.message : result.error;
+        return {
+          successful: false,
+          kind: 'SIMULATION_FAILED',
+          message,
+        };
+      }
+      const stageChanges = result.changes.filter(isSupportedStateChange).map(mapStateChange);
+      return {
+        successful: true,
+        stageChanges,
+        estimatedGas: result.gasUsed,
+      };
+    } catch (e: any) {
+      const body = this.protocol === 'https' ? e.body : e.response;
+      const parsed = JSON.parse(e.body);
+      if ('error' in parsed) {
         const {
           error: { message },
-        } = await response.json();
+        } = parsed;
         return {
           successful: false,
           kind: 'INVALID_TRANSACTION',
@@ -40,25 +57,10 @@ export class AlchemySimulationSource implements ISimulationSource {
         return {
           successful: false,
           kind: 'UNKNOWN_ERROR',
-          message: await response.text(),
+          message: body,
         };
       }
     }
-    const { result }: { result: Result } = await response.json();
-    if (result.error) {
-      const message = 'message' in result.error ? result.error.message : result.error;
-      return {
-        successful: false,
-        kind: 'SIMULATION_FAILED',
-        message,
-      };
-    }
-    const stageChanges = result.changes.filter(isSupportedStateChange).map(mapStateChange);
-    return {
-      successful: true,
-      stageChanges,
-      estimatedGas: result.gasUsed,
-    };
   }
 
   async simulateTransactionBundle(_: {
@@ -70,8 +72,8 @@ export class AlchemySimulationSource implements ISimulationSource {
     throw new Error('Operation not supported');
   }
 
-  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString) {
-    return callAlchemyRPC(this.fetchService, this.alchemyKey, chainId, method, params, timeout);
+  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
+    return timeoutPromise(callAlchemyRPC(this.alchemyKey, 'https', chainId, method, params), timeout);
   }
 }
 
