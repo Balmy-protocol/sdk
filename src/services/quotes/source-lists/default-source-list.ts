@@ -1,13 +1,21 @@
 import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId, TokenWithOptionalPrice } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
-import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
+import {
+  BuyOrder,
+  QuoteSource,
+  QuoteSourceMetadata,
+  QuoteSourceSupport,
+  SellOrder,
+  SourceQuoteRequest,
+  SourceQuoteResponse,
+} from '../quote-sources/base';
 import { getChainByKeyOrFail } from '@chains';
 import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { DefaultSourcesConfig, buildSources } from '../source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
-import { BaseToken, ITokenService } from '@services/tokens/types';
+import { BaseTokenMetadata, ITokenService } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
@@ -36,7 +44,16 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   supportedSources() {
-    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, source.getMetadata()]);
+    // We need the token service in order to return a quote, so we'll filter out chains where the token service is not available
+    const supportedChains = this.tokenService.supportedChains();
+    const filterOutUnsupportedChains = <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
+      ...metadata,
+      supports: {
+        ...metadata.supports,
+        chains: metadata.supports.chains.filter((chainId) => supportedChains.includes(chainId)),
+      },
+    });
+    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, filterOutUnsupportedChains(source.getMetadata())]);
     return Object.fromEntries(entries);
   }
 
@@ -167,7 +184,7 @@ async function mapSourceResponseToResponse({
   };
 }
 
-function toAmountOfToken(token: BaseToken, price: number | undefined, amount: BigNumber) {
+function toAmountOfToken(token: BaseTokenMetadata, price: number | undefined, amount: BigNumber) {
   const amountInUSD = amountToUSD(token.decimals, amount, price);
   return {
     amount: amount.toString(),
@@ -193,8 +210,8 @@ function mapRequestToSourceRequest({
   gasPricePromise,
 }: {
   request: QuoteRequest;
-  sellTokenPromise: Promise<BaseToken>;
-  buyTokenPromise: Promise<BaseToken>;
+  sellTokenPromise: Promise<BaseTokenMetadata>;
+  buyTokenPromise: Promise<BaseTokenMetadata>;
   gasPricePromise: Promise<GasPrice>;
 }) {
   return {

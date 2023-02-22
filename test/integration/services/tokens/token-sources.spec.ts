@@ -7,7 +7,7 @@ import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-tok
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { BaseToken, ITokenSource } from '@services/tokens/types';
+import { ITokenSource } from '@services/tokens/types';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
@@ -36,18 +36,18 @@ describe('Token Sources', () => {
     validate: { fieldsExist: ['price'], on: DEFI_LLAMA_TOKEN_SOURCE.supportedChains() },
   });
 
-  function tokenSourceTest<T extends BaseToken>({
+  function tokenSourceTest<TokenData>({
     title,
     source,
     validate,
   }: {
     title: string;
-    source: ITokenSource<T>;
-    validate?: { fieldsExist: (keyof T & string)[]; on?: ChainId[] };
+    source: ITokenSource<TokenData>;
+    validate?: { fieldsExist: (keyof TokenData & string)[]; on?: ChainId[] };
   }) {
     describe(title, () => {
       let input: Record<ChainId, TokenAddress[]>;
-      let result: Record<ChainId, Record<TokenAddress, T>>;
+      let result: Record<ChainId, Record<TokenAddress, TokenData>>;
       beforeAll(async () => {
         const chains = source.supportedChains();
         const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {

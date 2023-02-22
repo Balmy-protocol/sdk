@@ -9,7 +9,6 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { getChainByKeyOrFail } from '@chains';
 import { TokenAddress, Address } from '@types';
 import { QuoteResponse } from '@services/quotes/types';
-import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
 import {
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReduceAsExpected,
@@ -17,6 +16,7 @@ import {
   chainsWithTestData,
   loadTokens,
   mint,
+  TestToken,
 } from '@test-utils/erc20';
 import { buildSDK } from '@builder';
 import { supportedChains } from './quote-tests-config';
@@ -34,7 +34,7 @@ describe('Quote Service', () => {
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress;
-      let nativeToken: DefiLlamaToken, STABLE_ERC20: DefiLlamaToken;
+      let nativeToken: TestToken, STABLE_ERC20: TestToken;
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
 

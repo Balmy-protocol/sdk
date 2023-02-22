@@ -1,8 +1,8 @@
 import { Chains } from '@chains';
-import { BaseToken } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/tokens/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { ChainId } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import { BigNumber, constants } from 'ethers';
 import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { failed } from './utils';
@@ -58,14 +58,13 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       config: { slippagePercentage, timeout },
     }: SourceQuoteRequest<RangoSupport>
   ): Promise<SourceQuoteResponse> {
-    const sellTokenDataResult = await sellTokenData;
-    const buyTokenDataResult = await buyTokenData;
+    const [sellTokenDataResult, buyTokenDataResult] = await Promise.all([sellTokenData, buyTokenData]);
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     let url =
       `https://api.rango.exchange/basic/swap` +
       `?apiKey=${this.customConfig.apiKey}` +
-      `&from=${mapToChainId(chainKey, sellTokenDataResult)}` +
-      `&to=${mapToChainId(chainKey, buyTokenDataResult)}` +
+      `&from=${mapToChainId(chainKey, sellToken, sellTokenDataResult)}` +
+      `&to=${mapToChainId(chainKey, buyToken, buyTokenDataResult)}` +
       `&amount=${order.sellAmount.toString()}` +
       `&fromAddress=${takeFrom}` +
       `&toAddress=${recipient ?? takeFrom}` +
@@ -107,6 +106,6 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
   }
 }
 
-function mapToChainId(chainKey: string, token: BaseToken) {
-  return isSameAddress(token.address, Addresses.NATIVE_TOKEN) ? `${chainKey}.${token.symbol}` : `${chainKey}.${token.symbol}--${token.address}`;
+function mapToChainId(chainKey: string, address: TokenAddress, metadata: BaseTokenMetadata) {
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${chainKey}.${metadata.symbol}` : `${chainKey}.${metadata.symbol}--${address}`;
 }

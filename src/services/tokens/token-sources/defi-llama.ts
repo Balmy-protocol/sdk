@@ -2,7 +2,7 @@ import { ChainId, TimeString, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
-import { BaseToken, ITokenSource, PropertiesRecord } from '../types';
+import { ITokenSource, PropertiesRecord } from '../types';
 import { isSameAddress } from '@shared/utils';
 
 const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
@@ -46,13 +46,9 @@ const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
   Object.entries(CHAIN_ID_TO_KEY).map(([chainId, key]) => [key, parseInt(chainId)])
 );
 
-export type DefiLlamaToken = Pick<FetchTokenResult, 'price'> & BaseToken;
+export type DefiLlamaToken = Required<Pick<FetchTokenResult, 'price' | 'symbol' | 'decimals'>>;
 export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
   constructor(private readonly fetch: IFetchService) {}
-
-  supportedChains(): ChainId[] {
-    return Object.keys(CHAIN_ID_TO_KEY).map((chainId) => parseInt(chainId));
-  }
 
   async getTokens({
     addresses,
@@ -70,18 +66,18 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     );
     for (const [tokenId, { timestamp, confidence, ...token }] of Object.entries(coins)) {
       const { chainId, address } = fromTokenId(tokenId);
-      result[chainId][address] = { decimals: 18, ...token, address };
+      result[chainId][address] = { decimals: 18, ...token };
     }
     return result;
   }
 
-  tokenProperties(): PropertiesRecord<DefiLlamaToken> {
-    return {
-      address: 'present',
+  tokenProperties(): Record<ChainId, PropertiesRecord<DefiLlamaToken>> {
+    const properties: PropertiesRecord<DefiLlamaToken> = {
       symbol: 'present',
       decimals: 'present',
       price: 'present',
     };
+    return Object.fromEntries(Object.keys(CHAIN_ID_TO_KEY).map((chainId) => [Number(chainId), properties]));
   }
 
   private async fetchTokens(tokens: TokenId[], context?: { timeout?: TimeString }) {

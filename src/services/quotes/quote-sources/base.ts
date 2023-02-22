@@ -3,7 +3,7 @@ import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
-import { BaseToken } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/tokens/types';
 import { IProviderSource } from '@services/providers';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
@@ -31,9 +31,9 @@ type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
   chain: Chain;
   sellToken: TokenAddress;
-  sellTokenData: Promise<BaseToken>;
+  sellTokenData: Promise<BaseTokenMetadata>;
   buyToken: TokenAddress;
-  buyTokenData: Promise<BaseToken>;
+  buyTokenData: Promise<BaseTokenMetadata>;
   order: Order;
   config: {
     slippagePercentage: number;
