@@ -20,6 +20,7 @@ import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
+import { reduceTimeout } from '@shared/timeouts';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -66,6 +67,7 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
+    const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const filteredSourceIds = request.sourceIds.filter((sourceId) => sourceId in this.sources);
     if (filteredSourceIds.length === 0) return [];
 
@@ -73,9 +75,11 @@ export class DefaultSourceList implements IQuoteSourceList {
     const tokensPromise = this.tokenService.getTokensForChain({
       chainId: request.chainId,
       addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+      config: { timeout: reducedTimeout },
     });
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
+    // TODO: Add timeout to gas service when available
     const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({ chainId: request.chainId });
     const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice({ speed: request.gasSpeed }));
 

@@ -108,7 +108,7 @@ export class FallbackTokenSource<
     for (const [chainIdString, addresses] of Object.entries(addressesForSource)) {
       const chainId = parseInt(chainIdString);
       for (const address of addresses) {
-        for (const tokenProperty in tokenProperties) {
+        for (const tokenProperty in tokenProperties[chainId]) {
           const property = tokenProperty as keyof TokenData;
           const counter = propertiesCounter[chainId]?.[address]?.[property];
           if (counter !== undefined) {

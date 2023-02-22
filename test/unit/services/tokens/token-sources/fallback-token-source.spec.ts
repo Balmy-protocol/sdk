@@ -227,15 +227,14 @@ describe('Fallback Token Source', () => {
   }): { source: ITokenSource<Token>; promise: PromiseWithTriggers<Record<ChainId, Record<TokenAddress, Token>>> } {
     const sourcePromise = promise<Record<ChainId, Record<TokenAddress, Token>>>();
     const source: ITokenSource<Token> = {
-      supportedChains: () => chains.map(({ chainId }) => chainId),
       getTokens: () => sourcePromise,
       tokenProperties: () => {
-        return {
-          address: 'present',
+        const aux = {
           decimals: 'present',
           symbol: 'present',
           ...properties,
         } as PropertiesRecord<Token>;
+        return Object.fromEntries(chains.map(({ chainId }) => [chainId, aux]));
       },
     };
     return { source, promise: sourcePromise };

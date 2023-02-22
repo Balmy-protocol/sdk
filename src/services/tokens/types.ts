@@ -27,7 +27,7 @@ export type ITokenSource<TokenData> = {
   tokenProperties(): Record<ChainId, PropertiesRecord<TokenData>>;
 };
 
-export type PropertiesRecord<TokenData> = { [K in keyof TokenData]-?: undefined extends TokenData[K] ? 'optional' : 'present' };
+export type PropertiesRecord<TokenData> = { [K in keyof TokenData]-?: undefined extends TokenData[K] ? 'present' | 'optional' : 'present' };
 
 export type BaseTokenMetadata = {
   decimals: number;
