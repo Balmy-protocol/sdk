@@ -1,14 +1,10 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { ITokenSource, MergeTokensFromSources, PropertiesRecord } from '@services/tokens/types';
+import { ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
 import { timeoutPromise } from '@shared/timeouts';
 import { combineTokenProperties } from './utils';
 
 // This fallback source will use different sources and combine the results of each of them
-export class FallbackTokenSource<
-  Sources extends ITokenSource<object>[] | [],
-  TokenData extends MergeTokensFromSources<Sources> = MergeTokensFromSources<Sources>
-> implements ITokenSource<TokenData>
-{
+export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> implements ITokenSource<MergeTokensFromSources<Sources>> {
   constructor(private readonly sources: Sources) {
     if (sources.length === 0) throw new Error('Need at least one source to setup a fallback token source');
   }
@@ -19,9 +15,9 @@ export class FallbackTokenSource<
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     context?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
-    return new Promise<Record<ChainId, Record<TokenAddress, TokenData>>>((resolve, reject) => {
-      const result: Record<ChainId, Record<TokenAddress, TokenData>> = {};
+  }): Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> {
+    return new Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>>((resolve, reject) => {
+      const result: Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>> = {};
       const propertiesCounter = this.buildPropertiesCounter(addresses);
 
       let sourcesLeftToFulfil = this.sources.length;
@@ -61,7 +57,7 @@ export class FallbackTokenSource<
 
                 // Remove from counter
                 for (const tokenProperty in tokenData) {
-                  const property = tokenProperty as keyof TokenData;
+                  const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
                   delete propertiesCounter?.[chainId]?.[address]?.[property];
                 }
               }
@@ -73,19 +69,19 @@ export class FallbackTokenSource<
     });
   }
 
-  tokenProperties(): Record<ChainId, PropertiesRecord<TokenData>> {
+  tokenProperties(): Record<ChainId, KeyOfToken<MergeTokensFromSources<Sources>>[]> {
     return combineTokenProperties(this.sources);
   }
 
   private buildPropertiesCounter(addresses: Record<ChainId, TokenAddress[]>) {
-    const propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof TokenData, number>>> = {};
+    const propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeTokensFromSources<Sources>, number>>> = {};
     for (const chainId in addresses) {
-      const counter: Record<keyof TokenData, number> = {} as any;
+      const counter: Record<keyof MergeTokensFromSources<Sources>, number> = {} as any;
       for (const source of this.sources) {
         const tokenProperties = source.tokenProperties();
         if (chainId in tokenProperties) {
-          for (const tokenProperty in tokenProperties[chainId]) {
-            const property = tokenProperty as keyof TokenData;
+          for (const tokenProperty of tokenProperties[chainId]) {
+            const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
             counter[property] = (counter[property] ?? 0) + 1;
           }
         }
@@ -99,7 +95,7 @@ export class FallbackTokenSource<
   }
 
   private updatePropertiesCounterWhenSourceFulfilled(
-    propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof TokenData, number>>>,
+    propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeTokensFromSources<Sources>, number>>>,
     source: ITokenSource<object>,
     addresses: Record<ChainId, TokenAddress[]>
   ) {
@@ -108,8 +104,8 @@ export class FallbackTokenSource<
     for (const [chainIdString, addresses] of Object.entries(addressesForSource)) {
       const chainId = parseInt(chainIdString);
       for (const address of addresses) {
-        for (const tokenProperty in tokenProperties[chainId]) {
-          const property = tokenProperty as keyof TokenData;
+        for (const tokenProperty of tokenProperties[chainId]) {
+          const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
           const counter = propertiesCounter[chainId]?.[address]?.[property];
           if (counter !== undefined) {
             if (counter === 1) {
@@ -134,7 +130,7 @@ export class FallbackTokenSource<
   }
 }
 
-function getAddressesForSource<TokenData>(
+function getAddressesForSource<TokenData extends object>(
   source: ITokenSource<TokenData>,
   addresses: Record<ChainId, TokenAddress[]>
 ): Record<ChainId, TokenAddress[]> {

@@ -46,7 +46,7 @@ export class DefaultSourceList implements IQuoteSourceList {
 
   supportedSources() {
     // We need the token service in order to return a quote, so we'll filter out chains where the token service is not available
-    const supportedChains = this.tokenService.supportedChains();
+    const supportedChains = Object.keys(this.tokenService.tokenProperties()).map(Number);
     const filterOutUnsupportedChains = <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
       ...metadata,
       supports: {

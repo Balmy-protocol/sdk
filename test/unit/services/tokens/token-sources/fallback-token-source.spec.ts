@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
-import { BaseTokenMetadata, ITokenSource, MergeTokensFromSources, PropertiesRecord } from '@services/tokens/types';
+import { BaseTokenMetadata, ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
 import { Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import ms from 'ms';
@@ -189,16 +189,11 @@ describe('Fallback Token Source', () => {
   function sourceWithExtra(...chains: Chain[]) {
     return buildSource<TokenWithExtra>({
       chains,
-      properties: {
-        extra: 'optional',
-      },
+      properties: ['extra'],
     });
   }
 
-  function getTokensFromSources<Sources extends ITokenSource<BaseTokenMetadata>[]>(
-    addresses: Record<ChainId, TokenAddress[]>,
-    ...sources: Sources
-  ) {
+  function getTokensFromSources<Sources extends ITokenSource<any>[] | []>(addresses: Record<ChainId, TokenAddress[]>, ...sources: Sources) {
     const result = new FallbackTokenSource(sources).getTokens({ addresses });
     const promiseWithState: PromiseWithState<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> = {
       result,
@@ -223,17 +218,13 @@ describe('Fallback Token Source', () => {
     properties,
   }: {
     chains: Chain[];
-    properties?: Omit<PropertiesRecord<Token>, keyof BaseTokenMetadata>;
+    properties?: KeyOfToken<Token>[];
   }): { source: ITokenSource<Token>; promise: PromiseWithTriggers<Record<ChainId, Record<TokenAddress, Token>>> } {
     const sourcePromise = promise<Record<ChainId, Record<TokenAddress, Token>>>();
     const source: ITokenSource<Token> = {
       getTokens: () => sourcePromise,
       tokenProperties: () => {
-        const aux = {
-          decimals: 'present',
-          symbol: 'present',
-          ...properties,
-        } as PropertiesRecord<Token>;
+        const aux: KeyOfToken<Token>[] = ['decimals', 'symbol', ...(properties ?? [])];
         return Object.fromEntries(chains.map(({ chainId }) => [chainId, aux]));
       },
     };

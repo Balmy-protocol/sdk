@@ -7,7 +7,7 @@ import { IProviderSource } from '@services/providers';
 import { IQuoteService } from '@services/quotes/types';
 import { ITokenService } from '@services/tokens/types';
 
-export type ISDK<TokenData> = {
+export type ISDK<TokenData extends object> = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
   gasService: IGasService;

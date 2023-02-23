@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { getChainByKey } from '@chains';
-import { BaseTokenMetadata, ITokenSource, PropertiesRecord } from '@services/tokens/types';
+import { BaseTokenMetadata, ITokenSource, KeyOfToken } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
@@ -24,11 +24,8 @@ export class RPCTokenSource implements ITokenSource<BaseTokenMetadata> {
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
-  tokenProperties(): Record<ChainId, PropertiesRecord<BaseTokenMetadata>> {
-    const properties: PropertiesRecord<BaseTokenMetadata> = {
-      symbol: 'present',
-      decimals: 'present',
-    };
+  tokenProperties() {
+    const properties: KeyOfToken<BaseTokenMetadata>[] = ['symbol', 'decimals'];
     return Object.fromEntries(this.multicallService.supportedChains().map((chainId) => [chainId, properties]));
   }
 

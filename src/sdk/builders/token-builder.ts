@@ -8,7 +8,6 @@ import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sou
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import { RPCTokenSource } from '@services/tokens/token-sources/rpc-token-source';
 import { TokenService } from '@services/tokens/token-service';
-import { TokenWithOptionalPrice } from '@services/quotes';
 
 export type TokenSourceInput =
   | { type: 'defi-llama' }
@@ -24,7 +23,7 @@ export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefine
   : CalculateTokenFromSource<undefined>;
 
 type CalculateTokenFromSource<T extends TokenSourceInput | undefined> = T extends undefined
-  ? UnionMerge<TokenWithOptionalPrice>
+  ? UnionMerge<BaseTokenMetadata | DefiLlamaToken>
   : T extends { type: 'defi-llama' }
   ? DefiLlamaToken
   : T extends { type: 'rpc-multicall' }

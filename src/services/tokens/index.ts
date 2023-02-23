@@ -1,1 +1,1 @@
-export { ITokenService, ITokenSource, PropertiesRecord } from './types';
+export { ITokenService, ITokenSource } from './types';

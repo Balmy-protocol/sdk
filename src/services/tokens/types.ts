@@ -1,9 +1,11 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { UnionMerge } from '@utility-types';
+import { DefiLlamaTokenSource } from './token-sources/defi-llama';
+import { RPCTokenSource } from './token-sources/rpc-token-source';
 
-export type ITokenService<TokenData> = {
+export type ITokenService<TokenData extends object> = {
   supportedChains(): ChainId[];
-  tokenProperties(): Record<ChainId, PropertiesRecord<TokenData>>;
+  tokenProperties(): Record<ChainId, (keyof TokenData)[]>;
   getTokensForChain(_: {
     chainId: ChainId;
     addresses: TokenAddress[];
@@ -19,15 +21,15 @@ export type ITokenService<TokenData> = {
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>>;
 };
 
-export type ITokenSource<TokenData> = {
+export type ITokenSource<TokenData extends object> = {
   getTokens(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     context?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>>;
-  tokenProperties(): Record<ChainId, PropertiesRecord<TokenData>>;
+  tokenProperties(): Record<ChainId, (keyof TokenData & string)[]>;
 };
 
-export type PropertiesRecord<TokenData> = { [K in keyof TokenData]-?: undefined extends TokenData[K] ? 'present' | 'optional' : 'present' };
+export type KeyOfToken<TokenData extends object> = keyof TokenData & string;
 
 export type BaseTokenMetadata = {
   decimals: number;

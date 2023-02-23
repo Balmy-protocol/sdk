@@ -31,7 +31,7 @@ export function buildQuoteService(
   fetchService: IFetchService,
   multicallService: IMulticallService,
   gasService: IGasService,
-  tokenService: ITokenService<object>
+  tokenService: ITokenService<any>
 ) {
   const newTokenService = setUpTokenService(tokenService, fetchService, multicallService);
   const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService: newTokenService });

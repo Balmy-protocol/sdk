@@ -7,7 +7,7 @@ import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-tok
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { ITokenSource } from '@services/tokens/types';
+import { ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
@@ -31,76 +31,97 @@ describe('Token Sources', () => {
   tokenSourceTest({
     title: 'Provider Source',
     source: RPC_TOKEN_SOURCE,
-    validate: [{ fieldsExist: ['decimals', 'symbol'], on: 'all chains' }],
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
   tokenSourceTest({
     title: 'Defi Llama Source',
     source: DEFI_LLAMA_TOKEN_SOURCE,
-    validate: [{ fieldsExist: ['decimals', 'symbol', 'price'], on: 'all chains' }],
+    fields: [{ fields: ['decimals', 'symbol', 'price'], on: 'all chains' }],
   });
   tokenSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_TOKEN_SOURCE,
-    validate: [
-      { fieldsExist: ['decimals', 'symbol'], on: 'all chains' },
-      { fieldsExist: ['price'], on: Object.keys(DEFI_LLAMA_TOKEN_SOURCE.tokenProperties()).map(Number) },
+    fields: [
+      { fields: ['decimals', 'symbol'], on: 'all chains' },
+      { fields: ['price'], on: Object.keys(DEFI_LLAMA_TOKEN_SOURCE.tokenProperties()).map(Number) },
     ],
   });
 
-  function tokenSourceTest<TokenData>({
+  function tokenSourceTest<TokenData extends object>({
     title,
     source,
-    validate,
+    fields,
   }: {
     title: string;
     source: ITokenSource<TokenData>;
-    validate: { fieldsExist: (keyof TokenData & string)[]; on: 'all chains' | ChainId[] }[];
+    fields: { fields: KeyOfToken<TokenData>[]; on: 'all chains' | ChainId[] }[];
   }) {
     describe(title, () => {
-      let input: Record<ChainId, TokenAddress[]>;
-      let result: Record<ChainId, Record<TokenAddress, TokenData>>;
-      beforeAll(async () => {
-        const chains = Object.keys(source.tokenProperties()).map(Number);
-        const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
-          const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
-          if (chainId in TESTS) addresses.push(TESTS[chainId].address);
-          return [chainId, addresses];
-        });
-        input = Object.fromEntries(entries);
-        result = await source.getTokens({ addresses: input, context: { timeout: '30s' } });
-      });
-
-      test(`Returned amount of chains is as expected`, () => {
-        expect(Object.keys(result)).to.have.lengthOf(Object.keys(source.tokenProperties()).length);
-      });
-
-      for (const chainIdString in source.tokenProperties()) {
-        const chainId = Number(chainIdString);
-        const chain = getChainByKey(chainId);
-        describe(chain?.name ?? `Chain with id ${chainId}`, () => {
-          test(`Returned amount of tokens is as expected`, () => {
-            expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
-          });
-          test(chain?.currencySymbol ?? 'Native token', () => {
-            validateToken({ chainId, address: Addresses.NATIVE_TOKEN });
-          });
-          if (chainId in TESTS) {
-            test(`${TESTS[chainId].symbol}`, () => {
-              validateToken({ chainId, ...TESTS[chainId] });
-            });
+      describe('tokenProperties', () => {
+        it('Token properties are reported correctly', () => {
+          const tokenProperties = source.tokenProperties();
+          for (const chainIdString in tokenProperties) {
+            const chainId = Number(chainIdString);
+            const fieldsThatApply = fields.filter(({ on }) => appliesToChain(on, chainId));
+            const totalAmountExpected = fieldsThatApply.reduce((accum, { fields }) => fields.length + accum, 0);
+            expect(tokenProperties[chainId]).to.have.lengthOf(totalAmountExpected);
+            for (const { fields: fieldsExist } of fieldsThatApply) {
+              expect(tokenProperties[chainId]).to.contain(fieldsExist);
+            }
           }
         });
-      }
 
-      function validateToken({ chainId, address }: { chainId: ChainId; address: TokenAddress }) {
-        const token = result[chainId][address];
-        for (const { fieldsExist, on } of validate) {
-          if (on !== 'all chains' && !on.includes(chainId)) continue;
-          for (const field of fieldsExist) {
-            expect(token).to.have.property(field);
+        function appliesToChain(on: 'all chains' | ChainId[], chain: ChainId) {
+          return on === 'all chains' || on.includes(chain);
+        }
+      });
+
+      describe('getTokens', () => {
+        let input: Record<ChainId, TokenAddress[]>;
+        let result: Record<ChainId, Record<TokenAddress, TokenData>>;
+        beforeAll(async () => {
+          const chains = Object.keys(source.tokenProperties()).map(Number);
+          const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
+            const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
+            if (chainId in TESTS) addresses.push(TESTS[chainId].address);
+            return [chainId, addresses];
+          });
+          input = Object.fromEntries(entries);
+          result = await source.getTokens({ addresses: input, context: { timeout: '30s' } });
+        });
+
+        test(`Returned amount of chains is as expected`, () => {
+          expect(Object.keys(result)).to.have.lengthOf(Object.keys(source.tokenProperties()).length);
+        });
+
+        for (const chainIdString in source.tokenProperties()) {
+          const chainId = Number(chainIdString);
+          const chain = getChainByKey(chainId);
+          describe(chain?.name ?? `Chain with id ${chainId}`, () => {
+            test(`Returned amount of tokens is as expected`, () => {
+              expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
+            });
+            test(chain?.currencySymbol ?? 'Native token', () => {
+              validateToken({ chainId, address: Addresses.NATIVE_TOKEN });
+            });
+            if (chainId in TESTS) {
+              test(`${TESTS[chainId].symbol}`, () => {
+                validateToken({ chainId, ...TESTS[chainId] });
+              });
+            }
+          });
+        }
+
+        function validateToken({ chainId, address }: { chainId: ChainId; address: TokenAddress }) {
+          const token = result[chainId][address];
+          for (const { fields: fieldsExist, on } of fields) {
+            if (on !== 'all chains' && !on.includes(chainId)) continue;
+            for (const field of fieldsExist) {
+              expect(token).to.have.property(field);
+            }
           }
         }
-      }
+      });
     });
   }
 });

@@ -1,15 +1,15 @@
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { ITokenService, ITokenSource, PropertiesRecord } from './types';
+import { ITokenService, ITokenSource } from './types';
 
-export class TokenService<TokenData> implements ITokenService<TokenData> {
+export class TokenService<TokenData extends object> implements ITokenService<TokenData> {
   constructor(private readonly tokenSource: ITokenSource<TokenData>) {}
 
   supportedChains(): ChainId[] {
     return Object.keys(this.tokenSource.tokenProperties()).map(Number);
   }
 
-  tokenProperties(): Record<ChainId, PropertiesRecord<TokenData>> {
+  tokenProperties() {
     return this.tokenSource.tokenProperties();
   }
 

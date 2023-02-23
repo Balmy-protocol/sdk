@@ -2,7 +2,7 @@ import { ChainId, TimeString, TokenAddress } from '@types';
 import { ITokenSource } from '@services/tokens/types';
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 
-export class CachedTokenSource<TokenData> implements ITokenSource<TokenData> {
+export class CachedTokenSource<TokenData extends object> implements ITokenSource<TokenData> {
   private readonly cache: ContextlessCache<TokenInChain, TokenData>;
 
   constructor(private readonly source: ITokenSource<TokenData>, expirationConfig: ExpirationConfigOptions) {
@@ -15,13 +15,13 @@ export class CachedTokenSource<TokenData> implements ITokenSource<TokenData> {
 
   async getTokens({
     addresses,
-    config,
+    context,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    context?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
     const tokensInChain = addressesToTokensInChain(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: config?.timeout });
+    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: context?.timeout });
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 
