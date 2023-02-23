@@ -13,7 +13,6 @@ import { Addresses } from '@shared/constants';
 import { calculatePercentage, isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
-import { DefiLlamaToken } from '@services/tokens/token-sources/defi-llama';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
@@ -26,6 +25,7 @@ import {
   chainsWithTestData,
   loadTokens,
   mintMany,
+  TestToken,
 } from '@test-utils/erc20';
 import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
@@ -50,7 +50,7 @@ describe('Quote Sources', () => {
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress, recipient: SignerWithAddress;
-      let nativeToken: DefiLlamaToken, wToken: DefiLlamaToken, STABLE_ERC20: DefiLlamaToken, RANDOM_ERC20: DefiLlamaToken;
+      let nativeToken: TestToken, wToken: TestToken, STABLE_ERC20: TestToken, RANDOM_ERC20: TestToken;
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
       let gasPricePromise: Promise<GasPrice>;
@@ -225,8 +225,8 @@ describe('Quote Sources', () => {
           type,
           sourceId,
         }: {
-          sellToken: DefiLlamaToken;
-          buyToken: DefiLlamaToken;
+          sellToken: TestToken;
+          buyToken: TestToken;
           type: 'sell' | 'buy';
           sourceId: SourceId;
           sellAmount?: BigNumber;
@@ -273,7 +273,7 @@ describe('Quote Sources', () => {
       }
 
       const TRESHOLD_PERCENTAGE = 3; // 3%
-      function validateQuote(from: DefiLlamaToken, to: DefiLlamaToken, fromAmount: BigNumber, toAmount: BigNumber) {
+      function validateQuote(from: TestToken, to: TestToken, fromAmount: BigNumber, toAmount: BigNumber) {
         const fromPriceBN = utils.parseEther(`${from.price!}`);
         const toPriceBN = utils.parseEther(`${to.price!}`);
         const magnitudeFrom = utils.parseUnits('1', from.decimals);
@@ -287,8 +287,8 @@ describe('Quote Sources', () => {
 
       type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
         recipient?: SignerWithAddress;
-        sellToken: DefiLlamaToken;
-        buyToken: DefiLlamaToken;
+        sellToken: TestToken;
+        buyToken: TestToken;
       };
       function buildQuote(source: QuoteSource<any>, { sellToken, buyToken, ...quote }: Quote) {
         return source.quote(

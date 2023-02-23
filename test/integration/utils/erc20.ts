@@ -6,7 +6,6 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Address, Chain, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
-import { BaseToken } from '@services/tokens/types';
 import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { FetchService } from '@services/fetch/fetch-service';
 import crossFetch from 'cross-fetch';
@@ -14,10 +13,11 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
-import { QuoteResponse } from '@services/quotes/types';
+import { QuoteResponse, TokenWithOptionalPrice } from '@services/quotes/types';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
+export type TestToken = TokenWithOptionalPrice & IHasAddress & { whale?: Address };
 
 export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
@@ -235,25 +235,11 @@ export function approve({ amount, to, for: token, from }: { amount: BigNumberish
   return new Contract(token.address, ERC20_ABI, from).approve(to, amount);
 }
 
-export async function mintMany({
-  to,
-  tokens,
-}: {
-  to: IHasAddress;
-  tokens: { token: BaseToken & { whale?: Address }; amount: Exclude<BigNumberish, Bytes> }[];
-}) {
+export async function mintMany({ to, tokens }: { to: IHasAddress; tokens: { token: TestToken; amount: Exclude<BigNumberish, Bytes> }[] }) {
   await Promise.all(tokens.map(({ token, amount }) => mint({ amount, of: token, to })));
 }
 
-export async function mint({
-  of: token,
-  amount,
-  to: user,
-}: {
-  amount: Exclude<BigNumberish, Bytes>;
-  of: BaseToken & { whale?: Address };
-  to: IHasAddress;
-}) {
+export async function mint({ of: token, amount, to: user }: { amount: Exclude<BigNumberish, Bytes>; of: TestToken; to: IHasAddress }) {
   if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
     await setBalance(user.address, amount);
   } else {
@@ -279,10 +265,10 @@ export async function loadTokens(chain: Chain) {
     };
   }
   return {
-    nativeToken: tokens[chain.chainId][Addresses.NATIVE_TOKEN],
-    wToken: { ...tokens[chain.chainId][chain.wToken], whale: whale('wToken') },
-    STABLE_ERC20: { ...tokens[chain.chainId][address('STABLE_ERC20')], whale: whale('STABLE_ERC20') },
-    RANDOM_ERC20: { ...tokens[chain.chainId][address('RANDOM_ERC20')], whale: whale('RANDOM_ERC20') },
+    nativeToken: { ...tokens[chain.chainId][Addresses.NATIVE_TOKEN], address: Addresses.NATIVE_TOKEN },
+    wToken: { ...tokens[chain.chainId][chain.wToken], address: address('wToken'), whale: whale('wToken') },
+    STABLE_ERC20: { ...tokens[chain.chainId][address('STABLE_ERC20')], address: address('STABLE_ERC20'), whale: whale('STABLE_ERC20') },
+    RANDOM_ERC20: { ...tokens[chain.chainId][address('RANDOM_ERC20')], address: address('RANDOM_ERC20'), whale: whale('RANDOM_ERC20') },
   };
 }
 

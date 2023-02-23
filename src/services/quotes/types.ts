@@ -1,6 +1,6 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { GasPrice, GasSpeed } from '@services/gas/types';
-import { BaseToken } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/tokens/types';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumberish } from 'ethers';
@@ -61,7 +61,7 @@ export type QuoteRequest = {
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
 
-export type TokenWithOptionalPrice = BaseToken & { price?: number };
+export type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
 export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice>;
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;

@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
-import { BaseToken, ITokenSource, MergeTokenTokensFromSources, PropertiesRecord } from '@services/tokens/types';
+import { BaseTokenMetadata, ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
 import { Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
 import ms from 'ms';
@@ -181,7 +181,7 @@ describe('Fallback Token Source', () => {
   });
 
   function source(...chains: Chain[]) {
-    return buildSource<BaseToken>({
+    return buildSource<BaseTokenMetadata>({
       chains,
     });
   }
@@ -189,15 +189,13 @@ describe('Fallback Token Source', () => {
   function sourceWithExtra(...chains: Chain[]) {
     return buildSource<TokenWithExtra>({
       chains,
-      properties: {
-        extra: 'optional',
-      },
+      properties: ['extra'],
     });
   }
 
-  function getTokensFromSources<Sources extends ITokenSource<BaseToken>[]>(addresses: Record<ChainId, TokenAddress[]>, ...sources: Sources) {
+  function getTokensFromSources<Sources extends ITokenSource<any>[] | []>(addresses: Record<ChainId, TokenAddress[]>, ...sources: Sources) {
     const result = new FallbackTokenSource(sources).getTokens({ addresses });
-    const promiseWithState: PromiseWithState<Record<ChainId, Record<TokenAddress, MergeTokenTokensFromSources<Sources>>>> = {
+    const promiseWithState: PromiseWithState<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> = {
       result,
       status: 'pending',
     };
@@ -215,24 +213,19 @@ describe('Fallback Token Source', () => {
     return Object.assign(promise, { resolve: resolveExternal, reject: rejectExternal });
   }
 
-  function buildSource<Token extends BaseToken>({
+  function buildSource<Token extends BaseTokenMetadata>({
     chains,
     properties,
   }: {
     chains: Chain[];
-    properties?: Omit<PropertiesRecord<Token>, keyof BaseToken>;
+    properties?: KeyOfToken<Token>[];
   }): { source: ITokenSource<Token>; promise: PromiseWithTriggers<Record<ChainId, Record<TokenAddress, Token>>> } {
     const sourcePromise = promise<Record<ChainId, Record<TokenAddress, Token>>>();
     const source: ITokenSource<Token> = {
-      supportedChains: () => chains.map(({ chainId }) => chainId),
       getTokens: () => sourcePromise,
       tokenProperties: () => {
-        return {
-          address: 'present',
-          decimals: 'present',
-          symbol: 'present',
-          ...properties,
-        } as PropertiesRecord<Token>;
+        const aux: KeyOfToken<Token>[] = ['decimals', 'symbol', ...(properties ?? [])];
+        return Object.fromEntries(chains.map(({ chainId }) => [chainId, aux]));
       },
     };
     return { source, promise: sourcePromise };
@@ -243,6 +236,6 @@ function sleep(time: TimeString) {
   return new Promise((resolve) => setTimeout(resolve, ms(time)));
 }
 
-type TokenWithExtra = BaseToken & { extra?: string };
+type TokenWithExtra = BaseTokenMetadata & { extra?: string };
 type PromiseWithTriggers<T> = Promise<T> & { resolve: (value: T) => void; reject: (error?: any) => void };
 type PromiseWithState<T> = { status: 'pending' | 'resolved' | 'rejected'; result: Promise<T> };

@@ -1,1 +1,1 @@
-export { ITokenService, ITokenSource, PropertiesRecord, BaseToken } from './types';
+export { ITokenService, ITokenSource } from './types';

@@ -2,7 +2,7 @@ import { ArrayTwoOrMore, UnionMerge } from '@utility-types';
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IMulticallService } from '@services/multicall/types';
-import { ITokenSource, BaseToken, ITokenService } from '@services/tokens/types';
+import { ITokenSource, BaseTokenMetadata, ITokenService } from '@services/tokens/types';
 import { CachedTokenSource } from '@services/tokens/token-sources/cached-token-source';
 import { DefiLlamaToken, DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
@@ -12,7 +12,7 @@ import { TokenService } from '@services/tokens/token-service';
 export type TokenSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
-  | { type: 'custom'; instance: ITokenSource<BaseToken> }
+  | { type: 'custom'; instance: ITokenSource<object> }
   | { type: 'combine-when-possible'; sources: TokenSourceInput[] };
 
 type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
@@ -23,11 +23,11 @@ export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefine
   : CalculateTokenFromSource<undefined>;
 
 type CalculateTokenFromSource<T extends TokenSourceInput | undefined> = T extends undefined
-  ? UnionMerge<DefiLlamaToken | BaseToken>
+  ? UnionMerge<BaseTokenMetadata | DefiLlamaToken>
   : T extends { type: 'defi-llama' }
   ? DefiLlamaToken
   : T extends { type: 'rpc-multicall' }
-  ? BaseToken
+  ? BaseTokenMetadata
   : T extends { type: 'custom'; instance: ITokenService<infer Token> }
   ? Token
   : T extends { type: 'combine-when-possible'; sources: ArrayTwoOrMore<TokenSourceInput> }
@@ -36,8 +36,7 @@ type CalculateTokenFromSource<T extends TokenSourceInput | undefined> = T extend
 
 type ExtractTokenFromSources<T extends ArrayTwoOrMore<TokenSourceInput>> = UnionMerge<
   { [K in keyof T]: T[K] extends TokenSourceInput ? CalculateTokenFromSource<T[K]> : T[K] }[number]
-> &
-  BaseToken;
+>;
 
 export function buildTokenService<T extends BuildTokenParams | undefined>(
   params: T,

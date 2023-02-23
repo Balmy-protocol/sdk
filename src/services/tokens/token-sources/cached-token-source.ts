@@ -1,31 +1,27 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { BaseToken, ITokenSource } from '@services/tokens/types';
+import { ITokenSource } from '@services/tokens/types';
 import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
 
-export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<Token> {
-  private readonly cache: ContextlessCache<TokenInChain, Token>;
+export class CachedTokenSource<TokenData extends object> implements ITokenSource<TokenData> {
+  private readonly cache: ContextlessCache<TokenInChain, TokenData>;
 
-  constructor(private readonly source: ITokenSource<Token>, expirationConfig: ExpirationConfigOptions) {
-    this.cache = new ContextlessCache<TokenInChain, Token>({
+  constructor(private readonly source: ITokenSource<TokenData>, expirationConfig: ExpirationConfigOptions) {
+    this.cache = new ContextlessCache<TokenInChain, TokenData>({
       calculate: (tokensInChain) => this.fetchTokens(tokensInChain),
       toStorableKey: (tokenInChain) => tokenInChain,
       expirationConfig,
     });
   }
 
-  supportedChains(): ChainId[] {
-    return this.source.supportedChains();
-  }
-
   async getTokens({
     addresses,
-    config,
+    context,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+    context?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
     const tokensInChain = addressesToTokensInChain(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: config?.timeout });
+    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: context?.timeout });
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 
@@ -33,7 +29,7 @@ export class CachedTokenSource<Token extends BaseToken> implements ITokenSource<
     return this.source.tokenProperties();
   }
 
-  private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, Token>> {
+  private async fetchTokens(tokensInChain: TokenInChain[]): Promise<Record<TokenInChain, TokenData>> {
     const addresses = tokensInChainToAddresses(tokensInChain);
     const tokens = await this.source.getTokens({ addresses });
     return chainAndAddressRecordToTokenInChain(tokens);
@@ -57,10 +53,10 @@ function tokensInChainToAddresses(tokensInChain: TokenInChain[]): Record<ChainId
   return result;
 }
 
-function tokenInChainRecordToChainAndAddress<Token extends BaseToken>(
-  record: Record<TokenInChain, Token>
-): Record<ChainId, Record<TokenAddress, Token>> {
-  const result: Record<ChainId, Record<TokenAddress, Token>> = {};
+function tokenInChainRecordToChainAndAddress<TokenData>(
+  record: Record<TokenInChain, TokenData>
+): Record<ChainId, Record<TokenAddress, TokenData>> {
+  const result: Record<ChainId, Record<TokenAddress, TokenData>> = {};
   for (const [tokenInChain, token] of Object.entries(record)) {
     const { chainId, address } = fromTokenInChain(tokenInChain);
     if (!(chainId in result)) {
@@ -71,11 +67,11 @@ function tokenInChainRecordToChainAndAddress<Token extends BaseToken>(
   return result;
 }
 
-function chainAndAddressRecordToTokenInChain<Token extends BaseToken>(
-  record: Record<ChainId, Record<TokenAddress, Token>>
-): Record<TokenInChain, Token> {
+function chainAndAddressRecordToTokenInChain<TokenData>(
+  record: Record<ChainId, Record<TokenAddress, TokenData>>
+): Record<TokenInChain, TokenData> {
   const entries = Object.entries(record).flatMap(([chainId, record]) =>
-    Object.entries(record).map<[TokenInChain, Token]>(([address, token]) => [toTokenInChain(parseInt(chainId), address), token])
+    Object.entries(record).map<[TokenInChain, TokenData]>(([address, token]) => [toTokenInChain(parseInt(chainId), address), token])
   );
   return Object.fromEntries(entries);
 }

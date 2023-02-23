@@ -1,7 +1,7 @@
 import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from '@services/quotes/types';
-import { ITokenService, BaseToken } from '@services/tokens/types';
+import { ITokenService } from '@services/tokens/types';
 import { DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
 import { DefaultSourcesConfig } from '@services/quotes/source-registry';
@@ -28,7 +28,7 @@ export function buildQuoteService(
   providerSource: IProviderSource,
   fetchService: IFetchService,
   gasService: IGasService,
-  tokenService: ITokenService<BaseToken>
+  tokenService: ITokenService<any>
 ) {
   const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService });
   return new QuoteService(sourceList);
@@ -45,7 +45,7 @@ function buildList(
     providerSource: IProviderSource;
     fetchService: IFetchService;
     gasService: IGasService;
-    tokenService: ITokenService<BaseToken>;
+    tokenService: ITokenService<any>;
   }
 ): IQuoteSourceList {
   switch (list?.type) {

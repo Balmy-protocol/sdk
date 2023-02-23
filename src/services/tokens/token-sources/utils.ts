@@ -1,17 +1,21 @@
-import { BaseToken, ITokenSource, MergeTokenTokensFromSources, PropertiesRecord } from '../types';
+import { chainsUnion } from '@chains';
+import { ChainId } from '@types';
+import { ITokenSource, KeyOfToken, MergeTokensFromSources } from '../types';
 
-export function combineTokenProperties<Sources extends ITokenSource<BaseToken>[] | []>(
+export function combineTokenProperties<Sources extends ITokenSource<object>[]>(
   sources: Sources
-): PropertiesRecord<MergeTokenTokensFromSources<Sources>> {
-  const result: Record<string, 'optional' | 'present'> = sources[0].tokenProperties();
-  for (let i = 1; i < sources.length; i++) {
-    const sourceProperties = sources[i].tokenProperties();
-    const comb = new Set([...Object.keys(result), ...Object.keys(sourceProperties)]);
-    for (const property of comb) {
-      if (!(property in result) || !(property in sourceProperties) || (result as any)[property] !== (sourceProperties as any)[property]) {
-        result[property] = 'optional';
+): Record<ChainId, KeyOfToken<MergeTokensFromSources<Sources>>[]> {
+  const chains = chainsUnion(sources.map((source) => Object.keys(source.tokenProperties()).map(Number)));
+  const result: Record<ChainId, KeyOfToken<MergeTokensFromSources<Sources>>[]> = {};
+  for (const chainId of chains) {
+    const keys: Set<KeyOfToken<MergeTokensFromSources<Sources>>> = new Set();
+    for (const source of sources) {
+      for (const property of source.tokenProperties()[chainId] ?? []) {
+        keys.add(property);
       }
     }
+    result[chainId] = [...keys];
   }
-  return result as PropertiesRecord<MergeTokenTokensFromSources<Sources>>;
+
+  return result;
 }

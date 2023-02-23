@@ -1,12 +1,16 @@
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { BaseToken, ITokenService, ITokenSource } from './types';
+import { ITokenService, ITokenSource } from './types';
 
-export class TokenService<Token extends BaseToken> implements ITokenService<Token> {
-  constructor(private readonly tokenSource: ITokenSource<Token>) {}
+export class TokenService<TokenData extends object> implements ITokenService<TokenData> {
+  constructor(private readonly tokenSource: ITokenSource<TokenData>) {}
 
   supportedChains(): ChainId[] {
-    return this.tokenSource.supportedChains();
+    return Object.keys(this.tokenSource.tokenProperties()).map(Number);
+  }
+
+  tokenProperties() {
+    return this.tokenSource.tokenProperties();
   }
 
   async getTokensForChain({
@@ -17,7 +21,7 @@ export class TokenService<Token extends BaseToken> implements ITokenService<Toke
     chainId: ChainId;
     addresses: TokenAddress[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<TokenAddress, Token>> {
+  }): Promise<Record<TokenAddress, TokenData>> {
     const byChainId = { [chainId]: addresses };
     const result = await this.getTokensByChainId({ addresses: byChainId, config });
     return result[chainId];
@@ -29,7 +33,7 @@ export class TokenService<Token extends BaseToken> implements ITokenService<Toke
   }: {
     addresses: { chainId: ChainId; addresses: TokenAddress[] }[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
     const byChainId = Object.fromEntries(addresses.map(({ chainId, addresses }) => [chainId, addresses]));
     return this.getTokensByChainId({ addresses: byChainId, config });
   }
@@ -40,7 +44,7 @@ export class TokenService<Token extends BaseToken> implements ITokenService<Toke
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, Token>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
     return timeoutPromise(this.tokenSource.getTokens({ addresses, context: config }), config?.timeout);
   }
 }
