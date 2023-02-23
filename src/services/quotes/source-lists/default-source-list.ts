@@ -21,6 +21,7 @@ import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
+import { ChainId } from '@types';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -45,15 +46,7 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   supportedSources() {
-    // We need the token service in order to return a quote, so we'll filter out chains where the token service is not available
-    const supportedChains = Object.keys(this.tokenService.tokenProperties()).map(Number);
-    const filterOutUnsupportedChains = <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
-      ...metadata,
-      supports: {
-        ...metadata.supports,
-        chains: metadata.supports.chains.filter((chainId) => supportedChains.includes(chainId)),
-      },
-    });
+    const filterOutUnsupportedChains = this.metadataChainFilter();
     const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, filterOutUnsupportedChains(source.getMetadata())]);
     return Object.fromEntries(entries);
   }
@@ -137,6 +130,23 @@ export class DefaultSourceList implements IQuoteSourceList {
       sourceId,
       source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>,
     }));
+  }
+
+  // There are some properties that are necessary for the quote service to work, so we'll filter out chains where
+  // those fields are not available
+  private metadataChainFilter() {
+    const tokenProperties = this.tokenService.tokenProperties();
+    const isChainSupported = (chainId: ChainId) => {
+      const properties = tokenProperties[chainId] ?? [];
+      return properties.includes('symbol') && properties.includes('decimals');
+    };
+    return <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
+      ...metadata,
+      supports: {
+        ...metadata.supports,
+        chains: metadata.supports.chains.filter((chainId) => isChainSupported(chainId)),
+      },
+    });
   }
 }
 

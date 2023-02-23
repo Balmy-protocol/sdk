@@ -1,6 +1,6 @@
 import { IFetchService } from '@services/fetch/types';
 import { IGasService } from '@services/gas/types';
-import { GlobalQuoteSourceConfig, SourceId, SourceMetadata, TokenWithOptionalPrice } from '@services/quotes/types';
+import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from '@services/quotes/types';
 import { ITokenService } from '@services/tokens/types';
 import { DefaultSourceList } from '@services/quotes/source-lists/default-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
@@ -10,8 +10,6 @@ import { OverridableSourceList } from '@services/quotes/source-lists/overridable
 import { ArrayOneOrMore } from '@utility-types';
 import { APISourceList, URIGenerator } from '@services/quotes/source-lists/api-source-list';
 import { IProviderSource } from '@services/providers';
-import { buildTokenService } from './token-builder';
-import { IMulticallService } from '@services/multicall';
 
 export type DefaultSourcesConfigInput = GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 export type QuoteSourceListInput =
@@ -29,12 +27,10 @@ export function buildQuoteService(
   params: BuildQuoteParams | undefined,
   providerSource: IProviderSource,
   fetchService: IFetchService,
-  multicallService: IMulticallService,
   gasService: IGasService,
   tokenService: ITokenService<any>
 ) {
-  const newTokenService = setUpTokenService(tokenService, fetchService, multicallService);
-  const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService: newTokenService });
+  const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService });
   return new QuoteService(sourceList);
 }
 
@@ -49,7 +45,7 @@ function buildList(
     providerSource: IProviderSource;
     fetchService: IFetchService;
     gasService: IGasService;
-    tokenService: ITokenService<TokenWithOptionalPrice>;
+    tokenService: ITokenService<any>;
   }
 ): IQuoteSourceList {
   switch (list?.type) {
@@ -73,9 +69,4 @@ function buildList(
 // If no referrer address was set, then we will use Mean's address
 function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>) {
   return { referrer: { address: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', name: 'MeanFinance' }, ...config };
-}
-
-function setUpTokenService(embeddedTokenService: ITokenService<object>, fetchService: IFetchService, multicallService: IMulticallService) {
-  // TODO: We should use the embedded token service, but add the default token service as fallback, so we know we have token data + price
-  return buildTokenService(undefined, fetchService, multicallService);
 }
