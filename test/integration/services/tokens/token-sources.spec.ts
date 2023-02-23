@@ -66,7 +66,7 @@ describe('Token Sources', () => {
             const totalAmountExpected = fieldsThatApply.reduce((accum, { fields }) => fields.length + accum, 0);
             expect(tokenProperties[chainId]).to.have.lengthOf(totalAmountExpected);
             for (const { fields: fieldsExist } of fieldsThatApply) {
-              expect(tokenProperties[chainId]).to.contain(fieldsExist);
+              expect(tokenProperties[chainId]).to.have.members(fieldsExist);
             }
           }
         });

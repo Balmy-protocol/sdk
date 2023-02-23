@@ -20,7 +20,7 @@ import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
-import { reduceTimeout } from '@shared/timeouts';
+import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -72,11 +72,14 @@ export class DefaultSourceList implements IQuoteSourceList {
     if (filteredSourceIds.length === 0) return [];
 
     // Ask for needed values, such as token data and gas price
-    const tokensPromise = this.tokenService.getTokensForChain({
-      chainId: request.chainId,
-      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
-      config: { timeout: reducedTimeout },
-    });
+    const tokensPromise = timeoutPromise(
+      this.tokenService.getTokensForChain({
+        chainId: request.chainId,
+        addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+        config: { timeout: reducedTimeout },
+      }),
+      reducedTimeout
+    );
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
     // TODO: Add timeout to gas service when available
