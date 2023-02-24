@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
-import { Chains, getChainByKey } from '@chains';
+import { getChainByKey } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeedSupportRecord, GasSpeedPriceResult } from '@services/gas/types';
@@ -11,7 +11,6 @@ import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
-import { ChainId } from '@types';
 
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
@@ -22,30 +21,12 @@ const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURC
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
 
-const EIP_1559_CHAINS = [
-  Chains.ETHEREUM,
-  Chains.ARBITRUM,
-  Chains.POLYGON,
-  Chains.GNOSIS,
-  Chains.CRONOS,
-  Chains.HECO,
-  Chains.FANTOM,
-  Chains.MOONBEAM,
-  Chains.MOONRIVER,
-  Chains.ASTAR,
-  Chains.CANTO,
-  Chains.KLAYTN,
-  Chains.EVMOS,
-  Chains.AVALANCHE,
-  Chains.CELO,
-].map(({ chainId }) => chainId);
-
 describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
   gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
-  // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
-  // gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
-  // gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
+  gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
+  gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
+  gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
 
   function gasPriceSourceTest<SupportRecord extends GasSpeedSupportRecord>({
     title,
@@ -63,9 +44,9 @@ describe('Gas Price Sources', () => {
             for (const speed in source.supportedSpeeds()) {
               const support = source.supportedSpeeds()[speed];
               if (support === 'present') {
-                expect(isGasPriceIsSetForSpeed(chainId, gasPrice, speed)).to.be.true;
+                expect(isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               } else {
-                expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(chainId, gasPrice, speed)).to.be.true;
+                expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               }
             }
             const unsupportedGasSpeeds = AVAILABLE_GAS_SPEEDS.filter((speed) => !(speed in source.supportedSpeeds()));
@@ -74,8 +55,7 @@ describe('Gas Price Sources', () => {
             }
           });
         });
-        const isGasPriceIsSetForSpeed = (chainId: ChainId, gasPrice: GasSpeedPriceResult<SupportRecord>, speed: keyof SupportRecord) => {
-          expect(isEIP1159Compatible(gasPrice)).to.equal(EIP_1559_CHAINS.includes(chainId));
+        const isGasPriceIsSetForSpeed = (gasPrice: GasSpeedPriceResult<SupportRecord>, speed: keyof SupportRecord) => {
           if (isEIP1159Compatible(gasPrice)) {
             return (
               typeof (gasPrice as any)[speed].maxFeePerGas === 'string' || typeof (gasPrice as any)[speed].maxPriorityFeePerGas === 'string'
