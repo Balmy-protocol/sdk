@@ -59,11 +59,17 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasSpeedSupport> 
     const { speeds }: { speeds: GasPrice[] } = await response.json();
     const [standard, fast, instant] = speeds;
     return {
-      standard,
-      fast,
-      instant,
+      standard: filterOutExtraData(standard),
+      fast: filterOutExtraData(fast),
+      instant: filterOutExtraData(instant),
     };
   }
+}
+
+function filterOutExtraData(result: any): GasPrice {
+  return 'maxFeePerGas' in result
+    ? { maxFeePerGas: result.maxFeePerGas, maxPriorityFeePerGas: result.maxPriorityFeePerGas }
+    : { gasPrice: result.gasPrice };
 }
 
 type Config = {

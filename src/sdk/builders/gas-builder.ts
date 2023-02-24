@@ -15,10 +15,14 @@ import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-oc
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { GasService } from '@services/gas/gas-service';
+import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
+import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
 
 export type GasSourceInput =
   | { type: 'open-ocean' }
   | { type: 'rpc' }
+  | { type: 'eth-gas-station' }
+  | { type: 'owlracle'; key: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
   | { type: 'fastest'; sources: ArrayTwoOrMore<GasSourceInput> }
   | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSourceInput> };
@@ -36,7 +40,7 @@ export function buildGasService(
 ) {
   const openOcean = new OpenOceanGasPriceSource(fetchService);
   const rpc = new RPCGasPriceSource(providerSource);
-  const source = buildSource(params?.source, { openOcean, rpc });
+  const source = buildSource(params?.source, { fetchService, openOcean, rpc });
 
   let gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
   if (params?.config?.caching?.useCaching) {
@@ -52,7 +56,7 @@ export function buildGasService(
 
 function buildSource(
   source: GasSourceInput | undefined,
-  { openOcean, rpc }: { openOcean: OpenOceanGasPriceSource; rpc: RPCGasPriceSource }
+  { openOcean, rpc, fetchService }: { openOcean: OpenOceanGasPriceSource; rpc: RPCGasPriceSource; fetchService: IFetchService }
 ): IGasPriceSource<any> {
   switch (source?.type) {
     case undefined:
@@ -61,12 +65,16 @@ function buildSource(
       return openOcean;
     case 'rpc':
       return rpc;
+    case 'eth-gas-station':
+      return new EthGasStationGasPriceSource(fetchService);
+    case 'owlracle':
+      return new OwlracleGasPriceSource(fetchService, source.key);
     case 'custom':
       return source.instance;
     case 'fastest':
-      return new FastestGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { openOcean, rpc })));
+      return new FastestGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { fetchService, openOcean, rpc })));
     case 'only-first-source-that-supports-chain':
-      return new PrioritizedGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { openOcean, rpc })));
+      return new PrioritizedGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { fetchService, openOcean, rpc })));
   }
 }
 
