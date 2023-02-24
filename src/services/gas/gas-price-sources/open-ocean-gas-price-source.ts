@@ -51,8 +51,8 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeedSupport>
 function toEip1159GasPrice(body: any, key: GasSpeed) {
   const { maxPriorityFeePerGas, maxFeePerGas } = body[key];
   return {
-    maxPriorityFeePerGas: `${maxPriorityFeePerGas}`,
     maxFeePerGas: `${maxFeePerGas}`,
+    maxPriorityFeePerGas: `${maxPriorityFeePerGas}`,
   };
 }
 

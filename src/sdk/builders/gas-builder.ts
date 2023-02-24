@@ -17,12 +17,14 @@ import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price
 import { GasService } from '@services/gas/gas-service';
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
 import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
+import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 
 export type GasSourceInput =
   | { type: 'open-ocean' }
   | { type: 'rpc' }
   | { type: 'eth-gas-station' }
   | { type: 'owlracle'; key: string }
+  | { type: 'etherscan'; key?: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
   | { type: 'fastest'; sources: ArrayTwoOrMore<GasSourceInput> }
   | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSourceInput> };
@@ -67,6 +69,8 @@ function buildSource(
       return rpc;
     case 'eth-gas-station':
       return new EthGasStationGasPriceSource(fetchService);
+    case 'etherscan':
+      return new EtherscanGasPriceSource(fetchService, source.key);
     case 'owlracle':
       return new OwlracleGasPriceSource(fetchService, source.key);
     case 'custom':

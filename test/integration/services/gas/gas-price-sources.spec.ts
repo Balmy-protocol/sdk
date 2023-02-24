@@ -8,6 +8,7 @@ import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeedSupportRecord, GasSpeedP
 import { isEIP1159Compatible } from '@services/gas/utils';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
+import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
@@ -15,6 +16,7 @@ import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources
 
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(new FetchService(crossFetch));
+const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(new FetchService(crossFetch));
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
@@ -30,6 +32,7 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
   gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE });
+  gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
 
   function gasPriceSourceTest<SupportRecord extends GasSpeedSupportRecord>({
     title,
