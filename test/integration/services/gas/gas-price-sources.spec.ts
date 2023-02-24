@@ -13,9 +13,11 @@ import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
+import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(new FetchService(crossFetch));
+const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(new FetchService(crossFetch));
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(new FetchService(crossFetch));
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
@@ -32,6 +34,7 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
   gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE });
+  gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
 
   function gasPriceSourceTest<SupportRecord extends GasSpeedSupportRecord>({
