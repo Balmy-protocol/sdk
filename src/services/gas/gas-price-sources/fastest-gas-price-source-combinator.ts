@@ -1,5 +1,5 @@
 import { chainsUnion } from '@chains';
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, MergeGasSpeedSupportRecord } from '../types';
 import { combineSupportedSpeeds } from './utils';
 
@@ -18,9 +18,9 @@ export class FastestGasPriceSourceCombinator<Sources extends IGasPriceSource<any
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getGasPrice({ chainId }: { chainId: ChainId }) {
+  getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
     const sourcesInChain = this.sources.filter((source) => source.supportedChains().includes(chainId));
     if (sourcesInChain.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
-    return Promise.any(sourcesInChain.map((source) => source.getGasPrice({ chainId })));
+    return Promise.any(sourcesInChain.map((source) => source.getGasPrice({ chainId, context })));
   }
 }

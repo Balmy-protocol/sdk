@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
@@ -44,7 +44,7 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasSpeedSupport> 
     return Object.keys(CHAINS).map(Number);
   }
 
-  async getGasPrice({ chainId }: { chainId: ChainId }) {
+  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
     const key = CHAINS[chainId];
     const accept = [this.config.accept.standard, this.config.accept.fast, this.config.accept.instant].join(',');
     const response = await this.fetchService.fetch(
@@ -54,7 +54,8 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasSpeedSupport> 
         `&feeinusd=false` +
         `&accept=${accept}` +
         `&percentile=${this.config.percentile}` +
-        `&blocks=${this.config.blocks}`
+        `&blocks=${this.config.blocks}`,
+      { timeout: context?.timeout }
     );
     const { speeds }: { speeds: GasPrice[] } = await response.json();
     const [standard, fast, instant] = speeds;

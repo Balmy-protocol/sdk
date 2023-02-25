@@ -75,8 +75,7 @@ export class DefaultSourceList implements IQuoteSourceList {
     );
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
-    // TODO: Add timeout to gas service when available
-    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({ chainId: request.chainId });
+    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({ chainId: request.chainId, config: { timeout: reducedTimeout } });
     const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice({ speed: request.gasSpeed }));
 
     // Map request to source request

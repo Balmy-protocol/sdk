@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, EIP1159GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
@@ -16,8 +16,8 @@ export class PolygonGasStationGasPriceSource implements IGasPriceSource<GasSpeed
     return [Chains.POLYGON.chainId];
   }
 
-  async getGasPrice({ chainId }: { chainId: ChainId }) {
-    const response = await this.fetchService.fetch('https://gasstation-mainnet.matic.network/v2');
+  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+    const response = await this.fetchService.fetch('https://gasstation-mainnet.matic.network/v2', { timeout: context?.timeout });
     const { safeLow, standard, fast }: { safeLow: Gas; standard: Gas; fast: Gas } = await response.json();
     return {
       standard: calculateGas(safeLow),

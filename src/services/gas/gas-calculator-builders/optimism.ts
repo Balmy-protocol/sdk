@@ -4,7 +4,7 @@ import { serialize } from '@ethersproject/transactions';
 import { Chains } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
 import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
@@ -15,7 +15,7 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
     return [Chains.OPTIMISM.chainId];
   }
 
-  async build(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
+  async build(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
       getGasPrice: () => ({ gasPrice: l2GasPrice.toString() }),

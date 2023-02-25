@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, GasSpeed } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
@@ -29,8 +29,8 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeedSupport>
     ].map(({ chainId }) => chainId);
   }
 
-  async getGasPrice({ chainId }: { chainId: ChainId }) {
-    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`);
+  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`, { timeout: context?.timeout });
     const body = await response.json();
     if (typeof body.standard === 'string' || typeof body.standard === 'number') {
       return {

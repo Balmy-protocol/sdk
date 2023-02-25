@@ -1,9 +1,10 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, ChainId } from '@types';
+import { AmountOfToken, ChainId, TimeString } from '@types';
 import { BigNumberish } from 'ethers';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from './types';
+import { timeoutPromise } from '@shared/timeouts';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -23,34 +24,35 @@ export class GasService implements IGasService {
     return chainsIntersection(this.providerSource.supportedChains(), this.gasCostCalculatorBuilder.supportedChains());
   }
 
-  estimateGas({ chainId, tx }: { chainId: ChainId; tx: TransactionRequest }): Promise<AmountOfToken> {
-    return this.providerSource
+  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+    const promise = this.providerSource
       .getProvider({ chainId })
       .estimateGas(tx)
       .then((estimate) => estimate.toString());
+    return timeoutPromise(promise, config?.timeout);
   }
 
-  getQuickGasCalculator({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
-    return this.gasCostCalculatorBuilder.build({ chainId });
+  getQuickGasCalculator({ chainId, config }: { chainId: ChainId; config?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
+    return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, context: config }), config?.timeout);
   }
 
-  async getGasPrice({ chainId, options }: { chainId: ChainId; options?: { speed?: GasSpeed } }): Promise<GasPrice> {
-    const gasCalculator = await this.getQuickGasCalculator({ chainId });
-    return gasCalculator.getGasPrice({ speed: options?.speed });
+  async getGasPrice({ chainId, config }: { chainId: ChainId; config?: { speed?: GasSpeed; timeout?: TimeString } }): Promise<GasPrice> {
+    const gasCalculator = await this.getQuickGasCalculator({ chainId, config });
+    return gasCalculator.getGasPrice({ speed: config?.speed });
   }
 
   async calculateGasCost({
     chainId,
     gasEstimation,
     tx,
-    options,
+    config,
   }: {
     chainId: ChainId;
     gasEstimation: BigNumberish;
     tx?: TransactionRequest;
-    options?: { speed?: GasSpeed };
+    config?: { speed?: GasSpeed; timeout?: TimeString };
   }): Promise<GasEstimation<GasPrice>> {
-    const gasCalculator = await this.getQuickGasCalculator({ chainId });
-    return gasCalculator.calculateGasCost({ gasEstimation, tx, ...options });
+    const gasCalculator = await this.getQuickGasCalculator({ chainId, config });
+    return gasCalculator.calculateGasCost({ gasEstimation, tx, speed: config?.speed });
   }
 }

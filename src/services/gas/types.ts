@@ -1,5 +1,5 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, ChainId } from '@types';
+import { AmountOfToken, ChainId, TimeString } from '@types';
 import { UnionMerge } from '@utility-types';
 import { BigNumberish } from 'ethers';
 
@@ -17,26 +17,26 @@ export type GasSpeedPriceResult<SupportRecord extends GasSpeedSupportRecord, Gas
 
 export type IGasService = {
   supportedChains(): ChainId[];
-  estimateGas(_: { chainId: ChainId; tx: TransactionRequest }): Promise<AmountOfToken>;
-  getGasPrice(_: { chainId: ChainId; options?: { speed?: GasSpeed } }): Promise<GasPrice>;
+  estimateGas(_: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken>;
+  getGasPrice(_: { chainId: ChainId; config?: { speed?: GasSpeed; timeout?: TimeString } }): Promise<GasPrice>;
   calculateGasCost(_: {
     chainId: ChainId;
     gasEstimation: BigNumberish;
     tx?: TransactionRequest;
-    options?: { speed?: GasSpeed };
+    config?: { speed?: GasSpeed; timeout?: TimeString };
   }): Promise<GasEstimation<GasPrice>>;
-  getQuickGasCalculator(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
+  getQuickGasCalculator(_: { chainId: ChainId; config?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IGasPriceSource<SupportRecord extends GasSpeedSupportRecord> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): SupportRecord;
-  getGasPrice(_: { chainId: ChainId }): Promise<GasSpeedPriceResult<SupportRecord>>;
+  getGasPrice(_: { chainId: ChainId; context: { timeout?: TimeString } | undefined }): Promise<GasSpeedPriceResult<SupportRecord>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
   supportedChains(): ChainId[];
-  build(_: { chainId: ChainId }): Promise<IQuickGasCostCalculator>;
+  build(_: { chainId: ChainId; context: { timeout?: TimeString } | undefined }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IQuickGasCostCalculator = {

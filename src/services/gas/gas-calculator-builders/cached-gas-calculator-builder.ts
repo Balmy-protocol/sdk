@@ -1,6 +1,6 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from '../types';
-import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
 
 type ConstructorParameters = {
   wrapped: IQuickGasCostCalculatorBuilder;
@@ -9,16 +9,16 @@ type ConstructorParameters = {
     overrides?: Record<ChainId, ExpirationConfigOptions>;
   };
 };
-
+type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
-  private readonly cache: ContextlessCache<ChainId, IQuickGasCostCalculatorBuilder>;
+  private readonly cache: Cache<CacheContext, ChainId, IQuickGasCostCalculatorBuilder>;
   private readonly wrapped: IQuickGasCostCalculatorBuilder;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
   constructor({ wrapped, expiration }: ConstructorParameters) {
     this.wrapped = wrapped;
-    this.cache = new ContextlessCache<ChainId, IQuickGasCostCalculatorBuilder>({
-      calculate: ([chainId]) => this.wrapped.build({ chainId }), // We know that we will only ask for one chain at a time
+    this.cache = new Cache<CacheContext, ChainId, IQuickGasCostCalculatorBuilder>({
+      calculate: (context, [chainId]) => this.wrapped.build({ chainId, context }), // We know that we will only ask for one chain at a time
       toStorableKey: (chainId) => `${chainId}`,
       expirationConfig: expiration.default,
     });
@@ -29,12 +29,14 @@ export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilde
     return this.wrapped.supportedChains();
   }
 
-  async build({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
+  async build({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
     const expirationConfig = this.expirationOverrides[chainId];
     const calculator = await this.cache.getOrCalculateSingle({
       key: chainId,
+      context,
       expirationConfig,
+      timeout: context?.timeout,
     });
-    return calculator!.build({ chainId });
+    return calculator!.build({ chainId, context });
   }
 }

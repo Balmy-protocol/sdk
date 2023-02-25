@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
@@ -23,13 +23,13 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasSpeedSupport>
     return Object.keys(CHAINS).map(Number);
   }
 
-  async getGasPrice({ chainId }: { chainId: ChainId }) {
+  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
     let url = `https://api.${CHAINS[chainId]}/api?module=gastracker&action=gasoracle`;
     if (this.apiKey) {
       url += `&apikey=${this.apiKey} `;
     }
 
-    const response = await this.fetchService.fetch(url);
+    const response = await this.fetchService.fetch(url, { timeout: context?.timeout });
     const {
       result: { SafeGasPrice, ProposeGasPrice, FastGasPrice, suggestBaseFee },
     }: { result: { SafeGasPrice: string; ProposeGasPrice: string; FastGasPrice: string; suggestBaseFee?: string } } = await response.json();

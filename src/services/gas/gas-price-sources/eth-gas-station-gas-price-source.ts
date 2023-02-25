@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { IGasPriceSource, EIP1159GasPrice } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
@@ -16,8 +16,8 @@ export class EthGasStationGasPriceSource implements IGasPriceSource<GasSpeedSupp
     return [Chains.ETHEREUM.chainId];
   }
 
-  async getGasPrice({ chainId }: { chainId: ChainId }) {
-    const response = await this.fetchService.fetch('https://api.ethgasstation.info/api/fee-estimate');
+  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+    const response = await this.fetchService.fetch('https://api.ethgasstation.info/api/fee-estimate', { timeout: context?.timeout });
     const {
       nextBaseFee,
       priorityFee: { standard, fast, instant },

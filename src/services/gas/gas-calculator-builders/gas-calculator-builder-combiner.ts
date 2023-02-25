@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { ChainId, TimeString } from '@types';
 import { chainsUnion } from '@chains';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from '../types';
 
@@ -23,8 +23,8 @@ export class GasCalculatorBuilderCombiner implements IQuickGasCostCalculatorBuil
     ]);
   }
 
-  build({ chainId }: { chainId: ChainId }): Promise<IQuickGasCostCalculator> {
+  build({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
     const builder = this.calculatorBuilderOverrides[chainId] ?? this.defaultCalculatorBuilder;
-    return builder.build({ chainId });
+    return builder.build({ chainId, context });
   }
 }
