@@ -54,7 +54,7 @@ describe('Gas Price Sources', () => {
             const gasPrice = await source.getGasPrice({ chainId });
             for (const speed of AVAILABLE_GAS_SPEEDS) {
               if (isSpeedSupported(speed, supportedSpeeds)) {
-                expect(isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
+                expect(isGasPriceIsSetForSpeed(gasPrice, speed), `${speed} was not set in ${JSON.stringify(gasPrice)}`).to.be.true;
               } else {
                 expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               }
