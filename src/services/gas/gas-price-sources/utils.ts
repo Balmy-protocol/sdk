@@ -34,5 +34,5 @@ export function keepSourcesWithMatchingSupportOnChain<Sources extends IGasPriceS
 ): IGasPriceSource<any>[] {
   const combinedSupport = combineSupportedSpeeds(sources)[chainId] ?? [];
   if (combinedSupport.length === 0) return [];
-  return sources.filter((source) => source.supportedSpeeds()[chainId].length === combinedSupport[chainId].length);
+  return sources.filter((source) => source.supportedSpeeds()[chainId]?.length ?? 0 === combinedSupport[chainId].length);
 }
