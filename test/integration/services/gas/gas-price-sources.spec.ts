@@ -4,7 +4,7 @@ import crossFetch from 'cross-fetch';
 import { getChainByKey } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeedSupportRecord, GasSpeedPriceResult } from '@services/gas/types';
+import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeed, GasPriceResult } from '@services/gas/types';
 import { isEIP1159Compatible } from '@services/gas/utils';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
@@ -37,42 +37,49 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
 
-  function gasPriceSourceTest<SupportRecord extends GasSpeedSupportRecord>({
+  function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({
     title,
     source,
   }: {
     title: string;
-    source: IGasPriceSource<SupportRecord>;
+    source: IGasPriceSource<SupportedGasSpeed>;
   }) {
     describe(title, () => {
-      for (const chainId of source.supportedChains()) {
+      for (const chainIdString in source.supportedSpeeds()) {
+        const chainId = Number(chainIdString);
         const chain = getChainByKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test.concurrent(`Gas prices are valid values`, async () => {
+            const supportedSpeeds = source.supportedSpeeds()[chainId];
             const gasPrice = await source.getGasPrice({ chainId });
-            for (const speed in source.supportedSpeeds()) {
-              const support = source.supportedSpeeds()[speed];
-              if (support === 'present') {
+            for (const speed of AVAILABLE_GAS_SPEEDS) {
+              if (isSpeedSupported(speed, supportedSpeeds)) {
                 expect(isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               } else {
                 expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               }
             }
-            const unsupportedGasSpeeds = AVAILABLE_GAS_SPEEDS.filter((speed) => !(speed in source.supportedSpeeds()));
+            const unsupportedGasSpeeds = AVAILABLE_GAS_SPEEDS.filter((speed) => !isSpeedSupported(speed, supportedSpeeds));
             for (const speed of unsupportedGasSpeeds) {
               expect(gasPrice).to.not.have.property(speed);
             }
           });
         });
-        const isGasPriceIsSetForSpeed = (gasPrice: GasSpeedPriceResult<SupportRecord>, speed: keyof SupportRecord) => {
+        function isGasPriceIsSetForSpeed(gasPrice: GasPriceResult<SupportedGasSpeed>, speed: string) {
           if (isEIP1159Compatible(gasPrice)) {
             return (
-              typeof (gasPrice as any)[speed].maxFeePerGas === 'string' || typeof (gasPrice as any)[speed].maxPriorityFeePerGas === 'string'
+              typeof (gasPrice as any)[speed]?.maxFeePerGas === 'string' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'string'
             );
           } else {
-            return typeof (gasPrice as any)[speed].gasPrice === 'string';
+            return typeof (gasPrice as any)[speed]?.gasPrice === 'string';
           }
-        };
+        }
+        function isSpeedSupported(speed: GasSpeed, supported: ('standard' | SupportedGasSpeed)[]): speed is SupportedGasSpeed {
+          if (supported.includes(speed as SupportedGasSpeed)) {
+            return true;
+          }
+          return false;
+        }
       }
     });
   }

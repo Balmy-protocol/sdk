@@ -1,14 +1,19 @@
-import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, MergeGasSpeedSupportRecord } from '../types';
+import { ChainId } from '@types';
+import { IGasPriceSource, MergeGasSpeedsFromSources } from '../types';
 
-export function combineSupportedSpeeds<Sources extends IGasPriceSource<any>[] | []>(sources: Sources): MergeGasSpeedSupportRecord<Sources> {
-  const result = sources[0].supportedSpeeds();
-  for (let i = 1; i < sources.length; i++) {
-    const sourceSpeeds = sources[i].supportedSpeeds();
-    for (const speed of AVAILABLE_GAS_SPEEDS) {
-      if (result[speed] !== sourceSpeeds[speed]) {
-        result[speed] = 'optional';
+export function combineSupportedSpeeds<Sources extends IGasPriceSource<any>[] | []>(
+  sources: Sources
+): Record<ChainId, MergeGasSpeedsFromSources<Sources>[]> {
+  const merged: Record<ChainId, Set<MergeGasSpeedsFromSources<Sources>>> = {};
+  for (const source of sources) {
+    const support = source.supportedSpeeds();
+    for (const chainId in support) {
+      if (!(chainId in merged)) merged[chainId] = new Set();
+      for (const speed of support[chainId]) {
+        merged[chainId].add(speed);
       }
     }
   }
-  return result;
+  const entries = Object.entries(merged).map<[ChainId, MergeGasSpeedsFromSources<Sources>[]]>(([chainId, set]) => [Number(chainId), [...set]]);
+  return Object.fromEntries(entries);
 }

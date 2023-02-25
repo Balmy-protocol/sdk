@@ -7,7 +7,7 @@ export class GenericGasCalculatorBuilder implements IQuickGasCostCalculatorBuild
   constructor(private readonly gasPriceSource: IGasPriceSource<any>) {}
 
   supportedChains(): ChainId[] {
-    return this.gasPriceSource.supportedChains();
+    return Object.keys(this.gasPriceSource.supportedSpeeds()).map(Number);
   }
 
   async build({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
