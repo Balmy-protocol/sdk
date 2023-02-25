@@ -1,5 +1,5 @@
 import { ChainId, TimeString } from '@types';
-import { IGasPriceSource, GasSpeed, GasPrice } from '@services/gas/types';
+import { IGasPriceSource, GasPrice, GasPriceResult } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
@@ -28,20 +28,16 @@ const DEFAULT_CONFIG: Config = {
     instant: 95,
   },
 };
-type GasSpeedSupport = { standard: 'present'; fast: 'present'; instant: 'present' };
-export class OwlracleGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
+export class OwlracleGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
   private readonly config: Config;
 
   constructor(private readonly fetchService: IFetchService, private readonly apiKey: string, config?: Partial<Config>) {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  supportedSpeeds(): GasSpeedSupport {
-    return { standard: 'present', fast: 'present', instant: 'present' };
-  }
-
-  supportedChains(): ChainId[] {
-    return Object.keys(CHAINS).map(Number);
+  supportedSpeeds() {
+    const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
+    return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), speeds]));
   }
 
   async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
@@ -63,7 +59,7 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasSpeedSupport> 
       standard: filterOutExtraData(standard),
       fast: filterOutExtraData(fast),
       instant: filterOutExtraData(instant),
-    };
+    } as GasPriceResult<'standard' | 'fast' | 'instant'>;
   }
 }
 

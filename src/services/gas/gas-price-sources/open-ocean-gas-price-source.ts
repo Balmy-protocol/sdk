@@ -3,30 +3,28 @@ import { IGasPriceSource, GasSpeed } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
-type GasSpeedSupport = { standard: 'present'; fast: 'present'; instant: 'present' };
-export class OpenOceanGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
+const SUPPORTED_CHAINS = [
+  Chains.ETHEREUM,
+  Chains.POLYGON,
+  Chains.BNB_CHAIN,
+  Chains.FANTOM,
+  Chains.AVALANCHE,
+  Chains.HECO,
+  Chains.OKC,
+  Chains.GNOSIS,
+  Chains.ARBITRUM,
+  Chains.OPTIMISM,
+  Chains.CRONOS,
+  Chains.MOONRIVER,
+  Chains.BOBA,
+];
+
+export class OpenOceanGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
   constructor(private readonly fetchService: IFetchService) {}
 
-  supportedSpeeds(): GasSpeedSupport {
-    return { standard: 'present', fast: 'present', instant: 'present' };
-  }
-
-  supportedChains(): ChainId[] {
-    return [
-      Chains.ETHEREUM,
-      Chains.POLYGON,
-      Chains.BNB_CHAIN,
-      Chains.FANTOM,
-      Chains.AVALANCHE,
-      Chains.HECO,
-      Chains.OKC,
-      Chains.GNOSIS,
-      Chains.ARBITRUM,
-      Chains.OPTIMISM,
-      Chains.CRONOS,
-      Chains.MOONRIVER,
-      Chains.BOBA,
-    ].map(({ chainId }) => chainId);
+  supportedSpeeds() {
+    const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
+    return Object.fromEntries(SUPPORTED_CHAINS.map(({ chainId }) => [Number(chainId), speeds]));
   }
 
   async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {

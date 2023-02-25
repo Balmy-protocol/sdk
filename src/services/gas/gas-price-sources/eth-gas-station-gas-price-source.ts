@@ -4,16 +4,11 @@ import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 import { utils } from 'ethers';
 
-type GasSpeedSupport = { standard: 'present'; fast: 'present'; instant: 'present' };
-export class EthGasStationGasPriceSource implements IGasPriceSource<GasSpeedSupport> {
+export class EthGasStationGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
   constructor(private readonly fetchService: IFetchService) {}
 
-  supportedSpeeds(): GasSpeedSupport {
-    return { standard: 'present', fast: 'present', instant: 'present' };
-  }
-
-  supportedChains(): ChainId[] {
-    return [Chains.ETHEREUM.chainId];
+  supportedSpeeds(): Record<ChainId, ('standard' | 'fast' | 'instant')[]> {
+    return { [Chains.ETHEREUM.chainId]: ['standard', 'fast', 'instant'] };
   }
 
   async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {

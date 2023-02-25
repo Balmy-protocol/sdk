@@ -5,8 +5,6 @@ export {
   EIP1159GasPrice,
   GasSpeed,
   GasEstimation,
-  GasSpeedSupportRecord,
-  GasSpeedPriceResult,
   IGasService,
   IGasPriceSource,
   IQuickGasCostCalculator,
