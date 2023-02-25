@@ -14,7 +14,7 @@ const CHAINS = {
 export class EtherscanGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
   constructor(private readonly fetchService: IFetchService, private readonly apiKey?: string) {}
 
-  supportedSpeeds(): Record<ChainId, ('standard' | 'fast' | 'instant')[]> {
+  supportedSpeeds() {
     const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
     return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), speeds]));
   }

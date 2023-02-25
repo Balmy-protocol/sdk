@@ -22,7 +22,7 @@ const SUPPORTED_CHAINS = [
 export class OpenOceanGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
   constructor(private readonly fetchService: IFetchService) {}
 
-  supportedSpeeds(): Record<ChainId, ('standard' | 'fast' | 'instant')[]> {
+  supportedSpeeds() {
     const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
     return Object.fromEntries(SUPPORTED_CHAINS.map(({ chainId }) => [Number(chainId), speeds]));
   }

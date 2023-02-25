@@ -35,7 +35,7 @@ export class OwlracleGasPriceSource implements IGasPriceSource<'standard' | 'fas
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  supportedSpeeds(): Record<ChainId, ('standard' | 'fast' | 'instant')[]> {
+  supportedSpeeds() {
     const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
     return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), speeds]));
   }

@@ -1,19 +1,38 @@
+import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
 import { IGasPriceSource, MergeGasSpeedsFromSources } from '../types';
 
-export function combineSupportedSpeeds<Sources extends IGasPriceSource<any>[] | []>(
+export function combineSupportedSpeeds<Sources extends IGasPriceSource<any>[] | []>(sources: Sources) {
+  const allChains = chainsUnion(sources.map((source) => Object.keys(source.supportedSpeeds()).map(Number)));
+  const result: Record<ChainId, MergeGasSpeedsFromSources<Sources>[]> = {};
+  for (const chainId of allChains) {
+    result[chainId] = combineSpeedsInChain(chainId, sources);
+  }
+  return result;
+}
+
+function combineSpeedsInChain<Sources extends IGasPriceSource<any>[] | []>(
+  chainId: ChainId,
   sources: Sources
-): Record<ChainId, MergeGasSpeedsFromSources<Sources>[]> {
-  const merged: Record<ChainId, Set<MergeGasSpeedsFromSources<Sources>>> = {};
+): MergeGasSpeedsFromSources<Sources>[] {
+  const set: Set<MergeGasSpeedsFromSources<Sources>> = new Set();
   for (const source of sources) {
     const support = source.supportedSpeeds();
-    for (const chainId in support) {
-      if (!(chainId in merged)) merged[chainId] = new Set();
-      for (const speed of support[chainId]) {
-        merged[chainId].add(speed);
-      }
+    for (const speed of support[chainId] ?? []) {
+      set.add(speed);
     }
   }
-  const entries = Object.entries(merged).map<[ChainId, MergeGasSpeedsFromSources<Sources>[]]>(([chainId, set]) => [Number(chainId), [...set]]);
-  return Object.fromEntries(entries);
+  return [...set];
+}
+
+// When we combine sources, we might end up in a situation where one of the sources in a chain supports less speeds than the rest
+// So when this happens, the result of this particular source will not match the speeds reported by the combination of all of them
+// So this function allows us to filter out those sources, and only keep the ones that fully match the reported support
+export function keepSourcesWithMatchingSupportOnChain<Sources extends IGasPriceSource<any>[] | []>(
+  chainId: ChainId,
+  sources: Sources
+): IGasPriceSource<any>[] {
+  const combinedSupport = combineSupportedSpeeds(sources)[chainId] ?? [];
+  if (combinedSupport.length === 0) return [];
+  return sources.filter((source) => source.supportedSpeeds()[chainId].length === combinedSupport[chainId].length);
 }

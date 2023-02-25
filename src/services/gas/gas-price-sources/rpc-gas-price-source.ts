@@ -7,7 +7,7 @@ import { timeoutPromise } from '@shared/timeouts';
 export class RPCGasPriceSource implements IGasPriceSource<'standard'> {
   constructor(private readonly providerSource: IProviderSource) {}
 
-  supportedSpeeds(): Record<ChainId, 'standard'[]> {
+  supportedSpeeds() {
     const speeds: 'standard'[] = ['standard'];
     return Object.fromEntries(this.providerSource.supportedChains().map((chainId) => [Number(chainId), speeds]));
   }
