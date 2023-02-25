@@ -31,12 +31,12 @@ export type IGasService = {
 export type IGasPriceSource<SupportRecord extends GasSpeedSupportRecord> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): SupportRecord;
-  getGasPrice(_: { chainId: ChainId; context: { timeout?: TimeString } | undefined }): Promise<GasSpeedPriceResult<SupportRecord>>;
+  getGasPrice(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<GasSpeedPriceResult<SupportRecord>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
   supportedChains(): ChainId[];
-  build(_: { chainId: ChainId; context: { timeout?: TimeString } | undefined }): Promise<IQuickGasCostCalculator>;
+  build(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator>;
 };
 
 export type IQuickGasCostCalculator = {
