@@ -21,8 +21,8 @@ export type IGasService = {
 };
 
 export type IGasPriceSource<SupportedGasSpeeds extends GasSpeed> = {
-  supportedSpeeds(): Record<ChainId, (SupportedGasSpeeds | 'standard')[]>;
-  getGasPrice(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<GasPriceResult<SupportedGasSpeeds | 'standard'>>;
+  supportedSpeeds(): Record<ChainId, SupportedGasSpeeds[]>;
+  getGasPrice(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<GasPriceResult<SupportedGasSpeeds>>;
 };
 
 export type IQuickGasCostCalculatorBuilder = {
@@ -38,15 +38,10 @@ export type IQuickGasCostCalculator = {
 export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGas: AmountOfToken };
 export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
-export type MergeGasSpeedsFromSources<T extends IGasPriceSource<any>[] | []> = (
-  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number]
-  | 'standard'
-) &
+export type MergeGasSpeedsFromSources<T extends IGasPriceSource<any>[] | []> =
+  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number] &
   GasSpeed;
 export type GasPriceResult<SupportedGasSpeed extends GasSpeed> =
   | GasPriceForSpeed<SupportedGasSpeed, EIP1159GasPrice>
   | GasPriceForSpeed<SupportedGasSpeed, LegacyGasPrice>;
-export type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<
-  SupportedGasSpeed | 'standard',
-  GasPriceVersion
->;
+export type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<SupportedGasSpeed, GasPriceVersion>;

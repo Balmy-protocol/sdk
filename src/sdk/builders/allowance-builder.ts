@@ -9,21 +9,17 @@ import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/a
 
 export type AllowanceSourceInput =
   | { type: 'rpc-multicall' }
+  | { type: 'cached'; underlyingSource: AllowanceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IAllowanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' };
-type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
-export type AllowanceSourceConfigInput = { caching?: CachingConfig };
-export type BuildAllowancesParams = { source: AllowanceSourceInput; config?: AllowanceSourceConfigInput };
+export type BuildAllowancesParams = { source: AllowanceSourceInput };
 
 export function buildAllowanceService(
   params: BuildAllowancesParams | undefined,
   fetchService: IFetchService,
   multicallService: IMulticallService
 ): IAllowanceService {
-  let source = buildSource(params?.source, { fetchService, multicallService });
-  if (params?.config?.caching?.useCaching) {
-    source = new CachedAllowanceSource(source, params.config.caching.expiration);
-  }
+  const source = buildSource(params?.source, { fetchService, multicallService });
   return new AllowanceService(source);
 }
 
@@ -35,6 +31,9 @@ function buildSource(
     case undefined:
     case 'rpc-multicall':
       return new RPCAllowanceSource(multicallService);
+    case 'cached':
+      const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
+      return new CachedAllowanceSource(underlying, source.expiration);
     case 'custom':
       return source.instance;
     case 'alchemy':

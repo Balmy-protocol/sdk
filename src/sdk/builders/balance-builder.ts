@@ -11,12 +11,11 @@ import { CachedBalanceSource } from '@services/balances/balance-sources/cached-b
 
 export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
+  | { type: 'cached'; underlyingSource: BalanceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
   | { type: 'moralis'; key: string };
-type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
-export type BalanceSourceConfigInput = { caching?: CachingConfig };
-export type BuildBalancesParams = { source: BalanceSourceInput; config?: BalanceSourceConfigInput };
+export type BuildBalancesParams = { source: BalanceSourceInput };
 
 export function buildBalanceService(
   params: BuildBalancesParams | undefined,
@@ -24,10 +23,7 @@ export function buildBalanceService(
   providerSource: IProviderSource,
   multicallService: IMulticallService
 ): IBalanceService {
-  let source = buildSource(params?.source, { fetchService, providerSource, multicallService });
-  if (params?.config?.caching?.useCaching) {
-    source = new CachedBalanceSource(source, params.config.caching.expiration);
-  }
+  const source = buildSource(params?.source, { fetchService, providerSource, multicallService });
   return new BalanceService(source);
 }
 
@@ -43,6 +39,9 @@ function buildSource(
     case undefined:
     case 'rpc-multicall':
       return new RPCBalanceSource(providerSource, multicallService);
+    case 'cached':
+      const underlying = buildSource(source.underlyingSource, { fetchService, providerSource, multicallService });
+      return new CachedBalanceSource(underlying, source.expiration);
     case 'custom':
       return source.instance;
     case 'alchemy':

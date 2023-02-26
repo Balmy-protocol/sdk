@@ -20,21 +20,27 @@ import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 
+// TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
+// builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
+// quite a lot of things
+type CachelessInput = Exclude<GasSourceInput, { type: 'cached' }>;
+
 export type GasSourceInput =
   | { type: 'open-ocean' }
   | { type: 'rpc' }
   | { type: 'eth-gas-station' }
   | { type: 'polygon-gas-station' }
+  | {
+      type: 'cached';
+      underlyingSource: CachelessInput;
+      expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
+    }
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; key?: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
-  | { type: 'fastest'; sources: ArrayTwoOrMore<GasSourceInput> }
-  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<GasSourceInput> };
-type CachingConfig =
-  | { useCaching: false }
-  | { useCaching: true; expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> } };
-export type GasSourceConfigInput = { caching?: CachingConfig };
-export type BuildGasParams = { source: GasSourceInput; config?: GasSourceConfigInput };
+  | { type: 'fastest'; sources: ArrayTwoOrMore<CachelessInput> }
+  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<CachelessInput> };
+export type BuildGasParams = { source: GasSourceInput };
 
 export function buildGasService(
   params: BuildGasParams | undefined,
@@ -42,16 +48,15 @@ export function buildGasService(
   providerSource: IProviderSource,
   multicallService: IMulticallService
 ) {
-  const openOcean = new OpenOceanGasPriceSource(fetchService);
-  const rpc = new RPCGasPriceSource(providerSource);
-  const source = buildSource(params?.source, { fetchService, openOcean, rpc });
+  const sourceInput: CachelessInput | undefined = params?.source?.type === 'cached' ? params.source.underlyingSource : params?.source;
+  const source = buildSource(sourceInput, { fetchService, multicallService, providerSource });
 
   let gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService });
-  if (params?.config?.caching?.useCaching) {
+  if (params?.source?.type === 'cached') {
     // Add caching if necessary
     gasCostCalculatorBuilder = new CachedGasCalculatorBuilder({
       wrapped: gasCostCalculatorBuilder,
-      expiration: { default: params.config.caching.expiration, overrides: params.config.caching.expiration.overrides },
+      expiration: { default: params.source.expiration, overrides: params.source.expiration.overrides },
     });
   }
 
@@ -59,16 +64,22 @@ export function buildGasService(
 }
 
 function buildSource(
-  source: GasSourceInput | undefined,
-  { openOcean, rpc, fetchService }: { openOcean: OpenOceanGasPriceSource; rpc: RPCGasPriceSource; fetchService: IFetchService }
+  source: CachelessInput | undefined,
+  {
+    providerSource,
+    multicallService,
+    fetchService,
+  }: { providerSource: IProviderSource; multicallService: IMulticallService; fetchService: IFetchService }
 ): IGasPriceSource<any> {
   switch (source?.type) {
     case undefined:
+      const openOcean = new OpenOceanGasPriceSource(fetchService);
+      const rpc = new RPCGasPriceSource(providerSource);
       return new PrioritizedGasPriceSourceCombinator([openOcean, rpc]);
     case 'open-ocean':
-      return openOcean;
+      return new OpenOceanGasPriceSource(fetchService);
     case 'rpc':
-      return rpc;
+      return new RPCGasPriceSource(providerSource);
     case 'eth-gas-station':
       return new EthGasStationGasPriceSource(fetchService);
     case 'polygon-gas-station':
@@ -80,9 +91,13 @@ function buildSource(
     case 'custom':
       return source.instance;
     case 'fastest':
-      return new FastestGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { fetchService, openOcean, rpc })));
+      return new FastestGasPriceSourceCombinator(
+        source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
+      );
     case 'only-first-source-that-supports-chain':
-      return new PrioritizedGasPriceSourceCombinator(source.sources.map((source) => buildSource(source, { fetchService, openOcean, rpc })));
+      return new PrioritizedGasPriceSourceCombinator(
+        source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
+      );
   }
 }
 
