@@ -2,7 +2,7 @@ import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { addQuoteSlippage, failed } from './utils';
 
 const ZRX_API: Record<ChainId, string> = {
@@ -27,8 +27,9 @@ export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   },
   logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
 };
+type ZRXConfig = { apiKey?: string };
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
-export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
+export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig> {
   getMetadata() {
     return ZRX_METADATA;
   }
@@ -57,7 +58,12 @@ export class ZRXQuoteSource extends NoCustomConfigQuoteSource<ZRXSupport> {
       url += `&buyAmount=${order.buyAmount.toString()}`;
     }
 
-    const response = await fetchService.fetch(url, { timeout });
+    const headers: HeadersInit = {};
+    if (this.customConfig.apiKey) {
+      headers['0x-api-key'] = this.customConfig.apiKey;
+    }
+
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(chain, sellToken, buyToken);
     }
