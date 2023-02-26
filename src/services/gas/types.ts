@@ -39,8 +39,7 @@ export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGa
 export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
 export type MergeGasSpeedsFromSources<T extends IGasPriceSource<any>[] | []> =
-  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number] &
-  GasSpeed;
+  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number] & GasSpeed;
 export type GasPriceResult<SupportedGasSpeed extends GasSpeed> =
   | GasPriceForSpeed<SupportedGasSpeed, EIP1159GasPrice>
   | GasPriceForSpeed<SupportedGasSpeed, LegacyGasPrice>;
