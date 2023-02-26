@@ -42,7 +42,7 @@ export class DefaultSourceList implements IQuoteSourceList {
     this.fetchService = fetchService;
     this.gasService = gasService;
     this.tokenService = tokenService;
-    this.sources = addForcedTimeout(buildSources(config));
+    this.sources = buildSources(config);
   }
 
   supportedSources() {
@@ -127,7 +127,7 @@ export class DefaultSourceList implements IQuoteSourceList {
     // Cast so that even if the source doesn't support it, everything else types ok
     return sources.map(({ sourceId, source }) => ({
       sourceId,
-      source: source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>,
+      source: forcedTimeoutWrapper(source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>),
     }));
   }
 
@@ -207,10 +207,6 @@ function toAmountOfToken(token: BaseTokenMetadata, price: number | undefined, am
     amountInUnits: utils.formatUnits(amount, token.decimals),
     amountInUSD,
   };
-}
-
-function addForcedTimeout(sources: Record<SourceId, QuoteSource<QuoteSourceSupport>>) {
-  return Object.fromEntries(Object.entries(sources).map(([id, source]) => [id, forcedTimeoutWrapper(source)]));
 }
 
 function mapOrderToBigNumber(request: QuoteRequest): BuyOrder | SellOrder {
