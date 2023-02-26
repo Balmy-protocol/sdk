@@ -12,12 +12,11 @@ import { TokenService } from '@services/tokens/token-service';
 export type TokenSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
+  | { type: 'cached'; underlyingSource: TokenSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: ITokenSource<object> }
   | { type: 'combine-when-possible'; sources: TokenSourceInput[] };
 
-type CachingConfig = { useCaching: false } | { useCaching: true; expiration: ExpirationConfigOptions };
-export type TokenSourceConfigInput = { caching?: CachingConfig };
-export type BuildTokenParams = { source: TokenSourceInput; config?: TokenSourceConfigInput };
+export type BuildTokenParams = { source: TokenSourceInput };
 export type CalculateTokenFromSourceParams<T extends BuildTokenParams | undefined> = T extends BuildTokenParams
   ? CalculateTokenFromSource<T['source']>
   : CalculateTokenFromSource<undefined>;
@@ -43,30 +42,29 @@ export function buildTokenService<T extends BuildTokenParams | undefined>(
   fetchService: IFetchService,
   multicallService: IMulticallService
 ): ITokenService<CalculateTokenFromSourceParams<T>> {
-  const defiLlama = new DefiLlamaTokenSource(fetchService);
-  const rpc = new RPCTokenSource(multicallService);
-
-  let source = buildSource(params?.source, { defiLlama, rpc });
-  if (params?.config?.caching?.useCaching) {
-    source = new CachedTokenSource(source, params.config.caching.expiration);
-  }
+  const source = buildSource(params?.source, { fetchService, multicallService });
   return new TokenService(source as unknown as ITokenSource<CalculateTokenFromSourceParams<T>>);
 }
 
 function buildSource<T extends TokenSourceInput>(
   source: T | undefined,
-  { defiLlama, rpc }: { defiLlama: DefiLlamaTokenSource; rpc: RPCTokenSource }
+  { fetchService, multicallService }: { fetchService: IFetchService; multicallService: IMulticallService }
 ): ITokenSource<CalculateTokenFromSource<T>> {
   switch (source?.type) {
     case undefined:
+      const defiLlama = new DefiLlamaTokenSource(fetchService);
+      const rpc = new RPCTokenSource(multicallService);
       return new FallbackTokenSource([defiLlama, rpc]) as any;
     case 'defi-llama':
-      return defiLlama as any;
+      return new DefiLlamaTokenSource(fetchService) as any;
+    case 'cached':
+      const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
+      return new CachedTokenSource(underlying, source.expiration) as any;
     case 'rpc-multicall':
-      return rpc as any;
+      return new RPCTokenSource(multicallService) as any;
     case 'custom':
       return source.instance as any;
     case 'combine-when-possible':
-      return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { defiLlama, rpc }))) as any;
+      return new FallbackTokenSource(source.sources.map((source) => buildSource(source, { fetchService, multicallService }))) as any;
   }
 }
