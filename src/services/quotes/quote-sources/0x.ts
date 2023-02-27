@@ -29,7 +29,7 @@ export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
 };
 type ZRXConfig = { apiKey?: string };
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
-export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig> {
+export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig | undefined> {
   getMetadata() {
     return ZRX_METADATA;
   }
@@ -59,7 +59,7 @@ export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig> {
     }
 
     const headers: HeadersInit = {};
-    if (this.customConfig.apiKey) {
+    if (this.customConfig?.apiKey) {
       headers['0x-api-key'] = this.customConfig.apiKey;
     }
 
