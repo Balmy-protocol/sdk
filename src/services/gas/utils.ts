@@ -1,4 +1,4 @@
-import { EIP1159GasPrice, GasSpeed, GasPriceResult, GasPriceForSpeed, GasPrice } from './types';
+import { EIP1159GasPrice, GasSpeed, GasPriceResult, GasPriceForSpeed } from './types';
 
 export function isEIP1159Compatible<SupportedGasSpeed extends GasSpeed>(
   gasPriceForSpeed: GasPriceResult<SupportedGasSpeed>
