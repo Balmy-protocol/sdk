@@ -30,14 +30,14 @@ jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
 
 describe('Gas Price Sources', () => {
-  // gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
-  // gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
-  // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
-  // gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
-  // gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
-  // gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE });
-  // gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
-  // gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
+  gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
+  gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
+  gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
+  gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
+  gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
+  gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE });
+  gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
+  gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
 
   function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({
