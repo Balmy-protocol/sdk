@@ -11,14 +11,14 @@ type ConstructorParameters = {
 };
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
-  private readonly cache: Cache<CacheContext, ChainId, IQuickGasCostCalculatorBuilder>;
+  private readonly cache: Cache<CacheContext, ChainId, IQuickGasCostCalculator>;
   private readonly wrapped: IQuickGasCostCalculatorBuilder;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
   constructor({ wrapped, expiration }: ConstructorParameters) {
     this.wrapped = wrapped;
-    this.cache = new Cache<CacheContext, ChainId, IQuickGasCostCalculatorBuilder>({
-      calculate: (context, [chainId]) => this.wrapped.build({ chainId, context }), // We know that we will only ask for one chain at a time
+    this.cache = new Cache<CacheContext, ChainId, IQuickGasCostCalculator>({
+      calculate: (context, [chainId]) => this.wrapped.build({ chainId, context }).then((calculator) => ({ [chainId]: calculator })), // We know that we will only ask for one chain at a time
       toStorableKey: (chainId) => `${chainId}`,
       expirationConfig: expiration.default,
     });
@@ -37,6 +37,6 @@ export class CachedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilde
       expirationConfig,
       timeout: context?.timeout,
     });
-    return calculator!.build({ chainId, context });
+    return calculator!;
   }
 }

@@ -38,8 +38,8 @@ export type GasSourceInput =
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; key?: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
-  | { type: 'fastest'; sources: (CachelessInput | 'public-sources')[] }
-  | { type: 'aggregate'; sources: (CachelessInput | 'public-sources')[]; by: GasPriceAggregationMethod }
+  | { type: 'fastest'; sources: 'public-sources' | (CachelessInput | 'public-sources')[] }
+  | { type: 'aggregate'; sources: 'public-sources' | (CachelessInput | 'public-sources')[]; by: GasPriceAggregationMethod }
   | { type: 'only-first-source-that-supports-chain'; sources: CachelessInput[] };
 export type BuildGasParams = { source: GasSourceInput };
 
@@ -74,7 +74,7 @@ function buildSource(
 ): IGasPriceSource<any> {
   switch (source?.type) {
     case undefined:
-      return new AggregatorGasPriceSource(calculateSources(['public-sources'], { fetchService, multicallService, providerSource }), 'mean');
+      return new AggregatorGasPriceSource(calculateSources('public-sources', { fetchService, multicallService, providerSource }), 'mean');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'rpc':
@@ -101,7 +101,7 @@ function buildSource(
 }
 
 function calculateSources(
-  sources: (CachelessInput | 'public-sources')[],
+  sources: 'public-sources' | (CachelessInput | 'public-sources')[],
   {
     providerSource,
     multicallService,
@@ -112,14 +112,19 @@ function calculateSources(
   const rpc = new RPCGasPriceSource(providerSource);
   const ethGasStation = new EthGasStationGasPriceSource(fetchService);
   const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
-  const publicSources = [openOcean, rpc, ethGasStation, polygonGasStation];
+  const etherscan = new EtherscanGasPriceSource(fetchService);
+  const publicSources = [openOcean, rpc, ethGasStation, polygonGasStation, etherscan];
 
   const result: IGasPriceSource<any>[] = [];
-  for (const source of sources) {
-    if (source === 'public-sources') {
-      result.push(...publicSources);
-    } else {
-      result.push(buildSource(source, { fetchService, multicallService, providerSource }));
+  if (sources === 'public-sources') {
+    result.push(...publicSources);
+  } else {
+    for (const source of sources) {
+      if (source === 'public-sources') {
+        result.push(...publicSources);
+      } else {
+        result.push(buildSource(source, { fetchService, multicallService, providerSource }));
+      }
     }
   }
   return result;
