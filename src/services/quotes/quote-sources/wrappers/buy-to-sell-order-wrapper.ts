@@ -51,6 +51,8 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
     order: { type: 'sell', sellAmount: request.order.buyAmount },
     sellToken: request.buyToken,
     buyToken: request.sellToken,
+    sellTokenData: request.buyTokenData,
+    buyTokenData: request.sellTokenData,
   } as SourceQuoteRequest<Support>;
   const testSellQuote = await quote(sellOrder);
   // Note: there is room for improvement here. We could take into account the potential slippage to try to guarantee the buy price, or

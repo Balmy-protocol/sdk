@@ -10,7 +10,7 @@ export function forcedTimeoutWrapper<Support extends QuoteSourceSupport, CustomQ
     getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => source.getMetadata(),
     quote: (components, request) => {
-      const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.chain.name}} for source ${source.getMetadata().name}`;
+      const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.chain.name} for source ${source.getMetadata().name}`;
       const reduced = reduceTimeout(request.config.timeout, '100'); // We reduce the timeout a little bit, so the list doesn't get timeouted
       return timeoutPromise(source.quote(components, request), reduced, { description });
     },
