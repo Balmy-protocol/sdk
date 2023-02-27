@@ -1,5 +1,4 @@
 import { ChainId } from '@types';
-import { ArrayTwoOrMore } from '@utility-types';
 import { Chains } from '@chains';
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
@@ -19,6 +18,7 @@ import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle
 import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
+import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 
 // TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
 // builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
@@ -38,8 +38,9 @@ export type GasSourceInput =
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; key?: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
-  | { type: 'fastest'; sources: ArrayTwoOrMore<CachelessInput> }
-  | { type: 'only-first-source-that-supports-chain'; sources: ArrayTwoOrMore<CachelessInput> };
+  | { type: 'fastest'; sources: (CachelessInput | 'public-sources')[] }
+  | { type: 'aggregate'; sources: (CachelessInput | 'public-sources')[]; by: GasPriceAggregationMethod }
+  | { type: 'only-first-source-that-supports-chain'; sources: CachelessInput[] };
 export type BuildGasParams = { source: GasSourceInput };
 
 export function buildGasService(
@@ -73,9 +74,7 @@ function buildSource(
 ): IGasPriceSource<any> {
   switch (source?.type) {
     case undefined:
-      const openOcean = new OpenOceanGasPriceSource(fetchService);
-      const rpc = new RPCGasPriceSource(providerSource);
-      return new PrioritizedGasPriceSourceCombinator([openOcean, rpc]);
+      return new AggregatorGasPriceSource(calculateSources(['public-sources'], { fetchService, multicallService, providerSource }), 'mean');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'rpc':
@@ -90,15 +89,40 @@ function buildSource(
       return new OwlracleGasPriceSource(fetchService, source.key);
     case 'custom':
       return source.instance;
+    case 'aggregate':
+      return new AggregatorGasPriceSource(calculateSources(source.sources, { fetchService, multicallService, providerSource }), source.by);
     case 'fastest':
-      return new FastestGasPriceSourceCombinator(
-        source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
-      );
+      return new FastestGasPriceSourceCombinator(calculateSources(source.sources, { fetchService, multicallService, providerSource }));
     case 'only-first-source-that-supports-chain':
       return new PrioritizedGasPriceSourceCombinator(
         source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
       );
   }
+}
+
+function calculateSources(
+  sources: (CachelessInput | 'public-sources')[],
+  {
+    providerSource,
+    multicallService,
+    fetchService,
+  }: { providerSource: IProviderSource; multicallService: IMulticallService; fetchService: IFetchService }
+) {
+  const openOcean = new OpenOceanGasPriceSource(fetchService);
+  const rpc = new RPCGasPriceSource(providerSource);
+  const ethGasStation = new EthGasStationGasPriceSource(fetchService);
+  const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
+  const publicSources = [openOcean, rpc, ethGasStation, polygonGasStation];
+
+  const result: IGasPriceSource<any>[] = [];
+  for (const source of sources) {
+    if (source === 'public-sources') {
+      result.push(...publicSources);
+    } else {
+      result.push(buildSource(source, { fetchService, multicallService, providerSource }));
+    }
+  }
+  return result;
 }
 
 function buildGasCalculatorBuilder({
