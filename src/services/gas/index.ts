@@ -9,3 +9,4 @@ export {
   IGasPriceSource,
   IQuickGasCostCalculator,
 } from './types';
+export { GasPriceAggregationMethod } from './gas-price-sources/aggregator-gas-price-source';

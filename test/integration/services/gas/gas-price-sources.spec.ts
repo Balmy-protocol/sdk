@@ -14,6 +14,7 @@ import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
+import { AggregatorGasPriceSource } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(new FetchService(crossFetch));
@@ -23,6 +24,7 @@ const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch),
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'mean');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
@@ -36,6 +38,7 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
+  gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
 
   function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({
     title,
