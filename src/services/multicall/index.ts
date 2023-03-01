@@ -1,1 +1,1 @@
-export { IMulticallService } from './types';
+export { IMulticallService, TryMulticallResult } from './types';

@@ -28,10 +28,21 @@ export class MulticallService implements IMulticallService {
 
   async readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string }[] }) {
     const multicall = this.getMulticall(chainId);
-    const [blockNumber, results]: [number, [string]] = await multicall.callStatic.aggregate(
+    const [blockNumber, results]: [number, string[]] = await multicall.callStatic.aggregate(
       calls.map(({ target, calldata }) => [target, calldata])
     );
     return results.map((result, i) => this.ABI_CODER.decode([calls[i].decode], result)[0]);
+  }
+
+  async tryReadOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string }[] }) {
+    const multicall = this.getMulticall(chainId);
+    const results: [boolean, string][] = await multicall.callStatic.tryAggregate(
+      false,
+      calls.map(({ target, calldata }) => [target, calldata])
+    );
+    return results.map(([success, result], i) =>
+      success ? { success, result: this.ABI_CODER.decode([calls[i].decode], result)[0] } : { success }
+    );
   }
 
   private getMulticall(chainId: ChainId) {
