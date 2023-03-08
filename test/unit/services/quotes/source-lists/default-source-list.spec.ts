@@ -16,7 +16,8 @@ chai.use(chaiAsPromised);
 const PROVIDER_SOURCE = new PublicRPCsSource();
 const FETCH_SERVICE = new FetchService(crossFetch);
 const TOKEN_SERVICE = new TokenService(new DefiLlamaTokenSource(FETCH_SERVICE));
-const FAILING_GAS_SERVICE: IGasService = {
+const FAILING_GAS_SERVICE: IGasService<any> = {
+  supportedSpeeds: () => ({}),
   supportedChains: () => [1, 2, 3],
   estimateGas: (_: { chainId: ChainId; tx: TransactionRequest }) => Promise.reject(new Error('Fail')),
   getGasPrice: (_: { chainId: ChainId; options?: { speed?: GasSpeed } }) => Promise.reject(new Error('Fail')),

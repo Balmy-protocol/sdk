@@ -14,7 +14,9 @@ describe('Gas Price Sources Utils', () => {
     });
   });
 
-  function source(support: Record<string, string[]>): IGasPriceSource<any> {
+  describe('filterSourcesBasedOnRequirements', () => {});
+
+  function source(support: Record<number, string[]>): IGasPriceSource<any> {
     return {
       supportedSpeeds: () => support,
       getGasPrice: () => Promise.resolve({}),

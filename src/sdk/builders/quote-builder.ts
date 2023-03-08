@@ -27,7 +27,7 @@ export function buildQuoteService(
   params: BuildQuoteParams | undefined,
   providerSource: IProviderSource,
   fetchService: IFetchService,
-  gasService: IGasService,
+  gasService: IGasService<any>,
   tokenService: ITokenService<any>
 ) {
   const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService });
@@ -44,7 +44,7 @@ function buildList(
   }: {
     providerSource: IProviderSource;
     fetchService: IFetchService;
-    gasService: IGasService;
+    gasService: IGasService<any>;
     tokenService: ITokenService<any>;
   }
 ): IQuoteSourceList {

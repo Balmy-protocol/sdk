@@ -9,8 +9,18 @@ export type ExcludeKeysWithTypeOf<T, V> = {
 }[keyof T];
 export type Without<T, V> = Pick<T, ExcludeKeysWithTypeOf<T, V>>;
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
-type UnionMapping<T> = { [K in keyof UnionToIntersection<T> | keyof T]: ValueOfUnion<T, K> };
-type ValueOfUnion<T, K> = T extends any ? (K extends keyof T ? T[K] : undefined) : never;
-export type UnionMerge<T> = Pick<UnionMapping<T>, keyof T> & Partial<UnionMapping<T>>;
 export type PartialOnly<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type KeysWithValue<T extends Record<string, any>, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T];
+export type If<Condition extends boolean, IfTrue> = true extends Condition ? IfTrue : never;
+export type UnionMerge<T extends object> = {
+  [k in CommonKeys<T>]: PickTypeOf<T, k>;
+} & {
+  [k in NonCommonKeys<T>]?: PickTypeOf<T, k>;
+};
+
+type CommonKeys<T extends object> = keyof T;
+type AllKeys<T> = T extends any ? keyof T : never;
+type Subtract<A, C> = A extends C ? never : A;
+type NonCommonKeys<T extends object> = Subtract<AllKeys<T>, CommonKeys<T>>;
+type PickType<T, K extends AllKeys<T>> = T extends { [k in K]?: any } ? T[K] : undefined;
+type PickTypeOf<T, K extends string | number | symbol> = K extends AllKeys<T> ? PickType<T, K> : never;

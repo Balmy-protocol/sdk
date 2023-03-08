@@ -3,27 +3,41 @@ import { TransactionRequest } from '@ethersproject/abstract-provider';
 import { serialize } from '@ethersproject/transactions';
 import { Chains } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
-import { IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
-import { ChainId, TimeString } from '@types';
+import {
+  GasEstimation,
+  GasPriceResult,
+  GasValueForVersion,
+  IQuickGasCostCalculator,
+  IQuickGasCostCalculatorBuilder,
+  LegacyGasPrice,
+} from '@services/gas/types';
+import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
-export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder {
+type GasValues = GasValueForVersion<'standard', LegacyGasPrice>;
+export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder<GasValues> {
   constructor(private readonly multicallService: IMulticallService) {}
 
-  supportedChains(): ChainId[] {
-    return [Chains.OPTIMISM.chainId];
+  supportedSpeeds() {
+    const support: SupportRecord<GasValues> = { standard: 'present' };
+    return { [Chains.OPTIMISM.chainId]: support };
   }
 
-  async build(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
+  async build<Requirements extends FieldsRequirements<GasValues>>(_: {
+    chainId: ChainId;
+    config?: { fields?: Requirements };
+    context?: { timeout?: TimeString };
+  }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {
-      getGasPrice: () => ({ gasPrice: l2GasPrice.toString() }),
+      supportedSpeeds: () => ({ standard: 'present' }),
+      getGasPrice: () => ({ standard: { gasPrice: l2GasPrice.toString() } } as GasPriceResult<GasValues, Requirements>),
       calculateGasCost: ({ gasEstimation, tx }) => {
         const l1GasCost = (tx && getL1Fee(tx, l1GasValues)) ?? constants.Zero;
         const l2GasCost = l2GasPrice.mul(gasEstimation);
         const gasCostNativeToken = l1GasCost.add(l2GasCost).toString();
-        return { gasCostNativeToken, gasPrice: l2GasPrice.toString() };
+        return { standard: { gasCostNativeToken, gasPrice: l2GasPrice.toString() } } as GasEstimation<GasValues, Requirements>;
       },
     };
   }

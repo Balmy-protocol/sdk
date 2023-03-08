@@ -26,14 +26,14 @@ import { ChainId } from '@types';
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
-  gasService: IGasService;
+  gasService: IGasService<any>;
   tokenService: ITokenService<TokenWithOptionalPrice>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
-  private readonly gasService: IGasService;
+  private readonly gasService: IGasService<any>;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
@@ -75,8 +75,11 @@ export class DefaultSourceList implements IQuoteSourceList {
     );
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
-    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({ chainId: request.chainId, config: { timeout: reducedTimeout } });
-    const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice({ speed: request.gasSpeed }));
+    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({
+      chainId: request.chainId,
+      config: { timeout: reducedTimeout, fields: { requirements: { [gasSpeed(request)]: 'required' } } },
+    });
+    const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice()[gasSpeed(request)]!);
 
     // Map request to source request
     const sourceRequest = mapRequestToSourceRequest({ request, sellTokenPromise, buyTokenPromise, gasPricePromise });
@@ -161,7 +164,7 @@ async function mapSourceResponseToResponse({
   request: QuoteRequest;
   response: Promise<SourceQuoteResponse>;
   values: Promise<{
-    gasCalculator: IQuickGasCostCalculator;
+    gasCalculator: IQuickGasCostCalculator<any>;
     sellToken: TokenWithOptionalPrice;
     buyToken: TokenWithOptionalPrice;
     nativeTokenPrice: number | undefined;
@@ -176,9 +179,8 @@ async function mapSourceResponseToResponse({
   };
   const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
     gasEstimation: response.estimatedGas,
-    speed: request.gasSpeed,
     tx: txData,
-  });
+  })[gasSpeed(request)]!;
   let tx: QuoteTx = txData;
   // TODO: We should add the gas price to the tx, but if we do, we get some weird errors. Investigate and add it to to the tx
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
@@ -244,4 +246,8 @@ function mapRequestToSourceRequest({
     },
     context: { gasPrice: gasPricePromise },
   } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }>;
+}
+
+function gasSpeed(request: QuoteRequest) {
+  return request.gasSpeed ?? 'standard';
 }

@@ -171,14 +171,14 @@ describe('Aggregator Gas Price Source', () => {
 
   function buildSource(price: GasPriceResult<any>, chainId: ChainId = CHAIN_ID): IGasPriceSource<any> {
     return {
-      supportedSpeeds: () => ({ [chainId]: Object.keys(price) }),
-      getGasPrice: () => Promise.resolve(price),
+      supportedSpeeds: () => ({ [chainId]: Object.fromEntries(Object.keys(price).map((speed) => [speed, 'present'])) }),
+      getGasPrice: () => Promise.resolve(price) as any,
     };
   }
 
   function buildSourceThatFails(...onChain: ChainId[]): IGasPriceSource<any> {
     return {
-      supportedSpeeds: () => Object.fromEntries(onChain.map((chainId) => [chainId, ['average']])),
+      supportedSpeeds: () => Object.fromEntries(onChain.map((chainId) => [chainId, { average: 'present' }])),
       getGasPrice: () => Promise.reject(new Error('Something failed')),
     };
   }

@@ -20,7 +20,7 @@ export type QuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceCon
 
 export type QuoteComponents = {
   providerSource: IProviderSource;
-  gasService: IGasService;
+  gasService: IGasService<any>;
   fetchService: IFetchService;
 };
 
