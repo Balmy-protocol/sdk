@@ -31,14 +31,26 @@ export class OdosQuoteSource extends NoCustomConfigQuoteSource<OdosSupport> {
 
   async quote(
     { fetchService }: QuoteComponents,
-    { chain, sellToken, buyToken, order, accounts: { takeFrom }, config: { slippagePercentage, timeout } }: SourceQuoteRequest<OdosSupport>
+    {
+      chain,
+      sellToken,
+      buyToken,
+      order,
+      accounts: { takeFrom },
+      config: { slippagePercentage, timeout },
+      context,
+    }: SourceQuoteRequest<OdosSupport>
   ): Promise<SourceQuoteResponse> {
+    const gasPrice = await context.gasPrice;
+    const legacyGasPrice = eip1159ToLegacy(gasPrice);
+    const parsedGasPrice = Number(utils.formatUnits(legacyGasPrice, 9));
     const checksummedSell = checksummAndMapIfNecessary(sellToken);
     const checksummedBuy = checksummAndMapIfNecessary(buyToken);
     const body = {
       chainId: chain.chainId,
       inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
       outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
+      gasPrice: parsedGasPrice,
       userAddr: takeFrom,
       slippageLimitPercent: slippagePercentage,
       sourceBlacklist: ['Hashflow'], // Hashflow needs the tx.origin as the wallet, so we ignore it
