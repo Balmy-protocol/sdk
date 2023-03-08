@@ -272,7 +272,7 @@ export async function loadTokens(chain: Chain) {
   };
 }
 
-export async function assertUsersBalanceIsReduceAsExpected({
+export async function assertUsersBalanceIsReducedAsExpected({
   txs,
   sellToken,
   quote,

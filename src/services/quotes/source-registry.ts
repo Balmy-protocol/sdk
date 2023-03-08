@@ -20,7 +20,7 @@ const QUOTE_SOURCES = {
   'open-ocean': builder<OpenOceanQuoteSource>(OPEN_OCEAN_METADATA, (config) => new OpenOceanQuoteSource(config)),
   'li-fi': builder<LiFiQuoteSource>(LI_FI_METADATA, (config) => new LiFiQuoteSource(config)),
   kyberswap: builder<KyberswapQuoteSource>(KYBERSWAP_METADATA, (config) => new KyberswapQuoteSource(config)),
-  odos: builderNeedsConfig<OdosQuoteSource>(ODOS_METADATA, (config) => new OdosQuoteSource(config)),
+  odos: builder<OdosQuoteSource>(ODOS_METADATA, (config) => new OdosQuoteSource(config)),
   firebird: builderNeedsConfig<FirebirdQuoteSource>(FIREBIRD_METADATA, (config) => new FirebirdQuoteSource(config)),
   rango: builderNeedsConfig<RangoQuoteSource>(RANGO_METADATA, (config) => new RangoQuoteSource(config)),
 } satisfies Record<SourceId, QuoteSourceBuilder<any>>;

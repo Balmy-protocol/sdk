@@ -1,7 +1,7 @@
 import { BigNumber, utils } from 'ethers';
 import { Address } from '@types';
 import { Chains } from '@chains';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { addQuoteSlippage, failed } from './utils';
@@ -23,51 +23,33 @@ export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   },
   logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
-type OdosConfig = { apiKey: string };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
-export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig> {
+export class OdosQuoteSource extends NoCustomConfigQuoteSource<OdosSupport> {
   getMetadata() {
     return ODOS_METADATA;
   }
 
   async quote(
     { fetchService }: QuoteComponents,
-    {
-      chain,
-      sellToken,
-      buyToken,
-      sellTokenData,
-      buyTokenData,
-      order,
-      accounts: { takeFrom },
-      config: { slippagePercentage, timeout },
-      context,
-    }: SourceQuoteRequest<OdosSupport>
+    { chain, sellToken, buyToken, order, accounts: { takeFrom }, config: { slippagePercentage, timeout } }: SourceQuoteRequest<OdosSupport>
   ): Promise<SourceQuoteResponse> {
-    const gasPrice = await context.gasPrice;
-    const sellTokenDataResult = await sellTokenData;
-    const legacyGasPrice = eip1159ToLegacy(gasPrice);
-    const gas_price = parseFloat(utils.formatUnits(legacyGasPrice, 9));
-
     const checksummedSell = checksummAndMapIfNecessary(sellToken);
     const checksummedBuy = checksummAndMapIfNecessary(buyToken);
     const body = {
-      wallet: takeFrom,
-      chain_id: chain.chainId,
-      gas_price,
-      input_tokens: [{ tokenAddress: checksummedSell, amount: utils.formatUnits(order.sellAmount, sellTokenDataResult.decimals) }],
-      output_token: checksummedBuy,
-      slippage: slippagePercentage,
-      lp_blacklist: ['Hashflow'], // Hashflow needs the tx.origin as the wallet, so we ignore it
+      chainId: chain.chainId,
+      inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
+      outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
+      userAddr: takeFrom,
+      slippageLimitPercent: slippagePercentage,
+      sourceBlacklist: ['Hashflow'], // Hashflow needs the tx.origin as the wallet, so we ignore it
+      simulate: false,
+      pathViz: false,
     };
 
-    const response = await fetchService.fetch('https://api.odos.xyz/swap', {
+    const response = await fetchService.fetch('https://api.odos.xyz/sor/swap', {
       body: JSON.stringify(body),
       method: 'POST',
-      headers: {
-        'X-API-Key': this.customConfig.apiKey,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       timeout,
     });
 
@@ -76,14 +58,13 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig> {
     }
 
     const {
-      outputToken,
+      outputTokens: [{ amount: outputTokenAmount }],
       transaction: { to, data, value, gas },
     }: Response = await response.json();
-    const buyTokenDataDataResult = await buyTokenData;
 
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: utils.parseUnits(parseFloat(outputToken.amount).toFixed(buyTokenDataDataResult.decimals), buyTokenDataDataResult.decimals),
+      buyAmount: BigNumber.from(outputTokenAmount),
       calldata: data,
       estimatedGas: BigNumber.from(gas),
       allowanceTarget: to,
@@ -110,9 +91,9 @@ function eip1159ToLegacy(gasPrice: GasPrice): BigNumber {
 }
 
 type Response = {
-  outputToken: {
+  outputTokens: {
     amount: string;
-  };
+  }[];
   transaction: {
     gas: number;
     to: Address;
