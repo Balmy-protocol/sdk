@@ -11,7 +11,7 @@ import { TokenAddress, Address } from '@types';
 import { QuoteResponse } from '@services/quotes/types';
 import {
   assertRecipientsBalanceIsIncreasedAsExpected,
-  assertUsersBalanceIsReduceAsExpected,
+  assertUsersBalanceIsReducedAsExpected,
   calculateBalancesFor,
   chainsWithTestData,
   loadTokens,
@@ -73,7 +73,7 @@ describe('Quote Service', () => {
           txs = [await user.sendTransaction({ gasPrice, ...tx })];
         });
         then('result is as expected', async () => {
-          await assertUsersBalanceIsReduceAsExpected({
+          await assertUsersBalanceIsReducedAsExpected({
             txs,
             sellToken: nativeToken,
             quote,

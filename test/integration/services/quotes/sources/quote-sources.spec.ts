@@ -20,7 +20,7 @@ import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';
 import {
   approve,
   assertRecipientsBalanceIsIncreasedAsExpected,
-  assertUsersBalanceIsReduceAsExpected,
+  assertUsersBalanceIsReducedAsExpected,
   calculateBalancesFor,
   chainsWithTestData,
   loadTokens,
@@ -34,7 +34,7 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'li-fi',
+  source: 'odos',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
@@ -188,7 +188,7 @@ describe('Quote Sources', () => {
                   txs = [...approveTx, await execute({ quote, as: user })];
                 });
                 then('result is as expected', async () => {
-                  await assertUsersBalanceIsReduceAsExpected({
+                  await assertUsersBalanceIsReducedAsExpected({
                     txs,
                     sellToken: quoteFtn().sellToken,
                     quote,

@@ -19,7 +19,6 @@ describe('Quote Sources', () => {
 function allSources() {
   const config = { apiKey: '' };
   const sourcesConfig: DefaultSourcesConfig = {
-    odos: config,
     firebird: config,
     rango: config,
     '0x': config,
