@@ -56,7 +56,7 @@
     "@nomicfoundation/hardhat-toolbox": "2.0.1",
     "@nomiclabs/hardhat-ethers": "2.2.2",
     "@types/jest": "29.4.0",
-    "@types/node": "18.14.5",
+    "@types/node": "18.15.1",
     "chai": "4.3.7",
     "dotenv": "16.0.3",
     "hardhat": "2.13.0",
