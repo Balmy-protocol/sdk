@@ -4,7 +4,7 @@ import crossFetch from 'cross-fetch';
 import { getChainByKey } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasSpeed, GasPriceResult } from '@services/gas/types';
+import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasPriceResult } from '@services/gas/types';
 import { isEIP1159Compatible } from '@services/gas/utils';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
@@ -22,9 +22,9 @@ const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(new Fetch
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(new FetchService(crossFetch));
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
-const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'mean');
+const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE]);
+const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE]);
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE], 'mean');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
@@ -35,12 +35,12 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
-  gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); // We comment this out because the API is quite flaky
+  // gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); We comment this out because the API is quite flaky
   gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
 
-  function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({ title, source }: { title: string; source: IGasPriceSource<object> }) {
+  function gasPriceSourceTest({ title, source }: { title: string; source: IGasPriceSource<object> }) {
     describe(title, () => {
       for (const chainIdString in source.supportedSpeeds()) {
         const chainId = Number(chainIdString);

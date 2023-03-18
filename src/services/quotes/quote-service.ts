@@ -105,7 +105,7 @@ export class QuoteService implements IQuoteService {
     request: QuoteRequest,
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
   ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
-    const responses = await this.sourceList.getAllQuotes(this.mapRequest(request));
+    const responses = await Promise.all(this.getQuotes(request));
     const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
     const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedQuote => 'failed' in response) : [];
 

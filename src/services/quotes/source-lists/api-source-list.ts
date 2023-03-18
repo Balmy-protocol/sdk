@@ -27,15 +27,25 @@ export class APISourceList implements IQuoteSourceList {
   }
 
   getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    return request.sourceIds.map((sourceId) => this.getAllQuotes({ ...request, sourceIds: [sourceId] }).then((quotes) => quotes[0]));
+    return request.sourceIds.map((sourceId) => this.fetchForSource(sourceId, request));
   }
 
-  async getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
+  private async fetchForSource(sourceId: string, request: SourceListRequest): Promise<QuoteResponse | FailedQuote> {
     // We reduce 0.75 seconds because calling the API might have this overhead in slow connections
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '0.75s');
-    const url = this.getUrl({ ...request, quoteTimeout: reducedTimeout });
+    const url = this.getUrl({ ...request, quoteTimeout: reducedTimeout, sourceIds: [sourceId] });
     const response = await this.fetchService.fetch(url, { timeout: request.quoteTimeout });
-    return response.json();
+    try {
+      return await response.json();
+    } catch (e) {
+      const supportedSources = this.supportedSources();
+      return {
+        failed: true,
+        name: supportedSources[sourceId].name,
+        logoURI: supportedSources[sourceId].logoURI,
+        error: e instanceof Error ? e.message : JSON.stringify(e),
+      };
+    }
   }
 
   private getUrl({ order, ...request }: SourceListRequest) {
