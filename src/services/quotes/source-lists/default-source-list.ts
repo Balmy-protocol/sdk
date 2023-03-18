@@ -55,10 +55,6 @@ export class DefaultSourceList implements IQuoteSourceList {
     return this.executeQuotes(request);
   }
 
-  getAllQuotes(request: SourceListRequest): Promise<(QuoteResponse | FailedQuote)[]> {
-    return Promise.all(this.getQuotes(request));
-  }
-
   private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const filteredSourceIds = request.sourceIds.filter((sourceId) => sourceId in this.sources);

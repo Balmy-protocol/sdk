@@ -37,7 +37,7 @@ describe('Default Source List', () => {
     });
     then('empty response is returned', async () => {
       expect(
-        await sourceList.getAllQuotes({
+        sourceList.getQuotes({
           chainId: 1,
           sellToken: 'sellToken',
           buyToken: 'buyToken',
@@ -59,7 +59,7 @@ describe('Default Source List', () => {
       config: undefined,
     });
     then('rejection is handled', async () => {
-      const quotes = await sourceList.getAllQuotes({
+      const quotes = sourceList.getQuotes({
         chainId: 1,
         sellToken: 'sellToken',
         buyToken: 'buyToken',
@@ -69,7 +69,7 @@ describe('Default Source List', () => {
         sourceIds: ['open-ocean'],
       });
       expect(quotes).to.have.lengthOf(1);
-      expect(quotes[0]).to.contain({ error: 'Fail', failed: true, name: 'Open Ocean' });
+      expect(await quotes[0]).to.contain({ error: 'Fail', failed: true, name: 'Open Ocean' });
     });
   });
 });

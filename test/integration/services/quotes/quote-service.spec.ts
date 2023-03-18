@@ -68,6 +68,7 @@ describe('Quote Service', () => {
             },
             slippagePercentage: 3,
             takerAddress: user.address,
+            quoteTimeout: '5s',
           });
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
           txs = [await user.sendTransaction({ gasPrice, ...tx })];
