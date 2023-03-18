@@ -169,7 +169,11 @@ export const Chains = {
     ids: ['boba'],
     currencySymbol: 'ETH',
     wToken: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000',
-    publicRPCs: ['https://mainnet.boba.network/'],
+    publicRPCs: [
+      'https://mainnet.boba.network/',
+      'https://lightning-replica.boba.network',
+      'https://boba-mainnet.gateway.pokt.network/v1/lb/623ad21b20354900396fed7f',
+    ],
     explorer: 'https://bobascan.com/',
   },
   ONTOLOGY: {
