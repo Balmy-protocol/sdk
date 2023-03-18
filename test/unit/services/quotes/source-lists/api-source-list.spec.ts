@@ -21,15 +21,16 @@ describe('API Source List', () => {
       takerAddress: 'takerAddress',
       sourceIds: ['source'],
     },
-    expected:
+    expected: [
       BASE_URI +
-      '?buyAmount=1000' +
-      '&buyToken=buyToken' +
-      '&chainId=1' +
-      '&sellToken=sellToken' +
-      '&slippagePercentage=1' +
-      '&sourceIds=source' +
-      '&takerAddress=takerAddress',
+        '?buyAmount=1000' +
+        '&buyToken=buyToken' +
+        '&chainId=1' +
+        '&sellToken=sellToken' +
+        '&slippagePercentage=1' +
+        '&sourceIds=source' +
+        '&takerAddress=takerAddress',
+    ],
   });
 
   urlTest({
@@ -44,16 +45,26 @@ describe('API Source List', () => {
       estimateBuyOrdersWithSellOnlySources: true,
       sourceIds: ['source1', 'source2'],
     },
-    expected:
+    expected: [
       BASE_URI +
-      '?buyToken=buyToken' +
-      '&chainId=1' +
-      '&estimateBuyOrdersWithSellOnlySources=true' +
-      '&sellAmount=1000' +
-      '&sellToken=sellToken' +
-      '&slippagePercentage=1' +
-      '&sourceIds=source1,source2' +
-      '&takerAddress=takerAddress',
+        '?buyToken=buyToken' +
+        '&chainId=1' +
+        '&estimateBuyOrdersWithSellOnlySources=true' +
+        '&sellAmount=1000' +
+        '&sellToken=sellToken' +
+        '&slippagePercentage=1' +
+        '&sourceIds=source1' +
+        '&takerAddress=takerAddress',
+      BASE_URI +
+        '?buyToken=buyToken' +
+        '&chainId=1' +
+        '&estimateBuyOrdersWithSellOnlySources=true' +
+        '&sellAmount=1000' +
+        '&sellToken=sellToken' +
+        '&slippagePercentage=1' +
+        '&sourceIds=source2' +
+        '&takerAddress=takerAddress',
+    ],
   });
 
   urlTest({
@@ -69,40 +80,54 @@ describe('API Source List', () => {
       estimateBuyOrdersWithSellOnlySources: true,
       sourceIds: ['source1', 'source2'],
     },
-    expected:
+    expected: [
       BASE_URI +
-      '?buyToken=buyToken' +
-      '&chainId=1' +
-      '&estimateBuyOrdersWithSellOnlySources=true' +
-      '&quoteTimeout=299250' +
-      '&sellAmount=1000' +
-      '&sellToken=sellToken' +
-      '&slippagePercentage=1' +
-      '&sourceIds=source1,source2' +
-      '&takerAddress=takerAddress',
+        '?buyToken=buyToken' +
+        '&chainId=1' +
+        '&estimateBuyOrdersWithSellOnlySources=true' +
+        '&quoteTimeout=299250' +
+        '&sellAmount=1000' +
+        '&sellToken=sellToken' +
+        '&slippagePercentage=1' +
+        '&sourceIds=source1' +
+        '&takerAddress=takerAddress',
+      BASE_URI +
+        '?buyToken=buyToken' +
+        '&chainId=1' +
+        '&estimateBuyOrdersWithSellOnlySources=true' +
+        '&quoteTimeout=299250' +
+        '&sellAmount=1000' +
+        '&sellToken=sellToken' +
+        '&slippagePercentage=1' +
+        '&sourceIds=source2' +
+        '&takerAddress=takerAddress',
+    ],
   });
 
-  function urlTest({ when: title, request, expected }: { when: string; request: SourceListRequest; expected: string }) {
+  function urlTest({ when: title, request, expected }: { when: string; request: SourceListRequest; expected: string[] }) {
     when(title, () => {
       let fetchService: FetchService;
       given(() => {
         fetchService = new FetchService();
         const sourceList = new APISourceList({ fetchService, baseUri: () => BASE_URI, sources: SOURCES });
-        sourceList.getAllQuotes(request);
+        sourceList.getQuotes(request);
       });
       then('url is as expected', () => {
-        expect(fetchService.url).to.equal(expected);
+        expect(fetchService.urls).to.have.lengthOf(expected.length);
+        for (let i = 0; i < expected.length; i++) {
+          expect(fetchService.urls[i]).to.equal(expected[i]);
+        }
       });
     });
   }
 });
 
 class FetchService implements IFetchService {
-  public url: string = '';
+  public urls: string[] = [];
 
   fetch(input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response> {
     if (typeof input !== 'string') throw new Error('WTF?');
-    this.url = input;
+    this.urls.push(input);
     return { json: () => Promise.resolve() } as any;
   }
 }
