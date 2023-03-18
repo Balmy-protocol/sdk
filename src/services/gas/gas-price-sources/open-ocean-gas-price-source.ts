@@ -1,5 +1,5 @@
-import { ChainId, TimeString } from '@types';
-import { IGasPriceSource, GasSpeed } from '@services/gas/types';
+import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
+import { IGasPriceSource, GasSpeed, GasPriceResult, GasValueForVersions } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
@@ -19,30 +19,37 @@ const SUPPORTED_CHAINS = [
   Chains.BOBA,
 ];
 
-export class OpenOceanGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
+type GasValues = GasValueForVersions<'standard' | 'fast' | 'instant'>;
+export class OpenOceanGasPriceSource implements IGasPriceSource<GasValues> {
   constructor(private readonly fetchService: IFetchService) {}
 
   supportedSpeeds() {
-    const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
-    return Object.fromEntries(SUPPORTED_CHAINS.map(({ chainId }) => [Number(chainId), speeds]));
+    const support: SupportRecord<GasValues> = { standard: 'present', fast: 'present', instant: 'present' };
+    return Object.fromEntries(SUPPORTED_CHAINS.map(({ chainId }) => [Number(chainId), support]));
   }
 
-  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+  async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
+    chainId,
+    context,
+  }: {
+    chainId: ChainId;
+    context?: { timeout?: TimeString };
+  }) {
     const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`, { timeout: context?.timeout });
     const body = await response.json();
-    if (typeof body.standard === 'string' || typeof body.standard === 'number') {
-      return {
-        standard: stringToLegacyGasPrice(body, 'standard'),
-        fast: stringToLegacyGasPrice(body, 'fast'),
-        instant: stringToLegacyGasPrice(body, 'instant'),
-      };
-    } else {
-      return {
-        standard: toEip1159GasPrice(body, 'standard'),
-        fast: toEip1159GasPrice(body, 'fast'),
-        instant: toEip1159GasPrice(body, 'instant'),
-      };
-    }
+    const result =
+      typeof body.standard === 'string' || typeof body.standard === 'number'
+        ? {
+            standard: stringToLegacyGasPrice(body, 'standard'),
+            fast: stringToLegacyGasPrice(body, 'fast'),
+            instant: stringToLegacyGasPrice(body, 'instant'),
+          }
+        : {
+            standard: toEip1159GasPrice(body, 'standard'),
+            fast: toEip1159GasPrice(body, 'fast'),
+            instant: toEip1159GasPrice(body, 'instant'),
+          };
+    return result as GasPriceResult<GasValues, Requirements>;
   }
 }
 

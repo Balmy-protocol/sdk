@@ -1,5 +1,5 @@
-import { ChainId, TimeString } from '@types';
-import { IGasPriceSource, GasPrice, GasPriceResult } from '@services/gas/types';
+import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
+import { IGasPriceSource, GasPrice, GasPriceResult, GasValueForVersions } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 import { utils } from 'ethers';
@@ -11,15 +11,22 @@ const CHAINS = {
   [Chains.FANTOM.chainId]: 'ftmscan.com',
 };
 
-export class EtherscanGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
+type GasValues = GasValueForVersions<'standard' | 'fast' | 'instant'>;
+export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
   constructor(private readonly fetchService: IFetchService, private readonly apiKey?: string) {}
 
   supportedSpeeds() {
-    const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
-    return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), speeds]));
+    const support: SupportRecord<GasValues> = { standard: 'present', fast: 'present', instant: 'present' };
+    return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), support]));
   }
 
-  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+  async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
+    chainId,
+    context,
+  }: {
+    chainId: ChainId;
+    context?: { timeout?: TimeString };
+  }) {
     let url = `https://api.${CHAINS[chainId]}/api?module=gastracker&action=gasoracle`;
     if (this.apiKey) {
       url += `&apikey=${this.apiKey} `;
@@ -33,7 +40,7 @@ export class EtherscanGasPriceSource implements IGasPriceSource<'standard' | 'fa
       standard: calculateGas(SafeGasPrice, suggestBaseFee),
       fast: calculateGas(ProposeGasPrice, suggestBaseFee),
       instant: calculateGas(FastGasPrice, suggestBaseFee),
-    } as GasPriceResult<'standard' | 'fast' | 'instant'>;
+    } as GasPriceResult<GasValues, Requirements>;
   }
 }
 

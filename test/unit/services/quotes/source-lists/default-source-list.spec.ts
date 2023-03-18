@@ -6,7 +6,7 @@ import crossFetch from 'cross-fetch';
 import { FetchService } from '@services/fetch/fetch-service';
 import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { TokenService } from '@services/tokens/token-service';
-import { GasSpeed, IGasService } from '@services/gas/types';
+import { GasSpeed, IGasService, SupportedGasValues } from '@services/gas/types';
 import { TransactionRequest } from '@ethersproject/providers';
 import { BigNumberish } from 'ethers';
 import { ChainId } from '@types';
@@ -16,7 +16,8 @@ chai.use(chaiAsPromised);
 const PROVIDER_SOURCE = new PublicRPCsSource();
 const FETCH_SERVICE = new FetchService(crossFetch);
 const TOKEN_SERVICE = new TokenService(new DefiLlamaTokenSource(FETCH_SERVICE));
-const FAILING_GAS_SERVICE: IGasService = {
+const FAILING_GAS_SERVICE: IGasService<SupportedGasValues> = {
+  supportedSpeeds: () => ({}),
   supportedChains: () => [1, 2, 3],
   estimateGas: (_: { chainId: ChainId; tx: TransactionRequest }) => Promise.reject(new Error('Fail')),
   getGasPrice: (_: { chainId: ChainId; options?: { speed?: GasSpeed } }) => Promise.reject(new Error('Fail')),

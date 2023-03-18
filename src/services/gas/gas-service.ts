@@ -1,27 +1,36 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, ChainId, TimeString } from '@types';
+import { AmountOfToken, ChainId, DefaultRequirements, FieldsRequirements, TimeString } from '@types';
 import { BigNumberish } from 'ethers';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
-import { GasEstimation, GasPrice, GasSpeed, IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator } from './types';
+import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
 import { timeoutPromise } from '@shared/timeouts';
+import { validateRequirements } from '@shared/requirements-and-support';
 
-type ConstructorParameters = {
+type ConstructorParameters<GasValues extends SupportedGasValues> = {
   providerSource: IProviderSource;
-  gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder;
+  gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder<GasValues>;
 };
 
-export class GasService implements IGasService {
+export class GasService<GasValues extends SupportedGasValues> implements IGasService<GasValues> {
   private readonly providerSource: IProviderSource;
-  private readonly gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder;
+  private readonly gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder<GasValues>;
 
-  constructor({ providerSource, gasCostCalculatorBuilder }: ConstructorParameters) {
+  constructor({ providerSource, gasCostCalculatorBuilder }: ConstructorParameters<GasValues>) {
     this.providerSource = providerSource;
     this.gasCostCalculatorBuilder = gasCostCalculatorBuilder;
   }
 
   supportedChains(): ChainId[] {
-    return chainsIntersection(this.providerSource.supportedChains(), this.gasCostCalculatorBuilder.supportedChains());
+    return chainsIntersection(this.providerSource.supportedChains(), Object.keys(this.gasCostCalculatorBuilder.supportedSpeeds()).map(Number));
+  }
+
+  supportedSpeeds() {
+    const supportedChains = this.supportedChains();
+    const entries = Object.entries(this.gasCostCalculatorBuilder.supportedSpeeds()).filter(([chainId]) =>
+      supportedChains.includes(Number(chainId))
+    );
+    return Object.fromEntries(entries);
   }
 
   estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
@@ -32,16 +41,29 @@ export class GasService implements IGasService {
     return timeoutPromise(promise, config?.timeout);
   }
 
-  getQuickGasCalculator({ chainId, config }: { chainId: ChainId; config?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator> {
-    return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, context: config }), config?.timeout);
+  getQuickGasCalculator<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>({
+    chainId,
+    config,
+  }: {
+    chainId: ChainId;
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
+    validateRequirements(this.supportedSpeeds(), [chainId], config?.fields);
+    return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, config, context: config }), config?.timeout);
   }
 
-  async getGasPrice({ chainId, config }: { chainId: ChainId; config?: { speed?: GasSpeed; timeout?: TimeString } }): Promise<GasPrice> {
+  async getGasPrice<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>({
+    chainId,
+    config,
+  }: {
+    chainId: ChainId;
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }) {
     const gasCalculator = await this.getQuickGasCalculator({ chainId, config });
-    return gasCalculator.getGasPrice({ speed: config?.speed });
+    return gasCalculator.getGasPrice();
   }
 
-  async calculateGasCost({
+  async calculateGasCost<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>({
     chainId,
     gasEstimation,
     tx,
@@ -50,9 +72,9 @@ export class GasService implements IGasService {
     chainId: ChainId;
     gasEstimation: BigNumberish;
     tx?: TransactionRequest;
-    config?: { speed?: GasSpeed; timeout?: TimeString };
-  }): Promise<GasEstimation<GasPrice>> {
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }) {
     const gasCalculator = await this.getQuickGasCalculator({ chainId, config });
-    return gasCalculator.calculateGasCost({ gasEstimation, tx, speed: config?.speed });
+    return gasCalculator.calculateGasCost({ gasEstimation, tx });
   }
 }

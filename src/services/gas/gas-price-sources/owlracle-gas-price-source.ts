@@ -1,5 +1,5 @@
-import { ChainId, TimeString } from '@types';
-import { IGasPriceSource, GasPrice, GasPriceResult } from '@services/gas/types';
+import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
+import { IGasPriceSource, GasPrice, GasPriceResult, GasValueForVersions } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
@@ -28,7 +28,8 @@ const DEFAULT_CONFIG: Config = {
     instant: 95,
   },
 };
-export class OwlracleGasPriceSource implements IGasPriceSource<'standard' | 'fast' | 'instant'> {
+type GasValues = GasValueForVersions<'standard' | 'fast' | 'instant'>;
+export class OwlracleGasPriceSource implements IGasPriceSource<GasValues> {
   private readonly config: Config;
 
   constructor(private readonly fetchService: IFetchService, private readonly apiKey: string, config?: Partial<Config>) {
@@ -36,11 +37,17 @@ export class OwlracleGasPriceSource implements IGasPriceSource<'standard' | 'fas
   }
 
   supportedSpeeds() {
-    const speeds: ('standard' | 'fast' | 'instant')[] = ['standard', 'fast', 'instant'];
-    return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), speeds]));
+    const support: SupportRecord<GasValues> = { standard: 'present', fast: 'present', instant: 'present' };
+    return Object.fromEntries(Object.keys(CHAINS).map((chainId) => [Number(chainId), support]));
   }
 
-  async getGasPrice({ chainId, context }: { chainId: ChainId; context?: { timeout?: TimeString } }) {
+  async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
+    chainId,
+    context,
+  }: {
+    chainId: ChainId;
+    context?: { timeout?: TimeString };
+  }) {
     const key = CHAINS[chainId];
     const accept = [this.config.accept.standard, this.config.accept.fast, this.config.accept.instant].join(',');
     const response = await this.fetchService.fetch(
@@ -59,7 +66,7 @@ export class OwlracleGasPriceSource implements IGasPriceSource<'standard' | 'fas
       standard: filterOutExtraData(standard),
       fast: filterOutExtraData(fast),
       instant: filterOutExtraData(instant),
-    } as GasPriceResult<'standard' | 'fast' | 'instant'>;
+    } as GasPriceResult<GasValues, Requirements>;
   }
 }
 

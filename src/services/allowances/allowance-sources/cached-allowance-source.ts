@@ -8,7 +8,6 @@ export class CachedAllowanceSource implements IAllowanceSource {
   constructor(private readonly source: IAllowanceSource, expirationConfig: ExpirationConfigOptions) {
     this.cache = new ContextlessCache<Key, AmountOfToken>({
       calculate: (ownerSpendersInChain) => this.fetchTokens(ownerSpendersInChain),
-      toStorableKey: (ownerSpenderInChain) => ownerSpenderInChain,
       expirationConfig,
     });
   }

@@ -12,7 +12,6 @@ type ToStorableKey<Key extends ValidKey> = (key: Key) => StorableKey;
 type ValidKey = string | number | symbol;
 type CacheConfig<Context, Key extends ValidKey, Value> = {
   calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
-  toStorableKey: ToStorableKey<Key>;
   expirationConfig: ExpirationConfigOptions;
 };
 
@@ -21,16 +20,13 @@ export class ContextlessCache<Key extends ValidKey, Value> {
 
   constructor({
     calculate,
-    toStorableKey,
     expirationConfig,
   }: {
     calculate: (keys: Key[]) => Promise<Record<Key, Value>>;
-    toStorableKey: (key: Key) => string;
     expirationConfig: ExpirationConfigOptions;
   }) {
     this.cache = new Cache({
       calculate: (_, keys) => calculate(keys),
-      toStorableKey,
       expirationConfig,
     });
   }
@@ -75,9 +71,9 @@ export class Cache<Context, Key extends ValidKey, Value> {
   private readonly cache: Map<StorableKey, { lastUpdated: Timestamp; value: Value }> = new Map();
   private readonly beingCalculated: Map<StorableKey, Promise<any>> = new Map();
 
-  constructor({ calculate, toStorableKey, expirationConfig }: CacheConfig<Context, Key, Value>) {
+  constructor({ calculate, expirationConfig }: CacheConfig<Context, Key, Value>) {
     this.calculate = calculate;
-    this.storableKeyMapper = (key) => toStorableKey(key).toLowerCase();
+    this.storableKeyMapper = (key) => key.toString().toLowerCase();
     this.expirationConfig = expirationConfig;
 
     const isInvalid =

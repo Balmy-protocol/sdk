@@ -8,7 +8,6 @@ export class CachedTokenSource<TokenData extends object> implements ITokenSource
   constructor(private readonly source: ITokenSource<TokenData>, expirationConfig: ExpirationConfigOptions) {
     this.cache = new ContextlessCache<TokenInChain, TokenData>({
       calculate: (tokensInChain) => this.fetchTokens(tokensInChain),
-      toStorableKey: (tokenInChain) => tokenInChain,
       expirationConfig,
     });
   }

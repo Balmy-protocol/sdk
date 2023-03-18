@@ -35,18 +35,12 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
-  // gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); We comment this out because the API is quite flaky
+  gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); // We comment this out because the API is quite flaky
   gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
 
-  function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({
-    title,
-    source,
-  }: {
-    title: string;
-    source: IGasPriceSource<SupportedGasSpeed>;
-  }) {
+  function gasPriceSourceTest<SupportedGasSpeed extends GasSpeed>({ title, source }: { title: string; source: IGasPriceSource<object> }) {
     describe(title, () => {
       for (const chainIdString in source.supportedSpeeds()) {
         const chainId = Number(chainIdString);
@@ -56,19 +50,18 @@ describe('Gas Price Sources', () => {
             const supportedSpeeds = source.supportedSpeeds()[chainId];
             const gasPrice = await source.getGasPrice({ chainId });
             for (const speed of AVAILABLE_GAS_SPEEDS) {
-              if (isSpeedSupported(speed, supportedSpeeds)) {
+              const expected = speed in supportedSpeeds ? (supportedSpeeds as any)[speed] : 'missing';
+              if (expected === 'present') {
                 expect(isGasPriceIsSetForSpeed(gasPrice, speed), `${speed} was not set in ${JSON.stringify(gasPrice)}`).to.be.true;
-              } else {
+              } else if (expected === 'optional') {
                 expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
+              } else {
+                expect(gasPrice).to.not.have.property(speed);
               }
-            }
-            const unsupportedGasSpeeds = AVAILABLE_GAS_SPEEDS.filter((speed) => !isSpeedSupported(speed, supportedSpeeds));
-            for (const speed of unsupportedGasSpeeds) {
-              expect(gasPrice).to.not.have.property(speed);
             }
           });
         });
-        function isGasPriceIsSetForSpeed(gasPrice: GasPriceResult<SupportedGasSpeed>, speed: string) {
+        function isGasPriceIsSetForSpeed(gasPrice: GasPriceResult<object>, speed: string) {
           if (isEIP1159Compatible(gasPrice)) {
             return (
               typeof (gasPrice as any)[speed]?.maxFeePerGas === 'string' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'string'
@@ -76,12 +69,6 @@ describe('Gas Price Sources', () => {
           } else {
             return typeof (gasPrice as any)[speed]?.gasPrice === 'string';
           }
-        }
-        function isSpeedSupported(speed: GasSpeed, supported: ('standard' | SupportedGasSpeed)[]): speed is SupportedGasSpeed {
-          if (supported.includes(speed as SupportedGasSpeed)) {
-            return true;
-          }
-          return false;
         }
       }
     });

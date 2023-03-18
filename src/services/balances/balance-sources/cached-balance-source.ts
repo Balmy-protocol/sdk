@@ -9,13 +9,11 @@ export class CachedBalanceSource implements IBalanceSource {
   constructor(private readonly source: IBalanceSource, expirationConfig: ExpirationConfigOptions) {
     this.cacheHeldByAccount = new ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>({
       calculate: (keysHeldByAccount) => this.fetchTokensHeldByAccount(keysHeldByAccount),
-      toStorableKey: (keyHeldByAccount) => keyHeldByAccount,
       expirationConfig,
     });
 
     this.cacheAmountInChain = new ContextlessCache<KeyTokenInChain, AmountOfToken>({
       calculate: (keysTokenInChain) => this.fetchBalancesForTokens(keysTokenInChain),
-      toStorableKey: (keyTokenInChain) => keyTokenInChain,
       expirationConfig,
     });
   }

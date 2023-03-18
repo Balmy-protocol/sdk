@@ -1,46 +1,91 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, ChainId, TimeString } from '@types';
+import {
+  AmountOfToken,
+  BasedOnRequirements,
+  ChainId,
+  DefaultRequirements,
+  FieldsRequirements,
+  SupportInChain,
+  SupportRecord,
+  TimeString,
+} from '@types';
+import { If, UnionMerge } from '@utility-types';
 import { BigNumberish } from 'ethers';
 
 export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
 export type GasSpeed = (typeof AVAILABLE_GAS_SPEEDS)[number];
-export type GasEstimation<ChainGasPrice extends GasPrice> = { gasCostNativeToken: AmountOfToken } & ChainGasPrice;
+export type GasEstimation<
+  GasValues extends SupportedGasValues,
+  Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<AddGasCost<GasValues>>
+> = GasPriceResult<AddGasCost<GasValues>, Requirements>;
 
-export type IGasService = {
+export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues> = {
   supportedChains(): ChainId[];
+  supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
   estimateGas(_: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken>;
-  getGasPrice(_: { chainId: ChainId; config?: { speed?: GasSpeed; timeout?: TimeString } }): Promise<GasPrice>;
-  calculateGasCost(_: {
+  getGasPrice<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
+    chainId: ChainId;
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }): Promise<GasPriceResult<GasValues, Requirements>>;
+  calculateGasCost<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
     gasEstimation: BigNumberish;
     tx?: TransactionRequest;
-    config?: { speed?: GasSpeed; timeout?: TimeString };
-  }): Promise<GasEstimation<GasPrice>>;
-  getQuickGasCalculator(_: { chainId: ChainId; config?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator>;
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }): Promise<GasEstimation<GasValues, Requirements>>;
+  getQuickGasCalculator<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
+    chainId: ChainId;
+    config?: { timeout?: TimeString; fields?: Requirements };
+  }): Promise<IQuickGasCostCalculator<GasValues, Requirements>>;
 };
 
-export type IGasPriceSource<SupportedGasSpeeds extends GasSpeed> = {
-  supportedSpeeds(): Record<ChainId, SupportedGasSpeeds[]>;
-  getGasPrice(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<GasPriceResult<SupportedGasSpeeds>>;
+export type IQuickGasCostCalculatorBuilder<GasValues extends SupportedGasValues> = {
+  supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
+  build<Requirements extends FieldsRequirements<GasValues>>(_: {
+    chainId: ChainId;
+    config?: { fields?: Requirements };
+    context?: { timeout?: TimeString };
+  }): Promise<IQuickGasCostCalculator<GasValues, Requirements>>;
 };
 
-export type IQuickGasCostCalculatorBuilder = {
-  supportedChains(): ChainId[];
-  build(_: { chainId: ChainId; context?: { timeout?: TimeString } }): Promise<IQuickGasCostCalculator>;
+export type IQuickGasCostCalculator<
+  GasValues extends SupportedGasValues = DefaultGasValues,
+  Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>
+> = {
+  supportedSpeeds(): SupportInChain<GasValues>;
+  getGasPrice(): GasPriceResult<GasValues, Requirements>;
+  calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
 };
 
-export type IQuickGasCostCalculator = {
-  getGasPrice(_: { speed?: GasSpeed }): GasPrice;
-  calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest; speed?: GasSpeed }): GasEstimation<GasPrice>;
+export type IGasPriceSource<GasValues extends SupportedGasValues> = {
+  supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
+  getGasPrice<Requirements extends FieldsRequirements<GasValues>>(_: {
+    chainId: ChainId;
+    config?: { fields?: Requirements };
+    context?: { timeout?: TimeString };
+  }): Promise<GasPriceResult<GasValues, Requirements>>;
 };
+
+export type SupportedGasValues = Partial<Record<GasSpeed, EIP1159GasPrice>> | Partial<Record<GasSpeed, LegacyGasPrice>>;
+export type GasValueForVersion<Speed extends GasSpeed, GasPriceVersion extends GasPrice> = Record<Speed, GasPriceVersion>;
+export type GasValueForVersions<Speed extends GasSpeed> = Record<Speed, EIP1159GasPrice> | Record<Speed, LegacyGasPrice>;
+export type GasPriceResult<
+  GasValues extends SupportedGasValues,
+  Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>
+> = BasedOnRequirements<GasValues, Requirements>;
+export type MergeGasValues<Sources extends IGasPriceSource<object>[] | []> = UnionMerge<
+  { [K in keyof Sources]: ExtractGasValues<Sources[K]> }[number]
+>;
+export type ExtractGasValues<Source extends IGasPriceSource<object>> = Source extends IGasPriceSource<infer R> ? R : never;
 
 export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGas: AmountOfToken };
 export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
-export type MergeGasSpeedsFromSources<T extends IGasPriceSource<any>[] | []> =
-  | { [K in keyof T]: T[K] extends IGasPriceSource<infer R> ? R : T[K] }[number] & GasSpeed;
-export type GasPriceResult<SupportedGasSpeed extends GasSpeed> =
-  | GasPriceForSpeed<SupportedGasSpeed, EIP1159GasPrice>
-  | GasPriceForSpeed<SupportedGasSpeed, LegacyGasPrice>;
-export type GasPriceForSpeed<SupportedGasSpeed extends GasSpeed, GasPriceVersion = GasPrice> = Record<SupportedGasSpeed, GasPriceVersion>;
+export type DefaultGasValues = GasValueForVersions<GasSpeed>;
+type IsEIP1559<GasValues extends SupportedGasValues> = GasValues extends Partial<Record<GasSpeed, EIP1159GasPrice>> ? true : false;
+type IsLegacy<GasValues extends SupportedGasValues> = GasValues extends Partial<Record<GasSpeed, LegacyGasPrice>> ? true : false;
+type AddGasCost<GasValues extends SupportedGasValues> =
+  | If<IsEIP1559<GasValues>, Record<keyof GasValues, EIP1159GasPrice & { gasCostNativeToken: AmountOfToken }>>
+  | If<IsLegacy<GasValues>, Record<keyof GasValues, LegacyGasPrice & { gasCostNativeToken: AmountOfToken }>>
+  | Record<keyof GasValues, never>;

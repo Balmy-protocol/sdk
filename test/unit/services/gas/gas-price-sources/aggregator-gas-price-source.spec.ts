@@ -14,28 +14,39 @@ describe('Aggregator Gas Price Source', () => {
 
   when('trying to create without sources', () => {
     then('an error is thrown', () => {
-      expect(() => new AggregatorGasPriceSource([], 'avg')).to.throw('No sources were specified');
+      expect(() => new AggregatorGasPriceSource([], 'mean')).to.throw('No sources were specified');
     });
   });
 
   when('there are no sources for chain', () => {
     then('error is thrown', async () => {
-      const source = new AggregatorGasPriceSource([buildSource({}, CHAIN_ID)], 'avg');
-      await expect(source.getGasPrice({ chainId: 2 })).to.eventually.be.rejectedWith('Chain with id 2 not supported');
+      const price = { standard: LEGACY(100) };
+      const source = new AggregatorGasPriceSource([buildSource(price, CHAIN_ID)], 'mean');
+      await expect(source.getGasPrice({ chainId: 2 })).to.eventually.be.rejectedWith(`Chain with id 2 cannot support the given requirements`);
     });
   });
 
   when('all sources fail', () => {
     then('error is thrown', async () => {
-      const source = new AggregatorGasPriceSource([buildSourceThatFails(CHAIN_ID)], 'avg');
+      const source = new AggregatorGasPriceSource([buildSourceThatFails(CHAIN_ID)], 'mean');
       await expect(source.getGasPrice({ chainId: CHAIN_ID })).to.eventually.be.rejectedWith('Failed to calculate gas on all sources');
+    });
+  });
+
+  when('one source works, but it doesnt meet the requirements', () => {
+    then('error is thrown', async () => {
+      const price = { standard: LEGACY(100) };
+      const source = new AggregatorGasPriceSource([buildSource(price, CHAIN_ID, { standard: 'present', fast: 'optional' })], 'mean');
+      await expect(
+        source.getGasPrice({ chainId: CHAIN_ID, config: { fields: { requirements: { fast: 'required' } } } })
+      ).to.eventually.be.rejectedWith('Could not fetch gas prices that met the given requirements');
     });
   });
 
   when('there is only one source that works', () => {
     then('that result is returned', async () => {
       const price = { standard: LEGACY(100) };
-      const source = new AggregatorGasPriceSource([buildSource(price), buildSourceThatFails(CHAIN_ID)], 'avg');
+      const source = new AggregatorGasPriceSource([buildSource(price), buildSourceThatFails(CHAIN_ID)], 'mean');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(price);
     });
   });
@@ -44,7 +55,7 @@ describe('Aggregator Gas Price Source', () => {
     then('legacy gas prices are ignored', async () => {
       const legacyPrice = { standard: LEGACY(100) };
       const eip1559Price = { standard: EIP(10, 20) };
-      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'avg');
+      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'mean');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(eip1559Price);
     });
   });
@@ -53,7 +64,7 @@ describe('Aggregator Gas Price Source', () => {
     then('1559 gas prices are ignored', async () => {
       const legacyPrice = { standard: LEGACY(100), fast: LEGACY(200) };
       const eip1559Price = { standard: EIP(10, 20) };
-      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'avg');
+      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'mean');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(legacyPrice);
     });
   });
@@ -62,14 +73,20 @@ describe('Aggregator Gas Price Source', () => {
     describe('EIP 1559', () => {
       aggregationTest({
         when: 'aggregating by max',
-        prices: [{ standard: EIP(100, 10), fast: EIP(1000, 200) }, { standard: EIP(500, 100) }, { fast: EIP(900, 300) }],
+        prices: [
+          { standard: EIP(100, 10), fast: EIP(1000, 200) },
+          { standard: EIP(500, 100), fast: EIP(900, 300) },
+        ],
         expected: { standard: EIP(500, 100), fast: EIP(1000, 200) },
         method: 'max',
       });
 
       aggregationTest({
         when: 'aggregating by min',
-        prices: [{ standard: EIP(100, 10), fast: EIP(1000, 200) }, { standard: EIP(500, 100) }, { fast: EIP(900, 300) }],
+        prices: [
+          { standard: EIP(100, 10), fast: EIP(1000, 200) },
+          { standard: EIP(500, 100), fast: EIP(900, 300) },
+        ],
         expected: { standard: EIP(100, 10), fast: EIP(900, 300) },
         method: 'min',
       });
@@ -77,41 +94,32 @@ describe('Aggregator Gas Price Source', () => {
       aggregationTest({
         when: 'aggregating by mean',
         prices: [
-          { fast: EIP(1100, 300), instant: EIP(1000, 200) },
-          { standard: EIP(100, 10), fast: EIP(1000, 200) },
-          { standard: EIP(800, 100) },
-          { standard: EIP(500, 100) },
-          { fast: EIP(900, 300) },
+          { standard: EIP(800, 100), fast: EIP(1100, 300), instant: EIP(1000, 200) },
+          { standard: EIP(100, 10), fast: EIP(1000, 200), instant: EIP(1500, 200) },
+          { standard: EIP(500, 100), fast: EIP(900, 300), instant: EIP(800, 200) },
         ],
         expected: { standard: EIP(500, 100), fast: EIP(1000, 200), instant: EIP(1000, 200) },
         method: 'mean',
-      });
-
-      aggregationTest({
-        when: 'aggregating by avg',
-        prices: [
-          { fast: EIP(10, 2), instant: EIP(1000, 200) },
-          { standard: EIP(1000, 20), fast: EIP(60, 4) },
-          { standard: EIP(2000, 40) },
-          { standard: EIP(3000, 60) },
-          { fast: EIP(20, 6) },
-        ],
-        expected: { standard: EIP(2000, 40), fast: EIP(30, 4), instant: EIP(1000, 200) },
-        method: 'avg',
       });
     });
 
     describe('Legacy', () => {
       aggregationTest({
         when: 'aggregating by max',
-        prices: [{ standard: LEGACY(100), fast: LEGACY(1000) }, { standard: LEGACY(500) }, { fast: LEGACY(900) }],
+        prices: [
+          { standard: LEGACY(100), fast: LEGACY(1000) },
+          { standard: LEGACY(500), fast: LEGACY(900) },
+        ],
         expected: { standard: LEGACY(500), fast: LEGACY(1000) },
         method: 'max',
       });
 
       aggregationTest({
         when: 'aggregating by min',
-        prices: [{ standard: LEGACY(100), fast: LEGACY(1000) }, { standard: LEGACY(500) }, { fast: LEGACY(900) }],
+        prices: [
+          { standard: LEGACY(100), fast: LEGACY(1000) },
+          { standard: LEGACY(500), fast: LEGACY(900) },
+        ],
         expected: { standard: LEGACY(100), fast: LEGACY(900) },
         method: 'min',
       });
@@ -119,27 +127,12 @@ describe('Aggregator Gas Price Source', () => {
       aggregationTest({
         when: 'aggregating by mean',
         prices: [
-          { fast: LEGACY(1100), instant: LEGACY(1000) },
+          { standard: LEGACY(800), fast: LEGACY(1100) },
           { standard: LEGACY(100), fast: LEGACY(1000) },
-          { standard: LEGACY(800) },
-          { standard: LEGACY(500) },
-          { fast: LEGACY(900) },
+          { standard: LEGACY(500), fast: LEGACY(900) },
         ],
-        expected: { standard: LEGACY(500), fast: LEGACY(1000), instant: LEGACY(1000) },
+        expected: { standard: LEGACY(500), fast: LEGACY(1000) },
         method: 'mean',
-      });
-
-      aggregationTest({
-        when: 'aggregating by avg',
-        prices: [
-          { fast: LEGACY(10), instant: LEGACY(1000) },
-          { standard: LEGACY(1000), fast: LEGACY(60) },
-          { standard: LEGACY(2000) },
-          { standard: LEGACY(3000) },
-          { fast: LEGACY(20) },
-        ],
-        expected: { standard: LEGACY(2000), fast: LEGACY(30), instant: LEGACY(1000) },
-        method: 'avg',
       });
     });
   });
@@ -169,16 +162,21 @@ describe('Aggregator Gas Price Source', () => {
     });
   }
 
-  function buildSource(price: GasPriceResult<any>, chainId: ChainId = CHAIN_ID): IGasPriceSource<any> {
+  function buildSource(
+    price: GasPriceResult<any>,
+    chainId: ChainId = CHAIN_ID,
+    supported?: Record<string, 'present' | 'optional'>
+  ): IGasPriceSource<any> {
+    const support = supported ?? Object.fromEntries(Object.keys(price).map((speed) => [speed, 'present']));
     return {
-      supportedSpeeds: () => ({ [chainId]: Object.keys(price) }),
-      getGasPrice: () => Promise.resolve(price),
+      supportedSpeeds: () => ({ [chainId]: support }),
+      getGasPrice: () => Promise.resolve(price) as any,
     };
   }
 
   function buildSourceThatFails(...onChain: ChainId[]): IGasPriceSource<any> {
     return {
-      supportedSpeeds: () => Object.fromEntries(onChain.map((chainId) => [chainId, ['average']])),
+      supportedSpeeds: () => Object.fromEntries(onChain.map((chainId) => [chainId, { average: 'present' }])),
       getGasPrice: () => Promise.reject(new Error('Something failed')),
     };
   }
