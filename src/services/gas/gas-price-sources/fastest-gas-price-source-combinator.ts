@@ -1,10 +1,5 @@
-import {
-  calculateFieldRequirements,
-  couldSupportMeetRequirements,
-  combineSourcesSupport,
-  doesResponseMeetRequirements,
-} from '@shared/requirements-and-support';
-import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
+import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRequirements } from '@shared/requirements-and-support';
+import { ChainId, FieldsRequirements, TimeString } from '@types';
 import { IGasPriceSource, MergeGasValues, GasPriceResult } from '../types';
 
 // This source will take a list of sources, and try to calculate the gas price on all of them, returning

@@ -1,16 +1,7 @@
 import chai, { expect } from 'chai';
 import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
-import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
-import { given, then, when } from '@test-utils/bdd';
-import {
-  EIP1159GasPrice,
-  GasPriceResult,
-  GasValueForVersion,
-  IGasPriceSource,
-  IQuickGasCostCalculator,
-  IQuickGasCostCalculatorBuilder,
-  SupportedGasValues,
-} from '@services/gas/types';
+import { then, when } from '@test-utils/bdd';
+import { EIP1159GasPrice, IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
 import chaiAsPromised from 'chai-as-promised';
 import { Chains } from '@chains';
 import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
@@ -19,12 +10,6 @@ chai.use(chaiAsPromised);
 
 const CHAIN_ID = Chains.ETHEREUM.chainId;
 describe('Cached Gas Calculator Builder', () => {
-  // when called for the first time, then built ok
-  // when called for the second time with same requirements, then cached
-  // when called for the second time with diff requireents, but same logic, then cached
-  // when called for the second time with a different timeout, then cached
-  //
-
   cacheTest({
     when: 'called for the first time',
     calls: [{ chainId: CHAIN_ID, context: { timeout: '5s' } }],
