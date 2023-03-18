@@ -4,14 +4,7 @@ import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers/types';
 import { IMulticallService } from '@services/multicall/types';
-import {
-  ExtractGasValues,
-  IGasPriceSource,
-  IGasService,
-  IQuickGasCostCalculatorBuilder,
-  MergeGasValues,
-  SupportedGasValues,
-} from '@services/gas/types';
+import { ExtractGasValues, IGasPriceSource, IGasService, IQuickGasCostCalculatorBuilder, SupportedGasValues } from '@services/gas/types';
 import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
 import { GasCalculatorBuilderCombiner } from '@services/gas/gas-calculator-builders/gas-calculator-builder-combiner';
 import { GenericGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/generic-gas-calculator-builder';
@@ -50,8 +43,8 @@ export type GasSourceInput =
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; key?: string }
   | { type: 'custom'; instance: IGasPriceSource<any> }
-  | { type: 'fastest'; sources: 'public-sources' | (SingleSourceInput | 'public-sources')[] }
-  | { type: 'aggregate'; sources: 'public-sources' | (SingleSourceInput | 'public-sources')[]; by: GasPriceAggregationMethod }
+  | { type: 'fastest'; sources: SingleSourceInput[] }
+  | { type: 'aggregate'; sources: SingleSourceInput[]; by: GasPriceAggregationMethod }
   | { type: 'only-first-source-that-supports-chain'; sources: SingleSourceInput[] };
 export type BuildGasParams = { source: GasSourceInput };
 
@@ -60,7 +53,7 @@ export type CalculateGasValuesFromSourceParams<T extends BuildGasParams | undefi
   : CalculateGasValuesFromInput<undefined>;
 
 type CalculateGasValuesFromInput<Input extends GasSourceInput | undefined> = undefined extends Input
-  ? PublicSourcesGasValues
+  ? ExtractGasValues<AggregatorGasPriceSource<PublicSources>>
   : Input extends { type: 'open-ocean' }
   ? ExtractGasValues<OpenOceanGasPriceSource>
   : Input extends { type: 'rpc' }
@@ -78,26 +71,16 @@ type CalculateGasValuesFromInput<Input extends GasSourceInput | undefined> = und
   : Input extends { type: 'cached' }
   ? CalculateGasValuesFromInput<Input['underlyingSource']>
   : Input extends { type: 'fastest' }
-  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  ? CalculateGasValuesFromArray<Input['sources']>
   : Input extends { type: 'aggregate' }
-  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  ? CalculateGasValuesFromArray<Input['sources']>
   : Input extends { type: 'only-first-source-that-supports-chain' }
-  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  ? CalculateGasValuesFromArray<Input['sources']>
   : never;
 
-type CalculateGasValuesWithPublicSources<T extends 'public-sources' | (CachelessInput | 'public-sources')[]> = T extends 'public-sources'
-  ? PublicSourcesGasValues
-  : T extends (CachelessInput | 'public-sources')[]
-  ? CalculateGasValeuesFromArray<T>
-  : never;
-
-type CalculateGasValeuesFromArray<Sources extends (CachelessInput | 'public-sources')[]> = UnionMerge<
+type CalculateGasValuesFromArray<Sources extends CachelessInput[]> = UnionMerge<
   {
-    [K in keyof Sources]: Sources[K] extends 'public-sources'
-      ? PublicSourcesGasValues
-      : Sources[K] extends CachelessInput
-      ? CalculateGasValuesFromInput<Sources[K]>
-      : never;
+    [K in keyof Sources]: Sources[K] extends CachelessInput ? CalculateGasValuesFromInput<Sources[K]> : never;
   }[number]
 >;
 
@@ -134,7 +117,7 @@ function buildSource(
 ): IGasPriceSource<object> {
   switch (source?.type) {
     case undefined:
-      return new AggregatorGasPriceSource(calculateSources('public-sources', { fetchService, multicallService, providerSource }), 'mean');
+      return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerSource }), 'mean');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'rpc':
@@ -167,36 +150,31 @@ type PublicSources = [
   PolygonGasStationGasPriceSource,
   EtherscanGasPriceSource
 ];
-type PublicSourcesGasValues = MergeGasValues<PublicSources>;
 
 function calculateSources(
-  sources: 'public-sources' | (CachelessInput | 'public-sources')[],
+  sources: CachelessInput[],
   {
     providerSource,
     multicallService,
     fetchService,
   }: { providerSource: IProviderSource; multicallService: IMulticallService; fetchService: IFetchService }
 ) {
+  return sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }));
+}
+
+function calculatePublicSources({
+  providerSource,
+  fetchService,
+}: {
+  providerSource: IProviderSource;
+  fetchService: IFetchService;
+}): PublicSources {
   const openOcean = new OpenOceanGasPriceSource(fetchService);
   const rpc = new RPCGasPriceSource(providerSource);
   const ethGasStation = new EthGasStationGasPriceSource(fetchService);
   const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
   const etherscan = new EtherscanGasPriceSource(fetchService);
-  const publicSources: PublicSources = [openOcean, rpc, ethGasStation, polygonGasStation, etherscan];
-
-  const result: IGasPriceSource<object>[] = [];
-  if (sources === 'public-sources') {
-    result.push(...publicSources);
-  } else {
-    for (const source of sources) {
-      if (source === 'public-sources') {
-        result.push(...publicSources);
-      } else {
-        result.push(buildSource(source, { fetchService, multicallService, providerSource }));
-      }
-    }
-  }
-  return result;
+  return [openOcean, rpc, ethGasStation, polygonGasStation, etherscan];
 }
 
 function buildGasCalculatorBuilder<GasValues extends SupportedGasValues>({

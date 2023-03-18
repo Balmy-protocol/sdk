@@ -22,9 +22,9 @@ const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(new Fetch
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(new FetchService(crossFetch));
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
-const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE]);
-const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE]);
-const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE, OWLRACLE_SOURCE], 'mean');
+const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
+const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'mean');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
@@ -32,7 +32,7 @@ jest.setTimeout(ms('30s'));
 describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
   gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
-  gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE });
+  // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE }); We comment this our because of rate limiting
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
   // gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); We comment this out because the API is quite flaky

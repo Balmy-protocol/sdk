@@ -240,7 +240,7 @@ export const Chains = {
     ids: ['canto'],
     currencySymbol: 'CANTO',
     wToken: '0x826551890Dc65655a0Aceca109aB11AbDbD7a07B',
-    publicRPCs: ['https://canto.slingshot.finance'],
+    publicRPCs: ['https://mainnode.plexnode.org:8545', 'https://canto.slingshot.finance'],
     explorer: 'https://evm.explorer.canto.io/',
   },
   EVMOS: {

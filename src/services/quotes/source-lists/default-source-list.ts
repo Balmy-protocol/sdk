@@ -56,19 +56,16 @@ export class DefaultSourceList implements IQuoteSourceList {
   }
 
   private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
+    const reducedTimeout = reduceTimeout(request.quoteTimeout, '200');
     const filteredSourceIds = request.sourceIds.filter((sourceId) => sourceId in this.sources);
     if (filteredSourceIds.length === 0) return [];
 
     // Ask for needed values, such as token data and gas price
-    const tokensPromise = timeoutPromise(
-      this.tokenService.getTokensForChain({
-        chainId: request.chainId,
-        addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
-        config: { timeout: reducedTimeout },
-      }),
-      reducedTimeout
-    );
+    const tokensPromise = this.tokenService.getTokensForChain({
+      chainId: request.chainId,
+      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+      config: { timeout: reducedTimeout },
+    });
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
     const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({

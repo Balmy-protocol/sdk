@@ -1,13 +1,8 @@
-import {
-  calculateFieldRequirements,
-  couldSupportMeetRequirements,
-  combineSourcesSupport,
-  doesResponseMeetRequirements,
-} from '@shared/requirements-and-support';
+import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import { AmountOfToken, ChainId, FieldsRequirements, TimeString } from '@types';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
 import { isEIP1159Compatible } from '../utils';
 
