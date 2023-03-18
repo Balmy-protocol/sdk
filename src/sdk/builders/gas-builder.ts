@@ -41,7 +41,7 @@ export type GasSourceInput =
       expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
     }
   | { type: 'owlracle'; key: string }
-  | { type: 'etherscan'; key?: string }
+  | { type: 'etherscan'; keys?: Record<ChainId, string> }
   | { type: 'custom'; instance: IGasPriceSource<any> }
   | { type: 'fastest'; sources: SingleSourceInput[] }
   | { type: 'aggregate'; sources: SingleSourceInput[]; by: GasPriceAggregationMethod }
@@ -127,7 +127,7 @@ function buildSource(
     case 'polygon-gas-station':
       return new PolygonGasStationGasPriceSource(fetchService);
     case 'etherscan':
-      return new EtherscanGasPriceSource(fetchService, source.key);
+      return new EtherscanGasPriceSource(fetchService, source.keys);
     case 'owlracle':
       return new OwlracleGasPriceSource(fetchService, source.key);
     case 'custom':

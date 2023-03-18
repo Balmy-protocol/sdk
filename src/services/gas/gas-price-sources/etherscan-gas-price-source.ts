@@ -13,7 +13,7 @@ const CHAINS = {
 
 type GasValues = GasValueForVersions<'standard' | 'fast' | 'instant'>;
 export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
-  constructor(private readonly fetchService: IFetchService, private readonly apiKey?: string) {}
+  constructor(private readonly fetchService: IFetchService, private readonly apiKeys?: Record<ChainId, string>) {}
 
   supportedSpeeds() {
     const support: SupportRecord<GasValues> = { standard: 'present', fast: 'present', instant: 'present' };
@@ -28,8 +28,8 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
     context?: { timeout?: TimeString };
   }) {
     let url = `https://api.${CHAINS[chainId]}/api?module=gastracker&action=gasoracle`;
-    if (this.apiKey) {
-      url += `&apikey=${this.apiKey} `;
+    if (this.apiKeys?.[chainId]) {
+      url += `&apikey=${this.apiKeys[chainId]} `;
     }
 
     const response = await this.fetchService.fetch(url, { timeout: context?.timeout });
