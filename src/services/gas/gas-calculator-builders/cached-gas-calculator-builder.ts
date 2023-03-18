@@ -1,7 +1,7 @@
 import { ChainId, DefaultRequirements, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from '../types';
 import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
-import { calculateFieldRequirements } from '../utils';
+import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
   wrapped: IQuickGasCostCalculatorBuilder<GasValues>;
@@ -49,7 +49,6 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
     return calculator as IQuickGasCostCalculator<GasValues, Requirements>;
   }
 
-  // TODO: test
   private toCacheKey<Requirements extends FieldsRequirements<GasValues>>(chainId: ChainId, requirements: Requirements | undefined) {
     const support = this.wrapped.supportedSpeeds()[chainId];
     const fieldRequirements = calculateFieldRequirements(support, requirements);
@@ -69,6 +68,6 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
       context,
       config: { fields: { requirements } },
     });
-    return { [chainIdString]: calculator } as Record<string, IQuickGasCostCalculator<GasValues, DefaultRequirements<GasValues>>>;
+    return { [cacheId]: calculator } as Record<string, IQuickGasCostCalculator<GasValues, DefaultRequirements<GasValues>>>;
   }
 }

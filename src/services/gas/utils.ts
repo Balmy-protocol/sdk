@@ -1,4 +1,4 @@
-import { DefaultRequirements, FieldRequirementOptions, FieldsRequirements, SupportInChain } from '@types';
+import { DefaultRequirements, FieldsRequirements } from '@types';
 import { EIP1159GasPrice, GasPriceResult, SupportedGasValues } from './types';
 
 export function isEIP1159Compatible<

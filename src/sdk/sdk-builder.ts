@@ -19,7 +19,7 @@ export function buildSDK<Params extends BuildParams = {}>(
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerSource, multicallService);
   const tokenService = buildTokenService<Params['tokens']>(params?.tokens, fetchService, multicallService);
-  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService, tokenService);
+  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, tokenService);
 
   return {
     providerSource,

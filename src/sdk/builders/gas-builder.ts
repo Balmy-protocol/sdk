@@ -77,10 +77,13 @@ type CalculateGasValuesFromInput<Input extends GasSourceInput | undefined> = und
   ? ExtractGasValues<Input['instance']>
   : Input extends { type: 'cached' }
   ? CalculateGasValuesFromInput<Input['underlyingSource']>
-  : // Input extends { type: 'fastest' } ? CalculateGasValuesWithPublicSources<Input['sources']> :
-    // Input extends { type: 'aggregate' } ? CalculateGasValuesWithPublicSources<Input['sources']> :
-    // Input extends { type: 'only-first-source-that-supports-chain' } ? CalculateGasValuesWithPublicSources<Input['sources']> :
-    never;
+  : Input extends { type: 'fastest' }
+  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  : Input extends { type: 'aggregate' }
+  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  : Input extends { type: 'only-first-source-that-supports-chain' }
+  ? CalculateGasValuesWithPublicSources<Input['sources']>
+  : never;
 
 type CalculateGasValuesWithPublicSources<T extends 'public-sources' | (CachelessInput | 'public-sources')[]> = T extends 'public-sources'
   ? PublicSourcesGasValues

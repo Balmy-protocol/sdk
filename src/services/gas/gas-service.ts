@@ -5,6 +5,7 @@ import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
 import { timeoutPromise } from '@shared/timeouts';
+import { validateRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
   providerSource: IProviderSource;
@@ -47,8 +48,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     chainId: ChainId;
     config?: { timeout?: TimeString; fields?: Requirements };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
-    // TODO: Make sure that fields make sense according to support in chain
-    // TODO: Test new behavior
+    validateRequirements(this.supportedSpeeds(), [chainId], config?.fields);
     return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, config, context: config }), config?.timeout);
   }
 

@@ -12,7 +12,7 @@ import {
 import { getChainByKeyOrFail } from '@chains';
 import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { DefaultSourcesConfig, buildSources } from '../source-registry';
-import { IQuickGasCostCalculator, GasPrice, IGasService } from '@services/gas/types';
+import { IQuickGasCostCalculator, GasPrice, IGasService, SupportedGasValues } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { BaseTokenMetadata, ITokenService } from '@services/tokens/types';
@@ -26,14 +26,14 @@ import { ChainId } from '@types';
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
-  gasService: IGasService<any>;
+  gasService: IGasService<SupportedGasValues>;
   tokenService: ITokenService<TokenWithOptionalPrice>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
-  private readonly gasService: IGasService<any>;
+  private readonly gasService: IGasService<SupportedGasValues>;
   private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 

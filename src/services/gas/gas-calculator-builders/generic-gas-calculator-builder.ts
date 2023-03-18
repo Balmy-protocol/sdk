@@ -17,7 +17,6 @@ export class GenericGasCalculatorBuilder<GasValues extends SupportedGasValues> i
     return this.gasPriceSource.supportedSpeeds();
   }
 
-  // TODO: Test
   async build<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
     config,
