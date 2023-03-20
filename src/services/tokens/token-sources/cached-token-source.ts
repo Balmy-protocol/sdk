@@ -14,13 +14,13 @@ export class CachedTokenSource<TokenData extends object> implements ITokenSource
 
   async getTokens({
     addresses,
-    context,
+    config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
     const tokensInChain = addressesToTokensInChain(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: context?.timeout });
+    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, timeout: config?.timeout });
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 

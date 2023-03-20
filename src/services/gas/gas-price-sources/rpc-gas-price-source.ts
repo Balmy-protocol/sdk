@@ -15,12 +15,12 @@ export class RPCGasPriceSource implements IGasPriceSource<GasValues> {
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
-    const feeData = await timeoutPromise(this.providerSource.getProvider({ chainId }).getFeeData(), context?.timeout);
+    const feeData = await timeoutPromise(this.providerSource.getProvider({ chainId }).getFeeData(), config?.timeout);
     const gasPrice =
       !!feeData.maxFeePerGas && !!feeData.maxPriorityFeePerGas
         ? { standard: { maxFeePerGas: feeData.maxFeePerGas.toString(), maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toString() } }

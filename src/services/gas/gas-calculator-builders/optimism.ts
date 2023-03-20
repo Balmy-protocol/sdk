@@ -26,8 +26,7 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
 
   async build<Requirements extends FieldsRequirements<GasValues>>(_: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
     const { l2GasPrice, ...l1GasValues } = await getGasValues(this.multicallService);
     return {

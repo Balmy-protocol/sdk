@@ -30,12 +30,12 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasValues> {
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
-    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`, { timeout: context?.timeout });
+    const response = await this.fetchService.fetch(`https://ethapi.openocean.finance/v2/${chainId}/gas-price`, { timeout: config?.timeout });
     const body = await response.json();
     const result =
       typeof body.standard === 'string' || typeof body.standard === 'number'

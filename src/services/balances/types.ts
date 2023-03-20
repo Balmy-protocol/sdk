@@ -34,10 +34,10 @@ export type IBalanceSource = {
   supportedQueries(): Record<ChainId, BalanceQueriesSupport>;
   getTokensHeldByAccounts(_: {
     accounts: Record<ChainId, Account[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
   getBalancesForTokens(_: {
     tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, AmountOfToken>>>>;
 };

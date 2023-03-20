@@ -52,15 +52,15 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
 
   async getTokens({
     addresses,
-    context,
+    config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
     const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
       addresses.map((address) => toTokenId(Number(chainId), address))
     );
-    const coins = await this.fetchTokens(tokenIds, context);
+    const coins = await this.fetchTokens(tokenIds, config);
     const result: Record<ChainId, Record<TokenAddress, DefiLlamaToken>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
@@ -84,12 +84,12 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     return Object.fromEntries(Object.keys(CHAIN_ID_TO_KEY).map((chainId) => [Number(chainId), properties]));
   }
 
-  private async fetchTokens(tokens: TokenId[], context?: { timeout?: TimeString }) {
+  private async fetchTokens(tokens: TokenId[], config?: { timeout?: TimeString }) {
     const chunkSize = 30;
     const chunks = [...Array(Math.ceil(tokens.length / chunkSize))].map((_) => tokens.splice(0, chunkSize));
     const requests = chunks.map(async (chunk) => {
       const url = 'https://coins.llama.fi/prices/current/' + chunk.join(',');
-      const response = await this.fetch.fetch(url, { timeout: context?.timeout });
+      const response = await this.fetch.fetch(url, { timeout: config?.timeout });
       if (!response.ok) {
         throw new Error('Request to Defi Llama API failed');
       }

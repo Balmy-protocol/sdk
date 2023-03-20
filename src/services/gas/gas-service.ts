@@ -49,7 +49,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     config?: { timeout?: TimeString; fields?: Requirements };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
     validateRequirements(this.supportedSpeeds(), [chainId], config?.fields);
-    return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, config, context: config }), config?.timeout);
+    return timeoutPromise(this.gasCostCalculatorBuilder.build({ chainId, config }), config?.timeout);
   }
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>({

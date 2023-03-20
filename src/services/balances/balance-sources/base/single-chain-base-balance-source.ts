@@ -8,24 +8,24 @@ import { BalanceQueriesSupport, IBalanceSource } from '../../types';
 export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   async getBalancesForTokens({
     tokens,
-    context,
+    config,
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const promises = Object.entries(tokens).map(async ([chainId, tokens]) => [
       parseInt(chainId),
-      await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), context?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
   async getTokensHeldByAccounts({
     accounts,
-    context,
+    config,
   }: {
     accounts: Record<ChainId, Address[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const support = this.supportedQueries();
     for (const chainId in accounts) {
@@ -35,7 +35,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     }
     const promises = Object.entries(accounts).map(async ([chainId, accounts]) => [
       chainId,
-      await timeoutPromise(this.fetchTokensHeldByAccountsInChain(Number(chainId), accounts, context), context?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.fetchTokensHeldByAccountsInChain(Number(chainId), accounts, config), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
@@ -43,7 +43,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   private async fetchBalancesInChain(
     chainId: ChainId,
     tokens: Record<Address, TokenAddress[]>,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     const accountsToFetchNativeToken: Address[] = [];
     const tokensWithoutNativeToken: Record<Address, TokenAddress[]> = {};
@@ -56,7 +56,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
 
     const erc20Promise =
       Object.keys(tokensWithoutNativeToken).length > 0
-        ? this.fetchERC20BalancesForAccountsInChain(chainId, tokensWithoutNativeToken, context)
+        ? this.fetchERC20BalancesForAccountsInChain(chainId, tokensWithoutNativeToken, config)
         : Promise.resolve({});
 
     const nativePromise =
@@ -93,9 +93,9 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   private async fetchTokensHeldByAccountsInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
-    const erc20Promise = this.fetchERC20TokensHeldByAccountsInChain(chainId, accounts, context);
+    const erc20Promise = this.fetchERC20TokensHeldByAccountsInChain(chainId, accounts, config);
     const nativePromise = this.fetchNativeBalancesInChain(chainId, accounts);
     const [erc20Result, nativeResult] = await Promise.all([erc20Promise, nativePromise]);
 
@@ -115,17 +115,17 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   protected abstract fetchERC20TokensHeldByAccountsInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>>;
   protected abstract fetchERC20BalancesForAccountsInChain(
     chainId: ChainId,
     accounts: Record<Address, TokenAddress[]>,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>>;
   protected abstract fetchNativeBalancesInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, AmountOfToken>>;
 }
 

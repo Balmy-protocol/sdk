@@ -19,7 +19,7 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
   constructor({ wrapped, expiration }: ConstructorParameters<GasValues>) {
     this.wrapped = wrapped;
     this.cache = new Cache<CacheContext, string, IQuickGasCostCalculator<GasValues>>({
-      calculate: (context, [cacheId]) => this.fromCacheKey(cacheId, context), // We know that we will only ask for one chain at a time
+      calculate: (config, [cacheId]) => this.fromCacheKey(cacheId, config), // We know that we will only ask for one chain at a time
       expirationConfig: expiration.default,
     });
     this.expirationOverrides = expiration.overrides ?? {};
@@ -32,19 +32,17 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
   async build<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
     config,
-    context,
   }: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }) {
     const expirationConfig = this.expirationOverrides[chainId];
     const key = this.toCacheKey(chainId, config?.fields);
     const calculator = await this.cache.getOrCalculateSingle({
       key,
-      context,
+      context: config,
       expirationConfig,
-      timeout: context?.timeout,
+      timeout: config?.timeout,
     });
     return calculator as IQuickGasCostCalculator<GasValues, Requirements>;
   }
@@ -58,15 +56,14 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
     return `${chainId}-${requirementsString}`;
   }
 
-  private async fromCacheKey(cacheId: string, context: CacheContext) {
+  private async fromCacheKey(cacheId: string, config: CacheContext) {
     const [chainIdString, requirementsString] = cacheId.split('-');
     const requirements: Record<keyof GasValues, FieldRequirementOptions> = Object.fromEntries(
       requirementsString.split('|').map((fieldRequirement) => fieldRequirement.split(':'))
     );
     const calculator = await this.wrapped.build({
       chainId: Number(chainIdString),
-      context,
-      config: { fields: { requirements } },
+      config: { ...config, fields: { requirements } },
     });
     return { [cacheId]: calculator } as Record<string, IQuickGasCostCalculator<GasValues, DefaultRequirements<GasValues>>>;
   }

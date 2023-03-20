@@ -51,7 +51,7 @@ const SOURCE: IBalanceSource = {
   },
   getTokensHeldByAccounts(_: {
     accounts: Record<ChainId, Address[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     throw new Error('Not implemented');
   },
@@ -59,7 +59,7 @@ const SOURCE: IBalanceSource = {
     tokens,
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
     for (const [chainIdString, record] of Object.entries(tokens)) {

@@ -62,7 +62,7 @@ export class BalanceService implements IBalanceService {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
-    return timeoutPromise(this.source.getTokensHeldByAccounts({ accounts, context: config }), config?.timeout);
+    return timeoutPromise(this.source.getTokensHeldByAccounts({ accounts, config }), config?.timeout);
   }
 
   getBalancesForTokensForAccounts({
@@ -72,6 +72,6 @@ export class BalanceService implements IBalanceService {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
-    return timeoutPromise(this.source.getBalancesForTokens({ tokens, context: config }), config?.timeout);
+    return timeoutPromise(this.source.getBalancesForTokens({ tokens, config }), config?.timeout);
   }
 }

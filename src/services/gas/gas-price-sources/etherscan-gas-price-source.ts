@@ -22,17 +22,17 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
     let url = `https://api.${CHAINS[chainId]}/api?module=gastracker&action=gasoracle`;
     if (this.apiKeys?.[chainId]) {
       url += `&apikey=${this.apiKeys[chainId]} `;
     }
 
-    const response = await this.fetchService.fetch(url, { timeout: context?.timeout });
+    const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
     const {
       result: { SafeGasPrice, ProposeGasPrice, FastGasPrice, suggestBaseFee },
     }: { result: { SafeGasPrice: string; ProposeGasPrice: string; FastGasPrice: string; suggestBaseFee?: string } } = await response.json();

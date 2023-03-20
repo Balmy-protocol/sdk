@@ -20,11 +20,11 @@ export class MoralisBalanceSource extends SingleAccountAndChainBaseBalanceSource
   protected async fetchERC20TokensHeldByAccountInChain(
     chainId: ChainId,
     account: Address,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
     const balances: { token_address: string; balance: string }[] = await this.fetch(
       `https://deep-index.moralis.io/api/v2/${account}/erc20?chain=${chainIdToValidChain(chainId)}`,
-      context?.timeout
+      config?.timeout
     );
     return toRecord(balances);
   }
@@ -33,19 +33,19 @@ export class MoralisBalanceSource extends SingleAccountAndChainBaseBalanceSource
     chainId: ChainId,
     account: Address,
     addresses: TokenAddress[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
     const url = `https://deep-index.moralis.io/api/v2/${account}/erc20?chain=${chainIdToValidChain(chainId)}&token_addresses=${addresses.join(
       ','
     )}`;
-    const balances: { token_address: string; balance: string }[] = await this.fetch(url, context?.timeout);
+    const balances: { token_address: string; balance: string }[] = await this.fetch(url, config?.timeout);
     return toRecord(balances);
   }
 
-  protected async fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
+  protected async fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }): Promise<AmountOfToken> {
     const { balance }: { balance: string } = await this.fetch(
       `https://deep-index.moralis.io/api/v2/${account}/balance?chain=${chainIdToValidChain(chainId)}`,
-      context?.timeout
+      config?.timeout
     );
     return balance;
   }

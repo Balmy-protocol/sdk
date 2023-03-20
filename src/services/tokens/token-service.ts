@@ -45,6 +45,6 @@ export class TokenService<TokenData extends object> implements ITokenService<Tok
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>> {
-    return timeoutPromise(this.tokenSource.getTokens({ addresses, context: config }), config?.timeout);
+    return timeoutPromise(this.tokenSource.getTokens({ addresses, config }), config?.timeout);
   }
 }

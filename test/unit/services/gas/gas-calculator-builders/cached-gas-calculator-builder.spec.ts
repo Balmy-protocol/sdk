@@ -12,15 +12,15 @@ const CHAIN_ID = Chains.ETHEREUM.chainId;
 describe('Cached Gas Calculator Builder', () => {
   cacheTest({
     when: 'called for the first time',
-    calls: [{ chainId: CHAIN_ID, context: { timeout: '5s' } }],
+    calls: [{ chainId: CHAIN_ID, config: { timeout: '5s' } }],
     expected: ['pass-through'],
   });
 
   cacheTest({
     when: 'called for the second time with same requirements',
     calls: [
-      { chainId: CHAIN_ID, context: { timeout: '5s' } },
-      { chainId: CHAIN_ID, context: { timeout: '5s' } },
+      { chainId: CHAIN_ID, config: { timeout: '5s' } },
+      { chainId: CHAIN_ID, config: { timeout: '5s' } },
     ],
     expected: ['pass-through', 'cached'],
   });
@@ -28,8 +28,8 @@ describe('Cached Gas Calculator Builder', () => {
   cacheTest({
     when: 'called for the second time with same requirements but different timeout',
     calls: [
-      { chainId: CHAIN_ID, context: { timeout: '5s' } },
-      { chainId: CHAIN_ID, context: { timeout: '15s' } },
+      { chainId: CHAIN_ID, config: { timeout: '5s' } },
+      { chainId: CHAIN_ID, config: { timeout: '15s' } },
     ],
     expected: ['pass-through', 'cached'],
   });
@@ -37,8 +37,8 @@ describe('Cached Gas Calculator Builder', () => {
   cacheTest({
     when: 'called for the second time with different requirements',
     calls: [
-      { chainId: CHAIN_ID, context: { timeout: '5s' } },
-      { chainId: CHAIN_ID, context: { timeout: '15s' }, config: { fields: { requirements: { fast: 'required' } } } },
+      { chainId: CHAIN_ID, config: { timeout: '5s' } },
+      { chainId: CHAIN_ID, config: { timeout: '15s', fields: { requirements: { fast: 'required' } } } },
     ],
     expected: ['pass-through', 'pass-through'],
   });
@@ -46,8 +46,8 @@ describe('Cached Gas Calculator Builder', () => {
   cacheTest({
     when: 'called for the second time with different requirement parameters, but same underlying requirements',
     calls: [
-      { chainId: CHAIN_ID, context: { timeout: '5s' } },
-      { chainId: CHAIN_ID, context: { timeout: '15s' }, config: { fields: { requirements: { standard: 'required' } } } },
+      { chainId: CHAIN_ID, config: { timeout: '5s' } },
+      { chainId: CHAIN_ID, config: { timeout: '15s', fields: { requirements: { standard: 'required' } } } },
     ],
     expected: ['pass-through', 'cached'],
   });
@@ -68,8 +68,7 @@ describe('Cached Gas Calculator Builder', () => {
         for (let i = 0; i < expectedCalls; i++) {
           const requirements = calculateFieldRequirements(wrapped.supportedSpeeds()[CHAIN_ID], calls[i].config?.fields);
           expect(wrapped.calls[i].chainId).to.eql(calls[i].chainId);
-          expect(wrapped.calls[i].context).to.eql(calls[i].context);
-          expect(wrapped.calls[i].config).to.eql({ fields: { requirements } });
+          expect(wrapped.calls[i].config).to.eql({ ...calls[i].config, fields: { requirements } });
         }
       });
     });
@@ -87,8 +86,7 @@ class MockedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder<GasVa
   }
   build<Requirements extends FieldsRequirements<GasValues>>(params: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
     this.calls.push(params);
     return RETURN_VALUE;
@@ -96,6 +94,5 @@ class MockedGasCalculatorBuilder implements IQuickGasCostCalculatorBuilder<GasVa
 }
 type CallParams = {
   chainId: ChainId;
-  config?: { fields?: FieldsRequirements<GasValues> };
-  context?: { timeout?: TimeString };
+  config?: { fields?: FieldsRequirements<GasValues>; timeout?: TimeString };
 };
