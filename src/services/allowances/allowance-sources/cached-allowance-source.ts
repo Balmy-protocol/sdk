@@ -18,13 +18,13 @@ export class CachedAllowanceSource implements IAllowanceSource {
 
   async getAllowances({
     allowances,
-    context,
+    config,
   }: {
     allowances: Record<ChainId, AllowanceCheck[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>> {
     const keys = allowanceChecksToKeys(allowances);
-    const result = await this.cache.getOrCalculate({ keys, timeout: context?.timeout });
+    const result = await this.cache.getOrCalculate({ keys, timeout: config?.timeout });
     return keyResultsToResult(result);
   }
 

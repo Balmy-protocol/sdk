@@ -20,14 +20,12 @@ export class GenericGasCalculatorBuilder<GasValues extends SupportedGasValues> i
   async build<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
     config,
-    context,
   }: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>> {
     const support = this.supportedSpeeds()[chainId];
-    const gasPriceData = await this.gasPriceSource.getGasPrice({ chainId, config, context });
+    const gasPriceData = await this.gasPriceSource.getGasPrice({ chainId, config });
     return {
       supportedSpeeds: () => support,
       getGasPrice: () => gasPriceData,

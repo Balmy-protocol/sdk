@@ -25,7 +25,7 @@ export type IAllowanceSource = {
   supportedChains(): ChainId[];
   getAllowances(_: {
     allowances: Record<ChainId, AllowanceCheck[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>>;
 };
 

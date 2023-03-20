@@ -15,12 +15,12 @@ export class PolygonGasStationGasPriceSource implements IGasPriceSource<GasValue
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
-    const response = await this.fetchService.fetch('https://gasstation-mainnet.matic.network/v2', { timeout: context?.timeout });
+    const response = await this.fetchService.fetch('https://gasstation-mainnet.matic.network/v2', { timeout: config?.timeout });
     const { safeLow, standard, fast }: { safeLow: Gas; standard: Gas; fast: Gas } = await response.json();
     return {
       standard: calculateGas(safeLow),

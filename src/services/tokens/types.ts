@@ -24,7 +24,7 @@ export type ITokenService<TokenData extends object> = {
 export type ITokenSource<TokenData extends object> = {
   getTokens(_: {
     addresses: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenData>>>;
   tokenProperties(): Record<ChainId, KeyOfToken<TokenData>[]>;
 };

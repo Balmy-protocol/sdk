@@ -43,10 +43,10 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasValues> {
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
     const key = CHAINS[chainId];
     const accept = [this.config.accept.standard, this.config.accept.fast, this.config.accept.instant].join(',');
@@ -58,7 +58,7 @@ export class OwlracleGasPriceSource implements IGasPriceSource<GasValues> {
         `&accept=${accept}` +
         `&percentile=${this.config.percentile}` +
         `&blocks=${this.config.blocks}`,
-      { timeout: context?.timeout }
+      { timeout: config?.timeout }
     );
     const { speeds }: { speeds: GasPrice[] } = await response.json();
     const [standard, fast, instant] = speeds;

@@ -20,7 +20,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   protected fetchERC20TokensHeldByAccountsInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     throw new Error('Operation not supported');
   }
@@ -28,7 +28,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   protected async fetchERC20BalancesForAccountsInChain(
     chainId: ChainId,
     accounts: Record<Address, TokenAddress[]>,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
     const calls: { target: Address; decode: string; calldata: string }[] = pairs.map(({ account, token }) => ({
@@ -49,7 +49,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   protected async fetchNativeBalancesInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, AmountOfToken>> {
     const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]);
     return Object.fromEntries(await Promise.all(entries));

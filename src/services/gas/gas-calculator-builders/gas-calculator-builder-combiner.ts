@@ -34,16 +34,12 @@ export class GasCalculatorBuilderCombiner<
   async build<Requirements extends FieldsRequirements<CombinationGasValues<Default, Overrides>>>({
     chainId,
     config,
-    context,
   }: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }) {
     const builder = this.calculatorBuilderOverrides[chainId] ?? this.defaultCalculatorBuilder;
-    return builder.build({ chainId, config, context }) as Promise<
-      IQuickGasCostCalculator<CombinationGasValues<Default, Overrides>, Requirements>
-    >;
+    return builder.build({ chainId, config }) as Promise<IQuickGasCostCalculator<CombinationGasValues<Default, Overrides>, Requirements>>;
   }
 }
 

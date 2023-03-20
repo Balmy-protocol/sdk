@@ -15,12 +15,12 @@ export class EthGasStationGasPriceSource implements IGasPriceSource<GasValues> {
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
-    context,
+    config,
   }: {
     chainId: ChainId;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }) {
-    const response = await this.fetchService.fetch('https://api.ethgasstation.info/api/fee-estimate', { timeout: context?.timeout });
+    const response = await this.fetchService.fetch('https://api.ethgasstation.info/api/fee-estimate', { timeout: config?.timeout });
     const {
       nextBaseFee,
       priorityFee: { standard, fast, instant },

@@ -5,20 +5,20 @@ export abstract class SingleAccountAndChainBaseBalanceSource extends SingleChain
   protected async fetchERC20TokensHeldByAccountsInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
-    const entries = accounts.map(async (account) => [account, await this.fetchERC20TokensHeldByAccountInChain(chainId, account, context)]);
+    const entries = accounts.map(async (account) => [account, await this.fetchERC20TokensHeldByAccountInChain(chainId, account, config)]);
     return Object.fromEntries(await Promise.all(entries));
   }
 
   protected async fetchERC20BalancesForAccountsInChain(
     chainId: ChainId,
     accounts: Record<Address, TokenAddress[]>,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     const entries = Object.entries(accounts).map(async ([account, tokens]) => [
       account,
-      await this.fetchERC20BalancesForAccountInChain(chainId, account, tokens, context),
+      await this.fetchERC20BalancesForAccountInChain(chainId, account, tokens, config),
     ]);
     return Object.fromEntries(await Promise.all(entries));
   }
@@ -26,22 +26,22 @@ export abstract class SingleAccountAndChainBaseBalanceSource extends SingleChain
   protected async fetchNativeBalancesInChain(
     chainId: ChainId,
     accounts: Address[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<Address, AmountOfToken>> {
-    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account, context)]);
+    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account, config)]);
     return Object.fromEntries(await Promise.all(entries));
   }
 
   protected abstract fetchERC20TokensHeldByAccountInChain(
     chainId: ChainId,
     account: Address,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>>;
   protected abstract fetchERC20BalancesForAccountInChain(
     chainId: ChainId,
     account: Address,
     addresses: TokenAddress[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>>;
-  protected abstract fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken>;
+  protected abstract fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }): Promise<AmountOfToken>;
 }

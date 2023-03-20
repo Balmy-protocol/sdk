@@ -18,18 +18,16 @@ export class FastestGasPriceSourceCombinator<Sources extends IGasPriceSource<obj
   async getGasPrice<Requirements extends FieldsRequirements<MergeGasValues<Sources>>>({
     chainId,
     config,
-    context,
   }: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }) {
     const sourcesInChain = this.sources.filter(
       (source) => chainId in source.supportedSpeeds() && couldSupportMeetRequirements(source.supportedSpeeds()[chainId], config?.fields)
     );
     if (sourcesInChain.length === 0) throw new Error(`Chain with id ${chainId} cannot support the given requirements`);
     const gasResults = sourcesInChain.map((source) =>
-      source.getGasPrice({ chainId, config, context }).then((response) => failIfResponseDoesNotMeetRequirements(response, config?.fields))
+      source.getGasPrice({ chainId, config }).then((response) => failIfResponseDoesNotMeetRequirements(response, config?.fields))
     );
     return Promise.any(gasResults) as Promise<GasPriceResult<MergeGasValues<Sources>, Requirements>>;
   }

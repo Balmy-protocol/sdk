@@ -44,8 +44,7 @@ export type IQuickGasCostCalculatorBuilder<GasValues extends SupportedGasValues>
   supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
   build<Requirements extends FieldsRequirements<GasValues>>(_: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<IQuickGasCostCalculator<GasValues, Requirements>>;
 };
 
@@ -62,8 +61,7 @@ export type IGasPriceSource<GasValues extends SupportedGasValues> = {
   supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
   getGasPrice<Requirements extends FieldsRequirements<GasValues>>(_: {
     chainId: ChainId;
-    config?: { fields?: Requirements };
-    context?: { timeout?: TimeString };
+    config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<GasPriceResult<GasValues, Requirements>>;
 };
 

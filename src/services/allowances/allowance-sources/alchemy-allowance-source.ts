@@ -13,14 +13,14 @@ export class AlchemyAllowanceSource implements IAllowanceSource {
 
   async getAllowances({
     allowances,
-    context,
+    config,
   }: {
     allowances: Record<ChainId, AllowanceCheck[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>> {
     const promises = Object.entries(allowances).map(async ([chainId, checks]) => [
       parseInt(chainId),
-      await timeoutPromise(this.fetchAllowancesInChain(parseInt(chainId), checks), context?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.fetchAllowancesInChain(parseInt(chainId), checks), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
@@ -28,9 +28,9 @@ export class AlchemyAllowanceSource implements IAllowanceSource {
   private async fetchAllowancesInChain(
     chainId: ChainId,
     allowances: AllowanceCheck[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>> {
-    const allowanceResults = await Promise.all(allowances.map((allowance) => this.fetchAllowanceInChain(chainId, allowance, context)));
+    const allowanceResults = await Promise.all(allowances.map((allowance) => this.fetchAllowanceInChain(chainId, allowance, config)));
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
     for (let i = 0; i < allowanceResults.length; i++) {
       const { token, owner, spender } = allowances[i];
@@ -44,9 +44,9 @@ export class AlchemyAllowanceSource implements IAllowanceSource {
   private fetchAllowanceInChain(
     chainId: ChainId,
     { token, owner, spender }: AllowanceCheck,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<AmountOfToken> {
-    return this.callRPC<AmountOfToken>(chainId, 'alchemy_getTokenAllowance', [{ contract: token, owner, spender }], context?.timeout);
+    return this.callRPC<AmountOfToken>(chainId, 'alchemy_getTokenAllowance', [{ contract: token, owner, spender }], config?.timeout);
   }
 
   private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {

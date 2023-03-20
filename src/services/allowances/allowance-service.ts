@@ -41,7 +41,7 @@ export class AllowanceService implements IAllowanceService {
   }): Promise<Record<SpenderAddress, AmountOfToken>> {
     const allowancesInChain = spenders.map((spender) => ({ token, owner, spender }));
     const allowances = { [chainId]: allowancesInChain };
-    const result = await timeoutPromise(this.source.getAllowances({ allowances, context: config }), config?.timeout);
+    const result = await timeoutPromise(this.source.getAllowances({ allowances, config }), config?.timeout);
     return result[chainId][token][owner];
   }
 }

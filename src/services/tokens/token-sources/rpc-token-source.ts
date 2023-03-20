@@ -12,14 +12,14 @@ export class RPCTokenSource implements ITokenSource<BaseTokenMetadata> {
 
   async getTokens({
     addresses,
-    context,
+    config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    context?: { timeout: TimeString };
+    config?: { timeout: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, BaseTokenMetadata>>> {
     const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, BaseTokenMetadata>]>>(async ([chainId, addresses]) => [
       parseInt(chainId),
-      await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), context?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }

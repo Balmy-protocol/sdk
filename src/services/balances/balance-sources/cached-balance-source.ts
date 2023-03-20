@@ -24,10 +24,10 @@ export class CachedBalanceSource implements IBalanceSource {
 
   async getTokensHeldByAccounts({
     accounts,
-    context,
+    config,
   }: {
     accounts: Record<ChainId, Address[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const support = this.supportedQueries();
     for (const chainId in accounts) {
@@ -40,7 +40,7 @@ export class CachedBalanceSource implements IBalanceSource {
     );
     const cacheResults = await this.cacheHeldByAccount.getOrCalculate({
       keys,
-      timeout: context?.timeout,
+      timeout: config?.timeout,
     });
     const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
     for (const key in cacheResults) {
@@ -53,10 +53,10 @@ export class CachedBalanceSource implements IBalanceSource {
 
   async getBalancesForTokens({
     tokens,
-    context,
+    config,
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
     const allChainAndAccountPairs = Object.entries(tokens).flatMap(([chainId, tokens]) =>
       Object.keys(tokens).map((account) => ({ chainId: Number(chainId), account }))
@@ -72,7 +72,7 @@ export class CachedBalanceSource implements IBalanceSource {
     if (accountsWithHeldByAccount.length > 0) {
       // Note: we know these values are cached, so no sense in parallelizing with the query below
       const keys = accountsWithHeldByAccount.map(({ chainId, account }) => toKeyHeldByAccount(chainId, account));
-      const tokensHeldByAccount = await this.cacheHeldByAccount.getOrCalculate({ keys, timeout: context?.timeout });
+      const tokensHeldByAccount = await this.cacheHeldByAccount.getOrCalculate({ keys, timeout: config?.timeout });
       for (const key of keys) {
         const { chainId, account } = fromKeyHeldByAccount(key);
         if (!(chainId in result)) result[chainId] = {};
@@ -86,7 +86,7 @@ export class CachedBalanceSource implements IBalanceSource {
       );
       const amountsInChain = await this.cacheAmountInChain.getOrCalculate({
         keys,
-        timeout: context?.timeout,
+        timeout: config?.timeout,
       });
       for (const key in amountsInChain) {
         const { chainId, account, token } = fromKeyTokenInChain(key as KeyTokenInChain);

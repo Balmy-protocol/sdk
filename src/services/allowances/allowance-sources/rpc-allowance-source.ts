@@ -14,14 +14,14 @@ export class RPCAllowanceSource implements IAllowanceSource {
 
   async getAllowances({
     allowances,
-    context,
+    config,
   }: {
     allowances: Record<ChainId, AllowanceCheck[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>> {
     const promises = Object.entries(allowances).map(async ([chainId, checks]) => [
       parseInt(chainId),
-      await timeoutPromise(this.getAllowancesInChain(parseInt(chainId), checks), context?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.getAllowancesInChain(parseInt(chainId), checks), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }

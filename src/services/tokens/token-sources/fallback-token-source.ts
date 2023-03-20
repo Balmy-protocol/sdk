@@ -11,10 +11,10 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
 
   getTokens({
     addresses,
-    context,
+    config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    context?: { timeout?: TimeString };
+    config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> {
     return new Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>>((resolve, reject) => {
       const result: Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>> = {};
@@ -43,7 +43,7 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
           return;
         }
 
-        timeoutPromise(source.getTokens({ addresses: addressesForSource }), context?.timeout, { reduceBy: '100' })
+        timeoutPromise(source.getTokens({ addresses: addressesForSource }), config?.timeout, { reduceBy: '100' })
           .then((sourceResult) => {
             successfulRequests++;
             for (const [chainIdString, tokenRecord] of Object.entries(sourceResult)) {

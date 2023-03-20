@@ -18,7 +18,7 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
   protected async fetchERC20TokensHeldByAccountInChain(
     chainId: ChainId,
     account: Address,
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
     const allBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] = [];
     let pageKey: string | undefined = undefined;
@@ -30,7 +30,7 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
           chainId,
           'alchemy_getTokenBalances',
           args,
-          context?.timeout
+          config?.timeout
         );
         allBalances.push(...result.tokenBalances);
         pageKey = result.pageKey;
@@ -45,20 +45,20 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
     chainId: ChainId,
     account: Address,
     addresses: TokenAddress[],
-    context?: { timeout?: TimeString }
+    config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
     const { tokenBalances } = await this.callRPC<{ tokenBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] }>(
       chainId,
       'alchemy_getTokenBalances',
       [account, addresses],
-      context?.timeout
+      config?.timeout
     );
 
     return toRecord(tokenBalances);
   }
 
-  protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, context?: { timeout?: TimeString }): Promise<AmountOfToken> {
-    return this.callRPC(chainId, 'eth_getBalance', [account, 'latest'], context?.timeout);
+  protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }): Promise<AmountOfToken> {
+    return this.callRPC(chainId, 'eth_getBalance', [account, 'latest'], config?.timeout);
   }
 
   private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {
