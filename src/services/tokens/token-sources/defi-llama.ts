@@ -58,7 +58,7 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     context?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, DefiLlamaToken>>> {
     const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
-      addresses.map((address) => toTokenId(parseInt(chainId), address))
+      addresses.map((address) => toTokenId(Number(chainId), address))
     );
     const coins = await this.fetchTokens(tokenIds, context);
     const result: Record<ChainId, Record<TokenAddress, DefiLlamaToken>> = Object.fromEntries(
@@ -66,7 +66,15 @@ export class DefiLlamaTokenSource implements ITokenSource<DefiLlamaToken> {
     );
     for (const [tokenId, { timestamp, confidence, ...token }] of Object.entries(coins)) {
       const { chainId, address } = fromTokenId(tokenId);
-      result[chainId][address] = { decimals: 18, ...token };
+      if (!isSameAddress(address, Addresses.NATIVE_TOKEN)) {
+        result[chainId][address] = { decimals: 18, ...token };
+      } else {
+        // Since we converted the native token address to 0x000...000 and back, we lost casing. So we need to check for the original casing
+        const nativeTokens = addresses[chainId].filter((address) => isSameAddress(address, Addresses.NATIVE_TOKEN));
+        for (const nativeToken of nativeTokens) {
+          result[chainId][nativeToken] = { decimals: 18, ...token };
+        }
+      }
     }
     return result;
   }
