@@ -4,14 +4,12 @@ import { DefaultSourceList } from '@services/quotes/source-lists/default-source-
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import crossFetch from 'cross-fetch';
 import { FetchService } from '@services/fetch/fetch-service';
-import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { TokenService } from '@services/tokens/token-service';
 import { GasSpeed, IGasService, SupportedGasValues } from '@services/gas/types';
 import { TransactionRequest } from '@ethersproject/providers';
 import { BigNumberish } from 'ethers';
 import { ChainId } from '@types';
 import chaiAsPromised from 'chai-as-promised';
-import { BaseTokenMetadata } from '@services/tokens/types';
 import { RPCTokenSource } from '@services/tokens/token-sources/rpc-token-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PriceService } from '@services/prices/price-service';
