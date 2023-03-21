@@ -9,6 +9,7 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
     if (sources.length === 0) throw new Error('Need at least one source to setup a fallback token source');
   }
 
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
   getMetadata({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
     return new Promise<Record<ChainId, Record<TokenAddress, MergeMetadata<Sources>>>>((resolve, reject) => {
       const result: Record<ChainId, Record<TokenAddress, MergeMetadata<Sources>>> = {};
@@ -63,7 +64,8 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
     });
   }
 
-  supportedProperties(): Record<ChainId, SupportInChain<MergeMetadata<Sources>>> {
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
+  supportedProperties() {
     return combineSourcesSupport<IMetadataSource<object>, MergeMetadata<Sources>>(this.sources, (source) => source.supportedProperties());
   }
 
