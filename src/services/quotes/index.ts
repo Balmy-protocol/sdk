@@ -8,7 +8,6 @@ export {
   IndividualQuoteRequest,
   EstimatedQuoteRequest,
   EstimatedQuoteResponse,
-  TokenWithOptionalPrice,
   FailedQuote,
   GlobalQuoteSourceConfig,
   AmountsOfToken,
