@@ -8,6 +8,7 @@ import { BuildQuoteParams, buildQuoteService } from './builders/quote-builder';
 import { buildBalanceService } from './builders/balance-builder';
 import { buildAllowanceService, BuildAllowancesParams } from './builders/allowance-builder';
 import { ISDK } from './types';
+import { BuildPriceParams, buildPriceService } from './builders/price-builder';
 
 export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
@@ -19,7 +20,8 @@ export function buildSDK<Params extends BuildParams = {}>(
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerSource, multicallService);
   const tokenService = buildTokenService<Params['tokens']>(params?.tokens, fetchService, multicallService);
-  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, tokenService);
+  const priceService = buildPriceService(params?.price, fetchService);
+  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, tokenService, priceService);
 
   return {
     providerSource,
@@ -29,6 +31,7 @@ export function buildSDK<Params extends BuildParams = {}>(
     balanceService,
     gasService,
     tokenService,
+    priceService,
     quoteService,
   };
 }
@@ -40,5 +43,6 @@ type BuildParams = {
   allowances?: BuildAllowancesParams;
   gas?: BuildGasParams;
   tokens?: BuildTokenParams;
+  price?: BuildPriceParams;
   quotes?: BuildQuoteParams;
 };

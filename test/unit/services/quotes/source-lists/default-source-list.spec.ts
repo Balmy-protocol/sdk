@@ -4,18 +4,22 @@ import { DefaultSourceList } from '@services/quotes/source-lists/default-source-
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import crossFetch from 'cross-fetch';
 import { FetchService } from '@services/fetch/fetch-service';
-import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { TokenService } from '@services/tokens/token-service';
 import { GasSpeed, IGasService, SupportedGasValues } from '@services/gas/types';
 import { TransactionRequest } from '@ethersproject/providers';
 import { BigNumberish } from 'ethers';
 import { ChainId } from '@types';
 import chaiAsPromised from 'chai-as-promised';
+import { RPCTokenSource } from '@services/tokens/token-sources/rpc-token-source';
+import { MulticallService } from '@services/multicall/multicall-service';
+import { PriceService } from '@services/prices/price-service';
+import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
 chai.use(chaiAsPromised);
 
 const PROVIDER_SOURCE = new PublicRPCsSource();
 const FETCH_SERVICE = new FetchService(crossFetch);
-const TOKEN_SERVICE = new TokenService(new DefiLlamaTokenSource(FETCH_SERVICE));
+const TOKEN_SERVICE = new TokenService(new RPCTokenSource(new MulticallService(PROVIDER_SOURCE)));
+const PRICE_SERVICE = new PriceService(new DefiLlamaPriceSource(FETCH_SERVICE));
 const FAILING_GAS_SERVICE: IGasService<SupportedGasValues> = {
   supportedSpeeds: () => ({}),
   supportedChains: () => [1, 2, 3],
@@ -32,6 +36,7 @@ describe('Default Source List', () => {
       providerSource: PROVIDER_SOURCE,
       fetchService: FETCH_SERVICE,
       tokenService: TOKEN_SERVICE,
+      priceService: PRICE_SERVICE,
       gasService: FAILING_GAS_SERVICE,
       config: undefined,
     });
@@ -55,6 +60,7 @@ describe('Default Source List', () => {
       providerSource: PROVIDER_SOURCE,
       fetchService: FETCH_SERVICE,
       tokenService: TOKEN_SERVICE,
+      priceService: PRICE_SERVICE,
       gasService: FAILING_GAS_SERVICE,
       config: undefined,
     });

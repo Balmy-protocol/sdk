@@ -10,6 +10,7 @@ import { OverridableSourceList } from '@services/quotes/source-lists/overridable
 import { ArrayOneOrMore } from '@utility-types';
 import { APISourceList, URIGenerator } from '@services/quotes/source-lists/api-source-list';
 import { IProviderSource } from '@services/providers';
+import { IPriceService } from '@services/prices';
 
 export type DefaultSourcesConfigInput = GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 export type QuoteSourceListInput =
@@ -28,9 +29,10 @@ export function buildQuoteService(
   providerSource: IProviderSource,
   fetchService: IFetchService,
   gasService: IGasService<SupportedGasValues>,
-  tokenService: ITokenService<any>
+  tokenService: ITokenService<any>,
+  priceService: IPriceService
 ) {
-  const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService });
+  const sourceList = buildList(params?.sourceList, { providerSource, fetchService, gasService, tokenService, priceService });
   return new QuoteService(sourceList);
 }
 
@@ -41,11 +43,13 @@ function buildList(
     fetchService,
     gasService,
     tokenService,
+    priceService,
   }: {
     providerSource: IProviderSource;
     fetchService: IFetchService;
     gasService: IGasService<SupportedGasValues>;
     tokenService: ITokenService<any>;
+    priceService: IPriceService;
   }
 ): IQuoteSourceList {
   switch (list?.type) {
@@ -53,13 +57,20 @@ function buildList(
       return list.instance;
     case 'default':
     case undefined:
-      return new DefaultSourceList({ providerSource, fetchService, gasService, tokenService, config: addReferrerIfNotSet(list?.withConfig) });
+      return new DefaultSourceList({
+        providerSource,
+        fetchService,
+        gasService,
+        tokenService,
+        priceService,
+        config: addReferrerIfNotSet(list?.withConfig),
+      });
     case 'api':
       return new APISourceList({ fetchService, ...list });
     case 'overridable-source-list':
-      const defaultList = buildList(list.lists.default, { providerSource, fetchService, gasService, tokenService });
+      const defaultList = buildList(list.lists.default, { providerSource, fetchService, gasService, tokenService, priceService });
       const overrides = list.lists.overrides.map(({ list, sourceIds }) => ({
-        list: buildList(list, { providerSource, fetchService, gasService, tokenService }),
+        list: buildList(list, { providerSource, fetchService, gasService, tokenService, priceService }),
         sourceIds,
       }));
       return new OverridableSourceList({ default: defaultList, overrides });

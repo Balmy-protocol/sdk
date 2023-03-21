@@ -1,4 +1,4 @@
-import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId, TokenWithOptionalPrice } from '../types';
+import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest } from './types';
 import {
   BuyOrder,
@@ -20,28 +20,32 @@ import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
-import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
-import { ChainId } from '@types';
+import { reduceTimeout } from '@shared/timeouts';
+import { ChainId, TokenAddress } from '@types';
+import { IPriceService, TokenPrice } from '@services/prices';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
+  priceService: IPriceService;
   gasService: IGasService<SupportedGasValues>;
-  tokenService: ITokenService<TokenWithOptionalPrice>;
+  tokenService: ITokenService<BaseTokenMetadata>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService<SupportedGasValues>;
-  private readonly tokenService: ITokenService<TokenWithOptionalPrice>;
+  private readonly tokenService: ITokenService<BaseTokenMetadata>;
+  private readonly priceService: IPriceService;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
-  constructor({ providerSource, fetchService, gasService, tokenService, config }: ConstructorParameters) {
+  constructor({ providerSource, fetchService, gasService, tokenService, priceService, config }: ConstructorParameters) {
     this.providerSource = providerSource;
     this.fetchService = fetchService;
     this.gasService = gasService;
     this.tokenService = tokenService;
+    this.priceService = priceService;
     this.sources = buildSources(config);
   }
 
@@ -68,6 +72,11 @@ export class DefaultSourceList implements IQuoteSourceList {
     });
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
+    const pricesPromise = this.priceService.getCurrentPricesForChain({
+      chainId: request.chainId,
+      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+      config: { timeout: reducedTimeout },
+    });
     const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({
       chainId: request.chainId,
       config: { timeout: reducedTimeout, fields: { requirements: { [gasSpeed(request)]: 'required' } } },
@@ -88,13 +97,9 @@ export class DefaultSourceList implements IQuoteSourceList {
     }));
 
     // Group all value promises
-    const values = Promise.all([
-      sellTokenPromise,
-      buyTokenPromise,
-      gasPriceCalculatorPromise,
-      tokensPromise.then((tokens) => tokens[Addresses.NATIVE_TOKEN]?.price).catch(() => undefined),
-      gasPricePromise,
-    ]).then(([sellToken, buyToken, gasCalculator, nativeTokenPrice]) => ({ sellToken, buyToken, gasCalculator, nativeTokenPrice }));
+    const values = Promise.all([sellTokenPromise, buyTokenPromise, gasPriceCalculatorPromise, pricesPromise, gasPricePromise]).then(
+      ([sellToken, buyToken, gasCalculator, prices]) => ({ sellToken, buyToken, gasCalculator, prices })
+    );
 
     // Map to response
     return responses.map(({ sourceId, source, response }) =>
@@ -158,12 +163,12 @@ async function mapSourceResponseToResponse({
   response: Promise<SourceQuoteResponse>;
   values: Promise<{
     gasCalculator: IQuickGasCostCalculator<any>;
-    sellToken: TokenWithOptionalPrice;
-    buyToken: TokenWithOptionalPrice;
-    nativeTokenPrice: number | undefined;
+    sellToken: BaseTokenMetadata;
+    buyToken: BaseTokenMetadata;
+    prices: Record<TokenAddress, TokenPrice>;
   }>;
 }): Promise<QuoteResponse> {
-  const [response, { sellToken, buyToken, gasCalculator, nativeTokenPrice }] = await Promise.all([responsePromise, values]);
+  const [response, { sellToken, buyToken, gasCalculator, prices }] = await Promise.all([responsePromise, values]);
   const txData = {
     to: response.tx.to,
     value: response.tx.value,
@@ -180,13 +185,13 @@ async function mapSourceResponseToResponse({
   return {
     sellToken,
     buyToken,
-    sellAmount: toAmountOfToken(sellToken, sellToken?.price, response.sellAmount),
-    buyAmount: toAmountOfToken(buyToken, buyToken?.price, response.buyAmount),
-    maxSellAmount: toAmountOfToken(sellToken, sellToken?.price, response.maxSellAmount),
-    minBuyAmount: toAmountOfToken(buyToken, buyToken?.price, response.minBuyAmount),
+    sellAmount: toAmountOfToken(sellToken, prices[request.sellToken], response.sellAmount),
+    buyAmount: toAmountOfToken(buyToken, prices[request.buyToken], response.buyAmount),
+    maxSellAmount: toAmountOfToken(sellToken, prices[request.sellToken], response.maxSellAmount),
+    minBuyAmount: toAmountOfToken(buyToken, prices[request.buyToken], response.minBuyAmount),
     gas: {
       estimatedGas: response.estimatedGas.toString(),
-      ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, nativeTokenPrice),
+      ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
     },
     recipient,
     source: { id: sourceId, allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
