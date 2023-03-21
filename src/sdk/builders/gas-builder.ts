@@ -19,7 +19,6 @@ import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
-import { UnionMerge } from '@utility-types';
 
 // TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
 // builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
@@ -72,7 +71,7 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? Input['instance']
   : Input extends { type: 'cached' }
   ? CalculateSourceFromInput<Input['underlyingSource']>
-  : Input extends { type: 'fastest'; sources: SingleSourceInput[] }
+  : Input extends { type: 'fastest' }
   ? FastestGasPriceSourceCombinator<SourcesFromArray<Input['sources']>>
   : Input extends { type: 'aggregate' }
   ? AggregatorGasPriceSource<SourcesFromArray<Input['sources']>>
