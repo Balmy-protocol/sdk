@@ -1,4 +1,4 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { timeoutPromise } from '@shared/timeouts';
 import { IMetadataSource, MergeMetadata } from '../types';
 import { combineSourcesSupport } from '@shared/requirements-and-support';
@@ -63,7 +63,7 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
     });
   }
 
-  supportedProperties() {
+  supportedProperties(): Record<ChainId, SupportInChain<MergeMetadata<Sources>>> {
     return combineSourcesSupport<IMetadataSource<object>, MergeMetadata<Sources>>(this.sources, (source) => source.supportedProperties());
   }
 
