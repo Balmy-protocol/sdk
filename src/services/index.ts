@@ -5,4 +5,5 @@ export * from './gas';
 export * from './multicall';
 export * from './providers';
 export * from './quotes';
-export * from './tokens';
+export * from './metadata';
+export * from './prices';

@@ -1,6 +1,6 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { GasPrice, GasSpeed } from '@services/gas/types';
-import { BaseTokenMetadata } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/metadata/types';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumberish } from 'ethers';

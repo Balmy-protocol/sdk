@@ -3,7 +3,7 @@ import { IFetchService } from '@services/fetch/types';
 import { GasPrice, IGasService } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
-import { BaseTokenMetadata } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/metadata/types';
 import { IProviderSource } from '@services/providers';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };

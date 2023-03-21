@@ -48,50 +48,52 @@ export type GasSourceInput =
   | { type: 'only-first-source-that-supports-chain'; sources: SingleSourceInput[] };
 export type BuildGasParams = { source: GasSourceInput };
 
-export type CalculateGasValuesFromSourceParams<T extends BuildGasParams | undefined> = T extends BuildGasParams
-  ? CalculateGasValuesFromInput<T['source']>
-  : CalculateGasValuesFromInput<undefined>;
+export type CalculateGasValuesFromSourceParams<Params extends BuildGasParams | undefined> = ExtractGasValues<CalculateSourceFromParams<Params>>;
 
-type CalculateGasValuesFromInput<Input extends GasSourceInput | undefined> = undefined extends Input
-  ? ExtractGasValues<AggregatorGasPriceSource<PublicSources>>
+type CalculateSourceFromParams<T extends BuildGasParams | undefined> = T extends BuildGasParams
+  ? CalculateSourceFromInput<T['source']>
+  : CalculateSourceFromInput<undefined>;
+
+type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefined extends Input
+  ? AggregatorGasPriceSource<PublicSources>
   : Input extends { type: 'open-ocean' }
-  ? ExtractGasValues<OpenOceanGasPriceSource>
+  ? OpenOceanGasPriceSource
   : Input extends { type: 'rpc' }
-  ? ExtractGasValues<RPCGasPriceSource>
+  ? RPCGasPriceSource
   : Input extends { type: 'eth-gas-station' }
-  ? ExtractGasValues<EthGasStationGasPriceSource>
+  ? EthGasStationGasPriceSource
   : Input extends { type: 'polygon-gas-station' }
-  ? ExtractGasValues<PolygonGasStationGasPriceSource>
+  ? PolygonGasStationGasPriceSource
   : Input extends { type: 'owlracle' }
-  ? ExtractGasValues<OwlracleGasPriceSource>
+  ? OwlracleGasPriceSource
   : Input extends { type: 'etherscan' }
-  ? ExtractGasValues<EtherscanGasPriceSource>
+  ? EtherscanGasPriceSource
   : Input extends { type: 'custom' }
-  ? ExtractGasValues<Input['instance']>
+  ? Input['instance']
   : Input extends { type: 'cached' }
-  ? CalculateGasValuesFromInput<Input['underlyingSource']>
-  : Input extends { type: 'fastest' }
-  ? CalculateGasValuesFromArray<Input['sources']>
+  ? CalculateSourceFromInput<Input['underlyingSource']>
+  : Input extends { type: 'fastest'; sources: SingleSourceInput[] }
+  ? FastestGasPriceSourceCombinator<SourcesFromArray<Input['sources']>>
   : Input extends { type: 'aggregate' }
-  ? CalculateGasValuesFromArray<Input['sources']>
+  ? AggregatorGasPriceSource<SourcesFromArray<Input['sources']>>
   : Input extends { type: 'only-first-source-that-supports-chain' }
-  ? CalculateGasValuesFromArray<Input['sources']>
+  ? PrioritizedGasPriceSourceCombinator<SourcesFromArray<Input['sources']>>
   : never;
 
-type CalculateGasValuesFromArray<Sources extends CachelessInput[]> = UnionMerge<
-  {
-    [K in keyof Sources]: Sources[K] extends CachelessInput ? CalculateGasValuesFromInput<Sources[K]> : never;
-  }[number]
->;
+type SourcesFromArray<Inputs extends SingleSourceInput[]> = Inputs extends SingleSourceInput[]
+  ? { [K in keyof Inputs]: Inputs[K] extends GasSourceInput ? CalculateSourceFromInput<Inputs[K]> : Inputs[K] }
+  : Inputs;
 
 export function buildGasService<Params extends BuildGasParams | undefined>(
   params: Params,
   fetchService: IFetchService,
   providerSource: IProviderSource,
   multicallService: IMulticallService
-): IGasService<CalculateGasValuesFromSourceParams<Params>> {
+): IGasService<ExtractGasValues<CalculateSourceFromParams<Params>>> {
   const sourceInput: CachelessInput | undefined = params?.source?.type === 'cached' ? params.source.underlyingSource : params?.source;
-  const source = buildSource(sourceInput, { fetchService, multicallService, providerSource }) as CalculateGasValuesFromSourceParams<Params>;
+  const source = buildSource(sourceInput, { fetchService, multicallService, providerSource }) as IGasPriceSource<
+    CalculateGasValuesFromSourceParams<Params>
+  >;
 
   let gasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService }) as IQuickGasCostCalculatorBuilder<
     CalculateGasValuesFromSourceParams<Params>

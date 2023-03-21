@@ -12,10 +12,10 @@ export type AllowanceSourceInput =
   | { type: 'cached'; underlyingSource: AllowanceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IAllowanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' };
-export type BuildAllowancesParams = { source: AllowanceSourceInput };
+export type BuildAllowanceParams = { source: AllowanceSourceInput };
 
 export function buildAllowanceService(
-  params: BuildAllowancesParams | undefined,
+  params: BuildAllowanceParams | undefined,
   fetchService: IFetchService,
   multicallService: IMulticallService
 ): IAllowanceService {

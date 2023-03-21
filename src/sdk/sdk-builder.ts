@@ -3,25 +3,25 @@ import { BuildProviderParams, buildProviderSource } from './builders/provider-so
 import { buildGasService, BuildGasParams, CalculateGasValuesFromSourceParams } from './builders/gas-builder';
 import { buildMulticallService } from './builders/multicall-builder';
 import { BuildBalancesParams } from './builders';
-import { BuildTokenParams, buildTokenService, CalculateTokenFromSourceParams } from './builders/token-builder';
+import { BuildMetadataParams, buildMetadataService, CalculateMetadataFromSourceParams } from './builders/metadata-builder';
 import { BuildQuoteParams, buildQuoteService } from './builders/quote-builder';
 import { buildBalanceService } from './builders/balance-builder';
-import { buildAllowanceService, BuildAllowancesParams } from './builders/allowance-builder';
+import { buildAllowanceService, BuildAllowanceParams } from './builders/allowance-builder';
 import { ISDK } from './types';
 import { BuildPriceParams, buildPriceService } from './builders/price-builder';
 
 export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
-): ISDK<CalculateTokenFromSourceParams<Params['tokens']>, CalculateGasValuesFromSourceParams<Params['gas']>> {
+): ISDK<CalculateMetadataFromSourceParams<Params['metadata']>, CalculateGasValuesFromSourceParams<Params['gas']>> {
   const fetchService = buildFetchService(params?.fetch);
   const providerSource = buildProviderSource(params?.provider);
   const multicallService = buildMulticallService(providerSource);
   const balanceService = buildBalanceService(params?.balances, fetchService, providerSource, multicallService);
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerSource, multicallService);
-  const tokenService = buildTokenService<Params['tokens']>(params?.tokens, fetchService, multicallService);
+  const metadataService = buildMetadataService<Params['metadata']>(params?.metadata, fetchService, multicallService);
   const priceService = buildPriceService(params?.price, fetchService);
-  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, tokenService, priceService);
+  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, metadataService as any, priceService);
 
   return {
     providerSource,
@@ -30,7 +30,7 @@ export function buildSDK<Params extends BuildParams = {}>(
     allowanceService,
     balanceService,
     gasService,
-    tokenService,
+    metadataService,
     priceService,
     quoteService,
   };
@@ -40,9 +40,9 @@ type BuildParams = {
   fetch?: BuildFetchParams;
   provider?: BuildProviderParams;
   balances?: BuildBalancesParams;
-  allowances?: BuildAllowancesParams;
+  allowances?: BuildAllowanceParams;
   gas?: BuildGasParams;
-  tokens?: BuildTokenParams;
+  metadata?: BuildMetadataParams;
   price?: BuildPriceParams;
   quotes?: BuildQuoteParams;
 };
