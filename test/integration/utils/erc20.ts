@@ -6,7 +6,6 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Address, Chain, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
-import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
 import { FetchService } from '@services/fetch/fetch-service';
 import crossFetch from 'cross-fetch';
 import { TransactionResponse } from '@ethersproject/providers';
@@ -14,10 +13,12 @@ import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse, TokenWithOptionalPrice } from '@services/quotes/types';
+import { BaseTokenMetadata } from '@services/metadata/types';
+import { DefiLlamaClient } from '@shared/defi-llama';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
-export type TestToken = TokenWithOptionalPrice & IHasAddress & { whale?: Address };
+export type TestToken = BaseTokenMetadata & { price: number } & IHasAddress & { whale?: Address };
 
 export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
@@ -255,9 +256,9 @@ export async function mint({ of: token, amount, to: user }: { amount: Exclude<Bi
 export async function loadTokens(chain: Chain) {
   const address = (name: string) => TOKENS[chain.chainId][name].address;
   const whale = (name: string) => TOKENS[chain.chainId][name].whale;
-  const tokenSource = new DefiLlamaTokenSource(new FetchService(crossFetch));
+  const tokenSource = new DefiLlamaClient(new FetchService(crossFetch));
   const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')] };
-  const tokens = await tokenSource.getTokens({ addresses });
+  const tokens = await tokenSource.getData({ addresses });
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
     tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
       ...tokens[chain.chainId][chain.wToken],

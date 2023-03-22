@@ -15,7 +15,7 @@ import { DefaultSourcesConfig, buildSources } from '../source-registry';
 import { IQuickGasCostCalculator, GasPrice, IGasService, SupportedGasValues } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
-import { BaseTokenMetadata, ITokenService } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
@@ -23,28 +23,29 @@ import { IProviderSource } from '@services/providers';
 import { reduceTimeout } from '@shared/timeouts';
 import { ChainId, TokenAddress } from '@types';
 import { IPriceService, TokenPrice } from '@services/prices';
+import { IMetadataService } from '@services/metadata';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
   priceService: IPriceService;
   gasService: IGasService<SupportedGasValues>;
-  tokenService: ITokenService<BaseTokenMetadata>;
+  metadataService: IMetadataService<BaseTokenMetadata>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
   private readonly gasService: IGasService<SupportedGasValues>;
-  private readonly tokenService: ITokenService<BaseTokenMetadata>;
+  private readonly metadataService: IMetadataService<BaseTokenMetadata>;
   private readonly priceService: IPriceService;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
-  constructor({ providerSource, fetchService, gasService, tokenService, priceService, config }: ConstructorParameters) {
+  constructor({ providerSource, fetchService, gasService, metadataService, priceService, config }: ConstructorParameters) {
     this.providerSource = providerSource;
     this.fetchService = fetchService;
     this.gasService = gasService;
-    this.tokenService = tokenService;
+    this.metadataService = metadataService;
     this.priceService = priceService;
     this.sources = buildSources(config);
   }
@@ -65,7 +66,7 @@ export class DefaultSourceList implements IQuoteSourceList {
     if (filteredSourceIds.length === 0) return [];
 
     // Ask for needed values, such as token data and gas price
-    const tokensPromise = this.tokenService.getTokensForChain({
+    const tokensPromise = this.metadataService.getMetadataForChain({
       chainId: request.chainId,
       addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
       config: { timeout: reducedTimeout },
@@ -135,10 +136,10 @@ export class DefaultSourceList implements IQuoteSourceList {
   // There are some properties that are necessary for the quote service to work, so we'll filter out chains where
   // those fields are not available
   private metadataChainFilter() {
-    const tokenProperties = this.tokenService.tokenProperties();
+    const tokenProperties = this.metadataService.supportedProperties();
     const isChainSupported = (chainId: ChainId) => {
-      const properties = tokenProperties[chainId] ?? [];
-      return properties.includes('symbol') && properties.includes('decimals');
+      const properties = tokenProperties[chainId] ?? {};
+      return 'symbol' in properties && 'decimals' in properties;
     };
     return <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
       ...metadata,

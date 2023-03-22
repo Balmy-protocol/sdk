@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { BaseTokenMetadata } from '@services/tokens/types';
+import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { ChainId, TokenAddress } from '@types';

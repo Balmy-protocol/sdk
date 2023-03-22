@@ -1,35 +1,38 @@
 import { ethers } from 'ethers';
-import { Address, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { getChainByKey } from '@chains';
-import { BaseTokenMetadata, ITokenSource, KeyOfToken } from '@services/tokens/types';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
+import { BaseTokenMetadata, IMetadataSource } from '../types';
 
-export class RPCTokenSource implements ITokenSource<BaseTokenMetadata> {
+type RPCMetadataProperties = BaseTokenMetadata;
+export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties> {
   constructor(private readonly multicallService: IMulticallService) {}
 
-  async getTokens({
+  async getMetadata({
     addresses,
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, BaseTokenMetadata>>> {
-    const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, BaseTokenMetadata>]>>(async ([chainId, addresses]) => [
-      parseInt(chainId),
-      await timeoutPromise(this.fetchTokensInChain(parseInt(chainId), addresses), config?.timeout, { reduceBy: '100' }),
-    ]);
+  }): Promise<Record<ChainId, Record<TokenAddress, RPCMetadataProperties>>> {
+    const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, RPCMetadataProperties>]>>(
+      async ([chainId, addresses]) => [
+        Number(chainId),
+        await timeoutPromise(this.fetchTokensInChain(Number(chainId), addresses), config?.timeout, { reduceBy: '100' }),
+      ]
+    );
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
-  tokenProperties() {
-    const properties: KeyOfToken<BaseTokenMetadata>[] = ['symbol', 'decimals'];
+  supportedProperties() {
+    const properties: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present' };
     return Object.fromEntries(this.multicallService.supportedChains().map((chainId) => [chainId, properties]));
   }
 
-  private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, BaseTokenMetadata>> {
+  private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, RPCMetadataProperties>> {
     const chain = getChainByKey(chainId);
     const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
 
@@ -38,7 +41,7 @@ export class RPCTokenSource implements ITokenSource<BaseTokenMetadata> {
       { target: address, decode: 'uint8', calldata: DECIMALS_CALLDATA },
     ]);
     const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
-    const result: Record<TokenAddress, BaseTokenMetadata> = {};
+    const result: Record<TokenAddress, RPCMetadataProperties> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
       const symbol: string = multicallResults[i * 2];

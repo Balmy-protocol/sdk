@@ -1,29 +1,24 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
-import { ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
+import { ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { timeoutPromise } from '@shared/timeouts';
-import { combineTokenProperties } from './utils';
+import { IMetadataSource, MergeMetadata } from '../types';
+import { combineSourcesSupport } from '@shared/requirements-and-support';
 
 // This fallback source will use different sources and combine the results of each of them
-export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> implements ITokenSource<MergeTokensFromSources<Sources>> {
+export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | []> implements IMetadataSource<MergeMetadata<Sources>> {
   constructor(private readonly sources: Sources) {
     if (sources.length === 0) throw new Error('Need at least one source to setup a fallback token source');
   }
 
-  getTokens({
-    addresses,
-    config,
-  }: {
-    addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> {
-    return new Promise<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>>((resolve, reject) => {
-      const result: Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>> = {};
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
+  getMetadata({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
+    return new Promise<Record<ChainId, Record<TokenAddress, MergeMetadata<Sources>>>>((resolve, reject) => {
+      const result: Record<ChainId, Record<TokenAddress, MergeMetadata<Sources>>> = {};
       const propertiesCounter = this.buildPropertiesCounter(addresses);
 
       let sourcesLeftToFulfil = this.sources.length;
       let successfulRequests = 0;
 
-      const handleFulfil = (source: ITokenSource<object>) => {
+      const handleFulfil = (source: IMetadataSource<object>) => {
         this.updatePropertiesCounterWhenSourceFulfilled(propertiesCounter, source, addresses);
 
         if (--sourcesLeftToFulfil === 0 || Object.keys(propertiesCounter).length === 0) {
@@ -43,21 +38,21 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
           return;
         }
 
-        timeoutPromise(source.getTokens({ addresses: addressesForSource }), config?.timeout, { reduceBy: '100' })
+        timeoutPromise(source.getMetadata({ addresses: addressesForSource }), config?.timeout, { reduceBy: '100' })
           .then((sourceResult) => {
             successfulRequests++;
-            for (const [chainIdString, tokenRecord] of Object.entries(sourceResult)) {
+            for (const [chainIdString, metadataRecord] of Object.entries(sourceResult)) {
               const chainId = parseInt(chainIdString);
-              const tokens = Object.entries(tokenRecord);
-              if (!(chainId in result) && tokens.length > 0) result[chainId] = {};
+              const metadatas = Object.entries(metadataRecord);
+              if (!(chainId in result) && metadatas.length > 0) result[chainId] = {};
 
-              for (const [address, tokenData] of tokens) {
+              for (const [address, metadata] of metadatas) {
                 // Add to result
-                result[chainId][address] = { ...result[chainId][address], ...tokenData };
+                result[chainId][address] = { ...result[chainId][address], ...metadata };
 
                 // Remove from counter
-                for (const tokenProperty in tokenData) {
-                  const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
+                for (const tokenProperty in metadata) {
+                  const property = tokenProperty as keyof MergeMetadata<Sources>;
                   delete propertiesCounter?.[chainId]?.[address]?.[property];
                 }
               }
@@ -69,19 +64,20 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
     });
   }
 
-  tokenProperties(): Record<ChainId, KeyOfToken<MergeTokensFromSources<Sources>>[]> {
-    return combineTokenProperties(this.sources);
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
+  supportedProperties() {
+    return combineSourcesSupport<IMetadataSource<object>, MergeMetadata<Sources>>(this.sources, (source) => source.supportedProperties());
   }
 
   private buildPropertiesCounter(addresses: Record<ChainId, TokenAddress[]>) {
-    const propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeTokensFromSources<Sources>, number>>> = {};
+    const propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeMetadata<Sources>, number>>> = {};
     for (const chainId in addresses) {
-      const counter: Record<keyof MergeTokensFromSources<Sources>, number> = {} as any;
+      const counter: Record<keyof MergeMetadata<Sources>, number> = {} as any;
       for (const source of this.sources) {
-        const tokenProperties = source.tokenProperties();
-        if (chainId in tokenProperties) {
-          for (const tokenProperty of tokenProperties[chainId]) {
-            const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
+        const supportedProperties = source.supportedProperties();
+        if (chainId in supportedProperties) {
+          for (const tokenProperty in supportedProperties[chainId]) {
+            const property = tokenProperty as keyof MergeMetadata<Sources>;
             counter[property] = (counter[property] ?? 0) + 1;
           }
         }
@@ -95,17 +91,17 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
   }
 
   private updatePropertiesCounterWhenSourceFulfilled(
-    propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeTokensFromSources<Sources>, number>>>,
-    source: ITokenSource<object>,
+    propertiesCounter: Record<ChainId, Record<TokenAddress, Record<keyof MergeMetadata<Sources>, number>>>,
+    source: IMetadataSource<object>,
     addresses: Record<ChainId, TokenAddress[]>
   ) {
-    const tokenProperties = source.tokenProperties();
+    const supportedProperties = source.supportedProperties();
     const addressesForSource = getAddressesForSource(source, addresses);
     for (const [chainIdString, addresses] of Object.entries(addressesForSource)) {
       const chainId = parseInt(chainIdString);
       for (const address of addresses) {
-        for (const tokenProperty of tokenProperties[chainId]) {
-          const property = tokenProperty as keyof MergeTokensFromSources<Sources>;
+        for (const tokenProperty in supportedProperties[chainId]) {
+          const property = tokenProperty as keyof MergeMetadata<Sources>;
           const counter = propertiesCounter[chainId]?.[address]?.[property];
           if (counter !== undefined) {
             if (counter === 1) {
@@ -131,10 +127,10 @@ export class FallbackTokenSource<Sources extends ITokenSource<any>[] | []> imple
 }
 
 function getAddressesForSource<TokenData extends object>(
-  source: ITokenSource<TokenData>,
+  source: IMetadataSource<TokenData>,
   addresses: Record<ChainId, TokenAddress[]>
 ): Record<ChainId, TokenAddress[]> {
-  const chainsForSource = new Set(Object.keys(source.tokenProperties()));
+  const chainsForSource = new Set(Object.keys(source.supportedProperties()));
   const filteredEntries = Object.entries(addresses)
     .filter(([chainId]) => chainsForSource.has(chainId))
     .map<[ChainId, TokenAddress[]]>(([chainId, addresses]) => [parseInt(chainId), addresses]);

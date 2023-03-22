@@ -1,16 +1,16 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
-import { RPCTokenSource } from '@services/tokens/token-sources/rpc-token-source';
-import { DefiLlamaTokenSource } from '@services/tokens/token-sources/defi-llama';
-import { FallbackTokenSource } from '@services/tokens/token-sources/fallback-token-source';
+import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
+import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama';
+import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { ITokenSource, KeyOfToken, MergeTokensFromSources } from '@services/tokens/types';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
+import { IMetadataSource } from '@services/metadata';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -20,53 +20,50 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
-const RPC_TOKEN_SOURCE = new RPCTokenSource(new MulticallService(new PublicRPCsSource()));
-const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaTokenSource(new FetchService(crossFetch));
-const FALLBACK_TOKEN_SOURCE = new FallbackTokenSource([RPC_TOKEN_SOURCE, DEFI_LLAMA_TOKEN_SOURCE]);
+const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(new PublicRPCsSource()));
+const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(new FetchService(crossFetch));
+const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
-describe('Token Sources', () => {
+describe('Metadata Sources', () => {
   tokenSourceTest({
-    title: 'Provider Source',
-    source: RPC_TOKEN_SOURCE,
+    title: 'RPC Source',
+    source: RPC_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
   tokenSourceTest({
     title: 'Defi Llama Source',
-    source: DEFI_LLAMA_TOKEN_SOURCE,
-    fields: [{ fields: ['decimals', 'symbol', 'price'], on: 'all chains' }],
+    source: DEFI_LLAMA_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
   tokenSourceTest({
     title: 'Fallback Source',
-    source: FALLBACK_TOKEN_SOURCE,
-    fields: [
-      { fields: ['decimals', 'symbol'], on: 'all chains' },
-      { fields: ['price'], on: Object.keys(DEFI_LLAMA_TOKEN_SOURCE.tokenProperties()).map(Number) },
-    ],
+    source: FALLBACK_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
 
-  function tokenSourceTest<TokenData extends object>({
+  function tokenSourceTest<TokenMetadata extends object>({
     title,
     source,
     fields,
   }: {
     title: string;
-    source: ITokenSource<TokenData>;
-    fields: { fields: KeyOfToken<TokenData>[]; on: 'all chains' | ChainId[] }[];
+    source: IMetadataSource<TokenMetadata>;
+    fields: { fields: (keyof TokenMetadata)[]; on: 'all chains' | ChainId[] }[];
   }) {
     describe(title, () => {
-      describe('tokenProperties', () => {
-        it('Token properties are reported correctly', () => {
-          const tokenProperties = source.tokenProperties();
-          for (const chainIdString in tokenProperties) {
+      describe('supportedProperties', () => {
+        it('Supported properties are reported correctly', () => {
+          const supportedProperties = source.supportedProperties();
+          for (const chainIdString in supportedProperties) {
             const chainId = Number(chainIdString);
             const fieldsThatApply = fields.filter(({ on }) => appliesToChain(on, chainId));
             const totalAmountExpected = fieldsThatApply.reduce((accum, { fields }) => fields.length + accum, 0);
-            expect(tokenProperties[chainId]).to.have.lengthOf(totalAmountExpected);
+            expect(Object.keys(supportedProperties[chainId])).to.have.lengthOf(totalAmountExpected);
             for (const { fields: fieldsExist } of fieldsThatApply) {
-              expect(tokenProperties[chainId]).to.include.members(fieldsExist);
+              expect(supportedProperties[chainId]).to.have.keys(fieldsExist);
             }
           }
         });
@@ -76,25 +73,25 @@ describe('Token Sources', () => {
         }
       });
 
-      describe('getTokens', () => {
+      describe('getMetadata', () => {
         let input: Record<ChainId, TokenAddress[]>;
-        let result: Record<ChainId, Record<TokenAddress, TokenData>>;
+        let result: Record<ChainId, Record<TokenAddress, TokenMetadata>>;
         beforeAll(async () => {
-          const chains = Object.keys(source.tokenProperties()).map(Number);
+          const chains = Object.keys(source.supportedProperties()).map(Number);
           const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
             const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
             if (chainId in TESTS) addresses.push(TESTS[chainId].address);
             return [chainId, addresses];
           });
           input = Object.fromEntries(entries);
-          result = await source.getTokens({ addresses: input, config: { timeout: '30s' } });
+          result = await source.getMetadata({ addresses: input, config: { timeout: '30s' } });
         });
 
         test(`Returned amount of chains is as expected`, () => {
-          expect(Object.keys(result)).to.have.lengthOf(Object.keys(source.tokenProperties()).length);
+          expect(Object.keys(result)).to.have.lengthOf(Object.keys(source.supportedProperties()).length);
         });
 
-        for (const chainIdString in source.tokenProperties()) {
+        for (const chainIdString in source.supportedProperties()) {
           const chainId = Number(chainIdString);
           const chain = getChainByKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
@@ -117,7 +114,7 @@ describe('Token Sources', () => {
           for (const { fields: fieldsExist, on } of fields) {
             if (on !== 'all chains' && !on.includes(chainId)) continue;
             for (const field of fieldsExist) {
-              expect(token).to.have.property(field);
+              expect(token).to.have.property(field as any);
             }
           }
         }
