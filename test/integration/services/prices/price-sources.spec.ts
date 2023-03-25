@@ -2,6 +2,7 @@ import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
+import { OdosPriceSource } from '@services/prices/price-sources/odos';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Chains, getChainByKey } from '@chains';
@@ -17,7 +18,9 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
-const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaPriceSource(new FetchService(crossFetch));
+const FETCH_SERVICE = new FetchService(crossFetch);
+const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
+const ODOS_TOKEN_SOURCE = new OdosPriceSource(FETCH_SERVICE);
 const CACHED_TOKEN_SOURCE = new CachedPriceSource(DEFI_LLAMA_TOKEN_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
@@ -30,6 +33,10 @@ describe('Price Sources', () => {
   priceSourceTest({
     title: 'Defi Llama Source',
     source: DEFI_LLAMA_TOKEN_SOURCE,
+  });
+  priceSourceTest({
+    title: 'Odos Source',
+    source: ODOS_TOKEN_SOURCE,
   });
   priceSourceTest({
     title: 'Cached Price Source',

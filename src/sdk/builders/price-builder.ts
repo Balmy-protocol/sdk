@@ -4,9 +4,11 @@ import { IPriceService, IPriceSource } from '@services/prices';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
 import { PriceService } from '@services/prices/price-service';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
+import { OdosPriceSource } from '@services/prices/price-sources/odos';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
+  | { type: 'odos' }
   | { type: 'cached'; underlyingSource: PriceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IPriceSource };
 export type BuildPriceParams = { source: PriceSourceInput };
@@ -21,6 +23,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
     case undefined:
     case 'defi-llama':
       return new DefiLlamaPriceSource(fetchService);
+    case 'odos':
+      return new OdosPriceSource(fetchService);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService });
       return new CachedPriceSource(underlying, source.expiration);
