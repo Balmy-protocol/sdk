@@ -21,9 +21,10 @@ import { BigNumber, utils } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
 import { reduceTimeout } from '@shared/timeouts';
-import { ChainId, TokenAddress } from '@types';
+import { FieldsRequirements, TokenAddress } from '@types';
 import { IPriceService, TokenPrice } from '@services/prices';
 import { IMetadataService } from '@services/metadata';
+import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -33,6 +34,12 @@ type ConstructorParameters = {
   metadataService: IMetadataService<BaseTokenMetadata>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
 };
+
+const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
+  requirements: { symbol: 'required', decimals: 'required' },
+  default: 'can ignore',
+};
+
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
@@ -69,7 +76,10 @@ export class DefaultSourceList implements IQuoteSourceList {
     const tokensPromise = this.metadataService.getMetadataForChain({
       chainId: request.chainId,
       addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
-      config: { timeout: reducedTimeout },
+      config: {
+        timeout: reducedTimeout,
+        fields: REQUIREMENTS,
+      },
     });
     const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
     const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
@@ -137,15 +147,11 @@ export class DefaultSourceList implements IQuoteSourceList {
   // those fields are not available
   private metadataChainFilter() {
     const tokenProperties = this.metadataService.supportedProperties();
-    const isChainSupported = (chainId: ChainId) => {
-      const properties = tokenProperties[chainId] ?? {};
-      return 'symbol' in properties && 'decimals' in properties;
-    };
     return <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
       ...metadata,
       supports: {
         ...metadata.supports,
-        chains: metadata.supports.chains.filter((chainId) => isChainSupported(chainId)),
+        chains: metadata.supports.chains.filter((chainId) => couldSupportMeetRequirements(tokenProperties[chainId], REQUIREMENTS)),
       },
     });
   }

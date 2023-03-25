@@ -1,242 +1,290 @@
 import chai, { expect } from 'chai';
-import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
-import { BaseTokenMetadata } from '@services/metadata/types';
-import { Chain, ChainId, TimeString, TokenAddress } from '@types';
+import { IMetadataSource, MergeMetadata, MetadataResult } from '@services/metadata/types';
+import { ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
 import ms from 'ms';
 import chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 
-const TOKEN_A = {
-  address: '0x0000000000000000000000000000000000000001',
-  symbol: 'TKNA',
-  decimals: 18,
-};
+const TOKEN_A = '0x0000000000000000000000000000000000000001';
+const TOKEN_B = '0x0000000000000000000000000000000000000002';
 
-const TOKEN_A_WITH_EXTRA = {
-  ...TOKEN_A,
-  extra: 'extra',
-};
+describe('Fallback Token Source', () => {
+  when('one of the given chains is not supported by any source', () => {
+    then('fallback fails', async () => {
+      const { source: source1 } = source({ chains: [1], properties: { decimals: 'present' } });
+      const promise = getMetadata({ addresses: { [2]: [TOKEN_A] }, sources: [source1] });
+      await expect(promise.result).to.to.eventually.be.rejectedWith(`Couldn't find sources that supported the given chains`);
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-const TOKEN_B = {
-  address: '0x0000000000000000000000000000000000000002',
-  symbol: 'TKNB',
-  decimals: 18,
-};
+  when('only source on chain resolves', () => {
+    then('fallback resolves', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'present' } });
+      const { source: source2 } = source({ chains: [2], properties: { decimals: 'present' } });
+      const result = { [1]: { [TOKEN_A]: metadataWith('decimals') } };
 
-describe.skip('Fallback Token Source', () => {
-  it('to remove', () => {});
-  //   when('source with all properties resolves', () => {
-  //     then('fallback resolves even if other sources are pending', async () => {
-  //       const { source: source1 } = source(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A_WITH_EXTRA } };
+      const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result);
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when('only source on chain fails', () => {
+    then('fallback fails', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'present' } });
+      const { source: source2 } = source({ chains: [2], properties: { decimals: 'present' } });
 
-  //   when('the only source with all properties resolves but extra properties are missing', () => {
-  //     then('fallback still resolves', async () => {
-  //       const { source: source1 } = source(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
+      const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
+      expect(promise.status).to.equal('pending');
+      source1Promise.reject();
+      await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when(`source with 'required' and 'best effort' properties resolves`, () => {
+    then(`fallback doesn't wait for other sources with 'can ignore' properties`, async () => {
+      const { source: source1, promise: source1Promise } = source({
+        chains: [1],
+        properties: { decimals: 'present', symbol: 'optional', name: 'optional' },
+      });
+      const { source: source2 } = source({ chains: [1], properties: { decimals: 'present', symbol: 'optional', name: 'optional' } });
+      const result = { [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } };
 
-  //   when('one source with all properties resolves but extra properties are missing', () => {
-  //     then('fallback waits for other sources with all properties', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
-  //       const resultWithProperties = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A_WITH_EXTRA } };
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A] },
+        requirements: { decimals: 'required', symbol: 'best effort', name: 'can ignore' },
+        sources: [source1, source2],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result);
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(resultWithProperties);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(resultWithProperties);
-  //     });
-  //   });
+  when(`source with 'required' properties resolves`, () => {
+    then(`fallback waits for other sources with 'best effort' properties`, async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'present', symbol: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { decimals: 'present', symbol: 'optional' } });
+      const result1 = { [1]: { [TOKEN_A]: metadataWith('decimals') } };
+      const result2 = { [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } };
 
-  //   when('all sources with extra properties resolved without these properties', () => {
-  //     then('fallback still resolves', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A] },
+        requirements: { decimals: 'required', symbol: 'best effort' },
+        sources: [source1, source2],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result1);
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.resolve(result2);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result2);
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when(`source with all 'required' properties resolves and there are no more sources`, () => {
+    then(`fallback resolves even if 'best effort' and 'can ignore' properties are not present`, async () => {
+      const { source: source1, promise: source1Promise } = source({
+        chains: [1],
+        properties: { decimals: 'present', symbol: 'optional', name: 'optional' },
+      });
+      const result = { [1]: { [TOKEN_A]: metadataWith('decimals') } };
 
-  //   when('the only source with all properties resolves but there are some missing tokens', () => {
-  //     then('fallback waits for other source without extra properties', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
-  //       const resultWithA = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
-  //       const resultWithB = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A, [TOKEN_B.address]: TOKEN_B } };
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A] },
+        requirements: { decimals: 'required', symbol: 'best effort', name: 'can ignore' },
+        sources: [source1],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result);
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address, TOKEN_B.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.resolve(resultWithA);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(resultWithB);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(resultWithB);
-  //     });
-  //   });
+  when(`source with 'required' and 'best effort' properties resolves but a token's metadata is missing`, () => {
+    then(`fallback waits for other sources`, async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'present', symbol: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { decimals: 'present', symbol: 'optional' } });
+      const result1 = { [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } };
+      const result2 = { [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol'), [TOKEN_B]: metadataWith('decimals', 'symbol') } };
 
-  //   when('the source with all properties does not support the chain', () => {
-  //     then('fallback resolves with the source without properties', async () => {
-  //       const { source: source1 } = sourceWithExtra(Chains.ETHEREUM);
-  //       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A, TOKEN_B] },
+        requirements: { decimals: 'required', symbol: 'best effort' },
+        sources: [source1, source2],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result1);
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.resolve(result2);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result2);
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when(`only source with 'required' properties fails`, () => {
+    then('fallback fails without waiting for other sources', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const { source: source2 } = source({ chains: [2], properties: { symbol: 'optional' } });
 
-  //   when('the source without all properties resolves', () => {
-  //     then('fallback waits for the one with all the properties to resolve', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
+      const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, requirements: { decimals: 'required' }, sources: [source1, source2] });
+      expect(promise.status).to.equal('pending');
+      source1Promise.reject();
+      await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when(`all sources fail to return 'required' properties`, () => {
+    then('fallback fails after waiting for all who supported it', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const { source: source3 } = source({ chains: [1], properties: { symbol: 'optional' } });
 
-  //   when('the source without all properties resolves', () => {
-  //     then('fallback waits for the one with all the properties to reject', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
-  //       const result = { [Chains.POLYGON.chainId]: { [TOKEN_A.address]: TOKEN_A } };
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A] },
+        requirements: { decimals: 'required' },
+        sources: [source1, source2, source3],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.reject();
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.reject();
+      await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.resolve(result);
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.reject();
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('resolved');
-  //       expect(await promise.result).to.deep.equal(result);
-  //     });
-  //   });
+  when(`all sources fail to return a token's metadata`, () => {
+    then('fallback fails after waiting for them all', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const result = { [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } };
 
-  //   when('all sources fail', () => {
-  //     then('fallback rejects', async () => {
-  //       const { source: source1, promise: source1Promise } = sourceWithExtra(Chains.POLYGON);
-  //       const { source: source2, promise: source2Promise } = source(Chains.POLYGON);
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A, TOKEN_B] },
+        requirements: { decimals: 'required' },
+        sources: [source1, source2],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result);
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.resolve(result);
+      await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-  //       const promise = getTokensFromSources({ [Chains.POLYGON.chainId]: [TOKEN_A.address] }, source1, source2);
-  //       expect(promise.status).to.equal('pending');
-  //       source1Promise.reject();
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('pending');
-  //       source2Promise.reject();
-  //       await sleep('10');
-  //       expect(promise.status).to.equal('rejected');
-  //       expect(promise.result).to.have.rejected;
-  //     });
-  //   });
+  when(`all sources fail`, () => {
+    then('fallback also fails', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { decimals: 'optional', symbol: 'optional' } });
 
-  //   function source(...chains: Chain[]) {
-  //     return buildSource<BaseTokenMetadata>({
-  //       chains,
-  //     });
-  //   }
+      const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, requirements: { decimals: 'required' }, sources: [source1, source2] });
+      expect(promise.status).to.equal('pending');
+      source1Promise.reject();
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.reject();
+      await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
+      expect(promise.status).to.equal('rejected');
+    });
+  });
 
-  //   function sourceWithExtra(...chains: Chain[]) {
-  //     return buildSource<TokenWithExtra>({
-  //       chains,
-  //       properties: ['extra'],
-  //     });
-  //   }
+  when.only(`combining required properties from different sources`, () => {
+    then('fallback waits for all of them', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional' } });
+      const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { symbol: 'optional' } });
+      const result1 = { [1]: { [TOKEN_A]: metadataWith('decimals') } };
+      const result2 = { [1]: { [TOKEN_A]: metadataWith('symbol') } };
 
-  //   function getTokensFromSources<Sources extends ITokenSource<any>[] | []>(addresses: Record<ChainId, TokenAddress[]>, ...sources: Sources) {
-  //     const result = new FallbackMetadataSource(sources).getTokens({ addresses });
-  //     const promiseWithState: PromiseWithState<Record<ChainId, Record<TokenAddress, MergeTokensFromSources<Sources>>>> = {
-  //       result,
-  //       status: 'pending',
-  //     };
-  //     result.then(() => (promiseWithState.status = 'resolved')).catch(() => (promiseWithState.status = 'rejected'));
-  //     return promiseWithState;
-  //   }
+      const promise = getMetadata({
+        addresses: { [1]: [TOKEN_A] },
+        requirements: { decimals: 'required', symbol: 'required' },
+        sources: [source1, source2],
+      });
+      expect(promise.status).to.equal('pending');
+      source1Promise.resolve(result1);
+      await sleep('10');
+      expect(promise.status).to.equal('pending');
+      source2Promise.resolve(result2);
+      await sleep('10');
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal({ [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } });
+    });
+  });
 
-  //   function promise<T>(): PromiseWithTriggers<T> {
-  //     let resolveExternal: (value: T) => void, rejectExternal: (error?: any) => void;
-  //     const promise = new Promise<T>((resolve, reject) => {
-  //       resolveExternal = resolve;
-  //       rejectExternal = reject;
-  //     });
-  //     // @ts-ignore
-  //     return Object.assign(promise, { resolve: resolveExternal, reject: rejectExternal });
-  //   }
+  function metadataWith(...properties: string[]) {
+    return Object.fromEntries(properties.map((property) => [property, 'value']));
+  }
 
-  //   function buildSource<Token extends BaseTokenMetadata>({
-  //     chains,
-  //     properties,
-  //   }: {
-  //     chains: Chain[];
-  //     properties?: KeyOfToken<Token>[];
-  //   }): { source: ITokenSource<Token>; promise: PromiseWithTriggers<Record<ChainId, Record<TokenAddress, Token>>> } {
-  //     const sourcePromise = promise<Record<ChainId, Record<TokenAddress, Token>>>();
-  //     const source: ITokenSource<Token> = {
-  //       getTokens: () => sourcePromise,
-  //       tokenProperties: () => {
-  //         const aux: KeyOfToken<Token>[] = ['decimals', 'symbol', ...(properties ?? [])];
-  //         return Object.fromEntries(chains.map(({ chainId }) => [chainId, aux]));
-  //       },
-  //     };
-  //     return { source, promise: sourcePromise };
-  //   }
+  function getMetadata<Sources extends IMetadataSource<object>[] | []>({
+    addresses,
+    requirements,
+    sources,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    requirements?: FieldsRequirements<MergeMetadata<Sources>>['requirements'];
+    sources: Sources;
+  }) {
+    const result = new FallbackMetadataSource(sources).getMetadata({ addresses, config: { fields: { requirements: requirements ?? {} } } });
+    const promiseWithState: PromiseWithState<Awaited<typeof result>> = {
+      result,
+      status: 'pending',
+    };
+    result.then(() => (promiseWithState.status = 'resolved')).catch(() => (promiseWithState.status = 'rejected'));
+    return promiseWithState;
+  }
+
+  function promise<T>(): PromiseWithTriggers<T> {
+    let resolveExternal: (value: T) => void, rejectExternal: (error?: any) => void;
+    const promise = new Promise<T>((resolve, reject) => {
+      resolveExternal = resolve;
+      rejectExternal = reject;
+    });
+    // @ts-ignore
+    return Object.assign(promise, { resolve: resolveExternal, reject: rejectExternal });
+  }
+
+  function source<TokenMetadata extends object>({
+    chains,
+    properties,
+  }: {
+    chains: ChainId[];
+    properties: SupportInChain<TokenMetadata>;
+  }): {
+    source: IMetadataSource<TokenMetadata>;
+    promise: PromiseWithTriggers<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata>>>>;
+  } {
+    const sourcePromise = promise<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata>>>>();
+    const source: IMetadataSource<TokenMetadata> = {
+      getMetadata: () => sourcePromise as any,
+      supportedProperties: () => Object.fromEntries(chains.map((chainId) => [chainId, properties])),
+    };
+    return { source, promise: sourcePromise };
+  }
 });
 
-// function sleep(time: TimeString) {
-//   return new Promise((resolve) => setTimeout(resolve, ms(time)));
-// }
+function sleep(time: TimeString) {
+  return new Promise((resolve) => setTimeout(resolve, ms(time)));
+}
 
-// type TokenWithExtra = BaseTokenMetadata & { extra?: string };
-// type PromiseWithTriggers<T> = Promise<T> & { resolve: (value: T) => void; reject: (error?: any) => void };
-// type PromiseWithState<T> = { status: 'pending' | 'resolved' | 'rejected'; result: Promise<T> };
+type PromiseWithTriggers<T> = Promise<T> & { resolve: (value: T) => void; reject: (error?: any) => void };
+type PromiseWithState<T> = { status: 'pending' | 'resolved' | 'rejected'; result: Promise<T> };

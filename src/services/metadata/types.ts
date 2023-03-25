@@ -1,27 +1,32 @@
-import { ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { BasedOnRequirements, ChainId, DefaultRequirements, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { UnionMerge } from '@utility-types';
 
 export type IMetadataService<TokenMetadata extends object> = {
   supportedChains(): ChainId[];
   supportedProperties(): Record<ChainId, SupportInChain<TokenMetadata>>;
-  getMetadataForChain(_: {
+  getMetadataForChain<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
     chainId: ChainId;
     addresses: TokenAddress[];
-    config?: { timeout?: TimeString };
-  }): Promise<Record<TokenAddress, TokenMetadata>>;
-  getMetadata(_: {
+    config?: { fields?: Requirements; timeout?: TimeString };
+  }): Promise<Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>;
+  getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenMetadata>>>;
+    config?: { fields?: Requirements; timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>>;
 };
 
 export type IMetadataSource<TokenMetadata extends object> = {
-  getMetadata(_: {
+  getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenMetadata>>>;
+    config?: { fields?: Requirements; timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>>;
   supportedProperties(): Record<ChainId, SupportInChain<TokenMetadata>>;
 };
+
+export type MetadataResult<
+  TokenMetadata extends object,
+  Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>
+> = BasedOnRequirements<TokenMetadata, Requirements>;
 
 export type BaseTokenMetadata = {
   symbol: string;

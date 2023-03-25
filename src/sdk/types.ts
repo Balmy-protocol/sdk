@@ -8,7 +8,7 @@ import { IProviderSource } from '@services/providers';
 import { IQuoteService } from '@services/quotes/types';
 import { IMetadataService } from '@services/metadata/types';
 
-export type ISDK<TokenData extends object, GasValues extends SupportedGasValues = DefaultGasValues> = {
+export type ISDK<TokenMetadata extends object, GasValues extends SupportedGasValues = DefaultGasValues> = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
   gasService: IGasService<GasValues>;
@@ -17,5 +17,5 @@ export type ISDK<TokenData extends object, GasValues extends SupportedGasValues 
   balanceService: IBalanceService;
   quoteService: IQuoteService;
   priceService: IPriceService;
-  metadataService: IMetadataService<TokenData>;
+  metadataService: IMetadataService<TokenMetadata>;
 };
