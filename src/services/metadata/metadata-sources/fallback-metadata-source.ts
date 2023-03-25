@@ -9,6 +9,7 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
     if (sources.length === 0) throw new Error('Need at least one source to setup a fallback token source');
   }
 
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
   getMetadata<Requirements extends FieldsRequirements<MergeMetadata<Sources>>>({
     addresses,
     config,
@@ -80,6 +81,7 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
     });
   }
 
+  // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
   supportedProperties() {
     return combineSourcesSupport<IMetadataSource<object>, MergeMetadata<Sources>>(this.sources, (source) => source.supportedProperties());
   }
@@ -118,8 +120,10 @@ function updateCounterWhenSourceFulfilled<Sources extends IMetadataSource<object
 ) {
   const supportedProperties = source.supportedProperties();
   for (const [chainId, properties] of Object.entries(supportedProperties)) {
-    for (const property in properties) {
-      requestTracker[Number(chainId)][property as keyof MergeMetadata<Sources>].sources -= 1;
+    if (chainId in requestTracker) {
+      for (const property in properties) {
+        requestTracker[Number(chainId)][property as keyof MergeMetadata<Sources>].sources -= 1;
+      }
     }
   }
 }
