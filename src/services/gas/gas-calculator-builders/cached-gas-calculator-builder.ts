@@ -50,20 +50,25 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
   private toCacheKey<Requirements extends FieldsRequirements<GasValues>>(chainId: ChainId, requirements: Requirements | undefined) {
     const support = this.wrapped.supportedSpeeds()[chainId];
     const fieldRequirements = calculateFieldRequirements(support, requirements);
-    const requirementsString = Object.entries(fieldRequirements)
-      .map(([field, requirement]) => `${field}:${requirement}`)
-      .join('|');
-    return `${chainId}-${requirementsString}`;
+    const requiredFields = Object.entries(fieldRequirements)
+      .filter(([, requirement]) => requirement === 'required')
+      .map(([field]) => field)
+      .join(',');
+    return `${chainId}-${requiredFields}`;
   }
 
   private async fromCacheKey(cacheId: string, config: CacheContext) {
-    const [chainIdString, requirementsString] = cacheId.split('-');
-    const requirements: Record<keyof GasValues, FieldRequirementOptions> = Object.fromEntries(
-      requirementsString.split('|').map((fieldRequirement) => fieldRequirement.split(':'))
-    );
+    const [chainIdString, requiredFieldsText] = cacheId.split('-');
+    const requiredFields = requiredFieldsText.length > 0 ? requiredFieldsText.split(',') : [];
+    const requirements = Object.fromEntries(requiredFields.map((field) => [field, 'required'])) as Record<
+      keyof GasValues,
+      FieldRequirementOptions
+    >;
+    // We set the default to best effort here, even if it wasn't set on the original request. The idea is that we try our best to fetch all properties,
+    // so that if we have a future request with the same required fields and best effort is set, then we can use the cached values
     const calculator = await this.wrapped.build({
       chainId: Number(chainIdString),
-      config: { ...config, fields: { requirements } },
+      config: { ...config, fields: { requirements, default: 'best effort' } },
     });
     return { [cacheId]: calculator } as Record<string, IQuickGasCostCalculator<GasValues, DefaultRequirements<GasValues>>>;
   }

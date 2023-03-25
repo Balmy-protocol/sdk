@@ -35,7 +35,7 @@ describe('Default Source List', () => {
     const sourceList = new DefaultSourceList({
       providerSource: PROVIDER_SOURCE,
       fetchService: FETCH_SERVICE,
-      metadataService: METADATA_SERVICE,
+      metadataService: METADATA_SERVICE as any,
       priceService: PRICE_SERVICE,
       gasService: FAILING_GAS_SERVICE,
       config: undefined,
@@ -59,7 +59,7 @@ describe('Default Source List', () => {
     const sourceList = new DefaultSourceList({
       providerSource: PROVIDER_SOURCE,
       fetchService: FETCH_SERVICE,
-      metadataService: METADATA_SERVICE,
+      metadataService: METADATA_SERVICE as any,
       priceService: PRICE_SERVICE,
       gasService: FAILING_GAS_SERVICE,
       config: undefined,
