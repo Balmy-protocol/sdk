@@ -31,7 +31,7 @@ export function calculateGasDetails(chain: Chain, gasCostNativeToken: string, na
     estimatedCost: gasCostNativeToken,
     estimatedCostInUnits: utils.formatUnits(gasCostNativeToken, 18),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
-    gasTokenSymbol: chain.currencySymbol,
+    gasTokenSymbol: chain.nativeCurrency.symbol,
   };
 }
 

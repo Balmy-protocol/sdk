@@ -138,7 +138,7 @@ describe('Balance Sources', () => {
               if (chainId in TESTS) expectedTokenAmount++;
               expect(Object.keys(result()[chainId][DEAD_ADDRESS]).length).to.be.gte(expectedTokenAmount);
             });
-            test(chain?.currencySymbol ?? 'Native token', () => {
+            test(chain?.nativeCurrency?.symbol ?? 'Native token', () => {
               if (!shouldZeroBalanceBeShown && CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId))) {
                 expect(result()).to.not.have.keys([Addresses.NATIVE_TOKEN]);
               } else {

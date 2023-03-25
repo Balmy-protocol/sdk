@@ -262,7 +262,7 @@ export async function loadTokens(chain: Chain) {
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
     tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
       ...tokens[chain.chainId][chain.wToken],
-      symbol: chain.currencySymbol,
+      symbol: chain.nativeCurrency.symbol,
     };
   }
   return {

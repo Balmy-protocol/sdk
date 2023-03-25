@@ -18,21 +18,21 @@ jest.setTimeout(ms('1m'));
 describe('RPC Metadata Source', () => {
   rpcTest({
     when: 'not specifying anything',
-    expected: ['decimals', 'symbol'],
+    expected: ['decimals', 'symbol', 'name'],
   });
   rpcTest({
     when: 'marking properties as required',
-    requirements: { requirements: { decimals: 'required', symbol: 'required' } },
-    expected: ['decimals', 'symbol'],
+    requirements: { requirements: { decimals: 'required', symbol: 'required', name: 'required' } },
+    expected: ['decimals', 'symbol', 'name'],
   });
   rpcTest({
     when: 'marking properties as best effort',
-    requirements: { requirements: { decimals: 'best effort', symbol: 'best effort' } },
-    expected: ['decimals', 'symbol'],
+    requirements: { requirements: { decimals: 'best effort', symbol: 'best effort', name: 'best effort' } },
+    expected: ['decimals', 'symbol', 'name'],
   });
   rpcTest({
     when: 'marking properties as can ignore',
-    requirements: { requirements: { decimals: 'best effort', symbol: 'can ignore' } },
+    requirements: { requirements: { decimals: 'best effort', symbol: 'can ignore' }, default: 'can ignore' },
     expected: ['decimals'],
   });
 

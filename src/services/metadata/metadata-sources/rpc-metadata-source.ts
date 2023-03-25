@@ -8,8 +8,8 @@ import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
-export type RPCMetadataProperties = BaseTokenMetadata;
-const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present' };
+export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
+const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
 export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties> {
   constructor(private readonly multicallService: IMulticallService) {}
 
@@ -62,12 +62,14 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     if (addressesWithoutNativeToken.length !== addresses.length) {
       const nativeResult = {} as MetadataResult<RPCMetadataProperties, Requirements>;
       if (fieldsToFetch.includes('symbol')) {
-        nativeResult.symbol = chain?.currencySymbol ?? '???';
+        nativeResult.symbol = chain?.nativeCurrency?.symbol ?? '???';
       }
       if (fieldsToFetch.includes('decimals')) {
         nativeResult.decimals = 18;
       }
-      // TODO: Take into account when adding name
+      if (fieldsToFetch.includes('name')) {
+        nativeResult.name = chain?.nativeCurrency?.name ?? 'Unknown';
+      }
       result[Addresses.NATIVE_TOKEN] = nativeResult;
     }
 
@@ -84,5 +86,6 @@ const ERC20_ABI = [
 const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);
 const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string; calldata: string }> = {
   symbol: { decode: 'string', calldata: ERC_20_INTERFACE.encodeFunctionData('symbol') },
+  name: { decode: 'string', calldata: ERC_20_INTERFACE.encodeFunctionData('name') },
   decimals: { decode: 'uint8', calldata: ERC_20_INTERFACE.encodeFunctionData('decimals') },
 };

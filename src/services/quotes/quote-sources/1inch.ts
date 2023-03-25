@@ -113,7 +113,7 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
 }
 
 function isNativeWrapOrUnwrap(chain: Chain, protocols: any) {
-  const wTokenSymbol = `W${chain.currencySymbol.toUpperCase()}`;
+  const wTokenSymbol = `W${chain.nativeCurrency.symbol.toUpperCase()}`;
   return (
     protocols.length === 1 &&
     protocols[0].length === 1 &&

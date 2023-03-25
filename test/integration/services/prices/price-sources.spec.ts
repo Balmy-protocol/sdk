@@ -62,7 +62,7 @@ describe('Price Sources', () => {
             test(`Returned amount of prices is as expected`, () => {
               expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
             });
-            test(chain?.currencySymbol ?? 'Native token', () => {
+            test(chain?.nativeCurrency?.symbol ?? 'Native token', () => {
               validateToken({ chainId, address: Addresses.NATIVE_TOKEN });
             });
             if (chainId in TESTS) {
