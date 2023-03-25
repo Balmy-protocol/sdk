@@ -9,7 +9,7 @@ export class EthersProviderSource implements IProviderSource {
     return [this.provider.network.chainId];
   }
 
-  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     return this.provider;
   }
 }

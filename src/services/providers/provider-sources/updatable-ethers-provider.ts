@@ -10,7 +10,7 @@ export class UpdatableEthersProviderSource implements IProviderSource {
     return provider ? [provider.network.chainId] : [];
   }
 
-  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     if (this.supportedChains().includes(chainId)) {
       return this.provider()!;
     }

@@ -35,7 +35,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
 
   estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
     const promise = this.providerSource
-      .getProvider({ chainId })
+      .getEthersProvider({ chainId })
       .estimateGas(tx)
       .then((estimate) => estimate.toString());
     return timeoutPromise(promise, config?.timeout);

@@ -11,11 +11,11 @@ const PROVIDER_2 = new JsonRpcProvider();
 describe('Prioritized Provider Source Combinator', () => {
   const source1: IProviderSource = {
     supportedChains: () => [Chains.POLYGON.chainId],
-    getProvider: () => PROVIDER_1,
+    getEthersProvider: () => PROVIDER_1,
   };
   const source2: IProviderSource = {
     supportedChains: () => [Chains.POLYGON.chainId, Chains.ETHEREUM.chainId],
-    getProvider: () => PROVIDER_2,
+    getEthersProvider: () => PROVIDER_2,
   };
   const fallbackSource = new PrioritizedProviderSourceCombinator([source1, source2]);
 
@@ -30,19 +30,19 @@ describe('Prioritized Provider Source Combinator', () => {
 
   when('asking for a chain supported by source1', () => {
     then('provider1 is returned', () => {
-      expect(fallbackSource.getProvider({ chainId: Chains.POLYGON.chainId })).to.equal(PROVIDER_1);
+      expect(fallbackSource.getEthersProvider({ chainId: Chains.POLYGON.chainId })).to.equal(PROVIDER_1);
     });
   });
 
   when('asking for a chain not supported by source1', () => {
     then('provider2 is returned', () => {
-      expect(fallbackSource.getProvider({ chainId: Chains.ETHEREUM.chainId })).to.equal(PROVIDER_2);
+      expect(fallbackSource.getEthersProvider({ chainId: Chains.ETHEREUM.chainId })).to.equal(PROVIDER_2);
     });
   });
 
   when('asking for a chain not supported by any source', () => {
     then('an error is thrown', () => {
-      expect(() => fallbackSource.getProvider({ chainId: Chains.OPTIMISM.chainId })).to.throw(
+      expect(() => fallbackSource.getEthersProvider({ chainId: Chains.OPTIMISM.chainId })).to.throw(
         `Chain with id ${Chains.OPTIMISM.chainId} not supported`
       );
     });

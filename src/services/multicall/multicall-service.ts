@@ -46,7 +46,7 @@ export class MulticallService implements IMulticallService {
   }
 
   private getMulticall(chainId: ChainId) {
-    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getProvider({ chainId }));
+    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getEthersProvider({ chainId }));
   }
 }
 

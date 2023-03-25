@@ -10,7 +10,7 @@ describe('Updatable Ethers Provider', () => {
       expect(source.supportedChains()).to.have.lengthOf(0);
     });
     then('asking for a provider would fail', () => {
-      expect(() => source.getProvider({ chainId: 0 })).to.throw('Provider is not set or it does not support the chain 0');
+      expect(() => source.getEthersProvider({ chainId: 0 })).to.throw('Provider is not set or it does not support the chain 0');
     });
   });
 
@@ -22,7 +22,7 @@ describe('Updatable Ethers Provider', () => {
     });
     then('it is reported correctly', () => {
       expect(source.supportedChains()).to.eql([10]);
-      expect(source.getProvider({ chainId: 10 })).to.equal(provider);
+      expect(source.getEthersProvider({ chainId: 10 })).to.equal(provider);
     });
   });
 });

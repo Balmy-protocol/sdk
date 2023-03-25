@@ -27,7 +27,7 @@ export class RPCSimulationSource implements ISimulationSource {
     if (!isValid(tx.value)) return invalidTx('"value" is not a valid');
 
     try {
-      const estimatedGas = await this.providerSource.getProvider({ chainId }).estimateGas(tx);
+      const estimatedGas = await this.providerSource.getEthersProvider({ chainId }).estimateGas(tx);
       return {
         successful: true,
         stageChanges: [],

@@ -15,10 +15,10 @@ export class FallbackSource implements IProviderSource {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
     const sources = this.sources.filter((source) => source.supportedChains().includes(chainId));
     if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
-    const config = sources.map((source, i) => ({ provider: source.getProvider({ chainId }), priority: i }));
+    const config = sources.map((source, i) => ({ provider: source.getEthersProvider({ chainId }), priority: i }));
     return new FallbackProvider(config);
   }
 }
