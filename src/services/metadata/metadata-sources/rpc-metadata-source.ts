@@ -1,64 +1,88 @@
 import { ethers } from 'ethers';
-import { Address, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { getChainByKey } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
-import { BaseTokenMetadata, IMetadataSource } from '../types';
+import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
+import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
-type RPCMetadataProperties = BaseTokenMetadata;
+export type RPCMetadataProperties = BaseTokenMetadata;
+const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present' };
 export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties> {
   constructor(private readonly multicallService: IMulticallService) {}
 
-  async getMetadata({
+  async getMetadata<Requirements extends FieldsRequirements<RPCMetadataProperties>>({
     addresses,
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, RPCMetadataProperties>>> {
-    const promises = Object.entries(addresses).map<Promise<[ChainId, Record<TokenAddress, RPCMetadataProperties>]>>(
-      async ([chainId, addresses]) => [
-        Number(chainId),
-        await timeoutPromise(this.fetchTokensInChain(Number(chainId), addresses), config?.timeout, { reduceBy: '100' }),
-      ]
-    );
+    config?: { fields?: Requirements; timeout: TimeString };
+  }) {
+    const promises = Object.entries(addresses).map<
+      Promise<[ChainId, Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>>]>
+    >(async ([chainId, addresses]) => [
+      Number(chainId),
+      await timeoutPromise(this.fetchMetadataInChain(Number(chainId), addresses, config?.fields), config?.timeout, { reduceBy: '100' }),
+    ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
   supportedProperties() {
-    const properties: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present' };
-    return Object.fromEntries(this.multicallService.supportedChains().map((chainId) => [chainId, properties]));
+    return Object.fromEntries(this.multicallService.supportedChains().map((chainId) => [chainId, SUPPORT]));
   }
 
-  private async fetchTokensInChain(chainId: ChainId, addresses: Address[]): Promise<Record<TokenAddress, RPCMetadataProperties>> {
+  private async fetchMetadataInChain<Requirements extends FieldsRequirements<RPCMetadataProperties>>(
+    chainId: ChainId,
+    addresses: Address[],
+    requirements: Requirements | undefined
+  ) {
     const chain = getChainByKey(chainId);
     const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
-
-    const calls: { target: Address; decode: string; calldata: string }[] = addressesWithoutNativeToken.flatMap((address) => [
-      { target: address, decode: 'string', calldata: SYMBOL_CALLDATA },
-      { target: address, decode: 'uint8', calldata: DECIMALS_CALLDATA },
-    ]);
+    const fieldRequirements = calculateFieldRequirements(SUPPORT, requirements);
+    const fieldsToFetch = Object.entries(fieldRequirements)
+      .filter(([, requirement]) => requirement !== 'can ignore')
+      .map(([field]) => field as keyof RPCMetadataProperties);
+    if (fieldsToFetch.length === 0) return {};
+    const calls: { target: Address; decode: string; calldata: string }[] = [];
+    for (const field of fieldsToFetch) {
+      calls.push(...addressesWithoutNativeToken.map((address) => ({ target: address, ...DECODE_DATA[field] })));
+    }
     const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
-    const result: Record<TokenAddress, RPCMetadataProperties> = {};
+    const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
-      const symbol: string = multicallResults[i * 2];
-      const decimals: number = multicallResults[i * 2 + 1];
-      result[address] = { symbol, decimals };
+      const tokenMetadata = Object.fromEntries(
+        fieldsToFetch.map((field, j) => [field, multicallResults[addressesWithoutNativeToken.length * j + i]])
+      ) as MetadataResult<RPCMetadataProperties, Requirements>;
+      result[address] = tokenMetadata;
     }
 
     if (addressesWithoutNativeToken.length !== addresses.length) {
-      result[Addresses.NATIVE_TOKEN] = { symbol: chain?.currencySymbol ?? '???', decimals: 18 };
+      const nativeResult = {} as MetadataResult<RPCMetadataProperties, Requirements>;
+      if (fieldsToFetch.includes('symbol')) {
+        nativeResult.symbol = chain?.currencySymbol ?? '???';
+      }
+      if (fieldsToFetch.includes('decimals')) {
+        nativeResult.decimals = 18;
+      }
+      // TODO: Take into account when adding name
+      result[Addresses.NATIVE_TOKEN] = nativeResult;
     }
 
     return result;
   }
 }
 
-const ERC20_ABI = ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'];
+const ERC20_ABI = [
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+  'function name() view returns (string)',
+];
 
 const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);
-const SYMBOL_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('symbol');
-const DECIMALS_CALLDATA = ERC_20_INTERFACE.encodeFunctionData('decimals');
+const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string; calldata: string }> = {
+  symbol: { decode: 'string', calldata: ERC_20_INTERFACE.encodeFunctionData('symbol') },
+  decimals: { decode: 'uint8', calldata: ERC_20_INTERFACE.encodeFunctionData('decimals') },
+};

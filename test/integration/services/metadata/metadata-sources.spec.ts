@@ -10,7 +10,8 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
-import { IMetadataSource } from '@services/metadata';
+import { IMetadataSource, MetadataResult } from '@services/metadata';
+import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -23,28 +24,37 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(new PublicRPCsSource()));
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(new FetchService(crossFetch));
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
+const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOURCE, {
+  useCachedValue: 'always',
+  useCachedValueIfCalculationFailed: 'always',
+});
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Metadata Sources', () => {
-  tokenSourceTest({
+  metadataSourceTest({
     title: 'RPC Source',
     source: RPC_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
-  tokenSourceTest({
+  metadataSourceTest({
     title: 'Defi Llama Source',
     source: DEFI_LLAMA_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
-  tokenSourceTest({
+  metadataSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
+  metadataSourceTest({
+    title: 'Cached Source',
+    source: CACHED_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+  });
 
-  function tokenSourceTest<TokenMetadata extends object>({
+  function metadataSourceTest<TokenMetadata extends object>({
     title,
     source,
     fields,
@@ -75,7 +85,7 @@ describe('Metadata Sources', () => {
 
       describe('getMetadata', () => {
         let input: Record<ChainId, TokenAddress[]>;
-        let result: Record<ChainId, Record<TokenAddress, TokenMetadata>>;
+        let result: Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata>>>;
         beforeAll(async () => {
           const chains = Object.keys(source.supportedProperties()).map(Number);
           const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
@@ -99,17 +109,17 @@ describe('Metadata Sources', () => {
               expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
             });
             test(chain?.currencySymbol ?? 'Native token', () => {
-              validateToken({ chainId, address: Addresses.NATIVE_TOKEN });
+              validateMetadata({ chainId, address: Addresses.NATIVE_TOKEN });
             });
             if (chainId in TESTS) {
               test(`${TESTS[chainId].symbol}`, () => {
-                validateToken({ chainId, ...TESTS[chainId] });
+                validateMetadata({ chainId, ...TESTS[chainId] });
               });
             }
           });
         }
 
-        function validateToken({ chainId, address }: { chainId: ChainId; address: TokenAddress }) {
+        function validateMetadata({ chainId, address }: { chainId: ChainId; address: TokenAddress }) {
           const token = result[chainId][address];
           for (const { fields: fieldsExist, on } of fields) {
             if (on !== 'all chains' && !on.includes(chainId)) continue;

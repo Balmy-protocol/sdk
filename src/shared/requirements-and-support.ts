@@ -1,14 +1,23 @@
 import { chainsUnion } from '@chains';
 import { ChainId, FieldRequirementOptions, FieldsRequirements, SupportInChain } from '@types';
 
+export function calculateFieldRequirementsPerChain<Values extends object, Requirements extends FieldsRequirements<Values>>(
+  supportRecord: Record<ChainId, SupportInChain<Values>>,
+  requirements: Requirements | undefined
+) {
+  const result: Record<ChainId, Record<keyof Values, FieldRequirementOptions>> = {};
+  for (const chainId in supportRecord) {
+    result[chainId] = calculateFieldRequirements(supportRecord[chainId], requirements);
+  }
+  return result;
+}
+
 export function calculateFieldRequirements<Values extends object, Requirements extends FieldsRequirements<Values>>(
   supportRecord: SupportInChain<Values> | undefined,
   requirements: Requirements | undefined
 ): Record<keyof Values, FieldRequirementOptions> {
   const result = {} as Record<keyof Values, FieldRequirementOptions>;
-  const fields = new Set([...Object.keys(supportRecord ?? {}), ...Object.keys(requirements?.requirements ?? {})]) as Set<
-    keyof Values | keyof Requirements['requirements']
-  >;
+  const fields = new Set([...Object.keys(supportRecord ?? {}), ...Object.keys(requirements?.requirements ?? {})]) as Set<keyof Values>;
   for (const field of fields) {
     // The idea is simple. We will calculate the requirement for each field in the following order:
     // A. What's specified on the requirements record
@@ -34,20 +43,24 @@ export function combineSourcesSupport<Source, Values extends object>(
   const allChains = chainsUnion(sources.map((source) => Object.keys(extractSupport(source)).map(Number)));
   const result: Record<ChainId, SupportInChain<Values>> = {};
   for (const chainId of allChains) {
-    result[chainId] = combineSourcesSupportInChain(chainId, sources, extractSupport);
+    const supports: SupportInChain<object>[] = sources.map((source) => extractSupport(source)[chainId]).filter((support) => !!support);
+    result[chainId] = combineSupportRecords(supports);
   }
   return result;
 }
 
-export function combineSourcesSupportInChain<Source, Values extends object>(
-  chainId: ChainId,
-  sources: Source[],
-  extractSupport: (source: Source) => Record<ChainId, SupportInChain<object>>
+export function combineSupportInChains<Values extends object>(
+  chainIds: ChainId[],
+  support: Record<ChainId, SupportInChain<object>>
 ): SupportInChain<Values> {
-  const sourcesInChain = sources.filter((source) => chainId in extractSupport(source));
-  const result = { ...extractSupport(sourcesInChain[0])[chainId] };
-  for (let i = 1; i < sourcesInChain.length; i++) {
-    const sourceSupport = extractSupport(sourcesInChain[i])[chainId];
+  const supportsInChains = chainIds.map((chainId) => support[chainId]).filter((support) => !!support);
+  return combineSupportRecords(supportsInChains);
+}
+
+export function combineSupportRecords<Values extends object>(supports: SupportInChain<object>[]): SupportInChain<Values> {
+  const result = supports[0];
+  for (let i = 1; i < supports.length; i++) {
+    const sourceSupport = supports[i];
     const allKeys = [...new Set([...Object.keys(sourceSupport), ...Object.keys(result)])];
     for (const key of allKeys) {
       if ((result as any)[key] !== (sourceSupport as any)[key]) {
@@ -69,11 +82,9 @@ export function validateRequirements<Values extends object, Requirements extends
 ) {
   if (!requirements) return;
 
-  for (const chainId of chains) {
-    const chainSupport = support[chainId];
-    if (!couldSupportMeetRequirements(chainSupport, requirements)) {
-      throw new Error(`The provided field requirements cannot be met for chain with id ${chainId}`);
-    }
+  const supportRecord = combineSupportInChains(chains, support);
+  if (!couldSupportMeetRequirements(supportRecord, requirements)) {
+    throw new Error(`The provided field requirements cannot be met for all chains`);
   }
 }
 
@@ -83,7 +94,7 @@ export function doesResponseMeetRequirements<Values extends object, Requirements
 ) {
   const fieldRequirements = calculateFieldRequirements<Values, Requirements>(undefined, requirements);
   for (const field in fieldRequirements) {
-    if (fieldRequirements[field] === 'required' && response[field] === undefined) {
+    if (fieldRequirements[field] === 'required' && !(field in response)) {
       return false;
     }
   }
@@ -102,4 +113,22 @@ export function couldSupportMeetRequirements<Values extends object, Requirements
     }
   }
   return true;
+}
+
+export function makeRequirementsCompatible<Values extends object, Requirements extends FieldsRequirements<Values> | undefined>(
+  supportRecord: Record<ChainId, SupportInChain<Values>>,
+  chains: ChainId[],
+  requirements: Requirements
+): Requirements {
+  if (!requirements) return requirements;
+  const newRequirements: Partial<Record<keyof Values, FieldRequirementOptions>> = {};
+  const isPropertyPresentOrOptionalInAllChains = (field: keyof Values) => chains.every((chainId) => !!supportRecord[chainId]?.[field]);
+
+  for (const field in requirements.requirements) {
+    if (requirements.requirements[field] !== 'required' || isPropertyPresentOrOptionalInAllChains(field)) {
+      newRequirements[field] = requirements.requirements[field];
+    }
+  }
+
+  return { requirements: newRequirements, default: requirements.default } as Requirements;
 }
