@@ -38,7 +38,7 @@ describe('Cached Metadata Source', () => {
   });
 
   cacheTest({
-    when: 'called for the second time with same required fields but decimals requirements',
+    when: 'called for the second time with same required fields but different decimals requirements',
     calls: [
       { config: { timeout: '5s', fields: { requirements: { symbol: 'required', decimals: 'best effort' } } } },
       { config: { timeout: '15s', fields: { requirements: { symbol: 'required', decimals: 'can ignore' } } } },

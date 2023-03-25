@@ -36,7 +36,7 @@ describe('Metadata Sources', () => {
   metadataSourceTest({
     title: 'RPC Source',
     source: RPC_METADATA_SOURCE,
-    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
   });
   metadataSourceTest({
     title: 'Defi Llama Source',
@@ -46,7 +46,10 @@ describe('Metadata Sources', () => {
   metadataSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_METADATA_SOURCE,
-    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+    fields: [
+      { fields: ['decimals', 'symbol'], on: 'all chains' },
+      { fields: ['name'], on: chainsForSource(RPC_METADATA_SOURCE) },
+    ],
   });
   metadataSourceTest({
     title: 'Cached Source',
@@ -73,7 +76,7 @@ describe('Metadata Sources', () => {
             const totalAmountExpected = fieldsThatApply.reduce((accum, { fields }) => fields.length + accum, 0);
             expect(Object.keys(supportedProperties[chainId])).to.have.lengthOf(totalAmountExpected);
             for (const { fields: fieldsExist } of fieldsThatApply) {
-              expect(supportedProperties[chainId]).to.have.keys(fieldsExist);
+              expect(supportedProperties[chainId]).to.include.all.keys(fieldsExist);
             }
           }
         });
@@ -132,3 +135,6 @@ describe('Metadata Sources', () => {
     });
   }
 });
+function chainsForSource(source: IMetadataSource<object>) {
+  return Object.keys(source.supportedProperties()).map(Number);
+}
