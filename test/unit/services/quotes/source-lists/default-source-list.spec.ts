@@ -11,7 +11,7 @@ import { ChainId } from '@types';
 import chaiAsPromised from 'chai-as-promised';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PriceService } from '@services/prices/price-service';
-import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
+import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { MetadataService } from '@services/metadata/metadata-service';
 chai.use(chaiAsPromised);
