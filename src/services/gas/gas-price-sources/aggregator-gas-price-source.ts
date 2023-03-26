@@ -6,7 +6,7 @@ import { BigNumber } from 'ethers';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
 import { isEIP1159Compatible } from '../utils';
 
-export type GasPriceAggregationMethod = 'mean' | 'min' | 'max';
+export type GasPriceAggregationMethod = 'median' | 'min' | 'max';
 export class AggregatorGasPriceSource<Sources extends IGasPriceSource<object>[] | []> implements IGasPriceSource<MergeGasValues<Sources>> {
   constructor(private readonly sources: Sources, private readonly method: GasPriceAggregationMethod) {
     if (sources.length === 0) throw new Error('No sources were specified');
@@ -88,8 +88,8 @@ function aggregateBySpeed<Is1559 extends boolean>(is1559: Is1559, toAggregate: C
 
 function aggregate1559(toAggregate: EIP1159GasPrice[], method: GasPriceAggregationMethod) {
   switch (method) {
-    case 'mean':
-      return meanByProperty(toAggregate, 'maxFeePerGas');
+    case 'median':
+      return medianByProperty(toAggregate, 'maxFeePerGas');
     case 'max':
       return maxByProperty(toAggregate, 'maxFeePerGas');
     case 'min':
@@ -99,8 +99,8 @@ function aggregate1559(toAggregate: EIP1159GasPrice[], method: GasPriceAggregati
 
 function aggregateLegacy(toAggregate: LegacyGasPrice[], method: GasPriceAggregationMethod) {
   switch (method) {
-    case 'mean':
-      return meanByProperty(toAggregate, 'gasPrice');
+    case 'median':
+      return medianByProperty(toAggregate, 'gasPrice');
     case 'max':
       return maxByProperty(toAggregate, 'gasPrice');
     case 'min':
@@ -108,9 +108,9 @@ function aggregateLegacy(toAggregate: LegacyGasPrice[], method: GasPriceAggregat
   }
 }
 
-function meanByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
+function medianByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
   const sorted = array.sort((a, b) => (BigNumber.from(a[property]).lte(b[property] as AmountOfToken) ? -1 : 1));
-  return sorted[Math.floor(sorted.length / 2)];
+  return sorted[Math.floor(Math.max(sorted.length - 1, 0) / 2)];
 }
 
 function maxByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {

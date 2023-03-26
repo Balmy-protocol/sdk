@@ -115,7 +115,7 @@ function buildSource(
 ): IGasPriceSource<object> {
   switch (source?.type) {
     case undefined:
-      return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerSource }), 'mean');
+      return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerSource }), 'median');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'rpc':

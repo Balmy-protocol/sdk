@@ -14,6 +14,7 @@ import { ChainId, TokenAddress } from '@types';
 import { IPriceSource, TokenPrice } from '@services/prices/types';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
+import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -33,6 +34,7 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
 });
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
+const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
 const MORALIS_PRICE_SOURCE = new MoralisPriceSource(FETCH_SERVICE, 'API_KEY');
 const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
 
@@ -46,6 +48,7 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Cached Price Source', source: CACHED_PRICE_SOURCE });
   priceSourceTest({ title: 'Prioritized Source', source: PRIORITIZED_PRICE_SOURCE });
   priceSourceTest({ title: 'Fastest Source', source: FASTEST_PRICE_SOURCE });
+  priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
   // priceSourceTest({ title: 'Moralis Source', source: MORALIS_PRICE_SOURCE }); // Commented out because we need API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
 
