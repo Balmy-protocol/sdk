@@ -1,16 +1,18 @@
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IMulticallService } from '@services/multicall/types';
-import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama';
+import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
 import { ExtractMetadata, IMetadataService, IMetadataSource } from '@services/metadata/types';
 import { MetadataService } from '@services/metadata/metadata-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
+import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
 
 export type MetadataSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
+  | { type: 'portals-fi' }
   | { type: 'cached'; underlyingSource: MetadataSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IMetadataSource<object> }
   | { type: 'combine-when-possible'; sources: MetadataSourceInput[] };
@@ -25,7 +27,7 @@ type CalculateSourceFromParams<T extends BuildMetadataParams | undefined> = T ex
   : CalculateSourceFromInput<undefined>;
 
 type CalculateSourceFromInput<Input extends MetadataSourceInput | undefined> = undefined extends Input
-  ? FallbackMetadataSource<[DefiLlamaMetadataSource, RPCMetadataSource]>
+  ? FallbackMetadataSource<[DefiLlamaMetadataSource, PortalsFiMetadataSource, RPCMetadataSource]>
   : Input extends { type: 'defi-llama' }
   ? DefiLlamaMetadataSource
   : Input extends { type: 'rpc-multicall' }
@@ -56,10 +58,13 @@ function buildSource<T extends MetadataSourceInput>(
   switch (source?.type) {
     case undefined:
       const defiLlama = new DefiLlamaMetadataSource(fetchService);
+      const portalsFi = new PortalsFiMetadataSource(fetchService);
       const rpc = new RPCMetadataSource(multicallService);
-      return new FallbackMetadataSource([defiLlama, rpc]);
+      return new FallbackMetadataSource([defiLlama, portalsFi, rpc]);
     case 'defi-llama':
       return new DefiLlamaMetadataSource(fetchService);
+    case 'portals-fi':
+      return new PortalsFiMetadataSource(fetchService);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
       return new CachedMetadataSource(underlying, source.expiration);

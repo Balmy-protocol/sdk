@@ -1,10 +1,10 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
-import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
-import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi';
-import { OdosPriceSource } from '@services/prices/price-sources/odos';
-import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko';
+import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
+import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
+import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
+import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Chains, getChainByKey } from '@chains';

@@ -52,7 +52,7 @@ export class PortalsFiClient {
         throw new Error('Request to Portals Fi API failed');
       }
       const result: Result = await response.json();
-      return Object.fromEntries(result.tokens.map(({ key, ...data }) => [key, data]));
+      return Object.fromEntries(result.tokens.map(({ key, name, decimals, symbol, price }) => [key, { name, decimals, symbol, price }]));
     });
     const responses = await Promise.all(requests);
     return responses.reduce((accum, curr) => ({ ...accum, ...curr }), {});

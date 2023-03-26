@@ -208,7 +208,7 @@ describe('Fallback Token Source', () => {
     });
   });
 
-  when.only(`combining required properties from different sources`, () => {
+  when(`combining required properties from different sources`, () => {
     then('fallback waits for all of them', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1], properties: { decimals: 'optional' } });
       const { source: source2, promise: source2Promise } = source({ chains: [1], properties: { symbol: 'optional' } });
