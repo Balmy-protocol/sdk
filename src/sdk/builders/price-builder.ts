@@ -10,6 +10,7 @@ import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-
 import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
+import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
@@ -19,6 +20,7 @@ export type PriceSourceInput =
   | { type: 'moralis'; key: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'fastest'; sources: PriceSourceInput[] }
+  | { type: 'aggregate'; sources: PriceSourceInput[]; by: PriceAggregationMethod }
   | { type: 'cached'; underlyingSource: PriceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IPriceSource };
 export type BuildPriceParams = { source: PriceSourceInput };
@@ -48,6 +50,11 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return new PrioritizedPriceSource(source.sources.map((source) => buildSource(source, { fetchService })));
     case 'fastest':
       return new FastestPriceSource(source.sources.map((source) => buildSource(source, { fetchService })));
+    case 'aggregate':
+      return new AggregatorPriceSource(
+        source.sources.map((source) => buildSource(source, { fetchService })),
+        source.by
+      );
     case 'custom':
       return source.instance;
   }

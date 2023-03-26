@@ -24,7 +24,7 @@ const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch),
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'mean');
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'median');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('30s'));
