@@ -2,7 +2,8 @@ import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
-import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama';
+import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
+import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
@@ -21,8 +22,10 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
+const FETCH_SERVICE = new FetchService(crossFetch);
 const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(new PublicRPCsSource()));
-const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(new FetchService(crossFetch));
+const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
+const PORTALS_FI_METADATA_SOURCE = new PortalsFiMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
 const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOURCE, {
   useCachedValue: 'always',
@@ -36,6 +39,11 @@ describe('Metadata Sources', () => {
   metadataSourceTest({
     title: 'RPC Source',
     source: RPC_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
+  });
+  metadataSourceTest({
+    title: 'Portals Fi Source',
+    source: PORTALS_FI_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
   });
   metadataSourceTest({

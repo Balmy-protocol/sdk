@@ -1,7 +1,7 @@
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IMulticallService } from '@services/multicall/types';
-import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama';
+import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
 import { ExtractMetadata, IMetadataService, IMetadataSource } from '@services/metadata/types';
 import { MetadataService } from '@services/metadata/metadata-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
