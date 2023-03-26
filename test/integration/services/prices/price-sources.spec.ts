@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama';
 import { OdosPriceSource } from '@services/prices/price-sources/odos';
+import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Chains, getChainByKey } from '@chains';
@@ -21,6 +22,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 const FETCH_SERVICE = new FetchService(crossFetch);
 const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
 const ODOS_TOKEN_SOURCE = new OdosPriceSource(FETCH_SERVICE);
+const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
 const CACHED_TOKEN_SOURCE = new CachedPriceSource(DEFI_LLAMA_TOKEN_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
@@ -29,19 +31,11 @@ const CACHED_TOKEN_SOURCE = new CachedPriceSource(DEFI_LLAMA_TOKEN_SOURCE, {
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
-describe('Price Sources', () => {
-  priceSourceTest({
-    title: 'Defi Llama Source',
-    source: DEFI_LLAMA_TOKEN_SOURCE,
-  });
-  priceSourceTest({
-    title: 'Odos Source',
-    source: ODOS_TOKEN_SOURCE,
-  });
-  priceSourceTest({
-    title: 'Cached Price Source',
-    source: CACHED_TOKEN_SOURCE,
-  });
+describe('Token Price Sources', () => {
+  priceSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE });
+  priceSourceTest({ title: 'Odos Source', source: ODOS_TOKEN_SOURCE });
+  // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
+  priceSourceTest({ title: 'Cached Price Source', source: CACHED_TOKEN_SOURCE });
 
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
     describe(title, () => {
