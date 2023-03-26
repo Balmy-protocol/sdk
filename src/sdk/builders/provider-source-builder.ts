@@ -24,8 +24,8 @@ export type ProviderSourceInput =
   | { type: 'llama-nodes'; config: { key: string } }
   | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
   | { type: 'web-socket'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
-  | { type: 'combine-when-possible'; sources: ProviderSourceInput[] }
-  | { type: 'only-first-provider-that-supports-chain'; sources: ProviderSourceInput[] };
+  | { type: 'fallback'; sources: ProviderSourceInput[] }
+  | { type: 'prioritized'; sources: ProviderSourceInput[] };
 
 export function buildProviderSource(params?: BuildProviderParams) {
   return buildSource(params?.source);
@@ -53,9 +53,9 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new JsonRPCProviderSource(source.config.url, source.config.supportedChains);
     case 'web-socket':
       return new WebSocketProviderSource(source.config.url, source.config.supportedChains);
-    case 'combine-when-possible':
+    case 'fallback':
       return new FallbackSource(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
-    case 'only-first-provider-that-supports-chain':
+    case 'prioritized':
       return new PrioritizedProviderSourceCombinator(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
   }
 }
