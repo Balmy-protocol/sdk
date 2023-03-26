@@ -19,6 +19,7 @@ import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
+import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
 
 // TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
 // builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
@@ -28,6 +29,7 @@ type SingleSourceInput = Exclude<CachelessInput, { type: 'fastest' } | { type: '
 
 export type GasSourceInput =
   | { type: 'open-ocean' }
+  | { type: 'paraswap' }
   | { type: 'rpc' }
   | { type: 'eth-gas-station' }
   | { type: 'polygon-gas-station' }
@@ -54,6 +56,8 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? AggregatorGasPriceSource<PublicSources>
   : Input extends { type: 'open-ocean' }
   ? OpenOceanGasPriceSource
+  : Input extends { type: 'paraswap' }
+  ? ParaswapGasPriceSource
   : Input extends { type: 'rpc' }
   ? RPCGasPriceSource
   : Input extends { type: 'eth-gas-station' }
@@ -118,6 +122,8 @@ function buildSource(
       return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerSource }), 'median');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
+    case 'paraswap':
+      return new ParaswapGasPriceSource(fetchService);
     case 'rpc':
       return new RPCGasPriceSource(providerSource);
     case 'eth-gas-station':
@@ -146,7 +152,8 @@ type PublicSources = [
   RPCGasPriceSource,
   EthGasStationGasPriceSource,
   PolygonGasStationGasPriceSource,
-  EtherscanGasPriceSource
+  EtherscanGasPriceSource,
+  ParaswapGasPriceSource
 ];
 
 function calculateSources(
@@ -172,7 +179,8 @@ function calculatePublicSources({
   const ethGasStation = new EthGasStationGasPriceSource(fetchService);
   const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
   const etherscan = new EtherscanGasPriceSource(fetchService);
-  return [openOcean, rpc, ethGasStation, polygonGasStation, etherscan];
+  const paraswap = new ParaswapGasPriceSource(fetchService);
+  return [openOcean, rpc, ethGasStation, polygonGasStation, etherscan, paraswap];
 }
 
 function buildGasCalculatorBuilder<GasValues extends SupportedGasValues>({

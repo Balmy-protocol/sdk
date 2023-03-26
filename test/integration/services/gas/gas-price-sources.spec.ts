@@ -15,12 +15,15 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
+import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
 
-const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(new FetchService(crossFetch));
-const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(new FetchService(crossFetch));
-const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(new FetchService(crossFetch));
-const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(new FetchService(crossFetch));
-const OWLRACLE_SOURCE = new OwlracleGasPriceSource(new FetchService(crossFetch), '7d7859c452d5419bae3d7666c8130c96');
+const FETCH_SERVICE = new FetchService(crossFetch);
+const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
+const PARASWAP_SOURCE = new ParaswapGasPriceSource(FETCH_SERVICE);
+const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
+const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SERVICE);
+const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(FETCH_SERVICE);
+const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
 const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
@@ -39,6 +42,7 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE });
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
+  gasPriceSourceTest({ title: 'Paraswap Source', source: PARASWAP_SOURCE });
 
   function gasPriceSourceTest({ title, source }: { title: string; source: IGasPriceSource<object> }) {
     describe(title, () => {
