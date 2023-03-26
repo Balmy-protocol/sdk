@@ -10,13 +10,7 @@ export class PrioritizedPriceSource implements IPriceSource {
     if (sources.length === 0) throw new Error('No sources were specified');
   }
 
-  async getCurrentPrices({
-    addresses,
-    config,
-  }: {
-    addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
+  async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
     const chainsInRequest = Object.keys(addresses).map(Number);
     const sourcesInChain = this.sources.filter((source) => doesSourceSupportAnyOfTheChains(source, chainsInRequest));
     if (sourcesInChain.length === 0) throw new Error(`Current price sources can't support all the given chains`);

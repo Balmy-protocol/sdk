@@ -30,7 +30,7 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
     return new Promise<GasPriceResult<MergeGasValues<Sources>, Requirements>>(async (resolve, reject) => {
       for (let i = 0; i < gasResults.length; i++) {
         const response = await gasResults[i];
-        if (doesResponseMeetRequirements(response, config?.fields)) {
+        if (Object.keys(response).length > 0 && doesResponseMeetRequirements(response, config?.fields)) {
           resolve(response as GasPriceResult<MergeGasValues<Sources>, Requirements>);
         }
       }
