@@ -3,21 +3,21 @@ import { then, when } from '@test-utils/bdd';
 import { ChainId, TokenAddress } from '@types';
 import chaiAsPromised from 'chai-as-promised';
 import { IPriceSource, TokenPrice } from '@services/prices';
-import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
+import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 chai.use(chaiAsPromised);
 
 const TOKEN_A = '0x0000000000000000000000000000000000000001';
 const TOKEN_B = '0x0000000000000000000000000000000000000002';
 
-describe('Prioritized Price Source', () => {
+describe('Fastest Price Source', () => {
   when('source is created empty', () => {
-    then('prioritized source fails', () => {
-      expect(() => new PrioritizedPriceSource([])).to.throw('No sources were specified');
+    then('fastest source fails', () => {
+      expect(() => new FastestPriceSource([])).to.throw('No sources were specified');
     });
   });
 
   when('one of the given chains is not supported by any source', () => {
-    then('prioritized source fails', async () => {
+    then('fastest source fails', async () => {
       const { source: source1 } = source({ chains: [1] });
       const promise = getPrices({ addresses: { [2]: [TOKEN_A] }, sources: [source1] });
       await expect(promise.result).to.to.eventually.be.rejectedWith(`Current price sources can't support all the given chains`);
@@ -25,23 +25,19 @@ describe('Prioritized Price Source', () => {
     });
   });
 
-  when('second source resolves', () => {
-    then('prioritized source waits for the first one', async () => {
-      const { source: source1, promise: source1Promise } = source({ chains: [1] });
+  when('second source resolves and result is fulfilled', () => {
+    then('resolves without waiting for first one', async () => {
+      const { source: source1 } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result1 = { [1]: { [TOKEN_A]: 10 } };
-      const result2 = { [1]: { [TOKEN_A]: 20 } };
+      const result = { [1]: { [TOKEN_A]: 20 } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       await wait();
       expect(promise.status).to.equal('pending');
-      source2Promise.resolve(result2);
-      await wait();
-      expect(promise.status).to.equal('pending');
-      source1Promise.resolve(result1);
+      source2Promise.resolve(result);
       await wait();
       expect(promise.status).to.equal('resolved');
-      expect(await promise.result).to.deep.equal(result1);
+      expect(await promise.result).to.deep.equal(result);
     });
   });
 
@@ -58,6 +54,24 @@ describe('Prioritized Price Source', () => {
       await wait();
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result1);
+    });
+  });
+
+  when('both sources resolve', () => {
+    then('the first one to resolve is returned', async () => {
+      const { source: source1, promise: source1Promise } = source({ chains: [1] });
+      const { source: source2, promise: source2Promise } = source({ chains: [1] });
+      const result1 = { [1]: { [TOKEN_A]: 10 } };
+      const result2 = { [1]: { [TOKEN_A]: 20 } };
+
+      const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
+      await wait();
+      expect(promise.status).to.equal('pending');
+      source2Promise.resolve(result2);
+      source1Promise.resolve(result1);
+      await wait();
+      expect(promise.status).to.equal('resolved');
+      expect(await promise.result).to.deep.equal(result2);
     });
   });
 
@@ -173,7 +187,7 @@ describe('Prioritized Price Source', () => {
   });
 });
 function getPrices({ addresses, sources }: { addresses: Record<ChainId, TokenAddress[]>; sources: IPriceSource[] }) {
-  const result = new PrioritizedPriceSource(sources).getCurrentPrices({ addresses });
+  const result = new FastestPriceSource(sources).getCurrentPrices({ addresses });
   const promiseWithState: PromiseWithState<Awaited<typeof result>> = {
     result,
     status: 'pending',
