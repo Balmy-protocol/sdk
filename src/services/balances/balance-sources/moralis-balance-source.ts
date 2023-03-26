@@ -60,7 +60,7 @@ export class MoralisBalanceSource extends SingleAccountAndChainBaseBalanceSource
 }
 
 function chainIdToValidChain(chainId: ChainId) {
-  return utils.hexlify(chainId);
+  return utils.hexStripZeros(utils.hexlify(chainId));
 }
 
 function toRecord(balances: { token_address: string; balance: string }[]) {

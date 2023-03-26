@@ -7,12 +7,14 @@ import { CachedPriceSource } from '@services/prices/price-sources/cached-price-s
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
 import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
+import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
   | { type: 'odos' }
   | { type: 'coingecko' }
   | { type: 'portals-fi' }
+  | { type: 'moralis'; key: string }
   | { type: 'cached'; underlyingSource: PriceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IPriceSource };
 export type BuildPriceParams = { source: PriceSourceInput };
@@ -31,6 +33,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return new OdosPriceSource(fetchService);
     case 'portals-fi':
       return new PortalsFiPriceSource(fetchService);
+    case 'moralis':
+      return new MoralisPriceSource(fetchService, source.key);
     case 'coingecko':
       return new CoingeckoPriceSource(fetchService);
     case 'cached':

@@ -5,6 +5,7 @@ import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-
 import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
+import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Chains, getChainByKey } from '@chains';
@@ -21,23 +22,25 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 };
 
 const FETCH_SERVICE = new FetchService(crossFetch);
-const DEFI_LLAMA_TOKEN_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
-const PORTALS_FI_TOKEN_SOURCE = new PortalsFiPriceSource(FETCH_SERVICE);
-const ODOS_TOKEN_SOURCE = new OdosPriceSource(FETCH_SERVICE);
-const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
-const CACHED_TOKEN_SOURCE = new CachedPriceSource(DEFI_LLAMA_TOKEN_SOURCE, {
+const DEFI_LLAMA_PRICE_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
+const PORTALS_FI_PRICE_SOURCE = new PortalsFiPriceSource(FETCH_SERVICE);
+const ODOS_PRICE_SOURCE = new OdosPriceSource(FETCH_SERVICE);
+const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
 });
+const MORALIS_PRICE_SOURCE = new MoralisPriceSource(FETCH_SERVICE, 'API_KEY');
+const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Token Price Sources', () => {
-  priceSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_TOKEN_SOURCE });
-  priceSourceTest({ title: 'Portals Fi Source', source: PORTALS_FI_TOKEN_SOURCE });
-  priceSourceTest({ title: 'Odos Source', source: ODOS_TOKEN_SOURCE });
-  priceSourceTest({ title: 'Cached Price Source', source: CACHED_TOKEN_SOURCE });
+  priceSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_PRICE_SOURCE });
+  priceSourceTest({ title: 'Portals Fi Source', source: PORTALS_FI_PRICE_SOURCE });
+  priceSourceTest({ title: 'Odos Source', source: ODOS_PRICE_SOURCE });
+  priceSourceTest({ title: 'Cached Price Source', source: CACHED_PRICE_SOURCE });
+  // priceSourceTest({ title: 'Moralis Source', source: MORALIS_PRICE_SOURCE }); // Commented out because we need API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
 
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
