@@ -26,15 +26,13 @@ export class PrioritizedGasPriceSourceCombinator<Sources extends IGasPriceSource
       (source) => chainId in source.supportedSpeeds() && couldSupportMeetRequirements(source.supportedSpeeds()[chainId], config?.fields)
     );
     if (sourcesInChain.length === 0) throw new Error(`Chain with id ${chainId} cannot support the given requirements`);
-    const gasResults = sourcesInChain.map((source) => source.getGasPrice({ chainId, config }));
+    const gasResults = sourcesInChain.map((source) => source.getGasPrice({ chainId, config }).catch(() => ({})));
     return new Promise<GasPriceResult<MergeGasValues<Sources>, Requirements>>(async (resolve, reject) => {
       for (let i = 0; i < gasResults.length; i++) {
-        try {
-          const response = await gasResults[i];
-          if (doesResponseMeetRequirements(response, config?.fields)) {
-            resolve(response as GasPriceResult<MergeGasValues<Sources>, Requirements>);
-          }
-        } catch {}
+        const response = await gasResults[i];
+        if (doesResponseMeetRequirements(response, config?.fields)) {
+          resolve(response as GasPriceResult<MergeGasValues<Sources>, Requirements>);
+        }
       }
       reject(new Error('Could not fetch gas prices that met the given requirements'));
     });

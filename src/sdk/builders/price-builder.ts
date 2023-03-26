@@ -8,6 +8,7 @@ import { OdosPriceSource } from '@services/prices/price-sources/odos-price-sourc
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
 import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
 import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
+import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
@@ -15,6 +16,7 @@ export type PriceSourceInput =
   | { type: 'coingecko' }
   | { type: 'portals-fi' }
   | { type: 'moralis'; key: string }
+  | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'cached'; underlyingSource: PriceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IPriceSource };
 export type BuildPriceParams = { source: PriceSourceInput };
@@ -40,6 +42,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService });
       return new CachedPriceSource(underlying, source.expiration);
+    case 'prioritized':
+      return new PrioritizedPriceSource(source.sources.map((source) => buildSource(source, { fetchService })));
     case 'custom':
       return source.instance;
   }

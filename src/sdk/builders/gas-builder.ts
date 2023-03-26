@@ -24,10 +24,7 @@ import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/g
 // builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
 // quite a lot of things
 type CachelessInput = Exclude<GasSourceInput, { type: 'cached' }>;
-type SingleSourceInput = Exclude<
-  CachelessInput,
-  { type: 'fastest' } | { type: 'aggregate' } | { type: 'only-first-source-that-supports-chain' }
->;
+type SingleSourceInput = Exclude<CachelessInput, { type: 'fastest' } | { type: 'aggregate' } | { type: 'prioritized' }>;
 
 export type GasSourceInput =
   | { type: 'open-ocean' }
@@ -44,7 +41,7 @@ export type GasSourceInput =
   | { type: 'custom'; instance: IGasPriceSource<any> }
   | { type: 'fastest'; sources: SingleSourceInput[] }
   | { type: 'aggregate'; sources: SingleSourceInput[]; by: GasPriceAggregationMethod }
-  | { type: 'only-first-source-that-supports-chain'; sources: SingleSourceInput[] };
+  | { type: 'prioritized'; sources: SingleSourceInput[] };
 export type BuildGasParams = { source: GasSourceInput };
 
 export type CalculateGasValuesFromSourceParams<Params extends BuildGasParams | undefined> = ExtractGasValues<CalculateSourceFromParams<Params>>;
@@ -75,7 +72,7 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? FastestGasPriceSourceCombinator<SourcesFromArray<Input['sources']>>
   : Input extends { type: 'aggregate' }
   ? AggregatorGasPriceSource<SourcesFromArray<Input['sources']>>
-  : Input extends { type: 'only-first-source-that-supports-chain' }
+  : Input extends { type: 'prioritized' }
   ? PrioritizedGasPriceSourceCombinator<SourcesFromArray<Input['sources']>>
   : never;
 
@@ -137,7 +134,7 @@ function buildSource(
       return new AggregatorGasPriceSource(calculateSources(source.sources, { fetchService, multicallService, providerSource }), source.by);
     case 'fastest':
       return new FastestGasPriceSourceCombinator(calculateSources(source.sources, { fetchService, multicallService, providerSource }));
-    case 'only-first-source-that-supports-chain':
+    case 'prioritized':
       return new PrioritizedGasPriceSourceCombinator(
         source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
       );

@@ -15,7 +15,7 @@ export type MetadataSourceInput =
   | { type: 'portals-fi' }
   | { type: 'cached'; underlyingSource: MetadataSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IMetadataSource<object> }
-  | { type: 'combine-when-possible'; sources: MetadataSourceInput[] };
+  | { type: 'aggregate'; sources: MetadataSourceInput[] };
 
 export type BuildMetadataParams = { source: MetadataSourceInput };
 export type CalculateMetadataFromSourceParams<Params extends BuildMetadataParams | undefined> = ExtractMetadata<
@@ -34,7 +34,7 @@ type CalculateSourceFromInput<Input extends MetadataSourceInput | undefined> = u
   ? RPCMetadataSource
   : Input extends { type: 'custom' }
   ? Input['instance']
-  : Input extends { type: 'combine-when-possible' }
+  : Input extends { type: 'aggregate' }
   ? FallbackMetadataSource<SourcesFromArray<Input['sources']>>
   : never;
 
@@ -72,7 +72,7 @@ function buildSource<T extends MetadataSourceInput>(
       return new RPCMetadataSource(multicallService);
     case 'custom':
       return source.instance;
-    case 'combine-when-possible':
+    case 'aggregate':
       return new FallbackMetadataSource(source.sources.map((source) => buildSource(source, { fetchService, multicallService })));
   }
 }
