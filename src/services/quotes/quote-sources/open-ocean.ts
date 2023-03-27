@@ -44,16 +44,15 @@ export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSup
     {
       chain,
       sellToken,
-      sellTokenData,
       buyToken,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
-      context: { gasPrice: gasPricePromise },
+      external,
     }: SourceQuoteRequest<OpenOceanSupport>
   ): Promise<SourceQuoteResponse> {
-    const sellTokenDataResult = await sellTokenData;
-    const legacyGasPrice = eip1159ToLegacy(await gasPricePromise);
+    const [{ sellToken: sellTokenDataResult }, gasPriceResult] = await Promise.all([external.tokenData.request(), external.gasPrice.request()]);
+    const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(utils.formatUnits(legacyGasPrice, 9));
     const amount = utils.formatUnits(order.sellAmount, sellTokenDataResult.decimals);
     const chainKey = SUPPORTED_CHAINS[chain.chainId];

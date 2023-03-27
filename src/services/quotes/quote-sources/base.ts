@@ -1,10 +1,11 @@
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
-import { GasPrice, IGasService } from '@services/gas/types';
+import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IProviderSource } from '@services/providers';
+import { ITriggerablePromise } from '../source-lists/types';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
 export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
@@ -20,7 +21,6 @@ export type QuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceCon
 
 export type QuoteComponents = {
   providerSource: IProviderSource;
-  gasService: IGasService<any>;
   fetchService: IFetchService;
 };
 
@@ -31,9 +31,7 @@ type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
   chain: Chain;
   sellToken: TokenAddress;
-  sellTokenData: Promise<BaseTokenMetadata>;
   buyToken: TokenAddress;
-  buyTokenData: Promise<BaseTokenMetadata>;
   order: Order;
   config: {
     slippagePercentage: number;
@@ -41,7 +39,13 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAcco
     timeout?: TimeString;
   };
   accounts: Accounts;
-  context: { gasPrice: Promise<GasPrice> };
+  external: {
+    tokenData: ITriggerablePromise<{
+      sellToken: BaseTokenMetadata;
+      buyToken: BaseTokenMetadata;
+    }>;
+    gasPrice: ITriggerablePromise<GasPrice>;
+  };
 };
 
 export type SourceQuoteResponse = {

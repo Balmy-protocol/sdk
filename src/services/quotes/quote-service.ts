@@ -1,4 +1,4 @@
-import { ChainId } from '@types';
+import { AmountOfToken, ChainId, FieldsRequirements, TokenAddress } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -9,17 +9,51 @@ import {
   QuoteResponse,
   IgnoreFailedQuotes,
   SourceId,
+  SourceMetadata,
 } from './types';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
-import { IQuoteSourceList } from './source-lists/types';
-import { chainsUnion } from '@chains';
-import { isSameAddress } from '@shared/utils';
+import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
+import { chainsUnion, getChainByKeyOrFail } from '@chains';
+import { amountToUSD, calculateGasDetails, isSameAddress } from '@shared/utils';
+import { IGasService, IMetadataService, IPriceService, TokenPrice } from '..';
+import { BaseTokenMetadata } from '@services/metadata/types';
+import { IQuickGasCostCalculator, SupportedGasValues } from '@services/gas/types';
+import { Addresses } from '@shared/constants';
+import { reduceTimeout } from '@shared/timeouts';
+import { utils } from 'ethers';
+import { TriggerablePromise } from './quote-sources/utils';
+import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 
+const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
+  requirements: { symbol: 'required', decimals: 'required' },
+  default: 'can ignore',
+};
+
+type ConstructorParameters = {
+  priceService: IPriceService;
+  gasService: IGasService<SupportedGasValues>;
+  metadataService: IMetadataService<BaseTokenMetadata>;
+  sourceList: IQuoteSourceList;
+};
 export class QuoteService implements IQuoteService {
-  constructor(private readonly sourceList: IQuoteSourceList) {}
+  private readonly priceService: IPriceService;
+  private readonly gasService: IGasService<SupportedGasValues>;
+  private readonly metadataService: IMetadataService<BaseTokenMetadata>;
+  private readonly sourceList: IQuoteSourceList;
+  constructor({ priceService, gasService, metadataService, sourceList }: ConstructorParameters) {
+    this.priceService = priceService;
+    this.gasService = gasService;
+    this.metadataService = metadataService;
+    this.sourceList = sourceList;
+  }
 
   supportedSources() {
-    return this.sourceList.supportedSources();
+    const filterOutUnsupportedChains = this.metadataChainFilter();
+    const entries: [SourceId, SourceMetadata][] = Object.entries(this.sourceList.supportedSources()).map(([sourceId, metadata]) => [
+      sourceId,
+      filterOutUnsupportedChains(metadata),
+    ]);
+    return Object.fromEntries(entries);
   }
 
   supportedChains() {
@@ -28,7 +62,7 @@ export class QuoteService implements IQuoteService {
   }
 
   supportedSourcesInChain(chainId: ChainId) {
-    const sourcesInChain = Object.entries(this.sourceList.supportedSources()).filter(([, source]) => source.supports.chains.includes(chainId));
+    const sourcesInChain = Object.entries(this.supportedSources()).filter(([, source]) => source.supports.chains.includes(chainId));
     return Object.fromEntries(sourcesInChain);
   }
 
@@ -84,9 +118,8 @@ export class QuoteService implements IQuoteService {
   }
 
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest) {
-    return this.getQuotes(estimatedToQuoteRequest(estimatedRequest)).map((response) =>
-      response.then((response) => ('failed' in response ? response : quoteResponseToEstimated(response)))
-    );
+    const quotes = this.getQuotes(estimatedToQuoteRequest(estimatedRequest));
+    return quotes.map((promise) => promise.then((response) => ifNotFailed(response, quoteResponseToEstimated)));
   }
 
   async estimateAllQuotes<IgnoreFailed extends boolean = true>(
@@ -94,11 +127,18 @@ export class QuoteService implements IQuoteService {
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
   ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
     const allResponses = await this.getAllQuotes(estimatedToQuoteRequest(estimatedRequest), config);
-    return allResponses.map((response) => ('failed' in response ? response : quoteResponseToEstimated(response)));
+    return allResponses.map((response) => ifNotFailed(response, quoteResponseToEstimated)) as IgnoreFailedQuotes<
+      IgnoreFailed,
+      EstimatedQuoteResponse
+    >[];
   }
 
-  getQuotes(request: QuoteRequest) {
-    return this.sourceList.getQuotes(this.mapRequest(request));
+  getQuotes(request: QuoteRequest): Promise<QuoteResponse | FailedQuote>[] {
+    const { promises, external } = this.calculateExternalPromises(request);
+    const sources = this.calculateSources(request);
+    return sources
+      .map((sourceId) => ({ sourceId, response: this.sourceList.getQuote({ ...request, sourceId, external }) }))
+      .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>(
@@ -118,7 +158,61 @@ export class QuoteService implements IQuoteService {
     return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
-  private mapRequest({ filters, includeNonTransferSourcesWhenRecipientIsSet, estimateBuyOrdersWithSellOnlySources, ...request }: QuoteRequest) {
+  private async listResponseToQuoteResponse({
+    sourceId,
+    request,
+    response: responsePromise,
+    promises,
+  }: {
+    sourceId: SourceId;
+    request: QuoteRequest;
+    response: Promise<SourceListResponse>;
+    promises: Promises;
+  }): Promise<QuoteResponse | FailedQuote> {
+    try {
+      const [response, tokens, prices, gasCalculator] = await Promise.all([
+        responsePromise,
+        promises.tokens,
+        promises.prices,
+        promises.gasCalculator,
+      ]);
+      const sellToken = { ...tokens[request.sellToken], price: prices[request.sellToken] };
+      const buyToken = { ...tokens[request.buyToken], price: prices[request.buyToken] };
+      // TODO: We should add the gas price to the tx response, but if we do, we get some weird errors. Investigate and add it to to the tx
+      const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
+        gasEstimation: response.estimatedGas,
+        tx: response.tx,
+      })[gasSpeed(request)]!;
+      return {
+        ...response,
+        sellToken,
+        buyToken,
+        sellAmount: toAmountOfToken(sellToken, sellToken.price, response.sellAmount),
+        buyAmount: toAmountOfToken(buyToken, buyToken.price, response.buyAmount),
+        maxSellAmount: toAmountOfToken(sellToken, sellToken.price, response.maxSellAmount),
+        minBuyAmount: toAmountOfToken(buyToken, buyToken.price, response.minBuyAmount),
+        gas: {
+          estimatedGas: response.estimatedGas,
+          ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
+        },
+      };
+    } catch (e) {
+      const metadata = this.supportedSources()[sourceId];
+      return {
+        failed: true,
+        name: metadata.name,
+        logoURI: metadata.logoURI,
+        error: e instanceof Error ? e.message : JSON.stringify(e),
+      };
+    }
+  }
+
+  private calculateSources({
+    filters,
+    includeNonTransferSourcesWhenRecipientIsSet,
+    estimateBuyOrdersWithSellOnlySources,
+    ...request
+  }: QuoteRequest): SourceId[] {
     const sourcesInChain = this.supportedSourcesInChain(request.chainId);
     let sourceIds = Object.keys(sourcesInChain);
 
@@ -136,12 +230,72 @@ export class QuoteService implements IQuoteService {
       sourceIds = sourceIds.filter((sourceIds) => sourcesInChain[sourceIds].supports.swapAndTransfer);
     }
 
+    return sourceIds;
+  }
+
+  private calculateExternalPromises(request: QuoteRequest) {
+    const reducedTimeout = reduceTimeout(request?.quoteTimeout, '200');
+    const selectedGasSpeed = gasSpeed(request);
+    const tokens = this.metadataService
+      .getMetadataForChain({
+        chainId: request.chainId,
+        addresses: [request.sellToken, request.buyToken],
+        config: {
+          timeout: reducedTimeout,
+          fields: REQUIREMENTS,
+        },
+      })
+      .catch(() => Promise.reject(new Error(`Failed to fetch the quote's tokens`)));
+    const prices = this.priceService
+      .getCurrentPricesForChain({
+        chainId: request.chainId,
+        addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+        config: { timeout: reducedTimeout },
+      })
+      .catch(() => ({ [request.sellToken]: 0, [request.buyToken]: 0, [Addresses.NATIVE_TOKEN]: 0 }));
+    const gasCalculator = this.gasService
+      .getQuickGasCalculator({
+        chainId: request.chainId,
+        config: { timeout: reducedTimeout, fields: { requirements: { [selectedGasSpeed]: 'required' } } },
+      })
+      .catch(() => Promise.reject(new Error(`Failed to fetch gas data`)));
+
     return {
-      ...request,
-      sourceIds,
-      estimateBuyOrdersWithSellOnlySources,
+      promises: { tokens, prices, gasCalculator },
+      external: {
+        tokenData: new TriggerablePromise(() =>
+          tokens.then((tokens) => ({ sellToken: tokens[request.sellToken], buyToken: tokens[request.buyToken] }))
+        ),
+        gasPrice: new TriggerablePromise(() => gasCalculator.then((calculator) => calculator.getGasPrice()[selectedGasSpeed]!)),
+      },
     };
   }
+
+  // There are some properties that are necessary for the quote service to work, so we'll filter out chains where
+  // those properties are not available
+  private metadataChainFilter(): (metadata: SourceMetadata) => SourceMetadata {
+    const tokenProperties = this.metadataService.supportedProperties();
+    return (metadata: SourceMetadata) => ({
+      ...metadata,
+      supports: {
+        ...metadata.supports,
+        chains: metadata.supports.chains.filter((chainId) => couldSupportMeetRequirements(tokenProperties[chainId], REQUIREMENTS)),
+      },
+    });
+  }
+}
+
+function ifNotFailed<T1 extends object, T2 extends object>(response: T1 | FailedQuote, mapped: (_: T1) => T2): T2 | FailedQuote {
+  return 'failed' in response ? response : mapped(response);
+}
+
+function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: AmountOfToken) {
+  const amountInUSD = amountToUSD(token.decimals, amount, price);
+  return {
+    amount: amount.toString(),
+    amountInUnits: utils.formatUnits(amount, token.decimals),
+    amountInUSD,
+  };
 }
 
 function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
@@ -154,3 +308,13 @@ function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
 function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
   return response;
 }
+
+function gasSpeed(request: QuoteRequest) {
+  return request?.gasSpeed ?? 'standard';
+}
+
+type Promises = {
+  tokens: Promise<Record<TokenAddress, BaseTokenMetadata>>;
+  prices: Promise<Record<TokenAddress, TokenPrice>>;
+  gasCalculator: Promise<IQuickGasCostCalculator<SupportedGasValues>>;
+};

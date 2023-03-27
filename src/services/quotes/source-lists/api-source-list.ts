@@ -1,11 +1,13 @@
 import { reduceTimeout } from '@shared/timeouts';
-import { FailedQuote, QuoteResponse, SourceId, SourceMetadata } from '../types';
-import { IQuoteSourceList, SourceListRequest } from './types';
+import { SourceId, SourceMetadata } from '../types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { BigNumber } from 'ethers';
 import queryString from 'query-string-esm';
+import { PartialOnly } from '@utility-types';
 
-export type URIGenerator = (request: SourceListRequest) => string;
+export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
+export type URIGenerator = (request: APISourceListRequest) => string;
 type ConstructorParameters = {
   fetchService: IFetchService;
   baseUri: URIGenerator;
@@ -26,29 +28,15 @@ export class APISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    return request.sourceIds.map((sourceId) => this.fetchForSource(sourceId, request));
-  }
-
-  private async fetchForSource(sourceId: string, request: SourceListRequest): Promise<QuoteResponse | FailedQuote> {
+  async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
     // We reduce 0.75 seconds because calling the API might have this overhead in slow connections
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '0.75s');
-    const url = this.getUrl({ ...request, quoteTimeout: reducedTimeout, sourceIds: [sourceId] });
+    const url = this.getUrl({ ...request, quoteTimeout: reducedTimeout });
     const response = await this.fetchService.fetch(url, { timeout: request.quoteTimeout });
-    try {
-      return await response.json();
-    } catch (e) {
-      const supportedSources = this.supportedSources();
-      return {
-        failed: true,
-        name: supportedSources[sourceId].name,
-        logoURI: supportedSources[sourceId].logoURI,
-        error: e instanceof Error ? e.message : JSON.stringify(e),
-      };
-    }
+    return response.json();
   }
 
-  private getUrl({ order, ...request }: SourceListRequest) {
+  private getUrl({ external, order, ...request }: APISourceListRequest) {
     const requestToParse: any = request;
     if (order.type === 'sell') {
       requestToParse.sellAmount = BigNumber.from(order.sellAmount).toString();

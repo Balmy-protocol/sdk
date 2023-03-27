@@ -1,218 +1,100 @@
-import { FailedQuote, GlobalQuoteSourceConfig, QuoteRequest, QuoteResponse, QuoteTx, SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest } from './types';
-import {
-  BuyOrder,
-  QuoteSource,
-  QuoteSourceMetadata,
-  QuoteSourceSupport,
-  SellOrder,
-  SourceQuoteRequest,
-  SourceQuoteResponse,
-} from '../quote-sources/base';
+import { GlobalQuoteSourceConfig, QuoteRequest, QuoteTx, SourceId } from '../types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
+import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
 import { getChainByKeyOrFail } from '@chains';
-import { amountToUSD, calculateGasDetails } from '@shared/utils';
 import { DefaultSourcesConfig, buildSources } from '../source-registry';
-import { IQuickGasCostCalculator, GasPrice, IGasService, SupportedGasValues } from '@services/gas/types';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
-import { BaseTokenMetadata } from '@services/metadata/types';
-import { Addresses } from '@shared/constants';
-import { BigNumber, utils } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
-import { reduceTimeout } from '@shared/timeouts';
-import { FieldsRequirements, TokenAddress } from '@types';
-import { IPriceService, TokenPrice } from '@services/prices';
-import { IMetadataService } from '@services/metadata';
-import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
-  priceService: IPriceService;
-  gasService: IGasService<SupportedGasValues>;
-  metadataService: IMetadataService<BaseTokenMetadata>;
   config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
-};
-
-const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
-  requirements: { symbol: 'required', decimals: 'required' },
-  default: 'can ignore',
 };
 
 export class DefaultSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
-  private readonly gasService: IGasService<SupportedGasValues>;
-  private readonly metadataService: IMetadataService<BaseTokenMetadata>;
-  private readonly priceService: IPriceService;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
 
-  constructor({ providerSource, fetchService, gasService, metadataService, priceService, config }: ConstructorParameters) {
+  constructor({ providerSource, fetchService, config }: ConstructorParameters) {
     this.providerSource = providerSource;
     this.fetchService = fetchService;
-    this.gasService = gasService;
-    this.metadataService = metadataService;
-    this.priceService = priceService;
     this.sources = buildSources(config);
   }
 
   supportedSources() {
-    const filterOutUnsupportedChains = this.metadataChainFilter();
-    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, filterOutUnsupportedChains(source.getMetadata())]);
+    const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, source.getMetadata()]);
     return Object.fromEntries(entries);
   }
 
-  getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    return this.executeQuotes(request);
-  }
-
-  private executeQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    const reducedTimeout = reduceTimeout(request.quoteTimeout, '200');
-    const filteredSourceIds = request.sourceIds.filter((sourceId) => sourceId in this.sources);
-    if (filteredSourceIds.length === 0) return [];
-
-    // Ask for needed values, such as token data and gas price
-    const tokensPromise = this.metadataService.getMetadataForChain({
-      chainId: request.chainId,
-      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
-      config: {
-        timeout: reducedTimeout,
-        fields: REQUIREMENTS,
-      },
-    });
-    const sellTokenPromise = tokensPromise.then((tokens) => tokens[request.sellToken]);
-    const buyTokenPromise = tokensPromise.then((tokens) => tokens[request.buyToken]);
-    const pricesPromise = this.priceService.getCurrentPricesForChain({
-      chainId: request.chainId,
-      addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
-      config: { timeout: reducedTimeout },
-    });
-    const gasPriceCalculatorPromise = this.gasService.getQuickGasCalculator({
-      chainId: request.chainId,
-      config: { timeout: reducedTimeout, fields: { requirements: { [gasSpeed(request)]: 'required' } } },
-    });
-    const gasPricePromise = gasPriceCalculatorPromise.then((calculator) => calculator.getGasPrice()[gasSpeed(request)]!);
+  async getQuote(request: SourceListRequest): Promise<SourceListResponse> {
+    if (!(request.sourceId in this.sources)) {
+      throw new Error(`Source with id '${request.sourceId} is not supported`);
+    }
 
     // Map request to source request
-    const sourceRequest = mapRequestToSourceRequest({ request, sellTokenPromise, buyTokenPromise, gasPricePromise });
+    const sourceRequest = mapRequestToSourceRequest(request);
 
-    // Ask for quotes
-    const responses = this.getSourcesForRequest(request).map(({ sourceId, source }) => ({
-      sourceId,
-      source,
-      response: source.quote(
-        { providerSource: this.providerSource, gasService: this.gasService, fetchService: this.fetchService },
-        sourceRequest
-      ),
-    }));
+    // Find and wrap source
+    const source = this.getSourceForRequest(request);
 
-    // Group all value promises
-    const values = Promise.all([sellTokenPromise, buyTokenPromise, gasPriceCalculatorPromise, pricesPromise, gasPricePromise]).then(
-      ([sellToken, buyToken, gasCalculator, prices]) => ({ sellToken, buyToken, gasCalculator, prices })
-    );
+    // Ask for quote
+    const response = await source.quote({ providerSource: this.providerSource, fetchService: this.fetchService }, sourceRequest);
 
     // Map to response
-    return responses.map(({ sourceId, source, response }) =>
-      mapSourceResponseToResponse({ sourceId, source, request, response, values }).catch((e) => ({
-        failed: true,
-        name: source.getMetadata().name,
-        logoURI: source.getMetadata().logoURI,
-        error: e instanceof Error ? e.message : JSON.stringify(e),
-      }))
-    );
+    return mapSourceResponseToResponse({ request, source, response });
   }
 
-  private getSourcesForRequest(request: SourceListRequest) {
-    let sources = request.sourceIds.map((sourceId) => ({ sourceId, source: this.sources[sourceId] })).filter(({ source }) => !!source);
+  private getSourceForRequest(request: SourceListRequest) {
+    let source = this.sources[request.sourceId];
 
-    if (request.order.type === 'buy') {
+    if (request.order.type === 'buy' && !source.getMetadata().supports.buyOrders) {
       if (request.estimateBuyOrdersWithSellOnlySources) {
-        sources = sources.map(({ sourceId, source }) => ({
-          sourceId,
-          source: source.getMetadata().supports.buyOrders ? source : buyToSellOrderWrapper(source),
-        }));
+        source = buyToSellOrderWrapper(source);
       } else {
-        sources = sources.filter(({ source }) => source.getMetadata().supports.buyOrders);
+        throw new Error(`Source with id '${request.sourceId}' does not support buy orders. Do you want to estimate buy orders?`);
       }
     }
     // Cast so that even if the source doesn't support it, everything else types ok
-    return sources.map(({ sourceId, source }) => ({
-      sourceId,
-      source: forcedTimeoutWrapper(source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>),
-    }));
-  }
-
-  // There are some properties that are necessary for the quote service to work, so we'll filter out chains where
-  // those fields are not available
-  private metadataChainFilter() {
-    const tokenProperties = this.metadataService.supportedProperties();
-    return <Support extends QuoteSourceSupport>(metadata: QuoteSourceMetadata<Support>) => ({
-      ...metadata,
-      supports: {
-        ...metadata.supports,
-        chains: metadata.supports.chains.filter((chainId) => couldSupportMeetRequirements(tokenProperties[chainId], REQUIREMENTS)),
-      },
-    });
+    return forcedTimeoutWrapper(source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>);
   }
 }
 
 async function mapSourceResponseToResponse({
-  sourceId,
   source,
   request,
-  response: responsePromise,
-  values,
+  response,
 }: {
-  sourceId: SourceId;
   source: QuoteSource<QuoteSourceSupport>;
-  request: QuoteRequest;
-  response: Promise<SourceQuoteResponse>;
-  values: Promise<{
-    gasCalculator: IQuickGasCostCalculator<any>;
-    sellToken: BaseTokenMetadata;
-    buyToken: BaseTokenMetadata;
-    prices: Record<TokenAddress, TokenPrice>;
-  }>;
-}): Promise<QuoteResponse> {
-  const [response, { sellToken, buyToken, gasCalculator, prices }] = await Promise.all([responsePromise, values]);
-  const txData = {
+  request: SourceListRequest;
+  response: SourceQuoteResponse;
+}): Promise<SourceListResponse> {
+  const tx: QuoteTx = {
     to: response.tx.to,
     value: response.tx.value,
     data: response.tx.calldata,
     from: request.takerAddress,
   };
-  const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
-    gasEstimation: response.estimatedGas,
-    tx: txData,
-  })[gasSpeed(request)]!;
-  let tx: QuoteTx = txData;
-  // TODO: We should add the gas price to the tx, but if we do, we get some weird errors. Investigate and add it to to the tx
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
-    sellToken,
-    buyToken,
-    sellAmount: toAmountOfToken(sellToken, prices[request.sellToken], response.sellAmount),
-    buyAmount: toAmountOfToken(buyToken, prices[request.buyToken], response.buyAmount),
-    maxSellAmount: toAmountOfToken(sellToken, prices[request.sellToken], response.maxSellAmount),
-    minBuyAmount: toAmountOfToken(buyToken, prices[request.buyToken], response.minBuyAmount),
-    gas: {
-      estimatedGas: response.estimatedGas.toString(),
-      ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
-    },
+    sellAmount: response.sellAmount.toString(),
+    buyAmount: response.buyAmount.toString(),
+    maxSellAmount: response.maxSellAmount.toString(),
+    minBuyAmount: response.minBuyAmount.toString(),
+    estimatedGas: response.estimatedGas.toString(),
     recipient,
-    source: { id: sourceId, allowanceTarget: response.allowanceTarget, name: source.getMetadata().name, logoURI: source.getMetadata().logoURI },
+    source: {
+      id: request.sourceId,
+      allowanceTarget: response.allowanceTarget,
+      name: source.getMetadata().name,
+      logoURI: source.getMetadata().logoURI,
+    },
     type: response.type,
     tx,
-  };
-}
-
-function toAmountOfToken(token: BaseTokenMetadata, price: number | undefined, amount: BigNumber) {
-  const amountInUSD = amountToUSD(token.decimals, amount, price);
-  return {
-    amount: amount.toString(),
-    amountInUnits: utils.formatUnits(amount, token.decimals),
-    amountInUSD,
   };
 }
 
@@ -222,23 +104,11 @@ function mapOrderToBigNumber(request: QuoteRequest): BuyOrder | SellOrder {
     : { type: 'buy', buyAmount: BigNumber.from(request.order.buyAmount) };
 }
 
-function mapRequestToSourceRequest({
-  request,
-  sellTokenPromise,
-  buyTokenPromise,
-  gasPricePromise,
-}: {
-  request: QuoteRequest;
-  sellTokenPromise: Promise<BaseTokenMetadata>;
-  buyTokenPromise: Promise<BaseTokenMetadata>;
-  gasPricePromise: Promise<GasPrice>;
-}) {
+function mapRequestToSourceRequest(request: SourceListRequest) {
   return {
     chain: getChainByKeyOrFail(request.chainId),
     sellToken: request.sellToken,
-    sellTokenData: sellTokenPromise,
     buyToken: request.buyToken,
-    buyTokenData: buyTokenPromise,
     order: mapOrderToBigNumber(request),
     config: {
       slippagePercentage: request.slippagePercentage,
@@ -249,10 +119,6 @@ function mapRequestToSourceRequest({
       takeFrom: request.takerAddress,
       recipient: request.recipient,
     },
-    context: { gasPrice: gasPricePromise },
+    external: request.external,
   } as SourceQuoteRequest<{ swapAndTransfer: true; buyOrders: true }>;
-}
-
-function gasSpeed(request: QuoteRequest) {
-  return request.gasSpeed ?? 'standard';
 }
