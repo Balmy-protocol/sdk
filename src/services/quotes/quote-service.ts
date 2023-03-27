@@ -1,4 +1,4 @@
-import { AmountOfToken, ChainId, FieldsRequirements, TokenAddress } from '@types';
+import { AmountOfToken, ChainId, FieldsRequirements, SupportInChain, TokenAddress } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -64,6 +64,10 @@ export class QuoteService implements IQuoteService {
   supportedSourcesInChain(chainId: ChainId) {
     const sourcesInChain = Object.entries(this.supportedSources()).filter(([, source]) => source.supports.chains.includes(chainId));
     return Object.fromEntries(sourcesInChain);
+  }
+
+  supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>> {
+    return this.gasService.supportedSpeeds();
   }
 
   async getQuote(sourceId: SourceId, request: IndividualQuoteRequest): Promise<QuoteResponse> {

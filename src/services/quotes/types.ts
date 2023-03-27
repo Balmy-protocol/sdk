@@ -1,7 +1,7 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { GasPrice, GasSpeed } from '@services/gas/types';
+import { GasPrice, GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { Either, WithRequired } from '@utility-types';
 import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
@@ -20,6 +20,7 @@ export type IQuoteService = {
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
   supportedSourcesInChain(chainId: ChainId): Record<SourceId, SourceMetadata>;
+  supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
   estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(
     request: EstimatedQuoteRequest,
