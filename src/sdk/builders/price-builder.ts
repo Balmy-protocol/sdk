@@ -31,18 +31,26 @@ export function buildPriceService(params: BuildPriceParams | undefined, fetchSer
 }
 
 function buildSource(source: PriceSourceInput | undefined, { fetchService }: { fetchService: IFetchService }): IPriceSource {
+  const coingecko = new CoingeckoPriceSource(fetchService);
+  const defiLlama = new DefiLlamaPriceSource(fetchService);
+  const portalsFi = new PortalsFiPriceSource(fetchService);
+  const odos = new OdosPriceSource(fetchService);
   switch (source?.type) {
     case undefined:
+      // Defi Llama and Portals.Fi are basically Coingecko with some token mappings. Defi Llama has a 5 min cache, and Portals.Fi has a
+      // 1 min cache, so the priority will be Coingecko => PortalsFi => DefiLlama
+      const prioritized = new PrioritizedPriceSource([coingecko, portalsFi, defiLlama]);
+      return new AggregatorPriceSource([prioritized, odos], 'median');
     case 'defi-llama':
-      return new DefiLlamaPriceSource(fetchService);
+      return defiLlama;
     case 'odos':
-      return new OdosPriceSource(fetchService);
+      return odos;
     case 'portals-fi':
-      return new PortalsFiPriceSource(fetchService);
+      return portalsFi;
     case 'moralis':
       return new MoralisPriceSource(fetchService, source.key);
     case 'coingecko':
-      return new CoingeckoPriceSource(fetchService);
+      return coingecko;
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService });
       return new CachedPriceSource(underlying, source.expiration);
