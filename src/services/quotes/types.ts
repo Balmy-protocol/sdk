@@ -62,7 +62,7 @@ export type QuoteRequest = {
   estimateBuyOrdersWithSellOnlySources?: boolean;
 };
 
-export type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
+type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
 export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice>;
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;

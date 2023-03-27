@@ -1,7 +1,7 @@
 import { BigNumber, utils } from 'ethers';
 import { Address } from '@types';
 import { Chains } from '@chains';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { addQuoteSlippage, failed } from './utils';
@@ -23,8 +23,9 @@ export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   },
   logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
+type OdosConfig = { sourceBlacklist?: string[] };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
-export class OdosQuoteSource extends NoCustomConfigQuoteSource<OdosSupport> {
+export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig | undefined> {
   getMetadata() {
     return ODOS_METADATA;
   }
@@ -53,7 +54,7 @@ export class OdosQuoteSource extends NoCustomConfigQuoteSource<OdosSupport> {
       gasPrice: parsedGasPrice,
       userAddr: takeFrom,
       slippageLimitPercent: slippagePercentage,
-      sourceBlacklist: ['Hashflow'], // Hashflow needs the tx.origin as the wallet, so we ignore it
+      sourceBlacklist: this.customConfig?.sourceBlacklist,
       simulate: false,
       pathViz: false,
     };

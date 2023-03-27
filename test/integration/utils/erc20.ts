@@ -12,7 +12,7 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
-import { QuoteResponse, TokenWithOptionalPrice } from '@services/quotes/types';
+import { QuoteResponse } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 
