@@ -16,6 +16,7 @@ export class FetchService implements IFetchService {
       controller.abort();
     }, ms(timeoutText));
     try {
+      // TODO: Improve timeout error
       return await this.realFetch(url, { ...otherConfig, signal: controller.signal as AbortSignal });
     } finally {
       clearTimeout(timeout);

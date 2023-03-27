@@ -1,6 +1,5 @@
-import { timeoutPromise } from '@shared/timeouts';
-import { FailedQuote, QuoteResponse, SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest } from './types';
+import { SourceId } from '../types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 
 type ConstructorParameters = {
   default: IQuoteSourceList;
@@ -31,24 +30,8 @@ export class OverridableSourceList implements IQuoteSourceList {
     return sources;
   }
 
-  getQuotes(request: SourceListRequest): Promise<QuoteResponse | FailedQuote>[] {
-    const requests = this.getRequests(request.sourceIds);
-    return requests
-      .flatMap(({ sourceList, sourceIds }) => sourceList.getQuotes({ ...request, sourceIds }))
-      .map((promise) => timeoutPromise(promise, request.quoteTimeout));
-  }
-
-  private getRequests(sourceIds: SourceId[]) {
-    const result: Map<IQuoteSourceList, SourceId[]> = new Map();
-    for (const sourceId of sourceIds) {
-      const source = this.getSourceListForId(sourceId);
-      if (result.has(source)) {
-        result.get(source)!.push(sourceId);
-      } else {
-        result.set(source, [sourceId]);
-      }
-    }
-    return [...result.entries()].map(([sourceList, sourceIds]) => ({ sourceList, sourceIds }));
+  getQuote(request: SourceListRequest): Promise<SourceListResponse> {
+    return this.getSourceListForId(request.sourceId).getQuote(request);
   }
 
   private getSourceListForId(sourceId: SourceId) {

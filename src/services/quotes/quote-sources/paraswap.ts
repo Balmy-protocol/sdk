@@ -59,15 +59,15 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     {
       chain,
       sellToken,
-      sellTokenData,
       buyToken,
-      buyTokenData,
       order,
       accounts: { takeFrom, recipient },
       config: { timeout },
+      external: { tokenData },
     }: SourceQuoteRequest<ParaswapSupport>
   ) {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
+    const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     let url =
       'https://apiv5.paraswap.io/prices' +
       `?network=${chain.chainId}` +
@@ -75,8 +75,8 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       `&destToken=${buyToken}` +
       `&amount=${amount}` +
       `&side=${order.type.toUpperCase()}` +
-      `&srcDecimals=${await sellTokenData.then((data) => data.decimals)}` +
-      `&destDecimals=${await buyTokenData.then((data) => data.decimals)}`;
+      `&srcDecimals=${sellTokenDataResult.decimals}` +
+      `&destDecimals=${buyTokenDataResult.decimals}`;
 
     if (!!recipient && takeFrom !== recipient) {
       // If is swap and transfer, then I need to whitelist methods
@@ -96,23 +96,23 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
     {
       chain,
       sellToken,
-      sellTokenData,
       buyToken,
-      buyTokenData,
       order,
       route,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, txValidFor, timeout },
       isWrapOrUnwrap,
+      external: { tokenData },
     }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean }
   ) {
+    const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
     const receiver = !!recipient && takeFrom !== recipient ? recipient : undefined;
     let body: any = {
       srcToken: sellToken,
-      srcDecimals: await sellTokenData.then((data) => data.decimals),
+      srcDecimals: sellTokenDataResult.decimals,
       destToken: buyToken,
-      destDecimals: await buyTokenData.then((data) => data.decimals),
+      destDecimals: buyTokenDataResult.decimals,
       priceRoute: route,
       userAddress: takeFrom,
       receiver,

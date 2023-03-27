@@ -1,5 +1,6 @@
 import { calculatePercentage } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
+import { ITriggerablePromise } from '../source-lists/types';
 import { SourceQuoteResponse } from './base';
 
 export function failed(chain: Chain, sellToken: TokenAddress, buyToken: TokenAddress, error?: any): never {
@@ -22,4 +23,17 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
         maxSellAmount: quote.sellAmount.add(calculatePercentage(quote.sellAmount, slippagePercentage)),
         minBuyAmount: quote.buyAmount,
       };
+}
+
+export class TriggerablePromise<T> implements ITriggerablePromise<T> {
+  private promise: Promise<T> | undefined;
+
+  constructor(private readonly trigger: () => Promise<T>) {}
+
+  request(): Promise<T> {
+    if (!this.promise) {
+      this.promise = this.trigger();
+    }
+    return this.promise;
+  }
 }

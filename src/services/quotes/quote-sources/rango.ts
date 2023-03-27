@@ -50,15 +50,14 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
     {
       chain,
       sellToken,
-      sellTokenData,
       buyToken,
-      buyTokenData,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
+      external: { tokenData },
     }: SourceQuoteRequest<RangoSupport>
   ): Promise<SourceQuoteResponse> {
-    const [sellTokenDataResult, buyTokenDataResult] = await Promise.all([sellTokenData, buyTokenData]);
+    const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     let url =
       `https://api.rango.exchange/basic/swap` +

@@ -38,10 +38,10 @@ export class OdosQuoteSource extends NoCustomConfigQuoteSource<OdosSupport> {
       order,
       accounts: { takeFrom },
       config: { slippagePercentage, timeout },
-      context,
+      external,
     }: SourceQuoteRequest<OdosSupport>
   ): Promise<SourceQuoteResponse> {
-    const gasPrice = await context.gasPrice;
+    const gasPrice = await external.gasPrice.request();
     const legacyGasPrice = eip1159ToLegacy(gasPrice);
     const parsedGasPrice = Number(utils.formatUnits(legacyGasPrice, 9));
     const checksummedSell = checksummAndMapIfNecessary(sellToken);
