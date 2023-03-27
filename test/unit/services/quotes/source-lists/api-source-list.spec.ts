@@ -27,7 +27,7 @@ describe('API Source List', () => {
       '&chainId=1' +
       '&sellToken=sellToken' +
       '&slippagePercentage=1' +
-      '&sourceIds=source' +
+      '&sourceId=source' +
       '&takerAddress=takerAddress',
   });
 
@@ -66,10 +66,8 @@ describe('API Source List', () => {
         await sourceList.getQuote(request);
       });
       then('url is as expected', () => {
-        expect(fetchService.urls).to.have.lengthOf(expected.length);
-        for (let i = 0; i < expected.length; i++) {
-          expect(fetchService.urls[i]).to.equal(expected[i]);
-        }
+        expect(fetchService.urls).to.have.lengthOf(1);
+        expect(fetchService.urls[0]).to.equal(expected);
       });
     });
   }
