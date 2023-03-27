@@ -16,8 +16,13 @@ export class FetchService implements IFetchService {
       controller.abort();
     }, ms(timeoutText));
     try {
-      // TODO: Improve timeout error
       return await this.realFetch(url, { ...otherConfig, signal: controller.signal as AbortSignal });
+    } catch (e: any) {
+      if (e.message === 'The user aborted a request.') {
+        // Trying to throw a better error
+        throw new Error(`Request to ${url} timeouted`);
+      }
+      throw e;
     } finally {
       clearTimeout(timeout);
     }
