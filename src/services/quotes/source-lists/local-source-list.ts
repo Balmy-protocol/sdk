@@ -2,7 +2,7 @@ import { GlobalQuoteSourceConfig, QuoteRequest, QuoteTx, SourceId } from '../typ
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
 import { getChainByKeyOrFail } from '@chains';
-import { DefaultSourcesConfig, buildSources } from '../source-registry';
+import { LocalSourcesConfig, buildSources } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { BigNumber } from 'ethers';
@@ -12,10 +12,10 @@ import { IProviderSource } from '@services/providers';
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
-  config?: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig>;
+  config?: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig>;
 };
 
-export class DefaultSourceList implements IQuoteSourceList {
+export class LocalSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
   private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;

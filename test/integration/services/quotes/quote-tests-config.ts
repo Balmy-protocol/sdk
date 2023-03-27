@@ -1,8 +1,8 @@
 import { chainsUnion } from '@chains';
-import { DefaultSourcesConfig, buildSources } from '@services/quotes/source-registry';
+import { LocalSourcesConfig, buildSources } from '@services/quotes/source-registry';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
-export const CONFIG: GlobalQuoteSourceConfig & Partial<DefaultSourcesConfig> = {
+export const CONFIG: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig> = {
   referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
 };
 if (process.env.RANGO_API_KEY) {

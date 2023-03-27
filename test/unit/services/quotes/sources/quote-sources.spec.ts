@@ -1,6 +1,6 @@
 import { getChainByKey } from '@chains';
 import { expect } from 'chai';
-import { buildSources, DefaultSourcesConfig } from '@services/quotes/source-registry';
+import { buildSources, LocalSourcesConfig } from '@services/quotes/source-registry';
 
 describe('Quote Sources', () => {
   it('all sources have known chains assigned', () => {
@@ -18,7 +18,7 @@ describe('Quote Sources', () => {
 
 function allSources() {
   const config = { apiKey: '' };
-  const sourcesConfig: DefaultSourcesConfig = {
+  const sourcesConfig: LocalSourcesConfig = {
     firebird: config,
     rango: config,
     '0x': config,
