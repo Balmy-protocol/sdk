@@ -11,6 +11,7 @@ import { LiFiQuoteSource, LI_FI_METADATA } from './quote-sources/li-fi';
 import { KyberswapQuoteSource, KYBERSWAP_METADATA } from './quote-sources/kyberswap';
 import { FirebirdQuoteSource, FIREBIRD_METADATA } from '@services/quotes/quote-sources/firebird';
 import { RangoQuoteSource, RANGO_METADATA } from './quote-sources/rango';
+import { ChangellyQuoteSource, CHANGELLY_METADATA } from './quote-sources/changelly';
 
 const QUOTE_SOURCES = {
   paraswap: builder<ParaswapQuoteSource>(PARASWAP_METADATA, (config) => new ParaswapQuoteSource(config)),
@@ -23,6 +24,7 @@ const QUOTE_SOURCES = {
   odos: builder<OdosQuoteSource>(ODOS_METADATA, (config) => new OdosQuoteSource(config)),
   firebird: builderNeedsConfig<FirebirdQuoteSource>(FIREBIRD_METADATA, (config) => new FirebirdQuoteSource(config)),
   rango: builderNeedsConfig<RangoQuoteSource>(RANGO_METADATA, (config) => new RangoQuoteSource(config)),
+  changelly: builderNeedsConfig<ChangellyQuoteSource>(CHANGELLY_METADATA, (config) => new ChangellyQuoteSource(config)),
 } satisfies Record<SourceId, QuoteSourceBuilder<any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(

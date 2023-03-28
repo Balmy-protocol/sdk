@@ -62,7 +62,6 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      console.log(await quotes[0]);
       expect(await quotes[0]).to.not.have.any.keys('error');
     });
   });
