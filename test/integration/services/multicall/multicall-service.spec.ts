@@ -19,15 +19,15 @@ describe('Multicall Service', () => {
     when('trying a call that fails with another that works', () => {
       given(async () => {
         const calls = [
-          { target: DAI, calldata: TRANSFER_FROM_DATA, decode: 'uint256' },
-          { target: DAI, calldata: ALLOWANCE_OF_DATA, decode: 'uint256' },
+          { target: DAI, calldata: TRANSFER_FROM_DATA, decode: ['uint256'] },
+          { target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] },
         ];
         response = await MULTICALL.tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
         expect(response[0].success).to.be.false;
-        expect(response[1]).to.eql({ success: true, result: constants.Zero });
+        expect(response[1]).to.eql({ success: true, result: [constants.Zero] });
       });
     });
   });

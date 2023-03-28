@@ -2,23 +2,20 @@ import { Address, ChainId } from '@types';
 
 export type IMulticallService = {
   supportedChains(): ChainId[];
-  readOnlyMulticallToSingleTarget({
-    chainId,
-    target,
-    calls,
-  }: {
-    chainId: ChainId;
-    target: Address;
-    calls: { calldata: string; decode: string }[];
-  }): Promise<any[]>;
-  readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; decode: string; calldata: string }[] }): Promise<any[]>;
-  tryReadOnlyMulticall<T>({
+  readOnlyMulticall({
     chainId,
     calls,
   }: {
     chainId: ChainId;
-    calls: { target: Address; decode: string; calldata: string }[];
-  }): Promise<TryMulticallResult<T>[]>;
+    calls: { target: Address; decode: string[]; calldata: string }[];
+  }): Promise<ReadonlyArray<any>[]>;
+  tryReadOnlyMulticall({
+    chainId,
+    calls,
+  }: {
+    chainId: ChainId;
+    calls: { target: Address; decode: string[]; calldata: string }[];
+  }): Promise<TryMulticallResult<any>[]>;
 };
 
-export type TryMulticallResult<T> = { success: true; result: T } | { success: false };
+export type TryMulticallResult<T> = { success: true; result: ReadonlyArray<T> } | { success: false };
