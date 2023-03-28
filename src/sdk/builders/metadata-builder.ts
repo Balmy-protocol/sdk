@@ -18,6 +18,7 @@ export type MetadataSourceInput =
   | { type: 'aggregate'; sources: MetadataSourceInput[] };
 
 export type BuildMetadataParams = { source: MetadataSourceInput };
+// @ts-ignore Avoid 'Type instantiation is excessively deep and possibly infinite.'
 export type CalculateMetadataFromSourceParams<Params extends BuildMetadataParams | undefined> = ExtractMetadata<
   CalculateSourceFromParams<Params>
 >;
@@ -30,6 +31,10 @@ type CalculateSourceFromInput<Input extends MetadataSourceInput | undefined> = u
   ? FallbackMetadataSource<[DefiLlamaMetadataSource, PortalsFiMetadataSource, RPCMetadataSource]>
   : Input extends { type: 'defi-llama' }
   ? DefiLlamaMetadataSource
+  : Input extends { type: 'portals-fi' }
+  ? PortalsFiMetadataSource
+  : Input extends { type: 'cached' }
+  ? CalculateSourceFromInput<Input['underlyingSource']>
   : Input extends { type: 'rpc-multicall' }
   ? RPCMetadataSource
   : Input extends { type: 'custom' }

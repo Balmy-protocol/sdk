@@ -38,7 +38,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
       const { token, owner, spender } = checks[i];
       if (!(token in result)) result[token] = {};
       if (!(owner in result[token])) result[token][owner] = {};
-      result[token][owner][spender] = multicallResult[0][i].toString();
+      result[token][owner][spender] = multicallResult[i][0].toString();
     }
     return result;
   }

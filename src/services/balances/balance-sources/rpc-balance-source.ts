@@ -41,7 +41,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     for (let i = 0; i < pairs.length; i++) {
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResults[0][i].toString();
+      result[account][token] = multicallResults[i][0].toString();
     }
     return result;
   }
