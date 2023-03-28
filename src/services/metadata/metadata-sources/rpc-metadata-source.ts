@@ -45,7 +45,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
       .filter(([, requirement]) => requirement !== 'can ignore')
       .map(([field]) => field as keyof RPCMetadataProperties);
     if (fieldsToFetch.length === 0) return {};
-    const calls: { target: Address; decode: string; calldata: string }[] = [];
+    const calls: { target: Address; decode: string[]; calldata: string }[] = [];
     for (const field of fieldsToFetch) {
       calls.push(...addressesWithoutNativeToken.map((address) => ({ target: address, ...DECODE_DATA[field] })));
     }
@@ -54,7 +54,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
       const tokenMetadata = Object.fromEntries(
-        fieldsToFetch.map((field, j) => [field, multicallResults[addressesWithoutNativeToken.length * j + i]])
+        fieldsToFetch.map((field, j) => [field, multicallResults[0][addressesWithoutNativeToken.length * j + i]])
       ) as MetadataResult<RPCMetadataProperties, Requirements>;
       result[address] = tokenMetadata;
     }
@@ -84,8 +84,8 @@ const ERC20_ABI = [
 ];
 
 const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);
-const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string; calldata: string }> = {
-  symbol: { decode: 'string', calldata: ERC_20_INTERFACE.encodeFunctionData('symbol') },
-  name: { decode: 'string', calldata: ERC_20_INTERFACE.encodeFunctionData('name') },
-  decimals: { decode: 'uint8', calldata: ERC_20_INTERFACE.encodeFunctionData('decimals') },
+const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string[]; calldata: string }> = {
+  symbol: { decode: ['string'], calldata: ERC_20_INTERFACE.encodeFunctionData('symbol') },
+  name: { decode: ['string'], calldata: ERC_20_INTERFACE.encodeFunctionData('name') },
+  decimals: { decode: ['uint8'], calldata: ERC_20_INTERFACE.encodeFunctionData('decimals') },
 };

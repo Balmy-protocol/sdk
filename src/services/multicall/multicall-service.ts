@@ -2,7 +2,7 @@ import { Contract } from 'ethers';
 import { AbiCoder } from 'ethers/lib/utils';
 import { Address, ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
-import { IMulticallService } from './types';
+import { IMulticallService, TryMulticallResult } from './types';
 import { chainsIntersection } from '@chains';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
@@ -14,35 +14,21 @@ export class MulticallService implements IMulticallService {
     return chainsIntersection(this.providerSource.supportedChains(), SUPPORTED_CHAINS);
   }
 
-  readOnlyMulticallToSingleTarget({
-    chainId,
-    target,
-    calls,
-  }: {
-    chainId: ChainId;
-    target: Address;
-    calls: { calldata: string; decode: string }[];
-  }) {
-    return this.readOnlyMulticall({ chainId, calls: calls.map(({ calldata, decode }) => ({ target, calldata, decode })) });
-  }
-
-  async readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string }[] }) {
+  async readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
     const multicall = this.getMulticall(chainId);
     const [blockNumber, results]: [number, string[]] = await multicall.callStatic.aggregate(
       calls.map(({ target, calldata }) => [target, calldata])
     );
-    return results.map((result, i) => this.ABI_CODER.decode([calls[i].decode], result)[0]);
+    return results.map((result, i) => this.ABI_CODER.decode(calls[i].decode, result));
   }
 
-  async tryReadOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string }[] }) {
+  async tryReadOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
     const multicall = this.getMulticall(chainId);
     const results: [boolean, string][] = await multicall.callStatic.tryAggregate(
       false,
       calls.map(({ target, calldata }) => [target, calldata])
     );
-    return results.map(([success, result], i) =>
-      success ? { success, result: this.ABI_CODER.decode([calls[i].decode], result)[0] } : { success }
-    );
+    return results.map(([success, result], i) => (success ? { success, result: this.ABI_CODER.decode(calls[i].decode, result) } : { success }));
   }
 
   private getMulticall(chainId: ChainId) {

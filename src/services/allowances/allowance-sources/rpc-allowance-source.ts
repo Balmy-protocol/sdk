@@ -29,16 +29,16 @@ export class RPCAllowanceSource implements IAllowanceSource {
   private async getAllowancesInChain(chainId: ChainId, checks: AllowanceCheck[]) {
     const calls = checks.map(({ token, owner, spender }) => ({
       target: token,
-      decode: 'uint256',
+      decode: ['uint256'],
       calldata: ERC_20_INTERFACE.encodeFunctionData('allowance', [owner, spender]),
     }));
-    const multicallResult: BigNumber[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResult: ReadonlyArray<BigNumber>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
     for (let i = 0; i < multicallResult.length; i++) {
       const { token, owner, spender } = checks[i];
       if (!(token in result)) result[token] = {};
       if (!(owner in result[token])) result[token][owner] = {};
-      result[token][owner][spender] = multicallResult[i].toString();
+      result[token][owner][spender] = multicallResult[0][i].toString();
     }
     return result;
   }

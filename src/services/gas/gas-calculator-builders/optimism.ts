@@ -43,15 +43,14 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
 }
 
 async function getGasValues(multicallService: IMulticallService) {
-  const [overhead, l1BaseFee, decimals, scalar, l2GasPrice]: BigNumber[] = await multicallService.readOnlyMulticallToSingleTarget({
-    target: OPTIMISM_GAS_ORACLE_ADDRESS,
+  const [[overhead], [l1BaseFee], [decimals], [scalar], [l2GasPrice]]: ReadonlyArray<BigNumber>[] = await multicallService.readOnlyMulticall({
     chainId: Chains.OPTIMISM.chainId,
     calls: [
-      { calldata: OVERHEAD_CALLDATA, decode: 'uint256' },
-      { calldata: L1_BASE_FEE_CALLDATA, decode: 'uint256' },
-      { calldata: DECIMALS_CALLDATA, decode: 'uint256' },
-      { calldata: SCALAR_CALLDATA, decode: 'uint256' },
-      { calldata: GAS_PRICE_CALLDATA, decode: 'uint256' },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: OVERHEAD_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: L1_BASE_FEE_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: DECIMALS_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: SCALAR_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: GAS_PRICE_CALLDATA, decode: ['uint256'] },
     ],
   });
   return { overhead, l1BaseFee, decimals, scalar, l2GasPrice };

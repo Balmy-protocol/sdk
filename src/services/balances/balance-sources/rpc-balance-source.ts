@@ -31,17 +31,17 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
-    const calls: { target: Address; decode: string; calldata: string }[] = pairs.map(({ account, token }) => ({
+    const calls: { target: Address; decode: string[]; calldata: string }[] = pairs.map(({ account, token }) => ({
       target: token,
-      decode: 'uint256',
+      decode: ['uint256'],
       calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]),
     }));
-    const multicallResults: BigNumber[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults: ReadonlyArray<BigNumber>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResults[i].toString();
+      result[account][token] = multicallResults[0][i].toString();
     }
     return result;
   }
