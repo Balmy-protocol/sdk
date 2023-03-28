@@ -20,6 +20,7 @@ import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/ethersc
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
+import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
 
 // TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
 // builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
@@ -38,6 +39,7 @@ export type GasSourceInput =
       underlyingSource: CachelessInput;
       expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
     }
+  | { type: 'changelly'; key: string }
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; keys?: Record<ChainId, string> }
   | { type: 'custom'; instance: IGasPriceSource<any> }
@@ -66,6 +68,8 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? PolygonGasStationGasPriceSource
   : Input extends { type: 'owlracle' }
   ? OwlracleGasPriceSource
+  : Input extends { type: 'changelly' }
+  ? ChangellyGasPriceSource
   : Input extends { type: 'etherscan' }
   ? EtherscanGasPriceSource
   : Input extends { type: 'custom' }
@@ -134,6 +138,8 @@ function buildSource(
       return new EtherscanGasPriceSource(fetchService, source.keys);
     case 'owlracle':
       return new OwlracleGasPriceSource(fetchService, source.key);
+    case 'changelly':
+      return new ChangellyGasPriceSource(fetchService, source.key);
     case 'custom':
       return source.instance;
     case 'aggregate':
