@@ -13,12 +13,11 @@ export type MetadataSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
   | { type: 'portals-fi' }
-  | { type: 'cached'; underlyingSource: MetadataSourceInput; expiration: ExpirationConfigOptions }
+  | { type: 'cached'; underlyingSource: Exclude<MetadataSourceInput, { type: 'cached' }>; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IMetadataSource<object> }
   | { type: 'aggregate'; sources: MetadataSourceInput[] };
 
 export type BuildMetadataParams = { source: MetadataSourceInput };
-// @ts-ignore Avoid 'Type instantiation is excessively deep and possibly infinite.'
 export type CalculateMetadataFromSourceParams<Params extends BuildMetadataParams | undefined> = ExtractMetadata<
   CalculateSourceFromParams<Params>
 >;
