@@ -30,7 +30,7 @@ import {
 import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { TriggerablePromise } from '@services/quotes/quote-sources/utils';
+import { TriggerablePromise } from '@services/quotes/source-lists/utils';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {

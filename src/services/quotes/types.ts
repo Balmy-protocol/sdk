@@ -63,7 +63,7 @@ export type QuoteRequest = {
 };
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
-export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice>;
+export type QuoteTx = WithRequired<TransactionRequest, 'to' | 'from' | 'data'> & Partial<GasPrice> & { value?: AmountOfToken };
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;

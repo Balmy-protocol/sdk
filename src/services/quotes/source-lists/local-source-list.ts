@@ -75,7 +75,7 @@ async function mapSourceResponseToResponse({
 }): Promise<SourceListResponse> {
   const tx: QuoteTx = {
     to: response.tx.to,
-    value: response.tx.value,
+    value: response.tx.value?.toString(),
     data: response.tx.calldata,
     from: request.takerAddress,
   };
