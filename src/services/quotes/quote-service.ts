@@ -79,7 +79,7 @@ export class QuoteService implements IQuoteService {
     const sourceSupport = sources[sourceId].supports;
     const supportedChains = sourceSupport.chains.map((chainId) => chainId);
     if (!supportedChains.includes(request.chainId)) {
-      throw new Error(`Source with '${sourceId}' does not support chain with id ${request.chainId}`);
+      throw new Error(`Source with id '${sourceId}' does not support chain with id ${request.chainId}`);
     }
     const shouldFailBecauseTransferNotSupported =
       !sourceSupport.swapAndTransfer &&
@@ -88,7 +88,7 @@ export class QuoteService implements IQuoteService {
       !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
     if (shouldFailBecauseTransferNotSupported) {
       throw new Error(
-        `Source with '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
+        `Source with id '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
       );
     }
 
@@ -97,7 +97,7 @@ export class QuoteService implements IQuoteService {
 
     if (shouldFailBecauseBuyOrderNotSupported) {
       throw new Error(
-        `Source with '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
+        `Source with id '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
       );
     }
 
