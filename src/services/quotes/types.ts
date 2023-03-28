@@ -1,8 +1,8 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { GasPrice, GasSpeed, SupportedGasValues } from '@services/gas/types';
+import { EIP1159GasPrice, GasSpeed, LegacyGasPrice, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { Address, AmountOfToken, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
-import { Either, WithRequired } from '@utility-types';
+import { Either } from '@utility-types';
 import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
@@ -63,7 +63,9 @@ export type QuoteRequest = {
 };
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
-export type QuoteTx = Required<Pick<TransactionRequest, 'to' | 'from' | 'data'>> & Partial<GasPrice> & { value?: AmountOfToken };
+export type QuoteTx = Required<Pick<TransactionRequest, 'to' | 'from' | 'data'>> &
+  Partial<EIP1159GasPrice> &
+  Partial<LegacyGasPrice> & { value?: AmountOfToken };
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
