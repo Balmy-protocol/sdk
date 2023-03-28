@@ -260,7 +260,7 @@ export class QuoteService implements IQuoteService {
     const gasCalculator = this.gasService
       .getQuickGasCalculator({
         chainId: request.chainId,
-        config: { timeout: reducedTimeout, fields: { requirements: { [selectedGasSpeed]: 'required' } } },
+        config: { timeout: reducedTimeout, fields: { requirements: { [selectedGasSpeed]: 'required' }, default: 'can ignore' } },
       })
       .catch(() => Promise.reject(new Error(`Failed to fetch gas data`)));
 
