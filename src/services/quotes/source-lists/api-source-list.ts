@@ -39,6 +39,7 @@ export class APISourceList implements IQuoteSourceList {
   private getUrl({ order, ...request }: APISourceListRequest) {
     // We are very explicit with the parameters so we don't send any extra data
     const requestToParse: any = {
+      sourceId: request.sourceId,
       chainId: request.chainId,
       sellToken: request.sellToken,
       buyToken: request.buyToken,
