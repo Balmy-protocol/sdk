@@ -22,6 +22,7 @@ function allSources() {
     firebird: config,
     rango: config,
     '0x': config,
+    changelly: config,
     odos: undefined,
   };
   return Object.values(buildSources(sourcesConfig));

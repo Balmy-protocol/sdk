@@ -11,6 +11,9 @@ if (process.env.RANGO_API_KEY) {
 if (process.env.FIREBIRD_API_KEY) {
   CONFIG.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
 }
+if (process.env.CHANGELLY_API_KEY) {
+  CONFIG.changelly = { apiKey: process.env.CHANGELLY_API_KEY };
+}
 
 export function supportedChains() {
   const sources = buildSources(CONFIG);
