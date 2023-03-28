@@ -16,7 +16,7 @@ export type ITriggerablePromise<T> = {
   request: () => Promise<T>;
 };
 
-export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'includeNonTransferSourcesWhenRecipientIsSet'> & {
+export type SourceListRequest = Omit<QuoteRequest, 'filters'> & {
   sourceId: SourceId;
   external: {
     tokenData: ITriggerablePromise<{
