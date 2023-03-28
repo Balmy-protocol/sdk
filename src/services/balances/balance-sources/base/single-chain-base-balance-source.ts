@@ -57,10 +57,12 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     const erc20Promise =
       Object.keys(tokensWithoutNativeToken).length > 0
         ? this.fetchERC20BalancesForAccountsInChain(chainId, tokensWithoutNativeToken, config)
-        : Promise.resolve({});
+        : Promise.resolve<Record<Address, Record<TokenAddress, AmountOfToken>>>({});
 
     const nativePromise =
-      accountsToFetchNativeToken.length > 0 ? this.fetchNativeBalancesInChain(chainId, accountsToFetchNativeToken) : Promise.resolve({});
+      accountsToFetchNativeToken.length > 0
+        ? this.fetchNativeBalancesInChain(chainId, accountsToFetchNativeToken)
+        : Promise.resolve<Record<Address, AmountOfToken>>({});
 
     const [erc20Result, nativeResult] = await Promise.all([erc20Promise, nativePromise]);
 
