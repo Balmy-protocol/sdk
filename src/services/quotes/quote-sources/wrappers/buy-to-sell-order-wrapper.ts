@@ -1,5 +1,5 @@
 import { SourceQuoteRequest, QuoteSourceSupport, QuoteSource, SourceQuoteResponse } from '../base';
-import { TriggerablePromise } from '../utils';
+import { TriggerablePromise } from '../../source-lists/utils';
 
 type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
 export function buyToSellOrderWrapper<
