@@ -27,7 +27,7 @@ describe('Multicall Service', () => {
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
         expect(response[0].success).to.be.false;
-        expect(response[1]).to.eql([{ success: true, result: constants.Zero }]);
+        expect(response[1]).to.eql({ success: true, result: [constants.Zero] });
       });
     });
   });
