@@ -5352,10 +5352,10 @@ tsconfig-paths@4.1.2:
     minimist "^1.2.6"
     strip-bom "^3.0.0"
 
-tsconfig-replace-paths@0.0.13:
-  version "0.0.13"
-  resolved "https://registry.yarnpkg.com/tsconfig-replace-paths/-/tsconfig-replace-paths-0.0.13.tgz#7753b051b7543e0c84c47b52c859bbcc6bcba452"
-  integrity sha512-L9bUwsQiNaNJXsU8iFoMpRvYXlKu+jZMpxlD1wtIUKy02MlOkafgykQ9fvCyTeOvo8KAvmNtaljySajzcc/6Mw==
+tsconfig-replace-paths@0.0.14:
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/tsconfig-replace-paths/-/tsconfig-replace-paths-0.0.14.tgz#67cd762ddcf09acca52c1102dae0698937278f9e"
+  integrity sha512-If9w1Z/HdSJkrZvCRSKHA3vAL3SwRWvI7rLmuTozlmKuBjPF/R8dWJku5C9ncOqiTOd8Dzd7SZ1cIYVZfpva8g==
   dependencies:
     commander "^3.0.2"
     globby "^10.0.1"
