@@ -46,7 +46,6 @@ export class APISourceList implements IQuoteSourceList {
       slippagePercentage: request.slippagePercentage,
       takerAddress: request.takerAddress,
       recipient: request.recipient,
-      gasSpeed: request.gasSpeed,
       quoteTimeout: request.quoteTimeout,
       txValidFor: request.txValidFor,
       estimateBuyOrdersWithSellOnlySources: request.estimateBuyOrdersWithSellOnlySources,

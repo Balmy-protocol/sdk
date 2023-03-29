@@ -16,7 +16,7 @@ export type ITriggerablePromise<T> = {
   request: () => Promise<T>;
 };
 
-export type SourceListRequest = Omit<QuoteRequest, 'filters'> & {
+export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   sourceId: SourceId;
   external: {
     tokenData: ITriggerablePromise<{

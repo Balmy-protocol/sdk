@@ -182,11 +182,12 @@ export class QuoteService implements IQuoteService {
       ]);
       const sellToken = { ...tokens[request.sellToken], price: prices[request.sellToken] };
       const buyToken = { ...tokens[request.buyToken], price: prices[request.buyToken] };
-      // TODO: We should add the gas price to the tx response, but if we do, we get some weird errors. Investigate and add it to to the tx
-      const { gasCostNativeToken, ...gasPrice } = gasCalculator.calculateGasCost({
+      const gasCost = gasCalculator.calculateGasCost({
         gasEstimation: response.estimatedGas,
         tx: response.tx,
-      })[gasSpeed(request)]!;
+      });
+      // TODO: We should add the gas price to the tx response, but if we do, we get some weird errors. Investigate and add it to to the tx
+      const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
       return {
         ...response,
         sellToken,
@@ -239,7 +240,7 @@ export class QuoteService implements IQuoteService {
 
   private calculateExternalPromises(request: QuoteRequest) {
     const reducedTimeout = reduceTimeout(request?.quoteTimeout, '200');
-    const selectedGasSpeed = gasSpeed(request);
+    const selectedGasSpeed = request.gasSpeed?.speed ?? 'standard';
     const tokens = this.metadataService
       .getMetadataForChain({
         chainId: request.chainId,
@@ -260,7 +261,16 @@ export class QuoteService implements IQuoteService {
     const gasCalculator = this.gasService
       .getQuickGasCalculator({
         chainId: request.chainId,
-        config: { timeout: reducedTimeout, fields: { requirements: { [selectedGasSpeed]: 'required' }, default: 'can ignore' } },
+        config: {
+          timeout: reducedTimeout,
+          fields: {
+            requirements: {
+              [selectedGasSpeed]: request.gasSpeed?.requirement ?? 'best effort',
+              standard: 'required',
+            },
+            default: 'can ignore',
+          },
+        },
       })
       .catch(() => Promise.reject(new Error(`Failed to fetch gas data`)));
 
@@ -270,7 +280,12 @@ export class QuoteService implements IQuoteService {
         tokenData: new TriggerablePromise(() =>
           tokens.then((tokens) => ({ sellToken: tokens[request.sellToken], buyToken: tokens[request.buyToken] }))
         ),
-        gasPrice: new TriggerablePromise(() => gasCalculator.then((calculator) => calculator.getGasPrice()[selectedGasSpeed]!)),
+        gasPrice: new TriggerablePromise(() =>
+          gasCalculator.then((calculator) => {
+            const gasPrice = calculator.getGasPrice();
+            return gasPrice[selectedGasSpeed] ?? gasPrice['standard']!;
+          })
+        ),
       },
     };
   }
@@ -311,10 +326,6 @@ function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
 
 function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
   return response;
-}
-
-function gasSpeed(request: QuoteRequest) {
-  return request?.gasSpeed ?? 'standard';
 }
 
 type Promises = {
