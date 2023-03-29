@@ -54,7 +54,7 @@ export type QuoteRequest = {
   slippagePercentage: number;
   takerAddress: Address;
   recipient?: Address;
-  gasSpeed?: GasSpeed;
+  gasSpeed?: { speed: GasSpeed; requirement?: 'required' | 'best effort' };
   quoteTimeout?: TimeString;
   txValidFor?: TimeString;
   filters?: Either<{ includeSources: SourceId[] }, { excludeSources: SourceId[] }>;
