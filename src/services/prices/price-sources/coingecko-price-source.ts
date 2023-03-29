@@ -17,7 +17,7 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
   [Chains.POLYGON.chainId]: { chainKey: 'polygon-pos', nativeTokenKey: 'matic-network' },
   [Chains.MOONRIVER.chainId]: { chainKey: 'moonriver', nativeTokenKey: 'moonriver' },
   [Chains.CRONOS.chainId]: { chainKey: 'cronos', nativeTokenKey: 'crypto-com-chain' },
-  [Chains.AURORA.chainId]: { chainKey: 'aurora', nativeTokenKey: 'aurora' },
+  [Chains.AURORA.chainId]: { chainKey: 'aurora', nativeTokenKey: 'ethereum' },
   [Chains.AVALANCHE.chainId]: { chainKey: 'avalanche', nativeTokenKey: 'avalanche-2' },
   [Chains.ETHEREUM.chainId]: { chainKey: 'ethereum', nativeTokenKey: 'ethereum' },
   [Chains.HARMONY_SHARD_0.chainId]: { chainKey: 'harmony-shard-0', nativeTokenKey: 'harmony' },
