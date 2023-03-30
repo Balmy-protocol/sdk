@@ -14,7 +14,7 @@ export class PublicRPCsSource implements IProviderSource {
       // If not set, default to known chains
       this.publicRPCs = Object.fromEntries(
         getAllChains()
-          .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => !!chain.publicRPCs && chain.publicRPCs.length > 0)
+          .filter((chain): chain is Chain & { publicRPCs: ArrayOneOrMore<string> } => chain.publicRPCs.length > 0)
           .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
       );
     }

@@ -182,6 +182,12 @@ export const Chains = {
     ids: ['ont', 'ontology'],
     nativeCurrency: { symbol: 'ONG', name: 'Ontology Gas' },
     wToken: '0xd8bc24cfd45452ef2c8bc7618e32330b61f2691b',
+    publicRPCs: [
+      'https://dappnode1.ont.io:10339',
+      'https://dappnode2.ont.io:10339',
+      'https://dappnode3.ont.io:10339',
+      'https://dappnode4.ont.io:10339',
+    ],
     explorer: 'https://explorer.ont.io/',
   },
   KLAYTN: {
