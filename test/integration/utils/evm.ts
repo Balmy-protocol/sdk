@@ -20,7 +20,7 @@ function getUrl(chain: Chain) {
   const key = getKey(chain);
   const path = getPath(chain);
   if (path && key) return `https://${path}/${key}`;
-  return chain.publicRPCs?.[0];
+  return chain.publicRPCs[0];
 }
 
 function getKey(chain: Chain): string {
