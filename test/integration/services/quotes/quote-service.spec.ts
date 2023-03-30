@@ -59,16 +59,18 @@ describe('Quote Service', () => {
         let txs: TransactionResponse[];
         given(async () => {
           [quote] = await quoteService.getAllQuotes({
-            chainId,
-            sellToken: nativeToken.address,
-            buyToken: STABLE_ERC20.address,
-            order: {
-              type: 'sell',
-              sellAmount: ONE_NATIVE_TOKEN,
+            request: {
+              chainId,
+              sellToken: nativeToken.address,
+              buyToken: STABLE_ERC20.address,
+              order: {
+                type: 'sell',
+                sellAmount: ONE_NATIVE_TOKEN,
+              },
+              slippagePercentage: 3,
+              takerAddress: user.address,
+              quoteTimeout: '5s',
             },
-            slippagePercentage: 3,
-            takerAddress: user.address,
-            quoteTimeout: '5s',
           });
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
           txs = [await user.sendTransaction({ gasPrice, ...tx })];

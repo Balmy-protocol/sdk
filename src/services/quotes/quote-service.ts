@@ -61,7 +61,7 @@ export class QuoteService implements IQuoteService {
     return chainsUnion(allChains);
   }
 
-  supportedSourcesInChain(chainId: ChainId) {
+  supportedSourcesInChain({ chainId }: { chainId: ChainId }) {
     const sourcesInChain = Object.entries(this.supportedSources()).filter(([, source]) => source.supports.chains.includes(chainId));
     return Object.fromEntries(sourcesInChain);
   }
@@ -70,7 +70,7 @@ export class QuoteService implements IQuoteService {
     return this.gasService.supportedSpeeds();
   }
 
-  async getQuote(sourceId: SourceId, request: IndividualQuoteRequest): Promise<QuoteResponse> {
+  async getQuote({ sourceId, request }: { sourceId: SourceId; request: IndividualQuoteRequest }): Promise<QuoteResponse> {
     const sources = this.supportedSources();
     if (!(sourceId in sources)) {
       throw new Error(`Could not find a source with '${sourceId}'`);
@@ -102,10 +102,12 @@ export class QuoteService implements IQuoteService {
     }
 
     const quotes = this.getQuotes({
-      ...request,
-      includeNonTransferSourcesWhenRecipientIsSet: true,
-      estimateBuyOrdersWithSellOnlySources: true,
-      filters: { includeSources: [sourceId] },
+      request: {
+        ...request,
+        includeNonTransferSourcesWhenRecipientIsSet: true,
+        estimateBuyOrdersWithSellOnlySources: true,
+        filters: { includeSources: [sourceId] },
+      },
     });
 
     if (quotes.length !== 1) {
@@ -121,23 +123,26 @@ export class QuoteService implements IQuoteService {
     return quote;
   }
 
-  estimateQuotes(estimatedRequest: EstimatedQuoteRequest) {
-    const quotes = this.getQuotes(estimatedToQuoteRequest(estimatedRequest));
+  estimateQuotes({ request }: { request: EstimatedQuoteRequest }) {
+    const quotes = this.getQuotes({ request: estimatedToQuoteRequest(request) });
     return quotes.map((promise) => promise.then((response) => ifNotFailed(response, quoteResponseToEstimated)));
   }
 
-  async estimateAllQuotes<IgnoreFailed extends boolean = true>(
-    estimatedRequest: EstimatedQuoteRequest,
-    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
-    const allResponses = await this.getAllQuotes(estimatedToQuoteRequest(estimatedRequest), config);
+  async estimateAllQuotes<IgnoreFailed extends boolean = true>({
+    request,
+    config,
+  }: {
+    request: EstimatedQuoteRequest;
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } };
+  }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
+    const allResponses = await this.getAllQuotes({ request: estimatedToQuoteRequest(request), config });
     return allResponses.map((response) => ifNotFailed(response, quoteResponseToEstimated)) as IgnoreFailedQuotes<
       IgnoreFailed,
       EstimatedQuoteResponse
     >[];
   }
 
-  getQuotes(request: QuoteRequest): Promise<QuoteResponse | FailedQuote>[] {
+  getQuotes({ request }: { request: QuoteRequest }): Promise<QuoteResponse | FailedQuote>[] {
     const { promises, external } = this.calculateExternalPromises(request);
     const sources = this.calculateSources(request);
     return sources
@@ -145,11 +150,14 @@ export class QuoteService implements IQuoteService {
       .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
   }
 
-  async getAllQuotes<IgnoreFailed extends boolean = true>(
-    request: QuoteRequest,
-    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } }
-  ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
-    const responses = await Promise.all(this.getQuotes(request));
+  async getAllQuotes<IgnoreFailed extends boolean = true>({
+    request,
+    config,
+  }: {
+    request: QuoteRequest;
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } };
+  }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
+    const responses = await Promise.all(this.getQuotes({ request }));
     const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
     const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedQuote => 'failed' in response) : [];
 
@@ -218,7 +226,7 @@ export class QuoteService implements IQuoteService {
     estimateBuyOrdersWithSellOnlySources,
     ...request
   }: QuoteRequest): SourceId[] {
-    const sourcesInChain = this.supportedSourcesInChain(request.chainId);
+    const sourcesInChain = this.supportedSourcesInChain(request);
     let sourceIds = Object.keys(sourcesInChain);
 
     if (filters?.includeSources) {
