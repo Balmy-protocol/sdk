@@ -19,31 +19,31 @@ export type SourceMetadata = QuoteSourceMetadata<QuoteSourceSupport>;
 export type IQuoteService = {
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
-  supportedSourcesInChain(chainId: ChainId): Record<SourceId, SourceMetadata>;
+  supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
-  estimateQuotes(estimatedRequest: EstimatedQuoteRequest): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
-  estimateAllQuotes<IgnoreFailed extends boolean = true>(
-    request: EstimatedQuoteRequest,
+  estimateQuotes(_: { request: EstimatedQuoteRequest }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
+  estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
+    request: EstimatedQuoteRequest;
     config?: {
       ignoredFailed?: IgnoreFailed;
       sort?: {
         by: CompareQuotesBy;
         using?: CompareQuotesUsing;
       };
-    }
-  ): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(sourceId: SourceId, request: IndividualQuoteRequest): Promise<QuoteResponse>;
-  getQuotes(request: QuoteRequest): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
-  getAllQuotes<IgnoreFailed extends boolean = true>(
-    request: QuoteRequest,
+    };
+  }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
+  getQuote(_: { sourceId: SourceId; request: IndividualQuoteRequest }): Promise<QuoteResponse>;
+  getQuotes(_: { request: QuoteRequest }): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
+  getAllQuotes<IgnoreFailed extends boolean = true>(_: {
+    request: QuoteRequest;
     config?: {
       ignoredFailed?: IgnoreFailed;
       sort?: {
         by: CompareQuotesBy;
         using?: CompareQuotesUsing;
       };
-    }
-  ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+    };
+  }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
 
 export type QuoteRequest = {

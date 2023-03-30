@@ -1,4 +1,4 @@
-import { ruleOfThree } from '@shared/utils';
+import { isSameAddress, ruleOfThree } from '@shared/utils';
 import { BigNumber } from 'ethers';
 import { QuoteResponse } from './types';
 
@@ -27,6 +27,11 @@ export function chooseQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy,
   if (quotes.length === 0) throw new Error(`There are no quotes to choose from`);
   const compareFtn = getCompareFtn(sortBy);
   return quotes.reduce((q1, q2) => (compareFtn(q1, q2, using) <= 0 ? q1 : q2));
+}
+
+export function compareQuotesBy(sortBy: CompareQuotesBy, using: CompareQuotesUsing): (quote1: QuoteResponse, quote2: QuoteResponse) => number {
+  const compareFtn = getCompareFtn(sortBy);
+  return (quote1: QuoteResponse, quote2: QuoteResponse) => compareFtn(quote1, quote2, using);
 }
 
 function getCompareFtn(compareBy: CompareQuotesBy) {
@@ -69,8 +74,14 @@ function compareMostProfit(quote1: QuoteResponse, quote2: QuoteResponse, using: 
   return 1;
 }
 
-// We are assuming that we are comparing two quote reponses for the same quote request
 export function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
+  const areQuotesForTheSameTokens =
+    quote1.sellToken.symbol === quote2.sellToken.symbol &&
+    quote1.sellToken.decimals === quote2.sellToken.decimals &&
+    quote1.buyToken.symbol === quote2.buyToken.symbol &&
+    quote1.buyToken.decimals === quote2.buyToken.decimals;
+  // If we are not comparing quotes for the same tokens, then we can't compare anything
+  if (!areQuotesForTheSameTokens) return 0;
   const extract = amountExtractor(using);
   const { sellAmount: sellAmount1, buyAmount: buyAmount1 } = extract(quote1);
   const { sellAmount: sellAmount2, buyAmount: buyAmount2 } = extract(quote2);

@@ -85,13 +85,15 @@ const RESPONSE: SourceListResponse = {
   },
 };
 
-const REQUEST: QuoteRequest = {
-  chainId: 1,
-  sellToken: '0x0000000000000000000000000000000000000001',
-  buyToken: '0x0000000000000000000000000000000000000002',
-  order: { type: 'sell', sellAmount: 100 },
-  slippagePercentage: 0.03,
-  takerAddress: '0x0000000000000000000000000000000000000003',
+const REQUEST: { request: QuoteRequest } = {
+  request: {
+    chainId: 1,
+    sellToken: '0x0000000000000000000000000000000000000001',
+    buyToken: '0x0000000000000000000000000000000000000002',
+    order: { type: 'sell', sellAmount: 100 },
+    slippagePercentage: 0.03,
+    takerAddress: '0x0000000000000000000000000000000000000003',
+  },
 };
 
 const SOURCE_LIST: IQuoteSourceList = {

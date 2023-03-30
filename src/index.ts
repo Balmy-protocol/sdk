@@ -4,6 +4,7 @@ export * from './services';
 export {
   TimeString,
   Chain,
+  ChainId,
   Address,
   TokenAddress,
   SupportRecord,
