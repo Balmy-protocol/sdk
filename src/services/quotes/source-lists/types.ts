@@ -1,6 +1,6 @@
 import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken } from '@types';
+import { Address, AmountOfToken, TimeString } from '@types';
 import { QuoteRequest, SourceMetadata, SourceId, QuoteTx } from '../types';
 
 export type IQuoteSourceList = {
@@ -25,6 +25,7 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
     }>;
     gasPrice: ITriggerablePromise<GasPrice>;
   };
+  quoteTimeout?: TimeString;
 };
 
 export type SourceListResponse = {

@@ -1,4 +1,4 @@
-import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
+import { timeoutPromise } from '@shared/timeouts';
 import { QuoteSource, QuoteSourceSupport } from '../base';
 
 // We will pass the timeout to the quote sources, but sometime they don't have a way to enforce. So the idea will be to

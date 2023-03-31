@@ -1,4 +1,4 @@
-import { GlobalQuoteSourceConfig, QuoteRequest, QuoteTx, SourceId } from '../types';
+import { GlobalQuoteSourceConfig, QuoteTx, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
 import { getChainByKeyOrFail } from '@chains';
@@ -98,7 +98,7 @@ async function mapSourceResponseToResponse({
   };
 }
 
-function mapOrderToBigNumber(request: QuoteRequest): BuyOrder | SellOrder {
+function mapOrderToBigNumber(request: SourceListRequest): BuyOrder | SellOrder {
   return request.order.type === 'sell'
     ? { type: 'sell', sellAmount: BigNumber.from(request.order.sellAmount) }
     : { type: 'buy', buyAmount: BigNumber.from(request.order.buyAmount) };
