@@ -35,6 +35,15 @@ export const Chains = {
     publicRPCs: ['https://arb1.arbitrum.io/rpc'],
     explorer: 'https://arbiscan.io/',
   },
+  ARBITRUM_NOVA: {
+    chainId: 42170,
+    name: 'Arbitrum Nova',
+    ids: ['nova'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x722e8bdd2ce80a4422e880164f2079488e115365',
+    publicRPCs: ['https://nova.arbitrum.io/rpc'],
+    explorer: 'https://nova.arbiscan.io/',
+  },
   POLYGON: {
     chainId: 137,
     name: 'Polygon',
