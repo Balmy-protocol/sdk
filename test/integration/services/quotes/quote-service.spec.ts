@@ -69,7 +69,9 @@ describe('Quote Service', () => {
               },
               slippagePercentage: 3,
               takerAddress: user.address,
-              quoteTimeout: '5s',
+            },
+            config: {
+              timeout: '5s',
             },
           });
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
