@@ -1,5 +1,5 @@
 import { IFetchService } from '@services/fetch/types';
-import { IGasService, SupportedGasValues } from '@services/gas/types';
+import { IGasService, DefaultGasValues } from '@services/gas/types';
 import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from '@services/quotes/types';
 import { BaseTokenMetadata, IMetadataService } from '@services/metadata/types';
 import { LocalSourceList } from '@services/quotes/source-lists/local-source-list';
@@ -28,7 +28,7 @@ export function buildQuoteService(
   params: BuildQuoteParams | undefined,
   providerSource: IProviderSource,
   fetchService: IFetchService,
-  gasService: IGasService<SupportedGasValues>,
+  gasService: IGasService<DefaultGasValues>,
   metadataService: IMetadataService<BaseTokenMetadata>,
   priceService: IPriceService
 ) {

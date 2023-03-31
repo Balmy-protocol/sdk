@@ -65,9 +65,9 @@ export type IGasPriceSource<GasValues extends SupportedGasValues> = {
   }): Promise<GasPriceResult<GasValues, Requirements>>;
 };
 
-export type SupportedGasValues = Partial<Record<GasSpeed, EIP1159GasPrice>> | Partial<Record<GasSpeed, LegacyGasPrice>>;
+export type SupportedGasValues = Partial<Record<GasSpeed, EIP1159GasPrice | LegacyGasPrice>>;
 export type GasValueForVersion<Speed extends GasSpeed, GasPriceVersion extends GasPrice> = Record<Speed, GasPriceVersion>;
-export type GasValueForVersions<Speed extends GasSpeed> = Record<Speed, EIP1159GasPrice> | Record<Speed, LegacyGasPrice>;
+export type GasValueForVersions<Speed extends GasSpeed> = Record<Speed, EIP1159GasPrice | LegacyGasPrice>;
 export type GasPriceResult<
   GasValues extends SupportedGasValues,
   Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>
@@ -81,9 +81,4 @@ export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGa
 export type LegacyGasPrice = { gasPrice: AmountOfToken };
 
 export type DefaultGasValues = GasValueForVersions<GasSpeed>;
-type IsEIP1559<GasValues extends SupportedGasValues> = GasValues extends Partial<Record<GasSpeed, EIP1159GasPrice>> ? true : false;
-type IsLegacy<GasValues extends SupportedGasValues> = GasValues extends Partial<Record<GasSpeed, LegacyGasPrice>> ? true : false;
-type AddGasCost<GasValues extends SupportedGasValues> =
-  | If<IsEIP1559<GasValues>, Record<keyof GasValues, EIP1159GasPrice & { gasCostNativeToken: AmountOfToken }>>
-  | If<IsLegacy<GasValues>, Record<keyof GasValues, LegacyGasPrice & { gasCostNativeToken: AmountOfToken }>>
-  | Record<keyof GasValues, never>;
+type AddGasCost<GasValues extends SupportedGasValues> = { [K in keyof GasValues]: GasValues[K] & { gasCostNativeToken: AmountOfToken } };

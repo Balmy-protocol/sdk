@@ -1,4 +1,4 @@
-import { AmountOfToken, ChainId, FieldsRequirements, SupportInChain, TokenAddress } from '@types';
+import { AmountOfToken, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -17,7 +17,7 @@ import { chainsUnion, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, calculateGasDetails, isSameAddress } from '@shared/utils';
 import { IGasService, IMetadataService, IPriceService, TokenPrice } from '..';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { IQuickGasCostCalculator, SupportedGasValues } from '@services/gas/types';
+import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
 import { utils } from 'ethers';
@@ -31,13 +31,13 @@ const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
 
 type ConstructorParameters = {
   priceService: IPriceService;
-  gasService: IGasService<SupportedGasValues>;
+  gasService: IGasService<DefaultGasValues>;
   metadataService: IMetadataService<BaseTokenMetadata>;
   sourceList: IQuoteSourceList;
 };
 export class QuoteService implements IQuoteService {
   private readonly priceService: IPriceService;
-  private readonly gasService: IGasService<SupportedGasValues>;
+  private readonly gasService: IGasService<DefaultGasValues>;
   private readonly metadataService: IMetadataService<BaseTokenMetadata>;
   private readonly sourceList: IQuoteSourceList;
   constructor({ priceService, gasService, metadataService, sourceList }: ConstructorParameters) {
@@ -66,11 +66,19 @@ export class QuoteService implements IQuoteService {
     return Object.fromEntries(sourcesInChain);
   }
 
-  supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>> {
+  supportedGasSpeeds(): Record<ChainId, SupportInChain<DefaultGasValues>> {
     return this.gasService.supportedSpeeds();
   }
 
-  async getQuote({ sourceId, request }: { sourceId: SourceId; request: IndividualQuoteRequest }): Promise<QuoteResponse> {
+  async getQuote({
+    sourceId,
+    request,
+    config,
+  }: {
+    sourceId: SourceId;
+    request: IndividualQuoteRequest;
+    config?: { timeout?: TimeString };
+  }): Promise<QuoteResponse> {
     const sources = this.supportedSources();
     if (!(sourceId in sources)) {
       throw new Error(`Could not find a source with '${sourceId}'`);
@@ -108,6 +116,7 @@ export class QuoteService implements IQuoteService {
         estimateBuyOrdersWithSellOnlySources: true,
         filters: { includeSources: [sourceId] },
       },
+      config,
     });
 
     if (quotes.length !== 1) {
@@ -123,8 +132,8 @@ export class QuoteService implements IQuoteService {
     return quote;
   }
 
-  estimateQuotes({ request }: { request: EstimatedQuoteRequest }) {
-    const quotes = this.getQuotes({ request: estimatedToQuoteRequest(request) });
+  estimateQuotes({ request, config }: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }) {
+    const quotes = this.getQuotes({ request: estimatedToQuoteRequest(request), config });
     return quotes.map((promise) => promise.then((response) => ifNotFailed(response, quoteResponseToEstimated)));
   }
 
@@ -133,7 +142,7 @@ export class QuoteService implements IQuoteService {
     config,
   }: {
     request: EstimatedQuoteRequest;
-    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } };
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]> {
     const allResponses = await this.getAllQuotes({ request: estimatedToQuoteRequest(request), config });
     return allResponses.map((response) => ifNotFailed(response, quoteResponseToEstimated)) as IgnoreFailedQuotes<
@@ -142,11 +151,11 @@ export class QuoteService implements IQuoteService {
     >[];
   }
 
-  getQuotes({ request }: { request: QuoteRequest }): Promise<QuoteResponse | FailedQuote>[] {
-    const { promises, external } = this.calculateExternalPromises(request);
+  getQuotes({ request, config }: { request: QuoteRequest; config?: { timeout?: TimeString } }): Promise<QuoteResponse | FailedQuote>[] {
+    const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
     return sources
-      .map((sourceId) => ({ sourceId, response: this.sourceList.getQuote({ ...request, sourceId, external }) }))
+      .map((sourceId) => ({ sourceId, response: this.sourceList.getQuote({ ...request, sourceId, external, quoteTimeout: config?.timeout }) }))
       .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
   }
 
@@ -155,9 +164,9 @@ export class QuoteService implements IQuoteService {
     config,
   }: {
     request: QuoteRequest;
-    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing } };
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
-    const responses = await Promise.all(this.getQuotes({ request }));
+    const responses = await Promise.all(this.getQuotes({ request, config }));
     const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
     const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedQuote => 'failed' in response) : [];
 
@@ -246,8 +255,8 @@ export class QuoteService implements IQuoteService {
     return sourceIds;
   }
 
-  private calculateExternalPromises(request: QuoteRequest) {
-    const reducedTimeout = reduceTimeout(request?.quoteTimeout, '200');
+  private calculateExternalPromises(request: QuoteRequest, config: { timeout?: TimeString } | undefined) {
+    const reducedTimeout = reduceTimeout(config?.timeout, '200');
     const selectedGasSpeed = request.gasSpeed?.speed ?? 'standard';
     const tokens = this.metadataService
       .getMetadataForChain({
@@ -339,5 +348,5 @@ function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse)
 type Promises = {
   tokens: Promise<Record<TokenAddress, BaseTokenMetadata>>;
   prices: Promise<Record<TokenAddress, TokenPrice>>;
-  gasCalculator: Promise<IQuickGasCostCalculator<SupportedGasValues>>;
+  gasCalculator: Promise<IQuickGasCostCalculator<DefaultGasValues>>;
 };

@@ -21,7 +21,10 @@ export type IQuoteService = {
   supportedChains(): ChainId[];
   supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
-  estimateQuotes(_: { request: EstimatedQuoteRequest }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
+  estimateQuotes(_: {
+    request: EstimatedQuoteRequest;
+    config?: { timeout?: TimeString };
+  }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
   estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: EstimatedQuoteRequest;
     config?: {
@@ -30,10 +33,11 @@ export type IQuoteService = {
         by: CompareQuotesBy;
         using?: CompareQuotesUsing;
       };
+      timeout?: TimeString;
     };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(_: { sourceId: SourceId; request: IndividualQuoteRequest }): Promise<QuoteResponse>;
-  getQuotes(_: { request: QuoteRequest }): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
+  getQuote(_: { sourceId: SourceId; request: IndividualQuoteRequest; config?: { timeout?: TimeString } }): Promise<QuoteResponse>;
+  getQuotes(_: { request: QuoteRequest; config?: { timeout?: TimeString } }): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
   getAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: QuoteRequest;
     config?: {
@@ -42,6 +46,7 @@ export type IQuoteService = {
         by: CompareQuotesBy;
         using?: CompareQuotesUsing;
       };
+      timeout?: TimeString;
     };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
@@ -55,7 +60,6 @@ export type QuoteRequest = {
   takerAddress: Address;
   recipient?: Address;
   gasSpeed?: { speed: GasSpeed; requirement?: 'required' | 'best effort' };
-  quoteTimeout?: TimeString;
   txValidFor?: TimeString;
   filters?: Either<{ includeSources: SourceId[] }, { excludeSources: SourceId[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;

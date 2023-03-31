@@ -3,6 +3,7 @@ import { LocalSourcesConfig, buildSources } from '@services/quotes/source-regist
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 
 export const CONFIG: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig> = {
+  odos: { sourceBlacklist: ['Hashflow'] },
   referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
 };
 if (process.env.RANGO_API_KEY) {

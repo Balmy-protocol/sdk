@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { then, when } from '@test-utils/bdd';
-import { GasSpeed, IGasService, IQuickGasCostCalculator, SupportedGasValues } from '@services/gas/types';
+import { GasSpeed, IGasService, IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { TransactionRequest } from '@ethersproject/providers';
 import { BigNumberish } from 'ethers';
 import { ChainId, TokenAddress } from '@types';
@@ -127,13 +127,13 @@ const FAILING_PRICE_SERVICE: IPriceService = {
   getCurrentPricesForChain: () => Promise.reject(new Error('Failed')),
 };
 
-const GAS_CALCULATOR: IQuickGasCostCalculator<SupportedGasValues> = {
-  supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' }),
+const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {
+  supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' } as any),
   calculateGasCost: (_: { gasEstimation: BigNumberish; tx?: TransactionRequest }) =>
     ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10', gasCostNativeToken: '10' } } as any),
-  getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } }),
+  getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } } as any),
 };
-const GAS_SERVICE: IGasService<SupportedGasValues> = {
+const GAS_SERVICE: IGasService<DefaultGasValues> = {
   supportedSpeeds: () => ({}),
   supportedChains: () => [1],
   estimateGas: (_: { chainId: ChainId; tx: TransactionRequest }) => Promise.reject(new Error('Should not be called')),
@@ -142,7 +142,7 @@ const GAS_SERVICE: IGasService<SupportedGasValues> = {
     Promise.reject(new Error('Should not be called')),
   getQuickGasCalculator: (_: { chainId: ChainId }) => Promise.resolve(GAS_CALCULATOR) as any,
 };
-const FAILING_GAS_SERVICE: IGasService<SupportedGasValues> = {
+const FAILING_GAS_SERVICE: IGasService<DefaultGasValues> = {
   ...GAS_SERVICE,
   getQuickGasCalculator: (_: { chainId: ChainId }) => Promise.reject(new Error('Failed')),
 };
