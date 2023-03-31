@@ -18,7 +18,7 @@ npm install @mean-finance/sdk
 
 ## Usage
 
-### Building the SDK
+### 👷🏽‍♀️ Building the SDK
 
 ```javascript
 import { buildSdk } from "@mean-finance/sdk";
@@ -26,7 +26,7 @@ import { buildSdk } from "@mean-finance/sdk";
 const sdk = buildSdk(config);
 ```
 
-### Getting balance for multiple tokens on several chains
+### ⚖️ Getting balance for multiple tokens on several chains
 
 ```javascript
 const accountBalances = await sdk.balanceService.getBalancesForTokens({
@@ -54,7 +54,7 @@ const usdcBalanceOnEthereum =
   accountBalances[1]["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"];
 ```
 
-### Getting allowances of multiple spenders for a token
+### 💸 Getting allowances of multiple spenders for a token
 
 ```javascript
 const accountAllowances = await sdk.allowanceService.getAllowances({
@@ -68,7 +68,7 @@ const amountThatDevilCanSpend =
   accountAllowances["0x6666666600000000000000000000000000009999"];
 ```
 
-### Quoting all dex aggregators for a trade
+### 🔄 Quoting all dex aggregators for a trade
 
 ```javascript
 const allQuotes = await sdk.quoteService.getAllQuotes({
