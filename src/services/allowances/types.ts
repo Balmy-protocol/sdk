@@ -19,6 +19,11 @@ export type IAllowanceService = {
     spenders: SpenderAddress[];
     config?: { timeout?: TimeString };
   }): Promise<Record<SpenderAddress, AmountOfToken>>;
+  getMultipleAllowances(_: {
+    chainId: ChainId;
+    check: AllowanceCheck[];
+    config?: { timeout?: TimeString };
+  }): Promise<Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>;
 };
 
 export type IAllowanceSource = {
