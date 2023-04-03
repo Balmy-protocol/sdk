@@ -21,7 +21,7 @@ import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
 import { utils } from 'ethers';
-import { TriggerablePromise } from './source-lists/utils';
+import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 
 const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {

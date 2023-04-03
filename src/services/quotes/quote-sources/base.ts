@@ -5,7 +5,7 @@ import { GlobalQuoteSourceConfig } from '@services/quotes/types';
 import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IProviderSource } from '@services/providers';
-import { ITriggerablePromise } from '../source-lists/types';
+import { ITriggerablePromise } from '@shared/triggerable-promise';
 
 export type QuoteSourceSupport = { buyOrders: boolean; swapAndTransfer: boolean };
 export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
