@@ -10,7 +10,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
-import { calculatePercentage, isSameAddress } from '@shared/utils';
+import { addSlippage, isSameAddress, substractSlippage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
@@ -30,11 +30,12 @@ import {
 import { buildSources } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { TriggerablePromise } from '@services/quotes/source-lists/utils';
+import { Deferred } from '@shared/deferred';
+import { TriggerablePromise } from '@shared/triggerable-promise';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: 'odos',
+  source: '0x',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
@@ -49,29 +50,44 @@ describe('Quote Sources', () => {
     const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
-      let user: SignerWithAddress, recipient: SignerWithAddress;
-      let nativeToken: TestToken, wToken: TestToken, STABLE_ERC20: TestToken, RANDOM_ERC20: TestToken;
+      const quotes: Record<string, Promise<SourceQuoteResponse>> = {};
+      let user = new Deferred<SignerWithAddress>(),
+        recipient = new Deferred<SignerWithAddress>(),
+        nativeToken = new Deferred<TestToken>(),
+        wToken = new Deferred<TestToken>(),
+        STABLE_ERC20 = new Deferred<TestToken>(),
+        RANDOM_ERC20 = new Deferred<TestToken>(),
+        gasPrice = new Deferred<GasPrice>();
       let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
       let snapshot: SnapshotRestorer;
-      let gasPricePromise: Promise<GasPrice>;
 
       beforeAll(async () => {
         await fork(chain);
-        [user, recipient] = await ethers.getSigners();
-        ({ nativeToken, wToken, STABLE_ERC20, RANDOM_ERC20 } = await loadTokens(chain));
+        const [userSigner, recipientSigner] = await ethers.getSigners();
+        const tokens = await loadTokens(chain);
+
         await mintMany({
-          to: user,
+          to: userSigner,
           tokens: [
-            { amount: utils.parseUnits('10000', STABLE_ERC20.decimals), token: STABLE_ERC20 },
-            { amount: ONE_NATIVE_TOKEN.mul(3), token: nativeToken },
-            { amount: ONE_NATIVE_TOKEN, token: wToken },
+            { amount: utils.parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
+            { amount: ONE_NATIVE_TOKEN.mul(3), token: tokens.nativeToken },
+            { amount: ONE_NATIVE_TOKEN, token: tokens.wToken },
           ],
         });
         initialBalances = await calculateBalancesFor({
-          tokens: [nativeToken, wToken, STABLE_ERC20, RANDOM_ERC20],
-          addresses: [user, recipient],
+          tokens: [tokens.nativeToken, tokens.wToken, tokens.STABLE_ERC20, tokens.RANDOM_ERC20],
+          addresses: [userSigner, recipientSigner],
         });
-        gasPricePromise = new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrice) => gasPrice['standard']);
+        const gasPriceResult = await new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
+
+        // Resolve all deferred
+        user.resolve(userSigner);
+        recipient.resolve(recipientSigner);
+        nativeToken.resolve(tokens.nativeToken);
+        wToken.resolve(tokens.wToken);
+        STABLE_ERC20.resolve(tokens.STABLE_ERC20);
+        RANDOM_ERC20.resolve(tokens.RANDOM_ERC20);
+        gasPrice.resolve(gasPriceResult);
         snapshot = await takeSnapshot();
       });
 
@@ -83,26 +99,26 @@ describe('Quote Sources', () => {
         quoteTest({
           test: Test.SELL_STABLE_TO_NATIVE,
           when: 'swapping 1000 of stables to native token',
-          quote: () => ({
+          request: {
             sellToken: STABLE_ERC20,
             buyToken: nativeToken,
             order: {
               type: 'sell',
               sellAmount: utils.parseUnits('1000', 6),
             },
-          }),
+          },
         });
         quoteTest({
           test: Test.SELL_NATIVE_TO_RANDOM_ERC20,
           when: 'swapping 1 native token to random token',
-          quote: () => ({
+          request: {
             sellToken: nativeToken,
             buyToken: RANDOM_ERC20,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,
             },
-          }),
+          },
         });
       });
       describe('Swap and transfer', () => {
@@ -110,7 +126,7 @@ describe('Quote Sources', () => {
           test: Test.SELL_NATIVE_TO_STABLE_AND_TRANSFER,
           checkSupport: (support) => support.swapAndTransfer,
           when: 'swapping 1 native token to stable',
-          quote: () => ({
+          request: {
             sellToken: nativeToken,
             buyToken: STABLE_ERC20,
             order: {
@@ -118,7 +134,7 @@ describe('Quote Sources', () => {
               sellAmount: ONE_NATIVE_TOKEN,
             },
             recipient,
-          }),
+          },
         });
       });
       describe('Buy order', () => {
@@ -126,86 +142,91 @@ describe('Quote Sources', () => {
           test: Test.BUY_NATIVE_WITH_STABLE,
           checkSupport: (support) => support.buyOrders,
           when: 'buying 1 native token with stables',
-          quote: () => ({
+          request: {
             sellToken: STABLE_ERC20,
             buyToken: nativeToken,
             order: {
               type: 'buy',
               buyAmount: ONE_NATIVE_TOKEN,
             },
-          }),
+          },
         });
       });
       describe('Wrap / Unwrap', () => {
         quoteTest({
           test: Test.WRAP_NATIVE_TOKEN,
           when: 'wrapping 1 native token',
-          quote: () => ({
+          request: {
             sellToken: nativeToken,
             buyToken: wToken,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,
             },
-          }),
+          },
         });
         quoteTest({
           test: Test.UNWRAP_WTOKEN,
           when: 'unwrapping 1 wtoken',
-          quote: () => ({
+          request: {
             sellToken: wToken,
             buyToken: nativeToken,
             order: {
               type: 'sell',
               sellAmount: ONE_NATIVE_TOKEN,
             },
-          }),
+          },
         });
       });
 
       function quoteTest({
         test,
         when: title,
-        quote: quoteFtn,
+        request,
         checkSupport,
       }: {
         test: Test;
         when: string;
         checkSupport?: (support: QuoteSourceSupport) => boolean;
-        quote: () => Quote;
+        request: Quote;
       }) {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
             if (shouldExecute(sourceId, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
+              const sourceInTest = `${sourceId}-${test}`;
+              quotes[sourceInTest] = buildQuote(source, request, test);
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
+                let sellToken: TestToken, buyToken: TestToken, recipient: SignerWithAddress | undefined, takeFrom: SignerWithAddress;
                 let txs: TransactionResponse[];
                 given(async () => {
-                  quote = await buildQuote(source, quoteFtn());
-                  const approveTx = isSameAddress(quote.allowanceTarget, constants.AddressZero)
-                    ? []
-                    : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: quoteFtn().sellToken, from: user })];
-                  txs = [...approveTx, await execute({ quote, as: user })];
+                  [sellToken, buyToken, recipient, takeFrom] = await Promise.all([request.sellToken, request.buyToken, request.recipient, user]);
+                  quote = await quotes[sourceInTest];
+                  const approveTx =
+                    isSameAddress(quote.allowanceTarget, constants.AddressZero) || isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)
+                      ? []
+                      : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: sellToken, from: takeFrom })];
+                  txs = [...approveTx, await execute({ quote, as: takeFrom })];
                 });
                 then('result is as expected', async () => {
                   await assertUsersBalanceIsReducedAsExpected({
                     txs,
-                    sellToken: quoteFtn().sellToken,
+                    sellToken,
                     quote,
-                    user,
+                    user: takeFrom,
                     initialBalances,
                   });
                   await assertRecipientsBalanceIsIncreasedAsExpected({
                     txs,
-                    buyToken: quoteFtn().buyToken,
+                    buyToken,
                     quote,
-                    recipient: quoteFtn().recipient ?? user,
+                    recipient: recipient ?? takeFrom,
                     initialBalances,
                   });
                   assertQuoteIsConsistent(quote, {
-                    sellToken: quoteFtn().sellToken,
-                    buyToken: quoteFtn().buyToken,
-                    ...quoteFtn().order,
+                    sellToken,
+                    buyToken,
+                    ...request.order,
                     sourceId,
                   });
                 });
@@ -264,11 +285,9 @@ describe('Quote Sources', () => {
         let slippage = SLIPPAGE_PERCENTAGE;
         if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
         if (quote.type === 'sell') {
-          const allowedSlippage = calculatePercentage(quote.buyAmount, slippage);
-          expect(quote.minBuyAmount).to.be.gte(quote.buyAmount.sub(allowedSlippage));
+          expect(quote.minBuyAmount).to.be.gte(substractSlippage(quote.buyAmount, slippage));
         } else {
-          const allowedSlippage = calculatePercentage(quote.sellAmount, slippage);
-          expect(quote.maxSellAmount).to.be.lte(quote.sellAmount.add(allowedSlippage));
+          expect(quote.maxSellAmount).to.be.lte(addSlippage(quote.sellAmount, slippage));
         }
       }
 
@@ -286,11 +305,15 @@ describe('Quote Sources', () => {
       }
 
       type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
-        recipient?: SignerWithAddress;
-        sellToken: TestToken;
-        buyToken: TestToken;
+        recipient?: Promise<SignerWithAddress>;
+        sellToken: Promise<TestToken>;
+        buyToken: Promise<TestToken>;
       };
-      function buildQuote(source: QuoteSource<any>, { sellToken, buyToken, ...quote }: Quote) {
+      async function buildQuote(source: QuoteSource<any>, quote: Quote, test: Test) {
+        const [sellToken, buyToken, takeFrom, recipient] = await Promise.all([quote.sellToken, quote.buyToken, user, quote.recipient]);
+        // If we execute all requests at the same time, then we'll probably get rate-limited. So the idea is to wait a little for each test so requests are not executed concurrently
+        const millisToWait = ms('0.5s') * test;
+        await wait(millisToWait);
         return source.quote(
           { providerSource: PROVIDER_SOURCE, fetchService: FETCH_SERVICE },
           {
@@ -303,9 +326,9 @@ describe('Quote Sources', () => {
               txValidFor: '5m',
               timeout: '15s',
             },
-            accounts: { takeFrom: user.address, recipient: quote.recipient?.address },
+            accounts: { takeFrom: takeFrom.address, recipient: recipient?.address },
             external: {
-              gasPrice: new TriggerablePromise(() => gasPricePromise),
+              gasPrice: new TriggerablePromise(() => gasPrice),
               tokenData: new TriggerablePromise(() => Promise.resolve({ sellToken, buyToken })),
             },
           }

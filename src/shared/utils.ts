@@ -2,14 +2,31 @@ import { BigNumber, BigNumberish, constants, utils } from 'ethers';
 import ms from 'ms';
 import { Address, Chain, TimeString } from '@types';
 
-export function isSameAddress(address1: Address, address2: Address) {
-  return address1.toLowerCase() === address2.toLowerCase();
+export function wait(time: TimeString | number) {
+  return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
 }
 
-const PRECISION = 10000;
-export function calculatePercentage(amount: BigNumber, percentage: number) {
-  const numerator = amount.mul(Math.round((percentage * PRECISION) / 100));
-  return numerator.mod(PRECISION).isZero() ? numerator.div(PRECISION) : numerator.div(PRECISION).add(1); // Round up
+export function isSameAddress(address1: Address | undefined, address2: Address | undefined) {
+  return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
+}
+
+export function substractSlippage(amount: BigNumberish, slippagePercentage: number) {
+  const percentage = mulDivByNumber(amount, slippagePercentage, 100);
+  return BigNumber.from(amount).sub(percentage);
+}
+
+export function addSlippage(amount: BigNumberish, slippagePercentage: number) {
+  const percentage = mulDivByNumber(amount, slippagePercentage, 100);
+  return BigNumber.from(amount).add(percentage);
+}
+
+const PRECISION = 10000000;
+export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
+  const round = (num: number) => Math.round(num * PRECISION);
+  const numerator = BigNumber.from(amount).mul(round(mul));
+  const denominator = round(div);
+  const result = numerator.div(denominator);
+  return !numerator.mod(denominator).isZero() && rounding === 'up' ? result.add(1) : result;
 }
 
 export function calculateDeadline(txValidFor?: TimeString) {

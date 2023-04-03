@@ -1,11 +1,11 @@
-import ms from 'ms';
 import chai, { expect } from 'chai';
 import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
-import { ChainId, FieldRequirementOptions, TimeString } from '@types';
+import { ChainId, FieldRequirementOptions } from '@types';
 import chaiAsPromised from 'chai-as-promised';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 import { GasPriceResult, IGasPriceSource, GasSpeed } from '@services/gas/types';
+import { wait } from '@shared/utils';
 chai.use(chaiAsPromised);
 
 describe('Prioritized Gas Price Source Combinator', () => {
@@ -59,12 +59,12 @@ describe('Prioritized Gas Price Source Combinator', () => {
       expect(promise.status).to.equal('pending');
       // Second one resolves ok
       source2Promise.resolve(source2Result);
-      await sleep('10');
+      await wait(10);
       // First one hasn't resolved, so we still wait
       expect(promise.status).to.equal('pending');
       // First one fails
       source1Promise.reject();
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       // Returns second source's result
       expect(await promise.result).to.deep.equal(source2Result);
@@ -83,12 +83,12 @@ describe('Prioritized Gas Price Source Combinator', () => {
       expect(promise.status).to.equal('pending');
       // Second one resolves ok
       source2Promise.resolve(source2Result);
-      await sleep('10');
+      await wait(10);
       // First one hasn't resolved, so we still wait
       expect(promise.status).to.equal('pending');
       // First one resolves, and does not meet
       source1Promise.resolve(source1Result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       // Returns second source's result
       expect(await promise.result).to.deep.equal(source2Result);
@@ -107,12 +107,12 @@ describe('Prioritized Gas Price Source Combinator', () => {
       expect(promise.status).to.equal('pending');
       // Second one resolves ok
       source2Promise.resolve(source2Result);
-      await sleep('10');
+      await wait(10);
       // First one hasn't resolved, so we still wait
       expect(promise.status).to.equal('pending');
       // First one resolves
       source1Promise.resolve(source1Result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       // Returns first source's result
       expect(await promise.result).to.deep.equal(source1Result);
@@ -160,10 +160,6 @@ describe('Prioritized Gas Price Source Combinator', () => {
     return { source, promise: sourcePromise };
   }
 });
-
-function sleep(time: TimeString) {
-  return new Promise((resolve) => setTimeout(resolve, ms(time)));
-}
 
 type PromiseWithTriggers<T> = Promise<T> & { resolve: (value: T) => void; reject: (error?: any) => void };
 type PromiseWithState<T> = { status: 'pending' | 'resolved' | 'rejected'; result: Promise<T> };

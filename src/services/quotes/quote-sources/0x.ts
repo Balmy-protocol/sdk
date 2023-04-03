@@ -65,7 +65,7 @@ export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig | unde
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(chain, sellToken, buyToken, await response.text());
     }
     const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = await response.json();
 

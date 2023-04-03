@@ -1,9 +1,9 @@
 import chai, { expect } from 'chai';
 import { then, when } from '@test-utils/bdd';
 import { IMetadataSource, MergeMetadata, MetadataResult } from '@services/metadata/types';
-import { ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
+import { ChainId, FieldsRequirements, SupportInChain, TokenAddress } from '@types';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
-import ms from 'ms';
+import { wait } from '@shared/utils';
 import chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 
@@ -29,7 +29,7 @@ describe('Fallback Token Source', () => {
       const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result);
     });
@@ -64,7 +64,7 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result);
     });
@@ -84,10 +84,10 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result1);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.resolve(result2);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result2);
     });
@@ -108,7 +108,7 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result);
     });
@@ -128,10 +128,10 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result1);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.resolve(result2);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal(result2);
     });
@@ -163,7 +163,7 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.reject();
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.reject();
       await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
@@ -184,7 +184,7 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.resolve(result);
       await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
@@ -200,7 +200,7 @@ describe('Fallback Token Source', () => {
       const promise = getMetadata({ addresses: { [1]: [TOKEN_A] }, requirements: { decimals: 'required' }, sources: [source1, source2] });
       expect(promise.status).to.equal('pending');
       source1Promise.reject();
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.reject();
       await expect(promise.result).to.to.eventually.be.rejectedWith('Could not find metadata for the given addresses');
@@ -222,10 +222,10 @@ describe('Fallback Token Source', () => {
       });
       expect(promise.status).to.equal('pending');
       source1Promise.resolve(result1);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('pending');
       source2Promise.resolve(result2);
-      await sleep('10');
+      await wait(10);
       expect(promise.status).to.equal('resolved');
       expect(await promise.result).to.deep.equal({ [1]: { [TOKEN_A]: metadataWith('decimals', 'symbol') } });
     });
@@ -281,10 +281,6 @@ describe('Fallback Token Source', () => {
     return { source, promise: sourcePromise };
   }
 });
-
-function sleep(time: TimeString) {
-  return new Promise((resolve) => setTimeout(resolve, ms(time)));
-}
 
 type PromiseWithTriggers<T> = Promise<T> & { resolve: (value: T) => void; reject: (error?: any) => void };
 type PromiseWithState<T> = { status: 'pending' | 'resolved' | 'rejected'; result: Promise<T> };
