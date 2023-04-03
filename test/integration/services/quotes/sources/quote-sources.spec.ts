@@ -50,7 +50,6 @@ describe('Quote Sources', () => {
     const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
-      const quotes: Record<string, Promise<SourceQuoteResponse>> = {};
       let user = new Deferred<SignerWithAddress>(),
         recipient = new Deferred<SignerWithAddress>(),
         nativeToken = new Deferred<TestToken>(),
@@ -193,15 +192,14 @@ describe('Quote Sources', () => {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
             if (shouldExecute(sourceId, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
-              const sourceInTest = `${sourceId}-${test}`;
-              quotes[sourceInTest] = buildQuote(source, request, test);
+              const quotePromise = buildQuote(source, request, test);
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
                 let sellToken: TestToken, buyToken: TestToken, recipient: SignerWithAddress | undefined, takeFrom: SignerWithAddress;
                 let txs: TransactionResponse[];
                 given(async () => {
                   [sellToken, buyToken, recipient, takeFrom] = await Promise.all([request.sellToken, request.buyToken, request.recipient, user]);
-                  quote = await quotes[sourceInTest];
+                  quote = await quotePromise;
                   const approveTx =
                     isSameAddress(quote.allowanceTarget, constants.AddressZero) || isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)
                       ? []
