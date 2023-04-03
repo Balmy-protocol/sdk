@@ -33,12 +33,12 @@ const accountBalances = await sdk.balanceService.getBalancesForTokens({
   account: "0x000000000000000000000000000000000000dead",
   tokens: {
     // [chainId]: [0xTokenAddress]
-    [1]: [
+    [Chains.ETHEREUM.chainId]: [
       // Ethereum
       "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC
       "0x6b175474e89094c44da98b954eedeac495271d0f", // DAI
     ],
-    [10]: [
+    [Chains.OPTIMISM.chainId]: [
       // Optimism
       "0x7f5c764cbc14f9669b88837ca1490cca17c31607", // USDC
       "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1", // DAI
@@ -51,14 +51,16 @@ const accountBalances = await sdk.balanceService.getBalancesForTokens({
 });
 
 const usdcBalanceOnEthereum =
-  accountBalances[1]["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"];
+  accountBalances[Chains.ETHEREUM.chainId][
+    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+  ];
 ```
 
 ### 💸 Getting allowances of multiple spenders for a token
 
 ```javascript
 const accountAllowances = await sdk.allowanceService.getAllowances({
-  chainId: 1,
+  chainId: Chains.ETHEREUM.chainId,
   token: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC
   owner: "0x000000000000000000000000000000000000dead",
   spenders: ["0x6666666600000000000000000000000000009999"],
@@ -73,7 +75,7 @@ const amountThatDevilCanSpend =
 ```javascript
 const allQuotes = await sdk.quoteService.getAllQuotes({
   request: {
-    chainId: 1, // Ethereum
+    chainId: Chains.ETHEREUM.chainId, // Ethereum
     sellToken: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     buyToken: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     order: {
