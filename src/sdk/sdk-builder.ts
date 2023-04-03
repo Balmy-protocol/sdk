@@ -36,7 +36,7 @@ export function buildSDK<Params extends BuildParams = {}>(
   };
 }
 
-type BuildParams = {
+export type BuildParams = {
   fetch?: BuildFetchParams;
   provider?: BuildProviderParams;
   balances?: BuildBalancesParams;
