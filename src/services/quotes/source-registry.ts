@@ -33,6 +33,7 @@ export const SOURCES_METADATA = Object.fromEntries(
 
 export type SourceWithConfigId = keyof LocalSourcesConfig;
 export type SourceConfig = { global?: GlobalQuoteSourceConfig; custom?: Partial<LocalSourcesConfig> };
+export type LocalSourceConfig = LocalSourcesConfig[keyof LocalSourcesConfig];
 type ImplementedSources = typeof QUOTE_SOURCES;
 type LocalSourcesConfig = Without<
   { [K in keyof AllLocalSourcesConfig]: ConfigHasKeys<AllLocalSourcesConfig[K]> extends true ? AllLocalSourcesConfig[K] : never },

@@ -6,7 +6,7 @@ import { Either } from '@utility-types';
 import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
-import { SourceConfig } from './source-registry';
+import { LocalSourceConfig, SourceConfig } from './source-registry';
 
 export type GlobalQuoteSourceConfig = {
   referrer?: {
@@ -94,10 +94,11 @@ export type QuoteResponse = {
 
 export type IndividualQuoteRequest = Omit<
   QuoteRequest,
-  'filters' | 'includeNonTransferSourcesWhenRecipientIsSet' | 'estimateBuyOrdersWithSellOnlySources'
+  'filters' | 'includeNonTransferSourcesWhenRecipientIsSet' | 'estimateBuyOrdersWithSellOnlySources' | 'sourceConfig'
 > & {
   dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet?: boolean;
   estimateBuyOrderIfSourceDoesNotSupportIt?: boolean;
+  sourceConfig?: { global?: GlobalQuoteSourceConfig; custom?: LocalSourceConfig };
 };
 
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;

@@ -120,6 +120,10 @@ export class QuoteService implements IQuoteService {
         includeNonTransferSourcesWhenRecipientIsSet: true,
         estimateBuyOrdersWithSellOnlySources: true,
         filters: { includeSources: [sourceId] },
+        sourceConfig: {
+          global: request.sourceConfig?.global,
+          custom: request.sourceConfig?.custom && { [sourceId]: request.sourceConfig.custom },
+        },
       },
       config,
     });
