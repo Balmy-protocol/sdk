@@ -191,7 +191,11 @@ describe('Quote Sources', () => {
       }) {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
-            if (shouldExecute(sourceId, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
+            if (
+              source.isConfigAndContextValid(getConfig(sourceId)) &&
+              shouldExecute(sourceId, test) &&
+              (!checkSupport || checkSupport(source.getMetadata().supports))
+            ) {
               const quotePromise = buildQuote(sourceId, source, request, test);
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
@@ -330,10 +334,7 @@ describe('Quote Sources', () => {
               tokenData: new TriggerablePromise(() => Promise.resolve({ sellToken, buyToken })),
             },
           },
-          config: {
-            ...CONFIG.global,
-            ...CONFIG.custom?.[sourceId as SourceWithConfigId],
-          },
+          config: getConfig(sourceId),
         });
       }
 
@@ -353,6 +354,13 @@ describe('Quote Sources', () => {
         return !EXCEPTIONS[sourceId]?.includes(test);
       }
     });
+
+    function getConfig(sourceId: SourceId) {
+      return {
+        ...CONFIG.global,
+        ...CONFIG.custom?.[sourceId as SourceWithConfigId],
+      };
+    }
   }
 });
 
