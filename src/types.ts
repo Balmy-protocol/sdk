@@ -23,7 +23,7 @@ export type SupportInChain<Values extends object> = {
 };
 export type FieldRequirementOptions = 'required' | 'best effort' | 'can ignore';
 export type FieldsRequirements<Values extends object> = {
-  requirements: Partial<Record<keyof Values, FieldRequirementOptions>>;
+  requirements?: Partial<Record<keyof Values, FieldRequirementOptions>>;
   default?: FieldRequirementOptions;
 };
 export type DefaultRequirements<Values extends object> = {
@@ -40,14 +40,14 @@ type PresentKeys<Values extends object, Requirements extends FieldsRequirements<
   keyof Values;
 type UnspecifiedKeys<Values extends object, Requirements extends FieldsRequirements<Values>> = Exclude<
   keyof Values,
-  keyof Requirements['requirements']
+  undefined extends Requirements['requirements'] ? never : keyof NonNullable<Requirements['requirements']>
 >;
 type RequiredKeys<Values extends object, Requirements extends FieldsRequirements<Values>> =
-  | KeysWithValue<Requirements['requirements'], 'required'>
+  | (undefined extends Requirements['requirements'] ? never : KeysWithValue<NonNullable<Requirements['requirements']>, 'required'>)
   | If<IsDefault<Requirements, 'required'>, UnspecifiedKeys<Values, Requirements>>;
 
 type CanIgnoreKeys<Values extends object, Requirements extends FieldsRequirements<Values>> =
-  | KeysWithValue<Requirements['requirements'], 'can ignore'>
+  | (undefined extends Requirements['requirements'] ? never : KeysWithValue<NonNullable<Requirements['requirements']>, 'can ignore'>)
   | If<IsDefault<Requirements, 'can ignore'>, UnspecifiedKeys<Values, Requirements>>;
 type IsDefault<Requirements extends FieldsRequirements<object>, Check extends FieldRequirementOptions> = Requirements['default'] extends Check
   ? true

@@ -21,7 +21,12 @@ if (process.env.CHANGELLY_API_KEY) {
 
 export function supportedChains() {
   const sources = QUOTE_SOURCES;
-  return chainsUnion(Object.values(sources).map((source) => source.getMetadata().supports.chains));
+  return chainsUnion(
+    Object.entries(sources)
+      .filter(([sourceId, source]) => source.isConfigAndContextValid((CONFIG as any)[sourceId]))
+      .map(([, source]) => source)
+      .map((source) => source.getMetadata().supports.chains)
+  );
 }
 
 export enum Test {
