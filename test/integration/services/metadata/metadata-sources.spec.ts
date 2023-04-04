@@ -96,7 +96,7 @@ describe('Metadata Sources', () => {
 
       describe('getMetadata', () => {
         let input: Record<ChainId, TokenAddress[]>;
-        let result: Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, { default: 'required' }>>>;
+        let result: Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata>>>;
         beforeAll(async () => {
           const chains = Object.keys(source.supportedProperties()).map(Number);
           const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
@@ -105,7 +105,7 @@ describe('Metadata Sources', () => {
             return [chainId, addresses];
           });
           input = Object.fromEntries(entries);
-          result = await source.getMetadata({ addresses: input, config: { timeout: '30s', fields: { default: 'required' } } });
+          result = await source.getMetadata({ addresses: input, config: { timeout: '30s' } });
         });
 
         test(`Returned amount of chains is as expected`, () => {

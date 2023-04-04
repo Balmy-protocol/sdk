@@ -105,8 +105,8 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
     };
   }
 
-  isConfigAndContextValid(config: Partial<RangoConfig>): config is RangoConfig {
-    return !!config.apiKey;
+  isConfigAndContextValid(config: Partial<RangoConfig> | undefined): config is RangoConfig {
+    return !!config?.apiKey;
   }
 }
 

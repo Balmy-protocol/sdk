@@ -19,7 +19,7 @@ export type QuoteParams<Support extends QuoteSourceSupport, CustomQuoteSourceCon
   request: SourceQuoteRequest<Support>;
 };
 export type IQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}> = {
-  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig>): config is CustomQuoteSourceConfig;
+  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
   quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse>;
 };

@@ -95,7 +95,7 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
     return addQuoteSlippage(quote, 'sell', slippagePercentage);
   }
 
-  isConfigAndContextValid(config: Partial<FirebirdConfig>): config is FirebirdConfig {
-    return !!config.apiKey;
+  isConfigAndContextValid(config: Partial<FirebirdConfig> | undefined): config is FirebirdConfig {
+    return !!config?.apiKey;
   }
 }
