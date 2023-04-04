@@ -36,21 +36,21 @@ jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Metadata Sources', () => {
-  // metadataSourceTest({
-  //   title: 'RPC Source',
-  //   source: RPC_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
-  // });
-  // metadataSourceTest({
-  //   title: 'Portals Fi Source',
-  //   source: PORTALS_FI_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
-  // });
-  // metadataSourceTest({
-  //   title: 'Defi Llama Source',
-  //   source: DEFI_LLAMA_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
-  // });
+  metadataSourceTest({
+    title: 'RPC Source',
+    source: RPC_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
+  });
+  metadataSourceTest({
+    title: 'Portals Fi Source',
+    source: PORTALS_FI_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
+  });
+  metadataSourceTest({
+    title: 'Defi Llama Source',
+    source: DEFI_LLAMA_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+  });
   metadataSourceTest({
     title: 'Fallback Source',
     source: FALLBACK_METADATA_SOURCE,
@@ -59,11 +59,11 @@ describe('Metadata Sources', () => {
       { fields: ['name'], on: chainsForSource(RPC_METADATA_SOURCE) },
     ],
   });
-  // metadataSourceTest({
-  //   title: 'Cached Source',
-  //   source: CACHED_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
-  // });
+  metadataSourceTest({
+    title: 'Cached Source',
+    source: CACHED_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+  });
 
   function metadataSourceTest<TokenMetadata extends object>({
     title,
