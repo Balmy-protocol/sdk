@@ -62,7 +62,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
     return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 
-  isConfigAndContextValid(config: Partial<ChangellyConfig>): config is ChangellyConfig {
-    return !!config.apiKey;
+  isConfigAndContextValid(config: Partial<ChangellyConfig> | undefined): config is ChangellyConfig {
+    return !!config?.apiKey;
   }
 }

@@ -1,5 +1,5 @@
 import { chainsUnion } from '@chains';
-import { QUOTE_SOURCES, SourceConfig } from '@services/quotes/source-registry';
+import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '@services/quotes/source-registry';
 
 export const CONFIG: SourceConfig = {
   global: {
@@ -23,7 +23,7 @@ export function supportedChains() {
   const sources = QUOTE_SOURCES;
   return chainsUnion(
     Object.entries(sources)
-      .filter(([sourceId, source]) => source.isConfigAndContextValid((CONFIG as any)[sourceId]))
+      .filter(([sourceId, source]) => source.isConfigAndContextValid({ ...CONFIG.global, ...CONFIG.custom?.[sourceId as SourceWithConfigId] }))
       .map(([, source]) => source)
       .map((source) => source.getMetadata().supports.chains)
   );

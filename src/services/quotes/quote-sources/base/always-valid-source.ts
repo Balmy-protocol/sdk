@@ -6,7 +6,7 @@ export abstract class AlwaysValidConfigAndContexSource<Support extends QuoteSour
   abstract getMetadata(): QuoteSourceMetadata<Support>;
   abstract quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse>;
 
-  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig>): config is CustomQuoteSourceConfig {
+  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig {
     return true;
   }
 }
