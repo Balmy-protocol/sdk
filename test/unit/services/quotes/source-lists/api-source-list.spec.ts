@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { APISourceList, APISourceListRequest } from '@services/quotes/source-lists/api-source-list';
 import { SourceId, SourceMetadata } from '@services/quotes/types';
-import { ZRX_METADATA } from '@services/quotes/quote-sources/0x';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
 import { given, then, when } from '@test-utils/bdd';
 import { IFetchService, RequestInit } from '@services/fetch';
 
-const SOURCES: Record<SourceId, SourceMetadata> = { sourceId: ZRX_METADATA };
+const SOURCES: Record<SourceId, SourceMetadata> = { sourceId: CHANGELLY_METADATA };
 const BASE_URI = 'http://baseUri';
 
 describe('API Source List', () => {
@@ -19,6 +19,7 @@ describe('API Source List', () => {
       slippagePercentage: 1,
       takerAddress: 'takerAddress',
       sourceId: 'source',
+      sourceConfig: {},
     },
     expected:
       BASE_URI +
@@ -43,6 +44,7 @@ describe('API Source List', () => {
       quoteTimeout: '5m',
       estimateBuyOrdersWithSellOnlySources: true,
       sourceId: 'source',
+      sourceConfig: {},
     },
     expected:
       BASE_URI +
