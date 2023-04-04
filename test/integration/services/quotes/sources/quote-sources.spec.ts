@@ -12,7 +12,7 @@ import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
 import { addSlippage, isSameAddress, substractSlippage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
-import { QuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/base';
+import { IQuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
@@ -27,15 +27,15 @@ import {
   mintMany,
   TestToken,
 } from '@test-utils/erc20';
-import { buildSources } from '@services/quotes/source-registry';
+import { QUOTE_SOURCES, SourceWithConfigId } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 
 // This is meant to be used for local testing. On the CI, we will do something different
-const RUN_FOR: { source: string; chains: Chain[] | 'all' } = {
-  source: '0x',
+const RUN_FOR: { source: SourceWithConfigId; chains: Chain[] | 'all' } = {
+  source: 'rango',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
@@ -191,8 +191,12 @@ describe('Quote Sources', () => {
       }) {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
-            if (shouldExecute(sourceId, test) && (!checkSupport || checkSupport(source.getMetadata().supports))) {
-              const quotePromise = buildQuote(source, request, test);
+            if (
+              source.isConfigAndContextValid(getConfig(sourceId)) &&
+              shouldExecute(sourceId, test) &&
+              (!checkSupport || checkSupport(source.getMetadata().supports))
+            ) {
+              const quotePromise = buildQuote(sourceId, source, request, test);
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
                 let sellToken: TestToken, buyToken: TestToken, recipient: SignerWithAddress | undefined, takeFrom: SignerWithAddress;
@@ -307,14 +311,14 @@ describe('Quote Sources', () => {
         sellToken: Promise<TestToken>;
         buyToken: Promise<TestToken>;
       };
-      async function buildQuote(source: QuoteSource<any>, quote: Quote, test: Test) {
+      async function buildQuote(sourceId: string, source: IQuoteSource<any>, quote: Quote, test: Test) {
         const [sellToken, buyToken, takeFrom, recipient] = await Promise.all([quote.sellToken, quote.buyToken, user, quote.recipient]);
         // If we execute all requests at the same time, then we'll probably get rate-limited. So the idea is to wait a little for each test so requests are not executed concurrently
         const millisToWait = ms('0.5s') * test;
         await wait(millisToWait);
-        return source.quote(
-          { providerSource: PROVIDER_SOURCE, fetchService: FETCH_SERVICE },
-          {
+        return source.quote({
+          components: { providerSource: PROVIDER_SOURCE, fetchService: FETCH_SERVICE },
+          request: {
             ...quote,
             sellToken: sellToken.address,
             buyToken: buyToken.address,
@@ -329,8 +333,9 @@ describe('Quote Sources', () => {
               gasPrice: new TriggerablePromise(() => gasPrice),
               tokenData: new TriggerablePromise(() => Promise.resolve({ sellToken, buyToken })),
             },
-          }
-        );
+          },
+          config: getConfig(sourceId),
+        });
       }
 
       function execute({
@@ -349,12 +354,19 @@ describe('Quote Sources', () => {
         return !EXCEPTIONS[sourceId]?.includes(test);
       }
     });
+
+    function getConfig(sourceId: SourceId) {
+      return {
+        ...CONFIG.global,
+        ...CONFIG.custom?.[sourceId as SourceWithConfigId],
+      };
+    }
   }
 });
 
 function getSources() {
-  const sources = buildSources(CONFIG);
-  const result: Record<ChainId, Record<string, QuoteSource<QuoteSourceSupport>>> = {};
+  const sources = QUOTE_SOURCES;
+  const result: Record<ChainId, Record<string, IQuoteSource<QuoteSourceSupport>>> = {};
 
   if (process.env.CI_CONTEXT) {
     // Will choose test on Ethereum or, if not supported, choose random chain

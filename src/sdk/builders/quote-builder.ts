@@ -4,7 +4,7 @@ import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from '@services/quo
 import { BaseTokenMetadata, IMetadataService } from '@services/metadata/types';
 import { LocalSourceList } from '@services/quotes/source-lists/local-source-list';
 import { QuoteService } from '@services/quotes/quote-service';
-import { LocalSourcesConfig } from '@services/quotes/source-registry';
+import { SourceConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
 import { ArrayOneOrMore } from '@utility-types';
@@ -12,17 +12,16 @@ import { APISourceList, URIGenerator } from '@services/quotes/source-lists/api-s
 import { IProviderSource } from '@services/providers';
 import { IPriceService } from '@services/prices';
 
-export type LocalSourcesConfigInput = GlobalQuoteSourceConfig & Partial<LocalSourcesConfig>;
 export type QuoteSourceListInput =
   | { type: 'custom'; instance: IQuoteSourceList }
-  | { type: 'local'; withConfig?: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig> }
+  | { type: 'local' }
   | { type: 'api'; baseUri: URIGenerator; sources: Record<SourceId, SourceMetadata> }
   | {
       type: 'overridable-source-list';
       lists: { default: QuoteSourceListInput; overrides: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }> };
     };
 
-export type BuildQuoteParams = { sourceList?: QuoteSourceListInput };
+export type BuildQuoteParams = { sourceList: QuoteSourceListInput; defaultConfig?: SourceConfig };
 
 export function buildQuoteService(
   params: BuildQuoteParams | undefined,
@@ -33,7 +32,16 @@ export function buildQuoteService(
   priceService: IPriceService
 ) {
   const sourceList = buildList(params?.sourceList, { providerSource, fetchService });
-  return new QuoteService({ priceService, gasService, metadataService, sourceList });
+  return new QuoteService({
+    priceService,
+    gasService,
+    metadataService,
+    sourceList,
+    defaultConfig: {
+      global: addReferrerIfNotSet(params?.defaultConfig?.global),
+      custom: params?.defaultConfig?.custom,
+    },
+  });
 }
 
 function buildList(
@@ -54,7 +62,6 @@ function buildList(
       return new LocalSourceList({
         providerSource,
         fetchService,
-        config: addReferrerIfNotSet(list?.withConfig),
       });
     case 'api':
       return new APISourceList({ fetchService, ...list });
@@ -69,6 +76,6 @@ function buildList(
 }
 
 // If no referrer address was set, then we will use Mean's address
-function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig>) {
+function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig) {
   return { referrer: { address: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', name: 'MeanFinance' }, ...config };
 }

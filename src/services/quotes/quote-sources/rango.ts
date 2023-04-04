@@ -4,7 +4,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { ChainId, TokenAddress } from '@types';
 import { BigNumber, constants } from 'ethers';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
@@ -29,7 +29,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.EVMOS.chainId]: 'EVMOS',
 };
 
-export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
+const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
   name: 'Rango',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
@@ -40,14 +40,14 @@ export const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
 };
 type RangoConfig = { apiKey: string };
 type RangoSupport = { buyOrders: false; swapAndTransfer: true };
-export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig> {
+export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig> {
   getMetadata() {
     return RANGO_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
@@ -55,13 +55,14 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
       external: { tokenData },
-    }: SourceQuoteRequest<RangoSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<RangoSupport, RangoConfig>): Promise<SourceQuoteResponse> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     let url =
       `https://api.rango.exchange/basic/swap` +
-      `?apiKey=${this.customConfig.apiKey}` +
+      `?apiKey=${config.apiKey}` +
       `&from=${mapToChainId(chainKey, sellToken, sellTokenDataResult)}` +
       `&to=${mapToChainId(chainKey, buyToken, buyTokenDataResult)}` +
       `&amount=${order.sellAmount.toString()}` +
@@ -70,8 +71,8 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       `&disableEstimate=true` +
       `&slippage=${slippagePercentage}`;
 
-    if (this.globalConfig.referrer?.address) {
-      url += `&referrerAddress=${this.globalConfig.referrer?.address}`;
+    if (config.referrer?.address) {
+      url += `&referrerAddress=${config.referrer?.address}`;
     }
 
     const response = await fetchService.fetch(url, { timeout });
@@ -102,6 +103,10 @@ export class RangoQuoteSource extends BaseQuoteSource<RangoSupport, RangoConfig>
       allowanceTarget: txTo ?? constants.AddressZero,
       tx,
     };
+  }
+
+  isConfigAndContextValid(config: Partial<RangoConfig>): config is RangoConfig {
+    return !!config.apiKey;
   }
 }
 

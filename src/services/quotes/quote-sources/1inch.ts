@@ -1,11 +1,13 @@
 import { BigNumber, constants } from 'ethers';
 import { Chains } from '@chains';
 import { Chain } from '@types';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { addQuoteSlippage, failed } from './utils';
+import { GlobalQuoteSourceConfig } from '../types';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
-export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
+const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
   supports: {
     chains: [
@@ -26,15 +28,15 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
 };
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
-export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport> {
+export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInchSupport> {
   getMetadata() {
     return ONE_INCH_METADATA;
   }
 
-  async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<OneInchSupport>): Promise<SourceQuoteResponse> {
+  async quote({ components: { fetchService }, request, config }: QuoteParams<OneInchSupport>): Promise<SourceQuoteResponse> {
     const [estimatedGas, { toTokenAmount, to, data, value, protocols }] = await Promise.all([
       this.getGasEstimate(fetchService, request),
-      this.getQuote(fetchService, request),
+      this.getQuote(fetchService, request, config),
     ]);
 
     const quote = {
@@ -62,7 +64,8 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       order,
       config: { slippagePercentage, timeout },
       accounts: { takeFrom, recipient },
-    }: SourceQuoteRequest<OneInchSupport>
+    }: SourceQuoteRequest<OneInchSupport>,
+    config: GlobalQuoteSourceConfig
   ) {
     let url =
       `https://api.1inch.io/v5.0/${chain.chainId}/swap` +
@@ -77,8 +80,8 @@ export class OneInchQuoteSource extends NoCustomConfigQuoteSource<OneInchSupport
       url += `&destReceiver=${recipient}`;
     }
 
-    if (this.globalConfig.referrer?.address) {
-      url += `&referrerAddress=${this.globalConfig.referrer.address}`;
+    if (config.referrer?.address) {
+      url += `&referrerAddress=${config.referrer.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

@@ -1,8 +1,8 @@
-import { GlobalQuoteSourceConfig, QuoteTx, SourceId } from '../types';
+import { QuoteTx, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
-import { BuyOrder, QuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/base';
+import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
-import { LocalSourcesConfig, buildSources } from '../source-registry';
+import { QUOTE_SOURCES } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { BigNumber } from 'ethers';
@@ -12,18 +12,16 @@ import { IProviderSource } from '@services/providers';
 type ConstructorParameters = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
-  config?: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig>;
 };
 
 export class LocalSourceList implements IQuoteSourceList {
   private readonly providerSource: IProviderSource;
   private readonly fetchService: IFetchService;
-  private readonly sources: Record<SourceId, QuoteSource<QuoteSourceSupport, any>>;
+  private readonly sources: Record<SourceId, IQuoteSource<QuoteSourceSupport, any>> = QUOTE_SOURCES;
 
-  constructor({ providerSource, fetchService, config }: ConstructorParameters) {
+  constructor({ providerSource, fetchService }: ConstructorParameters) {
     this.providerSource = providerSource;
     this.fetchService = fetchService;
-    this.sources = buildSources(config);
   }
 
   supportedSources() {
@@ -42,8 +40,18 @@ export class LocalSourceList implements IQuoteSourceList {
     // Find and wrap source
     const source = this.getSourceForRequest(request);
 
+    // Check config is valid
+    const config = request.sourceConfig;
+    if (!source.isConfigAndContextValid(config)) {
+      throw new Error(`The current context or config is not valid for source with id '${request.sourceId}'`);
+    }
+
     // Ask for quote
-    const response = await source.quote({ providerSource: this.providerSource, fetchService: this.fetchService }, sourceRequest);
+    const response = await source.quote({
+      components: { providerSource: this.providerSource, fetchService: this.fetchService },
+      config,
+      request: sourceRequest,
+    });
 
     // Map to response
     return mapSourceResponseToResponse({ request, source, response });
@@ -60,7 +68,7 @@ export class LocalSourceList implements IQuoteSourceList {
       }
     }
     // Cast so that even if the source doesn't support it, everything else types ok
-    return forcedTimeoutWrapper(source as QuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>);
+    return forcedTimeoutWrapper(source as IQuoteSource<{ buyOrders: true; swapAndTransfer: boolean }>);
   }
 }
 
@@ -69,7 +77,7 @@ async function mapSourceResponseToResponse({
   request,
   response,
 }: {
-  source: QuoteSource<QuoteSourceSupport>;
+  source: IQuoteSource<QuoteSourceSupport>;
   request: SourceListRequest;
   response: SourceQuoteResponse;
 }): Promise<SourceListResponse> {

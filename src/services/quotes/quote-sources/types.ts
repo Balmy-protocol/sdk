@@ -13,13 +13,18 @@ export type QuoteSourceMetadata<Support extends QuoteSourceSupport> = {
   supports: { chains: ChainId[] } & Support;
   logoURI: string;
 };
-export type QuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig = undefined> = {
-  getCustomConfig(): CustomQuoteSourceConfig;
+export type QuoteParams<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}> = {
+  components: QuoteComponents;
+  config: CustomQuoteSourceConfig & GlobalQuoteSourceConfig;
+  request: SourceQuoteRequest<Support>;
+};
+export type IQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}> = {
+  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig>): config is CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
-  quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
+  quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse>;
 };
 
-export type QuoteComponents = {
+type QuoteComponents = {
   providerSource: IProviderSource;
   fetchService: IFetchService;
 };
@@ -74,27 +79,3 @@ type ConfigurableAccounts<Support extends QuoteSourceSupport> = IsSwapAndTransfe
   : BaseSwapAccounts;
 type IsSwapAndTransfer<Support extends QuoteSourceSupport> = Support['swapAndTransfer'];
 type IsBuyOrder<Support extends QuoteSourceSupport> = Support['buyOrders'];
-export abstract class BaseQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig>
-  implements QuoteSource<Support, CustomQuoteSourceConfig>
-{
-  protected readonly globalConfig: GlobalQuoteSourceConfig;
-  protected readonly customConfig: CustomQuoteSourceConfig;
-
-  constructor({ global, custom }: { global: GlobalQuoteSourceConfig; custom: CustomQuoteSourceConfig }) {
-    this.globalConfig = global;
-    this.customConfig = custom;
-  }
-
-  getCustomConfig() {
-    return this.customConfig;
-  }
-
-  abstract getMetadata(): QuoteSourceMetadata<Support>;
-  abstract quote(components: QuoteComponents, request: SourceQuoteRequest<Support>): Promise<SourceQuoteResponse>;
-}
-
-export abstract class NoCustomConfigQuoteSource<Support extends QuoteSourceSupport> extends BaseQuoteSource<Support, undefined> {
-  constructor(config: { global: GlobalQuoteSourceConfig; custom: undefined }) {
-    super(config);
-  }
-}

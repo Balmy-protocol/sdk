@@ -74,7 +74,7 @@ function compareMostProfit(quote1: QuoteResponse, quote2: QuoteResponse, using: 
   return 1;
 }
 
-export function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
+function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
   const areQuotesForTheSameTokens =
     quote1.sellToken.symbol === quote2.sellToken.symbol &&
     quote1.sellToken.decimals === quote2.sellToken.decimals &&

@@ -9,7 +9,7 @@ import { IQuoteSourceList, QuoteRequest } from '@services/quotes';
 import { IPriceService } from '@services/prices';
 import { IMetadataService } from '@services/metadata';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { OPEN_OCEAN_METADATA } from '@services/quotes/quote-sources/open-ocean';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
 import { SourceListResponse } from '@services/quotes/source-lists/types';
 
 describe('Quote Service', () => {
@@ -20,10 +20,11 @@ describe('Quote Service', () => {
         metadataService: METADATA_SERVICE,
         priceService: PRICE_SERVICE,
         gasService: GAS_SERVICE,
+        defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Something failed at list level', failed: true, name: 'Open Ocean' });
+      expect(await quotes[0]).to.contain({ error: 'Something failed at list level', failed: true, name: CHANGELLY_METADATA.name });
     });
   });
   when('request works but gas request fails', () => {
@@ -33,10 +34,11 @@ describe('Quote Service', () => {
         gasService: FAILING_GAS_SERVICE,
         metadataService: METADATA_SERVICE,
         priceService: PRICE_SERVICE,
+        defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Failed to fetch gas data', failed: true, name: 'Open Ocean' });
+      expect(await quotes[0]).to.contain({ error: 'Failed to fetch gas data', failed: true, name: CHANGELLY_METADATA.name });
     });
   });
   when('request works but metadata request fails', () => {
@@ -46,10 +48,11 @@ describe('Quote Service', () => {
         gasService: GAS_SERVICE,
         metadataService: FAILING_METADATA_SERVICE,
         priceService: PRICE_SERVICE,
+        defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: `Failed to fetch the quote's tokens`, failed: true, name: 'Open Ocean' });
+      expect(await quotes[0]).to.contain({ error: `Failed to fetch the quote's tokens`, failed: true, name: CHANGELLY_METADATA.name });
     });
   });
   when('request works but price request fails', () => {
@@ -59,6 +62,7 @@ describe('Quote Service', () => {
         gasService: GAS_SERVICE,
         metadataService: METADATA_SERVICE,
         priceService: FAILING_PRICE_SERVICE,
+        defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
@@ -97,7 +101,7 @@ const REQUEST: { request: QuoteRequest } = {
 };
 
 const SOURCE_LIST: IQuoteSourceList = {
-  supportedSources: () => ({ [SOURCE]: OPEN_OCEAN_METADATA }),
+  supportedSources: () => ({ [SOURCE]: CHANGELLY_METADATA }),
   getQuote: () => Promise.resolve(RESPONSE),
 };
 const FAILING_SOURCE_LIST: IQuoteSourceList = {

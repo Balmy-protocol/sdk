@@ -2,8 +2,9 @@ import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const ZRX_API: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'https://api.0x.org',
@@ -18,7 +19,7 @@ const ZRX_API: Record<ChainId, string> = {
   [Chains.POLYGON_MUMBAI.chainId]: 'https://mumbai.api.0x.org',
 };
 
-export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
+const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   name: '0x/Matcha',
   supports: {
     chains: Object.keys(ZRX_API).map(Number),
@@ -29,15 +30,23 @@ export const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
 };
 type ZRXConfig = { apiKey?: string };
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
-export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig | undefined> {
+export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport, ZRXConfig> {
   getMetadata() {
     return ZRX_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    { chain, sellToken, buyToken, order, config: { slippagePercentage, timeout }, accounts: { takeFrom } }: SourceQuoteRequest<ZRXSupport>
-  ): Promise<SourceQuoteResponse> {
+  async quote({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      order,
+      config: { slippagePercentage, timeout },
+      accounts: { takeFrom },
+    },
+    config,
+  }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse> {
     const api = ZRX_API[chain.chainId];
     let url =
       `${api}/swap/v1/quote` +
@@ -48,8 +57,8 @@ export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig | unde
       `&slippagePercentage=${slippagePercentage / 100}` +
       `&enableSlippageProtection=false`;
 
-    if (this.globalConfig.referrer?.address) {
-      url += `&affiliateAddress=${this.globalConfig.referrer?.address}`;
+    if (config.referrer?.address) {
+      url += `&affiliateAddress=${config.referrer?.address}`;
     }
 
     if (order.type === 'sell') {
@@ -59,8 +68,8 @@ export class ZRXQuoteSource extends BaseQuoteSource<ZRXSupport, ZRXConfig | unde
     }
 
     const headers: HeadersInit = {};
-    if (this.customConfig?.apiKey) {
-      headers['0x-api-key'] = this.customConfig.apiKey;
+    if (config?.apiKey) {
+      headers['0x-api-key'] = config.apiKey;
     }
 
     const response = await fetchService.fetch(url, { timeout, headers });

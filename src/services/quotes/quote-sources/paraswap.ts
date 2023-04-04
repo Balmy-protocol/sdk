@@ -3,16 +3,12 @@ import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { Chain } from '@types';
 import { BigNumber } from 'ethers';
-import {
-  NoCustomConfigQuoteSource as NoCustomConfigQuoteSource,
-  QuoteComponents,
-  QuoteSourceMetadata,
-  SourceQuoteRequest,
-  SourceQuoteResponse,
-} from './base';
+import { GlobalQuoteSourceConfig } from '../types';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 
-export const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
+const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   name: 'Paraswap',
   supports: {
     chains: [
@@ -30,15 +26,15 @@ export const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
 };
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSupport> {
+export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<ParaswapSupport> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
     return PARASWAP_METADATA;
   }
 
-  async quote({ fetchService }: QuoteComponents, request: SourceQuoteRequest<ParaswapSupport>): Promise<SourceQuoteResponse> {
+  async quote({ components: { fetchService }, request, config }: QuoteParams<ParaswapSupport>): Promise<SourceQuoteResponse> {
     const route = await this.getPrice(fetchService, request);
     const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
-    const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap });
+    const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap }, config);
     const quote = {
       sellAmount: BigNumber.from(route.srcAmount),
       buyAmount: BigNumber.from(route.destAmount),
@@ -103,7 +99,8 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       config: { slippagePercentage, txValidFor, timeout },
       isWrapOrUnwrap,
       external: { tokenData },
-    }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean }
+    }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean },
+    config: GlobalQuoteSourceConfig
   ) {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
@@ -116,8 +113,8 @@ export class ParaswapQuoteSource extends NoCustomConfigQuoteSource<ParaswapSuppo
       priceRoute: route,
       userAddress: takeFrom,
       receiver,
-      partner: this.globalConfig.referrer?.name,
-      partnerAddress: this.globalConfig.referrer?.address,
+      partner: config.referrer?.name,
+      partnerAddress: config.referrer?.address,
       partnerFeeBps: 0,
       deadline: calculateDeadline(txValidFor),
     };

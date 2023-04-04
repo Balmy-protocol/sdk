@@ -23,6 +23,7 @@ import { reduceTimeout } from '@shared/timeouts';
 import { utils } from 'ethers';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
+import { SourceConfig, SourceWithConfigId } from './source-registry';
 
 const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
   requirements: { symbol: 'required', decimals: 'required' },
@@ -34,17 +35,21 @@ type ConstructorParameters = {
   gasService: IGasService<DefaultGasValues>;
   metadataService: IMetadataService<BaseTokenMetadata>;
   sourceList: IQuoteSourceList;
+  defaultConfig: SourceConfig | undefined;
 };
 export class QuoteService implements IQuoteService {
   private readonly priceService: IPriceService;
   private readonly gasService: IGasService<DefaultGasValues>;
   private readonly metadataService: IMetadataService<BaseTokenMetadata>;
   private readonly sourceList: IQuoteSourceList;
-  constructor({ priceService, gasService, metadataService, sourceList }: ConstructorParameters) {
+  private readonly defaultConfig: SourceConfig | undefined;
+
+  constructor({ priceService, gasService, metadataService, sourceList, defaultConfig }: ConstructorParameters) {
     this.priceService = priceService;
     this.gasService = gasService;
     this.metadataService = metadataService;
     this.sourceList = sourceList;
+    this.defaultConfig = defaultConfig;
   }
 
   supportedSources() {
@@ -155,7 +160,16 @@ export class QuoteService implements IQuoteService {
     const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
     return sources
-      .map((sourceId) => ({ sourceId, response: this.sourceList.getQuote({ ...request, sourceId, external, quoteTimeout: config?.timeout }) }))
+      .map((sourceId) => ({
+        sourceId,
+        response: this.sourceList.getQuote({
+          ...request,
+          sourceId,
+          sourceConfig: this.calculateConfig(sourceId, request.sourceConfig),
+          external,
+          quoteTimeout: config?.timeout,
+        }),
+      }))
       .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
   }
 
@@ -318,6 +332,16 @@ export class QuoteService implements IQuoteService {
         chains: metadata.supports.chains.filter((chainId) => couldSupportMeetRequirements(tokenProperties[chainId], REQUIREMENTS)),
       },
     });
+  }
+
+  private calculateConfig(sourceId: string, sourceConfigs: SourceConfig | undefined) {
+    const id = sourceId as SourceWithConfigId;
+    return {
+      ...this.defaultConfig?.global,
+      ...this.defaultConfig?.custom?.[id],
+      ...sourceConfigs?.global,
+      ...sourceConfigs?.custom?.[id],
+    };
   }
 }
 

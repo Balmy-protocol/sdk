@@ -1,13 +1,14 @@
 import { BigNumber, utils } from 'ethers';
 import { Address } from '@types';
 import { Chains } from '@chains';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { GasPrice } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { addQuoteSlippage, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
-export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
+const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   name: 'Odos',
   supports: {
     chains: [
@@ -25,14 +26,14 @@ export const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
 };
 type OdosConfig = { sourceBlacklist?: string[] };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
-export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig | undefined> {
+export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSupport, OdosConfig> {
   getMetadata() {
     return ODOS_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
@@ -40,8 +41,9 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig | u
       accounts: { takeFrom },
       config: { slippagePercentage, timeout },
       external,
-    }: SourceQuoteRequest<OdosSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
     const gasPrice = await external.gasPrice.request();
     const legacyGasPrice = eip1159ToLegacy(gasPrice);
     const parsedGasPrice = Number(utils.formatUnits(legacyGasPrice, 9));
@@ -54,7 +56,7 @@ export class OdosQuoteSource extends BaseQuoteSource<OdosSupport, OdosConfig | u
       gasPrice: parsedGasPrice,
       userAddr: takeFrom,
       slippageLimitPercent: slippagePercentage,
-      sourceBlacklist: this.customConfig?.sourceBlacklist,
+      sourceBlacklist: config?.sourceBlacklist,
       simulate: false,
       pathViz: false,
     };

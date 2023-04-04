@@ -3,8 +3,9 @@ import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, substractSlippage, timeToSeconds } from '@shared/utils';
-import { NoCustomConfigQuoteSource, QuoteSourceMetadata, QuoteComponents, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const ROUTER_ADDRESS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
@@ -16,7 +17,7 @@ const ROUTER_ADDRESS: Record<ChainId, string> = {
   [Chains.POLYGON_MUMBAI.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
 };
 
-export const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
+const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   name: 'Uniswap',
   supports: {
     chains: Object.keys(ROUTER_ADDRESS).map(Number),
@@ -26,22 +27,22 @@ export const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
 };
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class UniswapQuoteSource extends NoCustomConfigQuoteSource<UniswapSupport> {
+export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<UniswapSupport> {
   getMetadata() {
     return UNISWAP_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom, recipient },
-    }: SourceQuoteRequest<UniswapSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+  }: QuoteParams<UniswapSupport>): Promise<SourceQuoteResponse> {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
