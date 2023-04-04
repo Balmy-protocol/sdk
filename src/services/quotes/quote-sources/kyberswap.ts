@@ -3,7 +3,8 @@ import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { ChainId } from '@types';
 import { BigNumber, constants } from 'ethers';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
@@ -21,7 +22,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.OPTIMISM.chainId]: 'optimism',
 };
 
-export const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
+const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
   name: 'Kyberswap',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
@@ -31,22 +32,23 @@ export const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
   logoURI: 'ipfs://QmNcTVyqeVtNoyrT546VgJTD4vsZEkWp6zhDJ4qhgKkhbK',
 };
 type KyberswapSupport = { buyOrders: false; swapAndTransfer: true };
-export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSupport> {
+export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<KyberswapSupport> {
   getMetadata() {
     return KYBERSWAP_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
-    }: SourceQuoteRequest<KyberswapSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<KyberswapSupport>): Promise<SourceQuoteResponse> {
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     let url =
       `https://aggregator-api.kyberswap.com/${chainKey}/route/encode` +
@@ -61,8 +63,8 @@ export class KyberswapQuoteSource extends NoCustomConfigQuoteSource<KyberswapSup
       url += `&deadline=${calculateDeadline(txValidFor)}`;
     }
 
-    if (this.globalConfig.referrer?.name) {
-      url += `&clientData={"source": "${this.globalConfig.referrer.name}"}`;
+    if (config.referrer?.name) {
+      url += `&clientData={"source": "${config.referrer.name}"}`;
     }
 
     const response = await fetchService.fetch(url, { timeout, headers: { 'Accept-Version': 'Latest' } });

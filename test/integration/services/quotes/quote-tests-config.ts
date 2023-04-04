@@ -1,23 +1,26 @@
 import { chainsUnion } from '@chains';
-import { LocalSourcesConfig, buildSources } from '@services/quotes/source-registry';
-import { GlobalQuoteSourceConfig } from '@services/quotes/types';
+import { QUOTE_SOURCES, SourceConfig } from '@services/quotes/source-registry';
 
-export const CONFIG: GlobalQuoteSourceConfig & Partial<LocalSourcesConfig> = {
-  odos: { sourceBlacklist: ['Hashflow'] },
-  referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
+export const CONFIG: SourceConfig = {
+  global: {
+    referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
+  },
+  custom: {
+    odos: { sourceBlacklist: ['Hashflow'] },
+  },
 };
 if (process.env.RANGO_API_KEY) {
-  CONFIG.rango = { apiKey: process.env.RANGO_API_KEY };
+  CONFIG.custom!.rango = { apiKey: process.env.RANGO_API_KEY };
 }
 if (process.env.FIREBIRD_API_KEY) {
-  CONFIG.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
+  CONFIG.custom!.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
 }
 if (process.env.CHANGELLY_API_KEY) {
-  CONFIG.changelly = { apiKey: process.env.CHANGELLY_API_KEY };
+  CONFIG.custom!.changelly = { apiKey: process.env.CHANGELLY_API_KEY };
 }
 
 export function supportedChains() {
-  const sources = buildSources(CONFIG);
+  const sources = QUOTE_SOURCES;
   return chainsUnion(Object.values(sources).map((source) => source.getMetadata().supports.chains));
 }
 

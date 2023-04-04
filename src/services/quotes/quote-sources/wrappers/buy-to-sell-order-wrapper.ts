@@ -1,14 +1,13 @@
 import { TriggerablePromise } from '@shared/triggerable-promise';
-import { SourceQuoteRequest, QuoteSourceSupport, QuoteSource, SourceQuoteResponse } from '../base';
+import { SourceQuoteRequest, QuoteSourceSupport, IQuoteSource, SourceQuoteResponse } from '../types';
 
 type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
 export function buyToSellOrderWrapper<
   Support extends QuoteSourceSupport,
-  CustomQuoteSourceConfig,
-  Source extends QuoteSource<Support, CustomQuoteSourceConfig>
->(source: Source): QuoteSource<AddedBuyOrderSupport<Support>, CustomQuoteSourceConfig> {
+  CustomQuoteSourceConfig extends object,
+  Source extends IQuoteSource<Support, CustomQuoteSourceConfig>
+>(source: Source): IQuoteSource<AddedBuyOrderSupport<Support>, CustomQuoteSourceConfig> {
   return {
-    getCustomConfig: () => source.getCustomConfig(),
     getMetadata: () => {
       const { supports: originalSupport, ...originalMetadata } = source.getMetadata();
       return {
@@ -19,12 +18,15 @@ export function buyToSellOrderWrapper<
         },
       };
     },
-    quote: (components, request) => {
+    quote: ({ components, request, config }) => {
       if (request.order.type === 'sell') {
-        return source.quote(components, request as SourceQuoteRequest<Support>);
+        return source.quote({ components, request: request as SourceQuoteRequest<Support>, config });
       } else {
-        return executeBuyOrderAsSellOrder(request, (request) => source.quote(components, request));
+        return executeBuyOrderAsSellOrder(request, (request) => source.quote({ components, request, config }));
       }
+    },
+    isConfigAndContextValid: (config): config is CustomQuoteSourceConfig => {
+      return source.isConfigAndContextValid(config);
     },
   };
 }

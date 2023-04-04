@@ -1,6 +1,6 @@
 import { BigNumber, constants } from 'ethers';
 import { Chains } from '@chains';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
@@ -16,22 +16,23 @@ export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
 };
 type ChangellyConfig = { apiKey: string };
 type ChangellySupport = { buyOrders: false; swapAndTransfer: true };
-export class ChangellyQuoteSource extends BaseQuoteSource<ChangellySupport, ChangellyConfig> {
+export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, ChangellyConfig> {
   getMetadata() {
     return CHANGELLY_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
-    }: SourceQuoteRequest<ChangellySupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<ChangellySupport, ChangellyConfig>): Promise<SourceQuoteResponse> {
     let url =
       `https://dex-api.changelly.com/v1/${chain.chainId}/quote` +
       `?fromTokenAddress=${sellToken}` +
@@ -40,7 +41,7 @@ export class ChangellyQuoteSource extends BaseQuoteSource<ChangellySupport, Chan
       `&slippage=${slippagePercentage * 10}` +
       `&recipientAddress=${recipient ?? takeFrom}`;
 
-    const headers = { 'X-Api-Key': this.customConfig.apiKey };
+    const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(chain, sellToken, buyToken, await response.text());
@@ -59,5 +60,9 @@ export class ChangellyQuoteSource extends BaseQuoteSource<ChangellySupport, Chan
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  isConfigAndContextValid(config: Partial<ChangellyConfig>): config is ChangellyConfig {
+    return !!config.apiKey;
   }
 }

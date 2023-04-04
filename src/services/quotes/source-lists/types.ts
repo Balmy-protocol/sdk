@@ -2,7 +2,7 @@ import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
 import { Address, AmountOfToken, TimeString } from '@types';
-import { QuoteRequest, SourceMetadata, SourceId, QuoteTx } from '../types';
+import { QuoteRequest, SourceMetadata, SourceId, QuoteTx, GlobalQuoteSourceConfig } from '../types';
 
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
@@ -11,6 +11,7 @@ export type IQuoteSourceList = {
 
 export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   sourceId: SourceId;
+  sourceConfig: GlobalQuoteSourceConfig;
   external: {
     tokenData: ITriggerablePromise<{
       sellToken: BaseTokenMetadata;

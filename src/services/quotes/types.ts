@@ -5,7 +5,8 @@ import { Address, AmountOfToken, ChainId, SupportInChain, TimeString, TokenAddre
 import { Either } from '@utility-types';
 import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
-import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/base';
+import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
+import { SourceConfig } from './source-registry';
 
 export type GlobalQuoteSourceConfig = {
   referrer?: {
@@ -64,6 +65,7 @@ export type QuoteRequest = {
   filters?: Either<{ includeSources: SourceId[] }, { excludeSources: SourceId[] }>;
   includeNonTransferSourcesWhenRecipientIsSet?: boolean;
   estimateBuyOrdersWithSellOnlySources?: boolean;
+  sourceConfig?: SourceConfig;
 };
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };

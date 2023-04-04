@@ -2,10 +2,10 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { BigNumber, constants } from 'ethers';
-import { BaseQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 
-export const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
+const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
   name: 'Firebird',
   supports: {
     chains: [
@@ -26,23 +26,24 @@ export const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
 };
 type FirebirdConfig = { apiKey: string };
 type FirebirdSupport = { buyOrders: false; swapAndTransfer: true };
-export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, FirebirdConfig> {
+export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, FirebirdConfig> {
   getMetadata() {
     return FIREBIRD_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
-    }: SourceQuoteRequest<FirebirdSupport>
-  ): Promise<SourceQuoteResponse> {
-    const headers = { 'API-KEY': this.customConfig.apiKey };
+    },
+    config,
+  }: QuoteParams<FirebirdSupport, FirebirdConfig>): Promise<SourceQuoteResponse> {
+    const headers = { 'API-KEY': config.apiKey };
     let url =
       `https://router.firebird.finance/aggregator/v2/quote` +
       `?chainId=${chain.chainId}` +
@@ -54,9 +55,9 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
       `&saveGas=0` +
       `&gasInclude=1`;
 
-    if (this.globalConfig.referrer) {
-      url += `&source=${this.globalConfig.referrer.name}`;
-      url += `&ref=${this.globalConfig.referrer.address}`;
+    if (config.referrer) {
+      url += `&source=${config.referrer.name}`;
+      url += `&ref=${config.referrer.address}`;
     }
     if (txValidFor) {
       url += `&deadline=${calculateDeadline(txValidFor)}`;
@@ -92,5 +93,9 @@ export class FirebirdQuoteSource extends BaseQuoteSource<FirebirdSupport, Firebi
       },
     };
     return addQuoteSlippage(quote, 'sell', slippagePercentage);
+  }
+
+  isConfigAndContextValid(config: Partial<FirebirdConfig>): config is FirebirdConfig {
+    return !!config.apiKey;
   }
 }

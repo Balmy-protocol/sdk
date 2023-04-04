@@ -1,9 +1,10 @@
 import { BigNumber, utils } from 'ethers';
 import { Chains } from '@chains';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 import { GasPrice } from '@services/gas/types';
 import { ChainId } from '@types';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth',
@@ -24,7 +25,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
 };
 
-export const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
+const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   name: 'Open Ocean',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
@@ -34,14 +35,14 @@ export const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSupport> {
+export class OpenOceanQuoteSource extends AlwaysValidConfigAndContexSource<OpenOceanSupport> {
   getMetadata() {
     return OPEN_OCEAN_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
@@ -49,8 +50,9 @@ export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSup
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
       external,
-    }: SourceQuoteRequest<OpenOceanSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<OpenOceanSupport>): Promise<SourceQuoteResponse> {
     const [{ sellToken: sellTokenDataResult }, gasPriceResult] = await Promise.all([external.tokenData.request(), external.gasPrice.request()]);
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(utils.formatUnits(legacyGasPrice, 9));
@@ -65,8 +67,8 @@ export class OpenOceanQuoteSource extends NoCustomConfigQuoteSource<OpenOceanSup
       `&gasPrice=${gasPrice}` +
       `&account=${recipient ?? takeFrom}`;
 
-    if (this.globalConfig.referrer?.address) {
-      url += `&referrer=${this.globalConfig.referrer?.address}`;
+    if (config.referrer?.address) {
+      url += `&referrer=${config.referrer?.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

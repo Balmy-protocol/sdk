@@ -3,10 +3,11 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { TokenAddress } from '@types';
 import { BigNumber, BigNumberish, constants } from 'ethers';
-import { NoCustomConfigQuoteSource, QuoteComponents, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './base';
+import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 
-export const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
+const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   name: 'Li.Fi',
   supports: {
     chains: [
@@ -34,22 +35,23 @@ export const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   logoURI: 'ipfs://QmUgcnaNxsgQdjBjytxvXfeSfsDryh9bF4mNaz1Bp5QwJ4',
 };
 type LiFiSupport = { buyOrders: false; swapAndTransfer: true };
-export class LiFiQuoteSource extends NoCustomConfigQuoteSource<LiFiSupport> {
+export class LiFiQuoteSource extends AlwaysValidConfigAndContexSource<LiFiSupport> {
   getMetadata() {
     return LI_FI_METADATA;
   }
 
-  async quote(
-    { fetchService }: QuoteComponents,
-    {
+  async quote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
-    }: SourceQuoteRequest<LiFiSupport>
-  ): Promise<SourceQuoteResponse> {
+    },
+    config,
+  }: QuoteParams<LiFiSupport>): Promise<SourceQuoteResponse> {
     const mappedSellToken = mapNativeToken(sellToken);
     const mappedBuyToken = mapNativeToken(buyToken);
     let url =
@@ -63,9 +65,9 @@ export class LiFiQuoteSource extends NoCustomConfigQuoteSource<LiFiSupport> {
       `&fromAmount=${order.sellAmount.toString()}` +
       `&slippage=${slippagePercentage / 100}`;
 
-    if (this.globalConfig.referrer) {
-      url += `&integrator=${this.globalConfig.referrer.name}`;
-      url += `&referrer=${this.globalConfig.referrer.address}`;
+    if (config.referrer) {
+      url += `&integrator=${config.referrer.name}`;
+      url += `&referrer=${config.referrer.address}`;
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

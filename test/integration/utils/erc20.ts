@@ -9,7 +9,7 @@ import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import crossFetch from 'cross-fetch';
 import { TransactionResponse } from '@ethersproject/providers';
-import { SourceQuoteResponse } from '@services/quotes/quote-sources/base';
+import { SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
