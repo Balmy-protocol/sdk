@@ -11,7 +11,6 @@ export type IQuoteSourceList = {
 
 export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   sourceId: SourceId;
-  sourceConfig: GlobalQuoteSourceConfig;
   external: {
     tokenData: ITriggerablePromise<{
       sellToken: BaseTokenMetadata;
@@ -19,6 +18,7 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
     }>;
     gasPrice: ITriggerablePromise<GasPrice>;
   };
+  sourceConfig?: GlobalQuoteSourceConfig;
   quoteTimeout?: TimeString;
 };
 

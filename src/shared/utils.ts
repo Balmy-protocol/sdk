@@ -10,12 +10,12 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
-export function substractSlippage(amount: BigNumberish, slippagePercentage: number) {
+export function substractPercentage(amount: BigNumberish, slippagePercentage: number) {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100);
   return BigNumber.from(amount).sub(percentage);
 }
 
-export function addSlippage(amount: BigNumberish, slippagePercentage: number) {
+export function addPercentage(amount: BigNumberish, slippagePercentage: number) {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100);
   return BigNumber.from(amount).add(percentage);
 }

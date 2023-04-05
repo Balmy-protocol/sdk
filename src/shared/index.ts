@@ -3,8 +3,8 @@ export * from './triggerable-promise';
 export {
   wait,
   isSameAddress,
-  substractSlippage,
-  addSlippage,
+  substractPercentage,
+  addPercentage,
   mulDivByNumber,
   calculateDeadline,
   filterRejectedResults,

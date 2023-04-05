@@ -2,7 +2,7 @@ import { BigNumber, Contract } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
-import { isSameAddress, substractSlippage, timeToSeconds } from '@shared/utils';
+import { isSameAddress, substractPercentage, timeToSeconds } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
@@ -107,7 +107,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
 }
 
 function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: BigNumber, slippagePercentage: number) {
-  return type === 'sell' ? substractSlippage(buyAmount, slippagePercentage) : buyAmount;
+  return type === 'sell' ? substractPercentage(buyAmount, slippagePercentage) : buyAmount;
 }
 
 function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {

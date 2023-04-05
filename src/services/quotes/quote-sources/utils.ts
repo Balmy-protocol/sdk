@@ -1,4 +1,4 @@
-import { addSlippage, substractSlippage } from '@shared/utils';
+import { addPercentage, substractPercentage } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './types';
 
@@ -13,13 +13,13 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
     ? {
         ...quote,
         type,
-        minBuyAmount: substractSlippage(quote.buyAmount, slippagePercentage),
+        minBuyAmount: substractPercentage(quote.buyAmount, slippagePercentage),
         maxSellAmount: quote.sellAmount,
       }
     : {
         ...quote,
         type,
-        maxSellAmount: addSlippage(quote.sellAmount, slippagePercentage),
+        maxSellAmount: addPercentage(quote.sellAmount, slippagePercentage),
         minBuyAmount: quote.buyAmount,
       };
 }

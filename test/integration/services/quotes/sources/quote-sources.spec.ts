@@ -10,7 +10,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
-import { addSlippage, isSameAddress, substractSlippage, wait } from '@shared/utils';
+import { addPercentage, isSameAddress, substractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { IQuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
@@ -287,9 +287,9 @@ describe('Quote Sources', () => {
         let slippage = SLIPPAGE_PERCENTAGE;
         if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
         if (quote.type === 'sell') {
-          expect(quote.minBuyAmount).to.be.gte(substractSlippage(quote.buyAmount, slippage));
+          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount, slippage));
         } else {
-          expect(quote.maxSellAmount).to.be.lte(addSlippage(quote.sellAmount, slippage));
+          expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount, slippage));
         }
       }
 
