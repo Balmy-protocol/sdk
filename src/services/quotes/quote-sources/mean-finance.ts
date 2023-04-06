@@ -14,7 +14,7 @@ const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
     buyOrders: true,
     swapAndTransfer: true,
   },
-  logoURI: 'ipfs://QmUdg9cF4JxLf4zeJ92NvDh8EpcCPCzRqP9GMXGxPUPSHm',
+  logoURI: 'ipfs://QmUUbaZvrD8Ymr2nV6db4Cbtd1aMCiSP7MoyvBv9LTnrmP',
 };
 type MeanFinanceConfig = {
   alwaysUseTransformerRegistry: boolean;

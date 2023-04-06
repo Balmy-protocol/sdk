@@ -1,6 +1,7 @@
 import { isSameAddress, ruleOfThree } from '@shared/utils';
 import { BigNumber } from 'ethers';
 import { QuoteResponse } from './types';
+import { TokenAddress } from '@types';
 
 export const COMPARE_BY = [
   // Compare spent gas and prioritize the ones with the least spent gas
@@ -17,21 +18,28 @@ export const COMPARE_USING = ['sell/buy amounts', 'max sell/min buy amounts'] as
 
 export type CompareQuotesBy = (typeof COMPARE_BY)[number];
 export type CompareQuotesUsing = (typeof COMPARE_USING)[number];
+export type ComparableQuote = Pick<QuoteResponse, 'sellAmount' | 'maxSellAmount' | 'buyAmount' | 'minBuyAmount' | 'gas'> & {
+  sellToken?: TokenData;
+  buyToken?: TokenData;
+};
 
-export function sortQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): QuoteResponse[] {
+export function sortQuotesBy<T extends ComparableQuote>(quotes: T[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): T[] {
   const compareFtn = getCompareFtn(sortBy);
   return quotes.sort((q1, q2) => compareFtn(q1, q2, using));
 }
 
-export function chooseQuotesBy(quotes: QuoteResponse[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): QuoteResponse {
+export function chooseQuotesBy<T extends ComparableQuote>(quotes: T[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): T {
   if (quotes.length === 0) throw new Error(`There are no quotes to choose from`);
   const compareFtn = getCompareFtn(sortBy);
   return quotes.reduce((q1, q2) => (compareFtn(q1, q2, using) <= 0 ? q1 : q2));
 }
 
-export function compareQuotesBy(sortBy: CompareQuotesBy, using: CompareQuotesUsing): (quote1: QuoteResponse, quote2: QuoteResponse) => number {
+export function compareQuotesBy(
+  sortBy: CompareQuotesBy,
+  using: CompareQuotesUsing
+): (quote1: ComparableQuote, quote2: ComparableQuote) => number {
   const compareFtn = getCompareFtn(sortBy);
-  return (quote1: QuoteResponse, quote2: QuoteResponse) => compareFtn(quote1, quote2, using);
+  return (quote1: ComparableQuote, quote2: ComparableQuote) => compareFtn(quote1, quote2, using);
 }
 
 function getCompareFtn(compareBy: CompareQuotesBy) {
@@ -52,36 +60,35 @@ function getCompareFtn(compareBy: CompareQuotesBy) {
 
 function amountExtractor(using: CompareQuotesUsing) {
   return using === 'sell/buy amounts'
-    ? ({ sellAmount, buyAmount }: QuoteResponse) => ({ sellAmount, buyAmount })
-    : ({ maxSellAmount, minBuyAmount }: QuoteResponse) => ({ sellAmount: maxSellAmount, buyAmount: minBuyAmount });
+    ? ({ sellAmount, buyAmount }: ComparableQuote) => ({ sellAmount, buyAmount })
+    : ({ maxSellAmount, minBuyAmount }: ComparableQuote) => ({ sellAmount: maxSellAmount, buyAmount: minBuyAmount });
 }
 
-type Compare = (quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) => number;
+type Compare = (quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) => number;
 
 function mergeCompareFtns(prioritizedCompareFns: Compare[]): Compare {
-  return (quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) =>
+  return (quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) =>
     prioritizedCompareFns.reduce((accumCompareValue, compare) => accumCompareValue || compare(quote1, quote2, using), 0);
 }
 
-function compareMostProfit(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
+function compareMostProfit(quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) {
   const [profit1, profit2] = [calculateProfit(quote1, using), calculateProfit(quote2, using)];
   if (!profit1 || !profit2 || profit1 === profit2) {
     return 0;
   }
-  if (profit1 > profit2) {
-    return -1;
-  }
-  return 1;
+  return profit1 > profit2 ? -1 : 1;
 }
 
-function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, using: CompareQuotesUsing) {
-  const areQuotesForTheSameTokens =
-    quote1.sellToken.symbol === quote2.sellToken.symbol &&
-    quote1.sellToken.decimals === quote2.sellToken.decimals &&
-    quote1.buyToken.symbol === quote2.buyToken.symbol &&
-    quote1.buyToken.decimals === quote2.buyToken.decimals;
-  // If we are not comparing quotes for the same tokens, then we can't compare anything
-  if (!areQuotesForTheSameTokens) return 0;
+function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) {
+  if (areQuotesForTheDifferentPairs(quote1, quote2)) {
+    // If we are compating for different pairs, then we'll check profit without gas
+    const [profit1, profit2] = [calculateProfitWithoutGas(quote1, using), calculateProfitWithoutGas(quote2, using)];
+    if (!profit1 || !profit2 || profit1 === profit2) {
+      return 0;
+    }
+    return profit1 > profit2 ? -1 : 1;
+  }
+  // If we are comparing quotes for the same pair of tokens, then will simply compare swap ammounts
   const extract = amountExtractor(using);
   const { sellAmount: sellAmount1, buyAmount: buyAmount1 } = extract(quote1);
   const { sellAmount: sellAmount2, buyAmount: buyAmount2 } = extract(quote2);
@@ -94,7 +101,7 @@ function compareByMostSwapped(quote1: QuoteResponse, quote2: QuoteResponse, usin
   return 0;
 }
 
-function compareLeastGas(quote1: QuoteResponse, quote2: QuoteResponse) {
+function compareLeastGas(quote1: ComparableQuote, quote2: ComparableQuote) {
   if (BigNumber.from(quote1.gas.estimatedGas).lt(quote2.gas.estimatedGas)) {
     return -1;
   } else if (BigNumber.from(quote1.gas.estimatedGas).gt(quote2.gas.estimatedGas)) {
@@ -103,10 +110,31 @@ function compareLeastGas(quote1: QuoteResponse, quote2: QuoteResponse) {
   return 0;
 }
 
-function calculateProfit(quote: QuoteResponse, using: CompareQuotesUsing) {
+function calculateProfit(quote: ComparableQuote, using: CompareQuotesUsing) {
   const { sellAmount, buyAmount } = amountExtractor(using)(quote);
   const soldUSD = sellAmount.amountInUSD && Number(sellAmount.amountInUSD);
   const boughtUSD = buyAmount.amountInUSD && Number(buyAmount.amountInUSD);
   const gasCostUSD = quote.gas.estimatedCostInUSD && Number(quote.gas.estimatedCostInUSD);
   return !soldUSD || !boughtUSD || !gasCostUSD ? undefined : boughtUSD - soldUSD - gasCostUSD;
 }
+
+function calculateProfitWithoutGas(quote: ComparableQuote, using: CompareQuotesUsing) {
+  const { sellAmount, buyAmount } = amountExtractor(using)(quote);
+  const soldUSD = sellAmount.amountInUSD && Number(sellAmount.amountInUSD);
+  const boughtUSD = buyAmount.amountInUSD && Number(buyAmount.amountInUSD);
+  return !soldUSD || !boughtUSD ? undefined : boughtUSD - soldUSD;
+}
+
+function areQuotesForTheDifferentPairs(quote1: ComparableQuote, quote2: ComparableQuote) {
+  return areDifferentTokens(quote1.sellToken, quote2.sellToken) || areDifferentTokens(quote1.buyToken, quote2.buyToken);
+}
+
+function areDifferentTokens(token1: TokenData | undefined, token2: TokenData | undefined) {
+  return (
+    (!!token1?.address && !!token2?.address && !isSameAddress(token1.address, token2.address)) ||
+    (!!token1?.symbol && !!token2?.symbol && token1.symbol.toLowerCase() !== token2.symbol.toLowerCase()) ||
+    (!!token1?.decimals && !!token2?.decimals && token1.decimals !== token2.decimals)
+  );
+}
+
+type TokenData = { address?: TokenAddress; symbol?: string; decimals?: number };

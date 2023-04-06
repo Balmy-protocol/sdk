@@ -12,6 +12,15 @@ export {
   GlobalQuoteSourceConfig,
   AmountsOfToken,
 } from './types';
-export { COMPARE_BY, COMPARE_USING, CompareQuotesBy, CompareQuotesUsing, sortQuotesBy, chooseQuotesBy } from './quote-compare';
+export {
+  COMPARE_BY,
+  COMPARE_USING,
+  CompareQuotesBy,
+  CompareQuotesUsing,
+  ComparableQuote,
+  sortQuotesBy,
+  chooseQuotesBy,
+  compareQuotesBy,
+} from './quote-compare';
 export { SOURCES_METADATA, SourceConfig } from './source-registry';
 export * from './source-lists';
