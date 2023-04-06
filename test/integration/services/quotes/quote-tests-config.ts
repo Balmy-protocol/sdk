@@ -41,4 +41,10 @@ export enum Test {
 export const EXCEPTIONS: Partial<Record<string, Test[]>> = {
   uniswap: [Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN],
   kyberswap: [Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN],
+  'mean-finance': [
+    Test.SELL_STABLE_TO_NATIVE,
+    Test.SELL_NATIVE_TO_RANDOM_ERC20,
+    Test.SELL_NATIVE_TO_STABLE_AND_TRANSFER,
+    Test.BUY_NATIVE_WITH_STABLE,
+  ],
 };

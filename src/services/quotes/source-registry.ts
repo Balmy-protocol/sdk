@@ -12,6 +12,7 @@ import { KyberswapQuoteSource } from './quote-sources/kyberswap';
 import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird';
 import { RangoQuoteSource } from './quote-sources/rango';
 import { ChangellyQuoteSource } from './quote-sources/changelly';
+import { MeanFinanceQuoteSource } from './quote-sources/mean-finance';
 
 export const QUOTE_SOURCES = {
   paraswap: new ParaswapQuoteSource(),
@@ -25,6 +26,7 @@ export const QUOTE_SOURCES = {
   firebird: new FirebirdQuoteSource(),
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
+  'mean-finance': new MeanFinanceQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(
