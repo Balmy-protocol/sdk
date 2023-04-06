@@ -35,7 +35,7 @@ import { TriggerablePromise } from '@shared/triggerable-promise';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: SourceWithConfigId; chains: Chain[] | 'all' } = {
-  source: 'mean-finance',
+  source: 'rango',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
