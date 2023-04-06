@@ -197,7 +197,7 @@ export class Cache<Context, Key extends ValidKey, Value> {
     return Object.fromEntries(entries);
   }
 
-  populate(context: Context, values: Record<Key, Value>) {
+  populate(values: Record<Key, Value>) {
     const now = Date.now();
     for (const key in values) {
       const storableKey = this.storableKeyMapper(key);

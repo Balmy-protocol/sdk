@@ -1,9 +1,7 @@
-import queryString from 'query-string-esm';
 import { reduceTimeout } from '@shared/timeouts';
 import { SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
-import { BigNumber } from 'ethers';
 import { PartialOnly } from '@utility-types';
 
 export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
@@ -31,34 +29,15 @@ export class APISourceList implements IQuoteSourceList {
   async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
-    const url = this.getUrl({ ...request, quoteTimeout: reducedTimeout });
-    const response = await this.fetchService.fetch(url, { timeout: request.quoteTimeout });
+    const uri = this.baseUri(request);
+    const response = await this.fetchService.fetch(uri, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...request,
+        quoteTimeout: reducedTimeout,
+      }),
+      timeout: request.quoteTimeout,
+    });
     return response.json();
-  }
-
-  private getUrl({ order, ...request }: APISourceListRequest) {
-    // We are very explicit with the parameters so we don't send any extra data
-    const requestToParse: any = {
-      sourceId: request.sourceId,
-      chainId: request.chainId,
-      sellToken: request.sellToken,
-      buyToken: request.buyToken,
-      slippagePercentage: request.slippagePercentage,
-      takerAddress: request.takerAddress,
-      recipient: request.recipient,
-      quoteTimeout: request.quoteTimeout,
-      txValidFor: request.txValidFor,
-      estimateBuyOrdersWithSellOnlySources: request.estimateBuyOrdersWithSellOnlySources,
-      includeNonTransferSourcesWhenRecipientIsSet: request.includeNonTransferSourcesWhenRecipientIsSet,
-    };
-    if (order.type === 'sell') {
-      requestToParse.sellAmount = BigNumber.from(order.sellAmount).toString();
-    } else {
-      requestToParse.buyAmount = BigNumber.from(order.buyAmount).toString();
-    }
-
-    const params = queryString.stringify(requestToParse, { arrayFormat: 'comma', skipEmptyString: true, skipNull: true });
-    const uri = this.baseUri({ order, ...request });
-    return uri.includes('?') ? uri + '&' + params : uri + '?' + params;
   }
 }
