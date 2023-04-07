@@ -1,5 +1,6 @@
 import ms from 'ms';
 import { Fetch, IFetchService, RequestInit } from './types';
+import { TimeoutError } from '@shared/timeouts';
 
 export class FetchService implements IFetchService {
   constructor(private readonly realFetch: Fetch) {}
@@ -20,7 +21,7 @@ export class FetchService implements IFetchService {
     } catch (e: any) {
       if (e.message === 'The user aborted a request.') {
         // Trying to throw a better error
-        throw new Error(`Request to ${url} timeouted`);
+        throw new TimeoutError(`Request to ${url}`, timeoutText);
       }
       throw e;
     } finally {

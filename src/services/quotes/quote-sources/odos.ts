@@ -69,7 +69,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
     });
 
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(ODOS_METADATA, chain, sellToken, buyToken, await response.text());
     }
 
     const {

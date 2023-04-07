@@ -1,6 +1,12 @@
 import { TimeString } from '@types';
 import ms from 'ms';
 
+export class TimeoutError extends Error {
+  constructor(description: string, timeout: TimeString) {
+    super(`${description} timeouted at ${timeout}`);
+  }
+}
+
 export function timeoutPromise<T>(
   promise: Promise<T>,
   timeout: TimeString | undefined,
@@ -10,8 +16,7 @@ export function timeoutPromise<T>(
   const realTimeout = options?.reduceBy ? reduceTimeout(timeout, options.reduceBy) : timeout;
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      const text = `${options?.description ?? 'Promise'} timeouted at ${timeout}`;
-      reject(new Error(text));
+      reject(new TimeoutError(options?.description ?? 'Promise', timeout));
     }, ms(realTimeout));
     promise
       .then(resolve)

@@ -8,6 +8,7 @@ import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/fo
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderSource } from '@services/providers';
+import { SourceInvalidConfigOrContextError, SourceNoBuyOrdersError, SourceNotFoundError } from '../errors';
 
 type ConstructorParameters = {
   providerSource: IProviderSource;
@@ -31,7 +32,7 @@ export class LocalSourceList implements IQuoteSourceList {
 
   async getQuote(request: SourceListRequest): Promise<SourceListResponse> {
     if (!(request.sourceId in this.sources)) {
-      throw new Error(`Source with id '${request.sourceId} is not supported`);
+      throw new SourceNotFoundError(request.sourceId);
     }
 
     // Map request to source request
@@ -43,7 +44,7 @@ export class LocalSourceList implements IQuoteSourceList {
     // Check config is valid
     const config = request.sourceConfig;
     if (!source.isConfigAndContextValid(config)) {
-      throw new Error(`The current context or config is not valid for source with id '${request.sourceId}'`);
+      throw new SourceInvalidConfigOrContextError(request.sourceId);
     }
 
     // Ask for quote
@@ -64,7 +65,7 @@ export class LocalSourceList implements IQuoteSourceList {
       if (request.estimateBuyOrdersWithSellOnlySources) {
         source = buyToSellOrderWrapper(source);
       } else {
-        throw new Error(`Source with id '${request.sourceId}' does not support buy orders. Do you want to estimate buy orders?`);
+        throw new SourceNoBuyOrdersError(request.sourceId);
       }
     }
     // Cast so that even if the source doesn't support it, everything else types ok

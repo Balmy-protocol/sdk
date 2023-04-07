@@ -69,7 +69,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
     const response = await fetchService.fetch(url, { headers, timeout });
     const body = await response.json();
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, body);
+      failed(UNISWAP_METADATA, chain, sellToken, buyToken, body);
     }
     let {
       quote: quoteAmount,

@@ -58,7 +58,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<Mea
       timeout,
     });
     if (!response.ok) {
-      failed(chain, request.sellToken, request.buyToken, await response.text());
+      failed(MEAN_METADATA, chain, request.sellToken, request.buyToken, await response.text());
     }
     const {
       sellAmount,

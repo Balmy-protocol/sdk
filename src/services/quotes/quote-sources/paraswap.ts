@@ -81,7 +81,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken);
+      failed(PARASWAP_METADATA, chain, sellToken, buyToken);
     }
     const { priceRoute } = await response.json();
     return priceRoute;
@@ -134,7 +134,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
       timeout,
     });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { data, value } = await response.json();
     return { data, value: BigNumber.from(value ?? 0) };

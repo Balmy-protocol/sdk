@@ -1,7 +1,7 @@
 export * from './deferred';
 export * from './triggerable-promise';
 export { ExpirationConfigOptions, Cache, ContextlessCache } from './generic-cache';
-export { timeoutPromise, reduceTimeout } from './timeouts';
+export { timeoutPromise, reduceTimeout, TimeoutError } from './timeouts';
 export {
   wait,
   isSameAddress,

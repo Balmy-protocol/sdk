@@ -71,7 +71,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContexSource<LiFiSuppor
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(LI_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
       estimate: { approvalAddress, toAmountMin, toAmount, gasCosts },

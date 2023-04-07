@@ -77,7 +77,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(RANGO_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
       route: { outputAmount, outputAmountMin, fee },
