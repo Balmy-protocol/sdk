@@ -24,7 +24,7 @@ export type ProviderSourceInput =
   | { type: 'llama-nodes'; config: { key: string } }
   | { type: 'json-rpc'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
   | { type: 'web-socket'; config: { url: string; supportedChains: ArrayOneOrMore<ChainId> } }
-  | { type: 'fallback'; sources: ProviderSourceInput[] }
+  | { type: 'fallback'; sources: ProviderSourceInput[]; quorum?: number }
   | { type: 'prioritized'; sources: ProviderSourceInput[] };
 
 export function buildProviderSource(params?: BuildProviderParams) {
@@ -54,8 +54,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'web-socket':
       return new WebSocketProviderSource(source.config.url, source.config.supportedChains);
     case 'fallback':
-      return new FallbackSource(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
+      return new FallbackSource(source.sources.map(buildSource), source.quorum);
     case 'prioritized':
-      return new PrioritizedProviderSourceCombinator(source.sources.map(buildSource) as ArrayTwoOrMore<IProviderSource>);
+      return new PrioritizedProviderSourceCombinator(source.sources.map(buildSource));
   }
 }
