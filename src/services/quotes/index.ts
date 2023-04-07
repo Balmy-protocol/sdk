@@ -24,3 +24,4 @@ export {
 } from './quote-compare';
 export { SOURCES_METADATA, SourceConfig } from './source-registry';
 export * from './source-lists';
+export * from './errors';

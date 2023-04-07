@@ -65,7 +65,7 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
 
     const quoteResponse = await fetchService.fetch(url, { timeout, headers });
     if (!quoteResponse.ok) {
-      failed(chain, sellToken, buyToken, await quoteResponse.text());
+      failed(FIREBIRD_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     const encodeResponse = await fetchService.fetch(`https://router.firebird.finance/aggregator/v2/encode`, {
       method: 'POST',
@@ -73,7 +73,7 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
       body: JSON.stringify(await quoteResponse.json()),
     });
     if (!quoteResponse.ok) {
-      failed(chain, sellToken, buyToken, await encodeResponse.text());
+      failed(FIREBIRD_METADATA, chain, sellToken, buyToken, await encodeResponse.text());
     }
 
     const {

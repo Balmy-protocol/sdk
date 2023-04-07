@@ -74,7 +74,7 @@ export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport,
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(ZRX_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = await response.json();
 

@@ -69,7 +69,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<Kyber
 
     const response = await fetchService.fetch(url, { timeout, headers: { 'Accept-Version': 'Latest' } });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { outputAmount, totalGas, encodedSwapData, routerAddress } = await response.json();
 

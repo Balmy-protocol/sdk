@@ -85,7 +85,7 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
     }
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(ONE_INCH_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
       toTokenAmount,

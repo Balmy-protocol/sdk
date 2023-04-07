@@ -1,10 +1,11 @@
 import { addPercentage, substractPercentage } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './types';
+import { FailedToGenerateQuoteError } from '../errors';
+import { SourceMetadata } from '../types';
 
-export function failed(chain: Chain, sellToken: TokenAddress, buyToken: TokenAddress, error?: any): never {
-  const context = error ? ` with error ${JSON.stringify(error)}` : '';
-  throw new Error(`Failed to calculate quote between ${sellToken} and ${buyToken} on ${chain.name}${context}`);
+export function failed(metadata: SourceMetadata, chain: Chain, sellToken: TokenAddress, buyToken: TokenAddress, error?: any): never {
+  throw new FailedToGenerateQuoteError(metadata.name, chain.chainId, sellToken, buyToken, error);
 }
 
 type SlippagelessQuote = Omit<SourceQuoteResponse, 'minBuyAmount' | 'maxSellAmount' | 'type'>;

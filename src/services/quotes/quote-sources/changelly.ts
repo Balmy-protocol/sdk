@@ -44,7 +44,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
     const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(chain, sellToken, buyToken, await response.text());
+      failed(CHANGELLY_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { amount_out_total, estimate_gas_total, calldata, to } = await response.json();
 

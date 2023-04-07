@@ -24,6 +24,13 @@ import { utils } from 'ethers';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 import { SourceConfig, SourceWithConfigId } from './source-registry';
+import {
+  FailedToGenerateQuoteError,
+  SourceNoBuyOrdersError,
+  SourceNoSwapAndTransferError,
+  SourceNotFoundError,
+  SourceNotOnChainError,
+} from './errors';
 
 const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
   requirements: { symbol: 'required', decimals: 'required' },
@@ -86,13 +93,13 @@ export class QuoteService implements IQuoteService {
   }): Promise<QuoteResponse> {
     const sources = this.supportedSources();
     if (!(sourceId in sources)) {
-      throw new Error(`Could not find a source with '${sourceId}'`);
+      throw new SourceNotFoundError(sourceId);
     }
 
     const sourceSupport = sources[sourceId].supports;
     const supportedChains = sourceSupport.chains.map((chainId) => chainId);
     if (!supportedChains.includes(request.chainId)) {
-      throw new Error(`Source with id '${sourceId}' does not support chain with id ${request.chainId}`);
+      throw new SourceNotOnChainError(sourceId, request.chainId);
     }
     const shouldFailBecauseTransferNotSupported =
       !sourceSupport.swapAndTransfer &&
@@ -100,18 +107,14 @@ export class QuoteService implements IQuoteService {
       !isSameAddress(request.takerAddress, request.recipient) &&
       !request.dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet;
     if (shouldFailBecauseTransferNotSupported) {
-      throw new Error(
-        `Source with id '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set. Maybe you want to use the 'dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet' property?`
-      );
+      throw new SourceNoSwapAndTransferError(sourceId);
     }
 
     const shouldFailBecauseBuyOrderNotSupported =
       !sourceSupport.buyOrders && request.order.type === 'buy' && !request.estimateBuyOrderIfSourceDoesNotSupportIt;
 
     if (shouldFailBecauseBuyOrderNotSupported) {
-      throw new Error(
-        `Source with id '${sourceId}' does not support buy orders. Maybe you want to use the 'estimateBuyOrderIfSourceDoesNotSupportIt' property?`
-      );
+      throw new SourceNoBuyOrdersError(sourceId);
     }
 
     const quotes = this.getQuotes({
@@ -135,7 +138,7 @@ export class QuoteService implements IQuoteService {
     const quote = await quotes[0];
 
     if ('failed' in quote) {
-      throw new Error(`Failed to generate quote ${quote.error ? `'${quote.error}'` : ''}`);
+      throw new FailedToGenerateQuoteError(quote.name, request.chainId, request.sellToken, request.buyToken, quote.error);
     }
 
     return quote;
