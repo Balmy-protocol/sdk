@@ -4,7 +4,7 @@ import { getChainByKey } from '@chains';
 
 export class SourceNotFoundError extends Error {
   constructor(sourceId: SourceId) {
-    super(`Could not find a source with '${sourceId}'`);
+    super(`Could not find a source with id '${sourceId}'`);
   }
 }
 
