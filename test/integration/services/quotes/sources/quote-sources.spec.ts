@@ -34,8 +34,8 @@ import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 
 // This is meant to be used for local testing. On the CI, we will do something different
-const RUN_FOR: { source: SourceWithConfigId; chains: Chain[] | 'all' } = {
-  source: 'rango',
+const RUN_FOR: { source: SourceId; chains: Chain[] | 'all' } = {
+  source: 'wido',
   chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango'];
@@ -379,7 +379,7 @@ function getSources() {
       result[chainId][sourceId] = source;
     }
   } else {
-    const source = sources[RUN_FOR.source];
+    const source = sources[RUN_FOR.source as SourceWithConfigId];
     const chains =
       RUN_FOR.chains === 'all' ? chainsWithTestData(source.getMetadata().supports.chains) : RUN_FOR.chains.map(({ chainId }) => chainId);
     for (const chainId of chains) {
