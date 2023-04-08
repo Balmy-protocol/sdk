@@ -1,6 +1,6 @@
 import { providers } from 'ethers';
 import { ChainId } from '@types';
-import { ArrayOneOrMore, ArrayTwoOrMore } from '@utility-types';
+import { ArrayOneOrMore } from '@utility-types';
 import { IProviderSource } from '@services/providers/types';
 import { EthersProviderSource } from '@services/providers/provider-sources/ethers-provider';
 import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
