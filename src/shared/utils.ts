@@ -21,7 +21,7 @@ export function addPercentage(amount: BigNumberish, slippagePercentage: number) 
 }
 
 const PRECISION = 10000000;
-export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
+export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'down') {
   const round = (num: number) => Math.round(num * PRECISION);
   const numerator = BigNumber.from(amount).mul(round(mul));
   const denominator = round(div);
