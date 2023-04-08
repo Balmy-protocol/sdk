@@ -10,18 +10,18 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
-export function substractPercentage(amount: BigNumberish, slippagePercentage: number) {
-  const percentage = mulDivByNumber(amount, slippagePercentage, 100, 'down');
+export function substractPercentage(amount: BigNumberish, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+  const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigNumber.from(amount).sub(percentage);
 }
 
-export function addPercentage(amount: BigNumberish, slippagePercentage: number) {
-  const percentage = mulDivByNumber(amount, slippagePercentage, 100, 'up');
+export function addPercentage(amount: BigNumberish, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+  const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigNumber.from(amount).add(percentage);
 }
 
 const PRECISION = 10000000;
-export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'down') {
+export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
   const round = (num: number) => Math.round(num * PRECISION);
   const numerator = BigNumber.from(amount).mul(round(mul));
   const denominator = round(div);
