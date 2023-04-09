@@ -14,13 +14,13 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
     ? {
         ...quote,
         type,
-        minBuyAmount: substractPercentage(quote.buyAmount, slippagePercentage),
+        minBuyAmount: substractPercentage(quote.buyAmount.toString(), slippagePercentage),
         maxSellAmount: quote.sellAmount,
       }
     : {
         ...quote,
         type,
-        maxSellAmount: addPercentage(quote.sellAmount, slippagePercentage),
+        maxSellAmount: addPercentage(quote.sellAmount.toString(), slippagePercentage),
         minBuyAmount: quote.buyAmount,
       };
 }

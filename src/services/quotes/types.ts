@@ -1,9 +1,8 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { EIP1159GasPrice, GasSpeed, LegacyGasPrice, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, AmountOfTokenInput, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { Either } from '@utility-types';
-import { BigNumberish } from 'ethers';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
 import { LocalSourceConfig, SourceConfig } from './source-registry';
@@ -56,7 +55,7 @@ export type QuoteRequest = {
   chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
-  order: { type: 'sell'; sellAmount: BigNumberish } | { type: 'buy'; buyAmount: BigNumberish };
+  order: { type: 'sell'; sellAmount: AmountOfTokenInput } | { type: 'buy'; buyAmount: AmountOfTokenInput };
   slippagePercentage: number;
   takerAddress: Address;
   recipient?: Address;

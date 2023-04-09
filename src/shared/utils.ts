@@ -1,6 +1,6 @@
-import { BigNumber, BigNumberish, constants, utils } from 'ethers';
+import { BigNumber, constants, utils } from 'ethers';
 import ms from 'ms';
-import { Address, Chain, TimeString } from '@types';
+import { Address, AmountOfTokenInput, Chain, TimeString } from '@types';
 
 export function wait(time: TimeString | number) {
   return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
@@ -10,18 +10,18 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
-export function substractPercentage(amount: BigNumberish, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+export function substractPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigNumber.from(amount).sub(percentage);
 }
 
-export function addPercentage(amount: BigNumberish, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+export function addPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigNumber.from(amount).add(percentage);
 }
 
 const PRECISION = 10000000;
-export function mulDivByNumber(amount: BigNumberish, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
+export function mulDivByNumber(amount: AmountOfTokenInput, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
   const round = (num: number) => Math.round(num * PRECISION);
   const numerator = BigNumber.from(amount).mul(round(mul));
   const denominator = round(div);
@@ -37,7 +37,7 @@ export function timeToSeconds(time: TimeString) {
   return Math.floor(ms(time) / 1000);
 }
 
-export function toUnits(amount: BigNumber, decimals: number, precision: number = 5): string {
+export function toUnits(amount: AmountOfTokenInput, decimals: number, precision: number = 5): string {
   const units = utils.formatUnits(amount, decimals);
   const regex = new RegExp('^-?\\d+(?:.\\d{0,' + (precision || -1) + '})?');
   return units.match(regex)![0];
@@ -55,7 +55,7 @@ export function calculateGasDetails(chain: Chain, gasCostNativeToken: string, na
 const USD_PRECISION = 8;
 export function amountToUSD<Price extends number | undefined>(
   decimals: number,
-  amount: BigNumberish,
+  amount: AmountOfTokenInput,
   usdPrice: Price,
   precision: number = 3
 ): undefined extends Price ? undefined : string {
@@ -63,7 +63,7 @@ export function amountToUSD<Price extends number | undefined>(
     const priceBN = utils.parseUnits(`${usdPrice.toFixed(USD_PRECISION)}`, USD_PRECISION);
     const magnitude = utils.parseUnits('1', decimals);
     const amountUSDBN = priceBN.mul(amount).div(magnitude);
-    return toUnits(amountUSDBN, USD_PRECISION, precision) as undefined extends Price ? undefined : string;
+    return toUnits(amountUSDBN.toString(), USD_PRECISION, precision) as undefined extends Price ? undefined : string;
   }
   return undefined as undefined extends Price ? undefined : string;
 }
@@ -73,7 +73,7 @@ export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<
   return results.filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled').map(({ value }) => value);
 }
 
-export function ruleOfThree({ a, matchA, b }: { a: BigNumberish; matchA: BigNumberish; b: BigNumberish }) {
+export function ruleOfThree({ a, matchA, b }: { a: AmountOfTokenInput; matchA: AmountOfTokenInput; b: AmountOfTokenInput }) {
   const matchABN = BigNumber.from(matchA);
   const bBN = BigNumber.from(b);
   if (bBN.isZero() || matchABN.isZero()) return constants.Zero;

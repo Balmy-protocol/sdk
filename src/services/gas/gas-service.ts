@@ -1,6 +1,5 @@
 import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, ChainId, DefaultRequirements, FieldsRequirements, TimeString } from '@types';
-import { BigNumberish } from 'ethers';
+import { AmountOfToken, AmountOfTokenInput, ChainId, DefaultRequirements, FieldsRequirements, TimeString } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderSource } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
@@ -70,7 +69,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     config,
   }: {
     chainId: ChainId;
-    gasEstimation: BigNumberish;
+    gasEstimation: AmountOfTokenInput;
     tx?: TransactionRequest;
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {

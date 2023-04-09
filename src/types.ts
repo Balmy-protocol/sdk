@@ -6,6 +6,7 @@ export type TokenAddress = Address;
 export type ChainId = number;
 export type TimeString = StringValue;
 export type AmountOfToken = string;
+export type AmountOfTokenInput = string | number;
 export type Chain = Readonly<{
   chainId: ChainId;
   name: string;
