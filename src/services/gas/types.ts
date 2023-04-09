@@ -1,16 +1,15 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import {
   AmountOfToken,
+  AmountOfTokenInput,
   BasedOnRequirements,
   ChainId,
   DefaultRequirements,
   FieldsRequirements,
   SupportInChain,
-  SupportRecord,
   TimeString,
 } from '@types';
-import { If, UnionMerge } from '@utility-types';
-import { BigNumberish } from 'ethers';
+import { UnionMerge } from '@utility-types';
 
 export const AVAILABLE_GAS_SPEEDS = ['standard', 'fast', 'instant'] as const;
 export type GasPrice = LegacyGasPrice | EIP1159GasPrice;
@@ -30,7 +29,7 @@ export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues>
   }): Promise<GasPriceResult<GasValues, Requirements>>;
   calculateGasCost<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
-    gasEstimation: BigNumberish;
+    gasEstimation: AmountOfTokenInput;
     tx?: TransactionRequest;
     config?: { timeout?: TimeString; fields?: Requirements };
   }): Promise<GasEstimation<GasValues, Requirements>>;
@@ -54,7 +53,7 @@ export type IQuickGasCostCalculator<
 > = {
   supportedSpeeds(): SupportInChain<GasValues>;
   getGasPrice(): GasPriceResult<GasValues, Requirements>;
-  calculateGasCost(_: { gasEstimation: BigNumberish; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
+  calculateGasCost(_: { gasEstimation: AmountOfTokenInput; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
 };
 
 export type IGasPriceSource<GasValues extends SupportedGasValues> = {

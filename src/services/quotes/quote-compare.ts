@@ -18,10 +18,10 @@ export const COMPARE_USING = ['sell/buy amounts', 'max sell/min buy amounts'] as
 
 export type CompareQuotesBy = (typeof COMPARE_BY)[number];
 export type CompareQuotesUsing = (typeof COMPARE_USING)[number];
-export type ComparableQuote = Pick<QuoteResponse, 'sellAmount' | 'maxSellAmount' | 'buyAmount' | 'minBuyAmount' | 'gas'> & {
-  sellToken?: TokenData;
-  buyToken?: TokenData;
-};
+export type ComparableQuote = Pick<
+  QuoteResponse,
+  'sellToken' | 'buyToken' | 'sellAmount' | 'maxSellAmount' | 'buyAmount' | 'minBuyAmount' | 'gas'
+>;
 
 export function sortQuotesBy<T extends ComparableQuote>(quotes: T[], sortBy: CompareQuotesBy, using: CompareQuotesUsing): T[] {
   const compareFtn = getCompareFtn(sortBy);
@@ -80,7 +80,7 @@ function compareMostProfit(quote1: ComparableQuote, quote2: ComparableQuote, usi
 }
 
 function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) {
-  if (areQuotesForTheDifferentPairs(quote1, quote2)) {
+  if (!isSameAddress(quote1.sellToken.address, quote2.sellToken.address) || !isSameAddress(quote1.buyToken.address, quote2.buyToken.address)) {
     // If we are compating for different pairs, then we'll check profit without gas
     const [profit1, profit2] = [calculateProfitWithoutGas(quote1, using), calculateProfitWithoutGas(quote2, using)];
     if (!profit1 || !profit2 || profit1 === profit2) {
@@ -124,17 +124,3 @@ function calculateProfitWithoutGas(quote: ComparableQuote, using: CompareQuotesU
   const boughtUSD = buyAmount.amountInUSD && Number(buyAmount.amountInUSD);
   return !soldUSD || !boughtUSD ? undefined : boughtUSD - soldUSD;
 }
-
-function areQuotesForTheDifferentPairs(quote1: ComparableQuote, quote2: ComparableQuote) {
-  return areDifferentTokens(quote1.sellToken, quote2.sellToken) || areDifferentTokens(quote1.buyToken, quote2.buyToken);
-}
-
-function areDifferentTokens(token1: TokenData | undefined, token2: TokenData | undefined) {
-  return (
-    (!!token1?.address && !!token2?.address && !isSameAddress(token1.address, token2.address)) ||
-    (!!token1?.symbol && !!token2?.symbol && token1.symbol.toLowerCase() !== token2.symbol.toLowerCase()) ||
-    (!!token1?.decimals && !!token2?.decimals && token1.decimals !== token2.decimals)
-  );
-}
-
-type TokenData = { address?: TokenAddress; symbol?: string; decimals?: number };
