@@ -228,8 +228,8 @@ export class QuoteService implements IQuoteService {
       const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
       return {
         ...response,
-        sellToken,
-        buyToken,
+        sellToken: { ...sellToken, address: request.sellToken },
+        buyToken: { ...buyToken, address: request.buyToken },
         sellAmount: toAmountOfToken(sellToken, sellToken.price, response.sellAmount),
         buyAmount: toAmountOfToken(buyToken, buyToken.price, response.buyAmount),
         maxSellAmount: toAmountOfToken(sellToken, sellToken.price, response.maxSellAmount),

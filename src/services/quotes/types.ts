@@ -68,7 +68,7 @@ export type QuoteRequest = {
   sourceConfig?: SourceConfig;
 };
 
-type TokenWithOptionalPrice = BaseTokenMetadata & { price?: number };
+type TokenWithOptionalPrice = BaseTokenMetadata & { address: TokenAddress; price?: number };
 export type QuoteTx = Required<Pick<TransactionRequest, 'to' | 'from' | 'data'>> &
   Partial<EIP1159GasPrice> &
   Partial<LegacyGasPrice> & { value?: AmountOfToken };
