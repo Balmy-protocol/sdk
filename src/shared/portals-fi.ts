@@ -14,6 +14,10 @@ export const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.BNB_CHAIN.chainId]: 'bsc',
 };
 
+export const PORTALS_FI_KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
+  Object.entries(PORTALS_FI_CHAIN_ID_TO_KEY).map(([chainId, key]) => [key, Number(chainId)])
+);
+
 export const PORTALS_FI_SUPPORTED_CHAINS: ChainId[] = Object.keys(PORTALS_FI_CHAIN_ID_TO_KEY).map(Number);
 
 export class PortalsFiClient {
