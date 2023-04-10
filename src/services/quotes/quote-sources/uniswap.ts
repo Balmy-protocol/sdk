@@ -107,7 +107,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
 }
 
 function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: BigNumber, slippagePercentage: number) {
-  return type === 'sell' ? BigNumber.from(substractPercentage(buyAmount.toString(), slippagePercentage, 'down')) : buyAmount;
+  return type === 'sell' ? BigNumber.from(substractPercentage(buyAmount.toString(), slippagePercentage, 'up')) : buyAmount;
 }
 
 function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {
