@@ -13,6 +13,7 @@ import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird';
 import { RangoQuoteSource } from './quote-sources/rango';
 import { ChangellyQuoteSource } from './quote-sources/changelly';
 import { MeanFinanceQuoteSource } from './quote-sources/mean-finance';
+import { WidoQuoteSource } from './quote-sources/wido';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi';
 
 export const QUOTE_SOURCES = {
@@ -28,6 +29,7 @@ export const QUOTE_SOURCES = {
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
+  wido: new WidoQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
