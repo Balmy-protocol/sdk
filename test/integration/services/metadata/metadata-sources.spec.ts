@@ -13,6 +13,7 @@ import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
 import { IMetadataSource, MetadataResult } from '@services/metadata';
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
+import { ChangellyMetadataSource } from '@services/metadata/metadata-sources/changelly-metadata-source';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -31,6 +32,7 @@ const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOUR
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
 });
+const CHANGELLY_METADATA_SOURCE = new ChangellyMetadataSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -64,6 +66,11 @@ describe('Metadata Sources', () => {
     source: CACHED_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
   });
+  // metadataSourceTest({
+  //   title: 'Changelly Source',
+  //   source: CHANGELLY_METADATA_SOURCE,
+  //   fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
+  // }); We comment this out because we need an API key
 
   function metadataSourceTest<TokenMetadata extends object>({
     title,

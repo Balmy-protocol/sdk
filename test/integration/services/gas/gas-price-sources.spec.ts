@@ -45,7 +45,7 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Paraswap Source', source: PARASWAP_SOURCE });
-  // gasPriceSourceTest({ title: 'Changelly Source', source: CHANGELLY_GAS_SOURCE }); We comment this our becase we need an API key
+  // gasPriceSourceTest({ title: 'Changelly Source', source: CHANGELLY_GAS_SOURCE }); We comment this out because we need an API key
 
   function gasPriceSourceTest({ title, source }: { title: string; source: IGasPriceSource<object> }) {
     describe(title, () => {

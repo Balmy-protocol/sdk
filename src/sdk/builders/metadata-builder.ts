@@ -8,11 +8,13 @@ import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metad
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
 import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
+import { ChangellyMetadataSource } from '@services/metadata/metadata-sources/changelly-metadata-source';
 
 export type MetadataSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
   | { type: 'portals-fi' }
+  | { type: 'changelly'; apiKey: string }
   | { type: 'cached'; underlyingSource: Exclude<MetadataSourceInput, { type: 'cached' }>; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IMetadataSource<object> }
   | { type: 'aggregate'; sources: MetadataSourceInput[] };
@@ -32,6 +34,8 @@ type CalculateSourceFromInput<Input extends MetadataSourceInput | undefined> = u
   ? DefiLlamaMetadataSource
   : Input extends { type: 'portals-fi' }
   ? PortalsFiMetadataSource
+  : Input extends { type: 'changelly' }
+  ? ChangellyMetadataSource
   : Input extends { type: 'cached' }
   ? CalculateSourceFromInput<Input['underlyingSource']>
   : Input extends { type: 'rpc-multicall' }
@@ -69,6 +73,8 @@ function buildSource<T extends MetadataSourceInput>(
       return new DefiLlamaMetadataSource(fetchService);
     case 'portals-fi':
       return new PortalsFiMetadataSource(fetchService);
+    case 'changelly':
+      return new ChangellyMetadataSource(fetchService, source.apiKey);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
       return new CachedMetadataSource(underlying, source.expiration);
