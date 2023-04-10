@@ -220,12 +220,16 @@ export class QuoteService implements IQuoteService {
       ]);
       const sellToken = { ...tokens[request.sellToken], price: prices[request.sellToken] };
       const buyToken = { ...tokens[request.buyToken], price: prices[request.buyToken] };
-      const gasCost = gasCalculator.calculateGasCost({
-        gasEstimation: response.estimatedGas,
-        tx: response.tx,
-      });
-      // TODO: We should add the gas price to the tx response, but if we do, we get some weird errors. Investigate and add it to to the tx
-      const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
+      let gas: QuoteResponse['gas'];
+      if (response.estimatedGas) {
+        const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.tx });
+        // TODO: We should add the gas price to the tx response, but if we do, we get some weird errors. Investigate and add it to to the tx
+        const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
+        gas = {
+          estimatedGas: response.estimatedGas,
+          ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
+        };
+      }
       return {
         ...response,
         sellToken: { ...sellToken, address: request.sellToken },
@@ -234,10 +238,7 @@ export class QuoteService implements IQuoteService {
         buyAmount: toAmountOfToken(buyToken, buyToken.price, response.buyAmount),
         maxSellAmount: toAmountOfToken(sellToken, sellToken.price, response.maxSellAmount),
         minBuyAmount: toAmountOfToken(buyToken, buyToken.price, response.minBuyAmount),
-        gas: {
-          estimatedGas: response.estimatedGas,
-          ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
-        },
+        gas,
       };
     } catch (e) {
       const metadata = this.supportedSources()[sourceId];

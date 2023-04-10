@@ -60,7 +60,7 @@ export type SourceQuoteResponse = {
   minBuyAmount: BigNumber;
   type: 'sell' | 'buy';
   allowanceTarget: Address;
-  estimatedGas: BigNumber;
+  estimatedGas?: BigNumber;
   tx: {
     to: Address;
     calldata: string;
