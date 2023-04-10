@@ -1,13 +1,12 @@
 import { providers } from 'ethers';
 import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
-import { ArrayTwoOrMore } from '@utility-types';
 import { IProviderSource } from '../types';
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given chain
 export class PrioritizedProviderSourceCombinator implements IProviderSource {
-  constructor(private readonly sources: ArrayTwoOrMore<IProviderSource>) {
+  constructor(private readonly sources: IProviderSource[]) {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
 

@@ -67,7 +67,7 @@ describe('Quote Service', () => {
               buyToken: STABLE_ERC20.address,
               order: {
                 type: 'sell',
-                sellAmount: ONE_NATIVE_TOKEN,
+                sellAmount: ONE_NATIVE_TOKEN.toString(),
               },
               slippagePercentage: 3,
               takerAddress: user.address,

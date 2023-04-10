@@ -287,9 +287,9 @@ describe('Quote Sources', () => {
         let slippage = SLIPPAGE_PERCENTAGE;
         if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
         if (quote.type === 'sell') {
-          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount, slippage));
+          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount.toString(), slippage, 'up'));
         } else {
-          expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount, slippage));
+          expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount.toString(), slippage, 'up'));
         }
       }
 
@@ -379,7 +379,7 @@ function getSources() {
       result[chainId][sourceId] = source;
     }
   } else {
-    const source = sources[RUN_FOR.source as SourceWithConfigId];
+    const source = sources[RUN_FOR.source as keyof typeof sources];
     const chains =
       RUN_FOR.chains === 'all' ? chainsWithTestData(source.getMetadata().supports.chains) : RUN_FOR.chains.map(({ chainId }) => chainId);
     for (const chainId of chains) {

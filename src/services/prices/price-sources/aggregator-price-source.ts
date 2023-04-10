@@ -59,7 +59,9 @@ function collect(results: Record<ChainId, Record<TokenAddress, TokenPrice>>[]) {
         if (!(address in collected[chainId])) {
           collected[chainId][address] = [];
         }
-        collected[chainId][address].push(result[chainId][address]);
+        if (typeof result?.[chainId]?.[address] === 'number') {
+          collected[chainId][address].push(result[chainId][address]);
+        }
       }
     }
   }

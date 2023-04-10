@@ -4,7 +4,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { ChainId, TokenAddress, TimeString } from '@types';
 
-const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
+export const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.OPTIMISM.chainId]: 'optimism',
   [Chains.FANTOM.chainId]: 'fantom',
@@ -13,6 +13,8 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.AVALANCHE.chainId]: 'avalanche',
   [Chains.BNB_CHAIN.chainId]: 'bsc',
 };
+
+export const PORTALS_FI_SUPPORTED_CHAINS: ChainId[] = Object.keys(PORTALS_FI_CHAIN_ID_TO_KEY).map(Number);
 
 export class PortalsFiClient {
   constructor(private readonly fetch: IFetchService) {}
@@ -38,7 +40,7 @@ export class PortalsFiClient {
   }
 
   supportedChains(): ChainId[] {
-    return Object.keys(CHAIN_ID_TO_KEY).map(Number);
+    return Object.keys(PORTALS_FI_CHAIN_ID_TO_KEY).map(Number);
   }
 
   private async fetchData(tokens: TokenId[], config?: { timeout?: TimeString }) {
@@ -63,7 +65,7 @@ const PORTAS_FI_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
 const MAPPINGS: Record<string, string> = {};
 
 function toTokenId(chainId: ChainId, address: TokenAddress) {
-  const key = CHAIN_ID_TO_KEY[chainId];
+  const key = PORTALS_FI_CHAIN_ID_TO_KEY[chainId];
   const mappedNativeToken = isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${PORTAS_FI_NATIVE_TOKEN}` : `${key}:${address}`;
   return (MAPPINGS[mappedNativeToken] ?? mappedNativeToken).toLowerCase();
 }
