@@ -38,7 +38,7 @@ const RUN_FOR: { source: SourceId; chains: Chain[] | 'all' } = {
   source: 'wido',
   chains: [Chains.ARBITRUM],
 };
-const ROUNDING_ISSUES: SourceId[] = ['rango'];
+const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);

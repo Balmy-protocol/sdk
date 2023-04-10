@@ -59,7 +59,7 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
       quoteUrl += `&partner=${config.referrer.address}`;
     }
     if (recipient) {
-      quoteUrl += `&_recipient_address=${recipient}`;
+      quoteUrl += `&recipient=${recipient}`;
     }
 
     const allowanceUrl =
@@ -90,7 +90,7 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
       buyAmount: BigNumber.from(to_token_amount),
       minBuyAmount: BigNumber.from(min_to_token_amount),
       type: 'sell',
-      estimatedGas: BigNumber.from(0),
+      estimatedGas: undefined,
       allowanceTarget,
       tx: {
         calldata: data,
@@ -105,7 +105,7 @@ function fetch(fetchService: IFetchService, url: string, timeout?: TimeString) {
   return fetchService.fetch(url, {
     timeout,
     headers: {
-      // If we don't set this, Cloudfront will block the request
+      // Recommended by the Wido team. If we don't set this, Cloudfront will block the request for non-browsers
       'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
     },
   });
