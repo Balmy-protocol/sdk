@@ -23,8 +23,7 @@ const WIDO_METADATA: QuoteSourceMetadata<WidoSupport> = {
     swapAndTransfer: true,
     buyOrders: false,
   },
-  // TODO: Update logo
-  logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
+  logoURI: 'ipfs://QmVA2eTK8SBnF2iqUdxvTEUgZbcjBq47P1QejQCRSd9im7',
 };
 type WidoSupport = { buyOrders: false; swapAndTransfer: true };
 export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSupport> {
