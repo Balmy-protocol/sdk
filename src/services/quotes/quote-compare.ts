@@ -93,9 +93,9 @@ function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, 
   const { sellAmount: sellAmount1, buyAmount: buyAmount1 } = extract(quote1);
   const { sellAmount: sellAmount2, buyAmount: buyAmount2 } = extract(quote2);
   const quote1BuyAmountRelativeToQuote2 = ruleOfThree({ a: sellAmount1.amount, matchA: buyAmount1.amount, b: sellAmount2.amount });
-  if (quote1BuyAmountRelativeToQuote2.gt(buyAmount2.amount)) {
+  if (BigNumber.from(quote1BuyAmountRelativeToQuote2).gt(buyAmount2.amount)) {
     return -1;
-  } else if (quote1BuyAmountRelativeToQuote2.lt(buyAmount2.amount)) {
+  } else if (BigNumber.from(quote1BuyAmountRelativeToQuote2).lt(buyAmount2.amount)) {
     return 1;
   }
   return 0;

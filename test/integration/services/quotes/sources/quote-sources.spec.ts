@@ -287,9 +287,9 @@ describe('Quote Sources', () => {
         let slippage = SLIPPAGE_PERCENTAGE;
         if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
         if (quote.type === 'sell') {
-          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount.toString(), slippage));
+          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount.toString(), slippage, 'up'));
         } else {
-          expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount.toString(), slippage));
+          expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount.toString(), slippage, 'up'));
         }
       }
 
