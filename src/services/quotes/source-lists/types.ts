@@ -27,7 +27,7 @@ export type SourceListResponse = {
   buyAmount: AmountOfToken;
   maxSellAmount: AmountOfToken;
   minBuyAmount: AmountOfToken;
-  estimatedGas: AmountOfToken;
+  estimatedGas?: AmountOfToken;
   type: 'sell' | 'buy';
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };

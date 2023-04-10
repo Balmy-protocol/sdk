@@ -73,20 +73,38 @@ function mergeCompareFtns(prioritizedCompareFns: Compare[]): Compare {
 
 function compareMostProfit(quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) {
   const [profit1, profit2] = [calculateProfit(quote1, using), calculateProfit(quote2, using)];
-  if (!profit1 || !profit2 || profit1 === profit2) {
+  if (!profit1 || !profit2) {
+    if (!profit1 && !profit2) {
+      return 0;
+    } else if (profit1) {
+      return -1;
+    } else {
+      return 1;
+    }
+  } else if (profit1 === profit2) {
     return 0;
+  } else {
+    return profit1 > profit2 ? -1 : 1;
   }
-  return profit1 > profit2 ? -1 : 1;
 }
 
 function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, using: CompareQuotesUsing) {
   if (!isSameAddress(quote1.sellToken.address, quote2.sellToken.address) || !isSameAddress(quote1.buyToken.address, quote2.buyToken.address)) {
     // If we are compating for different pairs, then we'll check profit without gas
     const [profit1, profit2] = [calculateProfitWithoutGas(quote1, using), calculateProfitWithoutGas(quote2, using)];
-    if (!profit1 || !profit2 || profit1 === profit2) {
+    if (!profit1 || !profit2) {
+      if (!profit1 && !profit2) {
+        return 0;
+      } else if (profit1) {
+        return -1;
+      } else {
+        return 1;
+      }
+    } else if (profit1 === profit2) {
       return 0;
+    } else {
+      return profit1 > profit2 ? -1 : 1;
     }
-    return profit1 > profit2 ? -1 : 1;
   }
   // If we are comparing quotes for the same pair of tokens, then will simply compare swap ammounts
   const extract = amountExtractor(using);
@@ -102,7 +120,15 @@ function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, 
 }
 
 function compareLeastGas(quote1: ComparableQuote, quote2: ComparableQuote) {
-  if (BigNumber.from(quote1.gas.estimatedGas).lt(quote2.gas.estimatedGas)) {
+  if (!quote1.gas || !quote2.gas) {
+    if (!quote1.gas && !quote2.gas) {
+      return 0;
+    } else if (quote1.gas) {
+      return -1;
+    } else {
+      return 1;
+    }
+  } else if (BigNumber.from(quote1.gas.estimatedGas).lt(quote2.gas.estimatedGas)) {
     return -1;
   } else if (BigNumber.from(quote1.gas.estimatedGas).gt(quote2.gas.estimatedGas)) {
     return 1;
@@ -114,7 +140,7 @@ function calculateProfit(quote: ComparableQuote, using: CompareQuotesUsing) {
   const { sellAmount, buyAmount } = amountExtractor(using)(quote);
   const soldUSD = sellAmount.amountInUSD && Number(sellAmount.amountInUSD);
   const boughtUSD = buyAmount.amountInUSD && Number(buyAmount.amountInUSD);
-  const gasCostUSD = quote.gas.estimatedCostInUSD && Number(quote.gas.estimatedCostInUSD);
+  const gasCostUSD = quote.gas?.estimatedCostInUSD && Number(quote.gas.estimatedCostInUSD);
   return !soldUSD || !boughtUSD || !gasCostUSD ? undefined : boughtUSD - soldUSD - gasCostUSD;
 }
 

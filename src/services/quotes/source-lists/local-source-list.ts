@@ -94,7 +94,7 @@ async function mapSourceResponseToResponse({
     buyAmount: response.buyAmount.toString(),
     maxSellAmount: response.maxSellAmount.toString(),
     minBuyAmount: response.minBuyAmount.toString(),
-    estimatedGas: response.estimatedGas.toString(),
+    estimatedGas: response.estimatedGas?.toString(),
     recipient,
     source: {
       id: request.sourceId,

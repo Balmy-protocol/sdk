@@ -5,7 +5,7 @@ import { TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
 import { failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 
 export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
   name: 'Portals.fi',
@@ -24,7 +24,14 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<Porta
 
   async quote({
     components: { fetchService },
-    request: { chain, sellToken, buyToken, order, accounts: { takeFrom }, config: { slippagePercentage, timeout } },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      order,
+      accounts: { takeFrom },
+      config: { slippagePercentage, timeout },
+    },
     config,
   }: QuoteParams<PortalsFiSupport>): Promise<SourceQuoteResponse> {
     const mappedSellToken = mapNativeToken(sellToken);
@@ -57,7 +64,7 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<Porta
       buyAmount: BigNumber.from(buyAmount),
       minBuyAmount: BigNumber.from(minBuyAmount),
       type: 'sell',
-      estimatedGas: BigNumber.from(gasLimit),
+      estimatedGas: gasLimit ? BigNumber.from(gasLimit) : undefined, // Portals does not estimate gas when validate=false
       allowanceTarget: to,
       tx: {
         to,

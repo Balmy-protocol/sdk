@@ -379,7 +379,7 @@ function getSources() {
       result[chainId][sourceId] = source;
     }
   } else {
-    const source = sources[RUN_FOR.source];
+    const source = sources[RUN_FOR.source as keyof typeof sources];
     const chains =
       RUN_FOR.chains === 'all' ? chainsWithTestData(source.getMetadata().supports.chains) : RUN_FOR.chains.map(({ chainId }) => chainId);
     for (const chainId of chains) {

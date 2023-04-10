@@ -78,7 +78,7 @@ export type QuoteResponse = {
   buyAmount: AmountsOfToken;
   maxSellAmount: AmountsOfToken;
   minBuyAmount: AmountsOfToken;
-  gas: {
+  gas?: {
     estimatedGas: AmountOfToken;
     estimatedCost: AmountOfToken;
     estimatedCostInUnits: string;
