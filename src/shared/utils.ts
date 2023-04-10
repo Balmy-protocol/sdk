@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import ms from 'ms';
-import { Address, AmountOfTokenInput, Chain, TimeString } from '@types';
+import { Address, AmountOfToken, AmountOfTokenInput, Chain, TimeString } from '@types';
 
 export function wait(time: TimeString | number) {
   return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
@@ -10,23 +10,23 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
-export function substractPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+export function substractPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down'): AmountOfToken {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
-  return BigNumber.from(amount).sub(percentage);
+  return BigNumber.from(amount).sub(percentage).toString();
 }
 
-export function addPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down' = 'up') {
+export function addPercentage(amount: AmountOfTokenInput, slippagePercentage: number, rounding: 'up' | 'down'): AmountOfToken {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
-  return BigNumber.from(amount).add(percentage);
+  return BigNumber.from(amount).add(percentage).toString();
 }
 
 const PRECISION = 10000000;
-export function mulDivByNumber(amount: AmountOfTokenInput, mul: number, div: number, rounding: 'up' | 'down' = 'up') {
+export function mulDivByNumber(amount: AmountOfTokenInput, mul: number, div: number, rounding: 'up' | 'down'): AmountOfToken {
   const round = (num: number) => Math.round(num * PRECISION);
   const numerator = BigNumber.from(amount).mul(round(mul));
   const denominator = round(div);
   const result = numerator.div(denominator);
-  return !numerator.mod(denominator).isZero() && rounding === 'up' ? result.add(1) : result;
+  return !numerator.mod(denominator).isZero() && rounding === 'up' ? result.add(1).toString() : result.toString();
 }
 
 export function calculateDeadline(txValidFor?: TimeString) {
@@ -73,9 +73,9 @@ export async function filterRejectedResults<T>(promises: Promise<T>[]): Promise<
   return results.filter((result): result is PromiseFulfilledResult<Awaited<T>> => result.status === 'fulfilled').map(({ value }) => value);
 }
 
-export function ruleOfThree({ a, matchA, b }: { a: AmountOfTokenInput; matchA: AmountOfTokenInput; b: AmountOfTokenInput }) {
+export function ruleOfThree({ a, matchA, b }: { a: AmountOfTokenInput; matchA: AmountOfTokenInput; b: AmountOfTokenInput }): AmountOfToken {
   const matchABN = BigNumber.from(matchA);
   const bBN = BigNumber.from(b);
-  if (bBN.isZero() || matchABN.isZero()) return constants.Zero;
-  return bBN.mul(matchA).div(a);
+  if (bBN.isZero() || matchABN.isZero()) return constants.Zero.toString();
+  return bBN.mul(matchA).div(a).toString();
 }

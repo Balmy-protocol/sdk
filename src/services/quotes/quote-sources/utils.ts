@@ -1,5 +1,6 @@
 import { addPercentage, substractPercentage } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
+import { BigNumber } from 'ethers';
 import { SourceQuoteResponse } from './types';
 import { FailedToGenerateQuoteError } from '../errors';
 import { SourceMetadata } from '../types';
@@ -14,13 +15,13 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
     ? {
         ...quote,
         type,
-        minBuyAmount: substractPercentage(quote.buyAmount.toString(), slippagePercentage),
+        minBuyAmount: BigNumber.from(substractPercentage(quote.buyAmount.toString(), slippagePercentage, 'down')),
         maxSellAmount: quote.sellAmount,
       }
     : {
         ...quote,
         type,
-        maxSellAmount: addPercentage(quote.sellAmount.toString(), slippagePercentage),
+        maxSellAmount: BigNumber.from(addPercentage(quote.sellAmount.toString(), slippagePercentage, 'up')),
         minBuyAmount: quote.buyAmount,
       };
 }
