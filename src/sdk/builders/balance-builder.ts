@@ -2,7 +2,7 @@ import { IMulticallService } from '@services/multicall/types';
 import { IBalanceService, IBalanceSource } from '@services/balances/types';
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
-import { IProviderSource } from '@services/providers';
+import { IProviderService } from '@services/providers';
 import { BalanceService } from '@services/balances/balance-service';
 import { IFetchService } from '@services/fetch';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
@@ -20,10 +20,10 @@ export type BuildBalancesParams = { source: BalanceSourceInput };
 export function buildBalanceService(
   params: BuildBalancesParams | undefined,
   fetchService: IFetchService,
-  providerSource: IProviderSource,
+  providerService: IProviderService,
   multicallService: IMulticallService
 ): IBalanceService {
-  const source = buildSource(params?.source, { fetchService, providerSource, multicallService });
+  const source = buildSource(params?.source, { fetchService, providerService, multicallService });
   return new BalanceService(source);
 }
 
@@ -31,16 +31,16 @@ function buildSource(
   source: BalanceSourceInput | undefined,
   {
     fetchService,
-    providerSource,
+    providerService,
     multicallService,
-  }: { fetchService: IFetchService; providerSource: IProviderSource; multicallService: IMulticallService }
+  }: { fetchService: IFetchService; providerService: IProviderService; multicallService: IMulticallService }
 ): IBalanceSource {
   switch (source?.type) {
     case undefined:
     case 'rpc-multicall':
-      return new RPCBalanceSource(providerSource, multicallService);
+      return new RPCBalanceSource(providerService, multicallService);
     case 'cached':
-      const underlying = buildSource(source.underlyingSource, { fetchService, providerSource, multicallService });
+      const underlying = buildSource(source.underlyingSource, { fetchService, providerService, multicallService });
       return new CachedBalanceSource(underlying, source.expiration);
     case 'custom':
       return source.instance;

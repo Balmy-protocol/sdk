@@ -1,13 +1,13 @@
-import { IProviderSource } from '@services/providers';
+import { IProviderService } from '@services/providers';
 import { ChainId, TimeString } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, Transaction, FailedSimulation } from '../types';
 
 export class RPCSimulationSource implements ISimulationSource {
-  constructor(private readonly providerSource: IProviderSource) {}
+  constructor(private readonly providerService: IProviderService) {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
-    const entries = this.providerSource
+    const entries = this.providerService
       .supportedChains()
       .map<[ChainId, SimulationQueriesSupport]>((chainId) => [chainId, { transaction: 'gas-only', bundle: 'none' }]);
     return Object.fromEntries(entries);
@@ -27,7 +27,7 @@ export class RPCSimulationSource implements ISimulationSource {
     if (!isValid(tx.value)) return invalidTx('"value" is not a valid');
 
     try {
-      const estimatedGas = await this.providerSource.getEthersProvider({ chainId }).estimateGas(tx);
+      const estimatedGas = await this.providerService.getEthersProvider({ chainId }).estimateGas(tx);
       return {
         successful: true,
         stageChanges: [],

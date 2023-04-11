@@ -4,7 +4,7 @@ import { IFetchService } from '@services/fetch/types';
 import { IGasService, SupportedGasValues } from '@services/gas/types';
 import { IMulticallService } from '@services/multicall/types';
 import { IPriceService } from '@services/prices';
-import { IProviderSource } from '@services/providers';
+import { IProviderService } from '@services/providers';
 import { IQuoteService } from '@services/quotes/types';
 import { IMetadataService } from '@services/metadata/types';
 import { CalculateMetadataFromSourceParams } from './builders/metadata-builder';
@@ -14,7 +14,7 @@ export type ISDK<
   TokenMetadata extends object = CalculateMetadataFromSourceParams<undefined>,
   GasValues extends SupportedGasValues = CalculateGasValuesFromSourceParams<undefined>
 > = {
-  providerSource: IProviderSource;
+  providerService: IProviderService;
   fetchService: IFetchService;
   gasService: IGasService<GasValues>;
   multicallService: IMulticallService;

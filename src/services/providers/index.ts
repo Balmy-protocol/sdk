@@ -1,1 +1,1 @@
-export { IProviderSource } from './types';
+export { IProviderSource, IProviderService } from './types';

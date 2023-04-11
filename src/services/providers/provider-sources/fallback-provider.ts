@@ -4,10 +4,9 @@ import { ChainId } from '@types';
 import { IProviderSource } from '../types';
 import { FallbackProvider } from '@ethersproject/providers';
 
-// This source will take a list of sources, sorted by priority, and use Ether's fallback
-// provider on all of them (taking the priority into account)
+export type FallbackProviderSourceConfig = { ethers?: { quorum?: number } };
 export class FallbackSource implements IProviderSource {
-  constructor(private readonly sources: IProviderSource[], private readonly quorum?: number) {
+  constructor(private readonly sources: IProviderSource[], private readonly config: FallbackProviderSourceConfig | undefined) {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
 
@@ -19,6 +18,6 @@ export class FallbackSource implements IProviderSource {
     const sources = this.sources.filter((source) => source.supportedChains().includes(chainId));
     if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
     const config = sources.map((source, i) => ({ provider: source.getEthersProvider({ chainId }), priority: i }));
-    return new FallbackProvider(config, this.quorum);
+    return new FallbackProvider(config, this.config?.ethers?.quorum);
   }
 }

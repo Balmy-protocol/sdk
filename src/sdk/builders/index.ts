@@ -1,6 +1,6 @@
 export { BuildFetchParams } from './fetch-builder';
 export { BuildGasParams, GasSourceInput } from './gas-builder';
-export { BuildProviderParams, ProviderSourceInput } from './provider-source-builder';
+export { BuildProviderParams, ProviderSourceInput } from './provider-builder';
 export { BuildQuoteParams, QuoteSourceListInput } from './quote-builder';
 export { BuildMetadataParams, MetadataSourceInput } from './metadata-builder';
 export { BuildBalancesParams, BalanceSourceInput } from './balance-builder';
