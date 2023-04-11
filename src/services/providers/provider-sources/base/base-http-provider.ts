@@ -1,4 +1,4 @@
-import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
+import { BaseProvider, StaticJsonRpcProvider } from '@ethersproject/providers';
 import { IProviderSource } from '@services/providers/types';
 import { ChainId } from '@types';
 
@@ -18,5 +18,5 @@ export abstract class BaseHttpProvider implements IProviderSource {
 }
 
 export function buildEthersProviderForHttpSource(url: string, chainId: ChainId) {
-  return new JsonRpcProvider(url, chainId);
+  return new StaticJsonRpcProvider(url, chainId);
 }

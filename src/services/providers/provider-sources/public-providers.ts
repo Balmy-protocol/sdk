@@ -1,36 +1,23 @@
 import { getAllChains } from '@chains';
 import { ChainId, Chain } from '@types';
-import { providers } from 'ethers';
-import { IProviderSource } from '../types';
-import { buildEthersProviderForHttpSource } from './base/base-http-provider';
+import { HttpProviderSource } from './http-provider';
+import { FallbackSource } from './fallback-provider';
 
-export class PublicRPCsSource implements IProviderSource {
-  private readonly publicRPCs: Record<ChainId, string[]>;
-
+export class PublicRPCsSource extends FallbackSource {
   constructor(publicRPCs?: Record<ChainId, string[]>) {
-    if (publicRPCs) {
-      this.publicRPCs = publicRPCs;
-    } else {
-      // If not set, default to known chains
-      this.publicRPCs = Object.fromEntries(
-        getAllChains()
-          .filter((chain): chain is Chain & { publicRPCs: string[] } => chain.publicRPCs.length > 0)
-          .map(({ chainId, publicRPCs }) => [chainId, publicRPCs])
-      );
-    }
+    super(buildSources(calculateRPCs(publicRPCs)), { ethers: { quorum: 1 } });
   }
+}
 
-  supportedChains(): ChainId[] {
-    return Object.keys(this.publicRPCs).map((chainId) => parseInt(chainId));
-  }
+function buildSources(publicRPCs: { chainId: ChainId; publicRPC: string }[]) {
+  return publicRPCs.map(({ chainId, publicRPC }) => new HttpProviderSource(publicRPC, [chainId]));
+}
 
-  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
-    const publicRPCs = this.publicRPCs[chainId];
-    if (!publicRPCs) throw new Error(`Unsupported chain with id ${chainId}`);
-    const config = publicRPCs.map((url, i) => ({
-      provider: buildEthersProviderForHttpSource(url, chainId),
-      priority: i,
-    }));
-    return new providers.FallbackProvider(config, 1);
-  }
+function calculateRPCs(publicRPCs?: Record<ChainId, string[]>): { chainId: ChainId; publicRPC: string }[] {
+  const rpcsByChain: [ChainId, string[]][] = publicRPCs
+    ? Object.entries(publicRPCs).map(([chainId, rpcs]) => [Number(chainId), rpcs])
+    : getAllChains()
+        .filter((chain): chain is Chain & { publicRPCs: string[] } => chain.publicRPCs.length > 0)
+        .map(({ chainId, publicRPCs }) => [chainId, publicRPCs]);
+  return rpcsByChain.flatMap(([chainId, publicRPCs]) => publicRPCs.map((publicRPC) => ({ publicRPC, chainId: Number(chainId) })));
 }
