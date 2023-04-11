@@ -3,7 +3,7 @@ import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 import { buildEthersProviderForHttpSource } from './base/base-http-provider';
 import { buildEthersProviderForWebSocketSource } from './base/base-web-socket-provider';
-import { ALCHEMY_URLs, alchemySupportedChains } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyUrl } from '@shared/alchemy-rpc';
 
 export class AlchemyProviderSource implements IProviderSource {
   constructor(private readonly key: string, private readonly protocol: 'https' | 'wss') {}
@@ -13,7 +13,7 @@ export class AlchemyProviderSource implements IProviderSource {
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
-    const url = `${this.protocol}://${ALCHEMY_URLs[chainId]}/${this.key}`;
+    const url = buildAlchemyUrl(this.key, this.protocol, chainId);
     return this.protocol === 'https' ? buildEthersProviderForHttpSource(url, chainId) : buildEthersProviderForWebSocketSource(url, chainId);
   }
 }

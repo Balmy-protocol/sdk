@@ -8,7 +8,8 @@ export class EIP1993ProviderSource implements IProviderSource {
   constructor(private readonly provider: EIP1993Provider) {}
 
   supportedChains(): ChainId[] {
-    return [this.getEthersProvider({ chainId: 1 }).network.chainId];
+    // We know that the chain id is ignored, so we can pass whatever we want
+    return [this.getEthersProvider({ chainId: 0 }).network.chainId];
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
