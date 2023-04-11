@@ -1,17 +1,17 @@
 import { Contract } from 'ethers';
 import { AbiCoder } from 'ethers/lib/utils';
 import { Address, ChainId } from '@types';
-import { IProviderSource } from '@services/providers/types';
+import { IProviderService } from '@services/providers/types';
 import { IMulticallService, TryMulticallResult } from './types';
 import { chainsIntersection } from '@chains';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 export class MulticallService implements IMulticallService {
   private readonly ABI_CODER = new AbiCoder();
-  constructor(private readonly providerSource: IProviderSource) {}
+  constructor(private readonly providerService: IProviderService) {}
 
   supportedChains(): ChainId[] {
-    return chainsIntersection(this.providerSource.supportedChains(), SUPPORTED_CHAINS);
+    return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
   }
 
   async readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
@@ -32,7 +32,7 @@ export class MulticallService implements IMulticallService {
   }
 
   private getMulticall(chainId: ChainId) {
-    return new Contract(ADDRESS, MULTICALL_ABI, this.providerSource.getEthersProvider({ chainId }));
+    return new Contract(ADDRESS, MULTICALL_ABI, this.providerService.getEthersProvider({ chainId }));
   }
 }
 

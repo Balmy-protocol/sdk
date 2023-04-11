@@ -32,6 +32,7 @@ import { SourceId } from '@services/quotes/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
+import { ProviderService } from '@services/providers/provider-service';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: SourceId; chains: Chain[] | 'all' } = {
@@ -317,7 +318,7 @@ describe('Quote Sources', () => {
         const millisToWait = ms('0.5s') * test;
         await wait(millisToWait);
         return source.quote({
-          components: { providerSource: PROVIDER_SOURCE, fetchService: FETCH_SERVICE },
+          components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
           request: {
             ...quote,
             sellToken: sellToken.address,
@@ -390,6 +391,6 @@ function getSources() {
   return result;
 }
 
-const PROVIDER_SOURCE = new PublicRPCsSource();
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService(crossFetch);
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much

@@ -1,5 +1,5 @@
 import { BuildFetchParams, buildFetchService } from './builders/fetch-builder';
-import { BuildProviderParams, buildProviderSource } from './builders/provider-source-builder';
+import { BuildProviderParams, buildProviderService } from './builders/provider-builder';
 import { buildGasService, BuildGasParams, CalculateGasValuesFromSourceParams } from './builders/gas-builder';
 import { buildMulticallService } from './builders/multicall-builder';
 import { BuildBalancesParams } from './builders';
@@ -14,17 +14,17 @@ export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
 ): ISDK<CalculateMetadataFromSourceParams<Params['metadata']>, CalculateGasValuesFromSourceParams<Params['gas']>> {
   const fetchService = buildFetchService(params?.fetch);
-  const providerSource = buildProviderSource(params?.provider);
-  const multicallService = buildMulticallService(providerSource);
-  const balanceService = buildBalanceService(params?.balances, fetchService, providerSource, multicallService);
+  const providerService = buildProviderService(params?.provider);
+  const multicallService = buildMulticallService(providerService);
+  const balanceService = buildBalanceService(params?.balances, fetchService, providerService, multicallService);
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
-  const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerSource, multicallService);
+  const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerService, multicallService);
   const metadataService = buildMetadataService<Params['metadata']>(params?.metadata, fetchService, multicallService);
   const priceService = buildPriceService(params?.price, fetchService);
-  const quoteService = buildQuoteService(params?.quotes, providerSource, fetchService, gasService as any, metadataService as any, priceService);
+  const quoteService = buildQuoteService(params?.quotes, providerService, fetchService, gasService as any, metadataService as any, priceService);
 
   return {
-    providerSource,
+    providerService,
     fetchService,
     multicallService,
     allowanceService,

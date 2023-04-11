@@ -17,13 +17,14 @@ import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources
 import { AggregatorGasPriceSource } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
 import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
+import { ProviderService } from '@services/providers/provider-service';
 
 const FETCH_SERVICE = new FetchService(crossFetch);
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const PARASWAP_SOURCE = new ParaswapGasPriceSource(FETCH_SERVICE);
 const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SERVICE);
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(FETCH_SERVICE);
-const RPC_SOURCE = new RPCGasPriceSource(new PublicRPCsSource());
+const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSource()));
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource([OPEN_OCEAN_SOURCE, RPC_SOURCE], 'median');

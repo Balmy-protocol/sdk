@@ -1,27 +1,27 @@
 import { TransactionRequest } from '@ethersproject/providers';
 import { AmountOfToken, AmountOfTokenInput, ChainId, DefaultRequirements, FieldsRequirements, TimeString } from '@types';
 import { chainsIntersection } from '@chains';
-import { IProviderSource } from '@services/providers/types';
+import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 import { validateRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
-  providerSource: IProviderSource;
+  providerService: IProviderService;
   gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder<GasValues>;
 };
 
 export class GasService<GasValues extends SupportedGasValues> implements IGasService<GasValues> {
-  private readonly providerSource: IProviderSource;
+  private readonly providerService: IProviderService;
   private readonly gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder<GasValues>;
 
-  constructor({ providerSource, gasCostCalculatorBuilder }: ConstructorParameters<GasValues>) {
-    this.providerSource = providerSource;
+  constructor({ providerService, gasCostCalculatorBuilder }: ConstructorParameters<GasValues>) {
+    this.providerService = providerService;
     this.gasCostCalculatorBuilder = gasCostCalculatorBuilder;
   }
 
   supportedChains(): ChainId[] {
-    return chainsIntersection(this.providerSource.supportedChains(), Object.keys(this.gasCostCalculatorBuilder.supportedSpeeds()).map(Number));
+    return chainsIntersection(this.providerService.supportedChains(), Object.keys(this.gasCostCalculatorBuilder.supportedSpeeds()).map(Number));
   }
 
   supportedSpeeds() {
@@ -33,7 +33,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   }
 
   estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
-    const promise = this.providerSource
+    const promise = this.providerService
       .getEthersProvider({ chainId })
       .estimateGas(tx)
       .then((estimate) => estimate.toString());

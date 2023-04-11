@@ -1,6 +1,6 @@
-import { IProviderSource } from '@services/providers/types';
+import { IProviderService } from '@services/providers/types';
 import { MulticallService } from '@services/multicall/multicall-service';
 
-export function buildMulticallService(providerSource: IProviderSource) {
-  return new MulticallService(providerSource);
+export function buildMulticallService(providerService: IProviderService) {
+  return new MulticallService(providerService);
 }

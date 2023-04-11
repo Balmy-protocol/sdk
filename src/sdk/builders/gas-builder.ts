@@ -2,7 +2,7 @@ import { ChainId } from '@types';
 import { Chains } from '@chains';
 import { ExpirationConfigOptions } from '@shared/generic-cache';
 import { IFetchService } from '@services/fetch/types';
-import { IProviderSource } from '@services/providers/types';
+import { IProviderService } from '@services/providers/types';
 import { IMulticallService } from '@services/multicall/types';
 import { ExtractGasValues, IGasPriceSource, IGasService, IQuickGasCostCalculatorBuilder, SupportedGasValues } from '@services/gas/types';
 import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
@@ -91,11 +91,11 @@ type SourcesFromArray<Inputs extends SingleSourceInput[]> = Inputs extends Singl
 export function buildGasService<Params extends BuildGasParams | undefined>(
   params: Params,
   fetchService: IFetchService,
-  providerSource: IProviderSource,
+  providerService: IProviderService,
   multicallService: IMulticallService
 ): IGasService<ExtractGasValues<CalculateSourceFromParams<Params>>> {
   const sourceInput: CachelessInput | undefined = params?.source?.type === 'cached' ? params.source.underlyingSource : params?.source;
-  const source = buildSource(sourceInput, { fetchService, multicallService, providerSource }) as IGasPriceSource<
+  const source = buildSource(sourceInput, { fetchService, multicallService, providerService }) as IGasPriceSource<
     CalculateGasValuesFromSourceParams<Params>
   >;
 
@@ -110,26 +110,26 @@ export function buildGasService<Params extends BuildGasParams | undefined>(
     });
   }
 
-  return new GasService({ providerSource, gasCostCalculatorBuilder });
+  return new GasService({ providerService, gasCostCalculatorBuilder });
 }
 
 function buildSource(
   source: CachelessInput | undefined,
   {
-    providerSource,
+    providerService,
     multicallService,
     fetchService,
-  }: { providerSource: IProviderSource; multicallService: IMulticallService; fetchService: IFetchService }
+  }: { providerService: IProviderService; multicallService: IMulticallService; fetchService: IFetchService }
 ): IGasPriceSource<object> {
   switch (source?.type) {
     case undefined:
-      return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerSource }), 'median');
+      return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerService }), 'median');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'paraswap':
       return new ParaswapGasPriceSource(fetchService);
     case 'rpc':
-      return new RPCGasPriceSource(providerSource);
+      return new RPCGasPriceSource(providerService);
     case 'eth-gas-station':
       return new EthGasStationGasPriceSource(fetchService);
     case 'polygon-gas-station':
@@ -143,12 +143,12 @@ function buildSource(
     case 'custom':
       return source.instance;
     case 'aggregate':
-      return new AggregatorGasPriceSource(calculateSources(source.sources, { fetchService, multicallService, providerSource }), source.by);
+      return new AggregatorGasPriceSource(calculateSources(source.sources, { fetchService, multicallService, providerService }), source.by);
     case 'fastest':
-      return new FastestGasPriceSourceCombinator(calculateSources(source.sources, { fetchService, multicallService, providerSource }));
+      return new FastestGasPriceSourceCombinator(calculateSources(source.sources, { fetchService, multicallService, providerService }));
     case 'prioritized':
       return new PrioritizedGasPriceSourceCombinator(
-        source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }))
+        source.sources.map((source) => buildSource(source, { fetchService, multicallService, providerService }))
       );
   }
 }
@@ -165,23 +165,23 @@ type PublicSources = [
 function calculateSources(
   sources: CachelessInput[],
   {
-    providerSource,
+    providerService,
     multicallService,
     fetchService,
-  }: { providerSource: IProviderSource; multicallService: IMulticallService; fetchService: IFetchService }
+  }: { providerService: IProviderService; multicallService: IMulticallService; fetchService: IFetchService }
 ) {
-  return sources.map((source) => buildSource(source, { fetchService, multicallService, providerSource }));
+  return sources.map((source) => buildSource(source, { fetchService, multicallService, providerService }));
 }
 
 function calculatePublicSources({
-  providerSource,
+  providerService,
   fetchService,
 }: {
-  providerSource: IProviderSource;
+  providerService: IProviderService;
   fetchService: IFetchService;
 }): PublicSources {
   const openOcean = new OpenOceanGasPriceSource(fetchService);
-  const rpc = new RPCGasPriceSource(providerSource);
+  const rpc = new RPCGasPriceSource(providerService);
   const ethGasStation = new EthGasStationGasPriceSource(fetchService);
   const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
   const etherscan = new EtherscanGasPriceSource(fetchService);

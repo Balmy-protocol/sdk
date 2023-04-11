@@ -7,21 +7,21 @@ import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/b
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
-import { IProviderSource } from '@services/providers';
+import { IProviderService } from '@services/providers';
 import { SourceInvalidConfigOrContextError, SourceNoBuyOrdersError, SourceNotFoundError } from '../errors';
 
 type ConstructorParameters = {
-  providerSource: IProviderSource;
+  providerService: IProviderService;
   fetchService: IFetchService;
 };
 
 export class LocalSourceList implements IQuoteSourceList {
-  private readonly providerSource: IProviderSource;
+  private readonly providerService: IProviderService;
   private readonly fetchService: IFetchService;
   private readonly sources: Record<SourceId, IQuoteSource<QuoteSourceSupport, any>> = QUOTE_SOURCES;
 
-  constructor({ providerSource, fetchService }: ConstructorParameters) {
-    this.providerSource = providerSource;
+  constructor({ providerService, fetchService }: ConstructorParameters) {
+    this.providerService = providerService;
     this.fetchService = fetchService;
   }
 
@@ -49,7 +49,7 @@ export class LocalSourceList implements IQuoteSourceList {
 
     // Ask for quote
     const response = await source.quote({
-      components: { providerSource: this.providerSource, fetchService: this.fetchService },
+      components: { providerService: this.providerService, fetchService: this.fetchService },
       config,
       request: sourceRequest,
     });
