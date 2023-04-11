@@ -1,7 +1,7 @@
 import { ChainId } from '@types';
-import { BaseWebSocketProvider } from './base/base-web-socket-provider';
+import { BaseHttpProvider } from './base/base-http-provider';
 
-export class WebSocketProviderSource extends BaseWebSocketProvider {
+export class HttpProviderSource extends BaseHttpProvider {
   constructor(private readonly url: string, private readonly chains: ChainId[]) {
     super();
     if (chains.length === 0) throw new Error('Must support at least one chain');

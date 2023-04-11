@@ -3,16 +3,16 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
-import { IProviderSource } from '@services/providers/types';
+import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(private readonly providerSource: IProviderSource, private readonly multicallService: IMulticallService) {
+  constructor(private readonly providerService: IProviderService, private readonly multicallService: IMulticallService) {
     super();
   }
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    const supportedChains = chainsIntersection(this.providerSource.supportedChains(), this.multicallService.supportedChains());
+    const supportedChains = chainsIntersection(this.providerService.supportedChains(), this.multicallService.supportedChains());
     const entries = supportedChains.map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: false }]);
     return Object.fromEntries(entries);
   }
@@ -56,7 +56,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
-    return this.providerSource
+    return this.providerService
       .getEthersProvider({ chainId })
       .getBalance(account)
       .then((balance) => balance.toString());
