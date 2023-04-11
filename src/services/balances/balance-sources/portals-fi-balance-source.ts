@@ -7,7 +7,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
 export class PortalsFiBalanceSource implements IBalanceSource {
-  constructor(private readonly fetchService: IFetchService) {}
+  constructor(private readonly fetchService: IFetchService, private readonly key: string) {}
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
     const entries = PORTALS_FI_SUPPORTED_CHAINS.map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: true }]);
@@ -60,7 +60,7 @@ export class PortalsFiBalanceSource implements IBalanceSource {
       result[chainId] = {};
       for (const account in tokens[chainId]) {
         result[chainId][account] = {};
-        for (const token in tokens[chainId][account]) {
+        for (const token of tokens[chainId][account]) {
           result[chainId][account][token] = tokensHeldByAccount?.[chainId]?.[account]?.[token] ?? '0';
         }
       }
@@ -77,7 +77,10 @@ export class PortalsFiBalanceSource implements IBalanceSource {
       .map((chainId) => PORTALS_FI_CHAIN_ID_TO_KEY[chainId])
       .filter((key) => !!key)
       .join('&networks=');
-    const response = await this.fetchService.fetch(`https://api.portals.fi/v2/account?ownerAddress=${account}&networks=${keys}`, { timeout });
+    const response = await this.fetchService.fetch(`https://api.portals.fi/v2/account?ownerAddress=${account}&networks=${keys}`, {
+      timeout,
+      headers: { 'x-api-key': this.key },
+    });
     const { balances }: Result = await response.json();
     const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
     for (const { key, rawBalance } of balances) {

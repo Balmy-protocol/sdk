@@ -58,16 +58,16 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
 });
-const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE);
+const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Balance Sources', () => {
-  // balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
-  // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
-  // balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE });
+  balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
+  balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
@@ -85,7 +85,6 @@ describe('Balance Sources', () => {
           });
           const input = Object.fromEntries(entries);
           result = await source.getBalancesForTokens({ tokens: input, config: { timeout: '30s' } });
-          console.log(result);
         });
 
         test('getBalancesForTokens is supported', () => {
@@ -107,7 +106,6 @@ describe('Balance Sources', () => {
           beforeAll(async () => {
             const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
             result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '30s' } });
-            console.log(result);
           });
 
           validateBalances(() => result, supportedChains, false);
