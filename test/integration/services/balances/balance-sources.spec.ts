@@ -75,11 +75,10 @@ describe('Balance Sources', () => {
     describe(title, () => {
       const sourceSupport = source.supportedQueries();
 
-      describe.only('getBalancesForTokens', () => {
+      describe('getBalancesForTokens', () => {
         let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
         beforeAll(async () => {
-          // const chains = Object.keys(sourceSupport).map(Number);
-          const chains = [106];
+          const chains = Object.keys(sourceSupport).map(Number);
           const entries = chains.map<[ChainId, Record<Address, TokenAddress[]>]>((chainId) => {
             const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
             if (chainId in TESTS) addresses.push(TESTS[chainId].address);
@@ -95,7 +94,7 @@ describe('Balance Sources', () => {
           }
         });
 
-        validateBalances(() => result, [106], true);
+        validateBalances(() => result, Object.keys(sourceSupport).map(Number), true);
       });
 
       describe('getTokensHeldByAccount', () => {
