@@ -1,5 +1,4 @@
-import { TransactionRequest } from '@ethersproject/providers';
-import { AmountOfToken, AmountOfTokenInput, ChainId, DefaultRequirements, FieldsRequirements, TimeString } from '@types';
+import { AmountOfToken, AmountOfTokenInput, ChainId, DefaultRequirements, FieldsRequirements, TimeString, Transaction } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
@@ -32,7 +31,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return Object.fromEntries(entries);
   }
 
-  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: Transaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
     const promise = this.providerService
       .getEthersProvider({ chainId })
       .estimateGas(tx)
@@ -70,7 +69,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   }: {
     chainId: ChainId;
     gasEstimation: AmountOfTokenInput;
-    tx?: TransactionRequest;
+    tx?: Transaction;
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {
     const gasCalculator = await this.getQuickGasCalculator({ chainId, config });

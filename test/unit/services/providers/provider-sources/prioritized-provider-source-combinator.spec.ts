@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { JsonRpcProvider } from '@ethersproject/providers';
+import { http } from 'viem';
 import { Chains } from '@chains';
 import { then, when } from '@test-utils/bdd';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
@@ -12,10 +13,12 @@ describe('Prioritized Provider Source Combinator', () => {
   const source1: IProviderSource = {
     supportedChains: () => [Chains.POLYGON.chainId],
     getEthersProvider: () => PROVIDER_1,
+    getViemTransport: () => http(),
   };
   const source2: IProviderSource = {
     supportedChains: () => [Chains.POLYGON.chainId, Chains.ETHEREUM.chainId],
     getEthersProvider: () => PROVIDER_2,
+    getViemTransport: () => http(),
   };
   const fallbackSource = new PrioritizedProviderSourceCombinator([source1, source2]);
 

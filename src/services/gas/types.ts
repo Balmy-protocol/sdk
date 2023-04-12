@@ -1,4 +1,3 @@
-import { TransactionRequest } from '@ethersproject/providers';
 import {
   AmountOfToken,
   AmountOfTokenInput,
@@ -8,6 +7,7 @@ import {
   FieldsRequirements,
   SupportInChain,
   TimeString,
+  Transaction,
 } from '@types';
 import { UnionMerge } from '@utility-types';
 
@@ -22,7 +22,7 @@ export type GasEstimation<
 export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
-  estimateGas(_: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken>;
+  estimateGas(_: { chainId: ChainId; tx: Transaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken>;
   getGasPrice<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
     config?: { timeout?: TimeString; fields?: Requirements };
@@ -30,7 +30,7 @@ export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues>
   calculateGasCost<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
     gasEstimation: AmountOfTokenInput;
-    tx?: TransactionRequest;
+    tx?: Transaction;
     config?: { timeout?: TimeString; fields?: Requirements };
   }): Promise<GasEstimation<GasValues, Requirements>>;
   getQuickGasCalculator<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
@@ -53,7 +53,7 @@ export type IQuickGasCostCalculator<
 > = {
   supportedSpeeds(): SupportInChain<GasValues>;
   getGasPrice(): GasPriceResult<GasValues, Requirements>;
-  calculateGasCost(_: { gasEstimation: AmountOfTokenInput; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
+  calculateGasCost(_: { gasEstimation: AmountOfTokenInput; tx?: Transaction }): GasEstimation<GasValues, Requirements>;
 };
 
 export type IGasPriceSource<GasValues extends SupportedGasValues> = {

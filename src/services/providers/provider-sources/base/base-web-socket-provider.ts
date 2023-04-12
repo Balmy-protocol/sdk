@@ -1,5 +1,6 @@
-import { BaseProvider, JsonRpcProvider, WebSocketProvider } from '@ethersproject/providers';
+import { BaseProvider, WebSocketProvider } from '@ethersproject/providers';
 import { IProviderSource } from '@services/providers/types';
+import { webSocket } from 'viem';
 import { ChainId } from '@types';
 
 export abstract class BaseWebSocketProvider implements IProviderSource {
@@ -7,6 +8,12 @@ export abstract class BaseWebSocketProvider implements IProviderSource {
     this.assertChainIsValid(chainId);
     const url = this.calculateUrl(chainId);
     return buildEthersProviderForWebSocketSource(url, chainId);
+  }
+
+  getViemTransport({ chainId }: { chainId: ChainId }) {
+    this.assertChainIsValid(chainId);
+    const url = this.calculateUrl(chainId);
+    return buildViemTransportForWebSocketSource(url, chainId);
   }
 
   abstract supportedChains(): ChainId[];
@@ -19,4 +26,8 @@ export abstract class BaseWebSocketProvider implements IProviderSource {
 
 export function buildEthersProviderForWebSocketSource(url: string, chainId: ChainId) {
   return new WebSocketProvider(url, chainId);
+}
+
+export function buildViemTransportForWebSocketSource(url: string, chainId: ChainId) {
+  return webSocket(url);
 }

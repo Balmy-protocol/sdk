@@ -1,5 +1,4 @@
 import { ChainId } from '@types';
-import { providers } from 'ethers';
 import { IProviderSource } from '../types';
 
 export class UpdatableProviderSource implements IProviderSource {
@@ -9,11 +8,19 @@ export class UpdatableProviderSource implements IProviderSource {
     return this.underlying()?.supportedChains() ?? [];
   }
 
-  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }) {
     const provider = this.underlying();
     if (!provider) {
       throw new Error(`Provider is not set yet`);
     }
     return provider.getEthersProvider({ chainId });
+  }
+
+  getViemTransport({ chainId }: { chainId: ChainId }) {
+    const provider = this.underlying();
+    if (!provider) {
+      throw new Error(`Provider is not set yet`);
+    }
+    return provider.getViemTransport({ chainId });
   }
 }

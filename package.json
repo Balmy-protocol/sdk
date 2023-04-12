@@ -43,7 +43,8 @@
   "dependencies": {
     "cross-fetch": "3.1.5",
     "ethers": "5.7.2",
-    "ms": "3.0.0-canary.1"
+    "ms": "3.0.0-canary.1",
+    "viem": "0.3.0"
   },
   "devDependencies": {
     "@commitlint/cli": "17.5.1",
@@ -56,6 +57,7 @@
     "@nomiclabs/hardhat-ethers": "2.2.2",
     "@types/jest": "29.5.0",
     "@types/node": "18.15.11",
+    "@types/ws": "^8.5.4",
     "chai": "4.3.7",
     "dotenv": "16.0.3",
     "hardhat": "2.13.0",

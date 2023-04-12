@@ -1,5 +1,6 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
+import { ProviderService } from '@services/providers/provider-service';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
@@ -50,9 +51,9 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chain
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
-const PROVIDER_SOURCE = new PublicRPCsSource();
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService(crossFetch);
-const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
+const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   useCachedValue: 'always',
