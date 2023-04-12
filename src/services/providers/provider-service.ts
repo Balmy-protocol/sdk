@@ -1,6 +1,6 @@
 import { ChainId } from '@types';
-import { BaseProvider } from '@ethersproject/providers';
 import { IProviderService, IProviderSource } from './types';
+import { createPublicClient } from 'viem';
 
 export class ProviderService implements IProviderService {
   constructor(private readonly source: IProviderSource) {}
@@ -9,7 +9,12 @@ export class ProviderService implements IProviderService {
     return this.source.supportedChains();
   }
 
-  getEthersProvider({ chainId }: { chainId: ChainId }): BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }) {
     return this.source.getEthersProvider({ chainId });
+  }
+
+  getViemProvider({ chainId }: { chainId: ChainId }) {
+    const transport = this.source.getViemTransport({ chainId });
+    return createPublicClient({ transport });
   }
 }

@@ -1,4 +1,3 @@
-import { providers } from 'ethers';
 import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
 import { IProviderSource } from '../types';
@@ -14,9 +13,15 @@ export class PrioritizedProviderSourceCombinator implements IProviderSource {
     return chainsUnion(this.sources.map((source) => source.supportedChains()));
   }
 
-  getEthersProvider({ chainId }: { chainId: ChainId }): providers.BaseProvider {
+  getEthersProvider({ chainId }: { chainId: ChainId }) {
     const source = this.sources.find((source) => source.supportedChains().includes(chainId));
     if (!source) throw new Error(`Chain with id ${chainId} not supported`);
     return source.getEthersProvider({ chainId });
+  }
+
+  getViemTransport({ chainId }: { chainId: ChainId }) {
+    const source = this.sources.find((source) => source.supportedChains().includes(chainId));
+    if (!source) throw new Error(`Chain with id ${chainId} not supported`);
+    return source.getViemTransport({ chainId });
   }
 }

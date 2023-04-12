@@ -1,12 +1,19 @@
 import { BaseProvider, StaticJsonRpcProvider } from '@ethersproject/providers';
-import { IProviderSource } from '@services/providers/types';
+import { http } from 'viem';
 import { ChainId } from '@types';
+import { IProviderSource } from '@services/providers/types';
 
 export abstract class BaseHttpProvider implements IProviderSource {
   getEthersProvider({ chainId }: { chainId: ChainId }): BaseProvider {
     this.assertChainIsValid(chainId);
     const url = this.calculateUrl(chainId);
     return buildEthersProviderForHttpSource(url, chainId);
+  }
+
+  getViemTransport({ chainId }: { chainId: ChainId }) {
+    this.assertChainIsValid(chainId);
+    const url = this.calculateUrl(chainId);
+    return buildViemTransportForHttpSource(url, chainId);
   }
 
   abstract supportedChains(): ChainId[];
@@ -19,4 +26,8 @@ export abstract class BaseHttpProvider implements IProviderSource {
 
 export function buildEthersProviderForHttpSource(url: string, chainId: ChainId) {
   return new StaticJsonRpcProvider(url, chainId);
+}
+
+export function buildViemTransportForHttpSource(url: string, chainId: ChainId) {
+  return http(url);
 }

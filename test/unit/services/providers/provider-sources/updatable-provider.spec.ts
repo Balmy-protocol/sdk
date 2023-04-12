@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { http } from 'viem';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { given, then, when } from '@test-utils/bdd';
 import { UpdatableProviderSource } from '@services/providers/provider-sources/updatable-provider';
@@ -32,4 +33,5 @@ const ETHERS_PROVIDER = new JsonRpcProvider('', 10);
 const CUSTOM_PROVIDER_SOURCE: IProviderSource = {
   supportedChains: () => [10],
   getEthersProvider: () => ETHERS_PROVIDER,
+  getViemTransport: () => http(),
 };
