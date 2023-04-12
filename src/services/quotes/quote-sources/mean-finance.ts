@@ -34,6 +34,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<Mea
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom, recipient },
       order,
+      external,
       ...request
     },
     config,
@@ -48,7 +49,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<Mea
       takerAddress: takeFrom,
       recipient,
       txValidFor,
-      quoteTiemout: timeout,
+      quoteTimeout: timeout,
       sourceConfig: config,
     };
 

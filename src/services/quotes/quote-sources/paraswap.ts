@@ -81,7 +81,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(PARASWAP_METADATA, chain, sellToken, buyToken);
+      failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { priceRoute } = await response.json();
     return priceRoute;
