@@ -5,6 +5,7 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
+import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -13,6 +14,8 @@ import { IBalanceSource } from '@services/balances/types';
 import chaiAsPromised from 'chai-as-promised';
 import { formatUnits } from 'ethers/lib/utils';
 import dotenv from 'dotenv';
+import { FetchService } from '@services/fetch/fetch-service';
+import crossFetch from 'cross-fetch';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -48,12 +51,14 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chain
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
 const PROVIDER_SOURCE = new PublicRPCsSource();
+const FETCH_SERVICE = new FetchService(crossFetch);
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',
 });
+const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -62,6 +67,7 @@ describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {

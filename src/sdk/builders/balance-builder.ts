@@ -8,12 +8,14 @@ import { IFetchService } from '@services/fetch';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { MoralisBalanceSource } from '@services/balances/balance-sources/moralis-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
+import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 
 export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'cached'; underlyingSource: BalanceSourceInput; expiration: ExpirationConfigOptions }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
+  | { type: 'portals-fi'; key: string }
   | { type: 'moralis'; key: string };
 export type BuildBalancesParams = { source: BalanceSourceInput };
 
@@ -46,6 +48,8 @@ function buildSource(
       return source.instance;
     case 'alchemy':
       return new AlchemyBalanceSource(source.key, source.protocol ?? 'https');
+    case 'portals-fi':
+      return new PortalsFiBalanceSource(fetchService, source.key);
     case 'moralis':
       return new MoralisBalanceSource(fetchService, source.key);
   }
