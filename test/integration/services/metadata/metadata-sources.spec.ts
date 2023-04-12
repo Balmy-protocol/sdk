@@ -45,29 +45,29 @@ describe('Metadata Sources', () => {
     source: RPC_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
   });
-  // metadataSourceTest({
-  //   title: 'Portals Fi Source',
-  //   source: PORTALS_FI_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
-  // });
-  // metadataSourceTest({
-  //   title: 'Defi Llama Source',
-  //   source: DEFI_LLAMA_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
-  // });
-  // metadataSourceTest({
-  //   title: 'Fallback Source',
-  //   source: FALLBACK_METADATA_SOURCE,
-  //   fields: [
-  //     { fields: ['decimals', 'symbol'], on: 'all chains' },
-  //     { fields: ['name'], on: chainsForSource(RPC_METADATA_SOURCE) },
-  //   ],
-  // });
-  // metadataSourceTest({
-  //   title: 'Cached Source',
-  //   source: CACHED_METADATA_SOURCE,
-  //   fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
-  // });
+  metadataSourceTest({
+    title: 'Portals Fi Source',
+    source: PORTALS_FI_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
+  });
+  metadataSourceTest({
+    title: 'Defi Llama Source',
+    source: DEFI_LLAMA_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+  });
+  metadataSourceTest({
+    title: 'Fallback Source',
+    source: FALLBACK_METADATA_SOURCE,
+    fields: [
+      { fields: ['decimals', 'symbol'], on: 'all chains' },
+      { fields: ['name'], on: chainsForSource(RPC_METADATA_SOURCE) },
+    ],
+  });
+  metadataSourceTest({
+    title: 'Cached Source',
+    source: CACHED_METADATA_SOURCE,
+    fields: [{ fields: ['decimals', 'symbol'], on: 'all chains' }],
+  });
   // metadataSourceTest({
   //   title: 'Changelly Source',
   //   source: CHANGELLY_METADATA_SOURCE,
