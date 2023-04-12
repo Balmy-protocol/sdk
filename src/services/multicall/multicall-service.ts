@@ -1,8 +1,7 @@
-import { Contract } from 'ethers';
 import { AbiCoder } from 'ethers/lib/utils';
 import { Address, ChainId } from '@types';
 import { IProviderService } from '@services/providers/types';
-import { IMulticallService, TryMulticallResult } from './types';
+import { IMulticallService } from './types';
 import { chainsIntersection } from '@chains';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
@@ -14,46 +13,123 @@ export class MulticallService implements IMulticallService {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
   }
 
-  async readOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
-    const multicall = this.getMulticall(chainId);
-    const [blockNumber, results]: [number, string[]] = await multicall.callStatic.aggregate(
-      calls.map(({ target, calldata }) => [target, calldata])
-    );
-    return results.map((result, i) => this.ABI_CODER.decode(calls[i].decode, result));
+  async readOnlyMulticall({
+    chainId,
+    calls,
+  }: {
+    chainId: ChainId;
+    calls: { target: Address; calldata: string; decode: string[] }[];
+  }): Promise<ReadonlyArray<any>[]> {
+    if (calls.length === 0) return [];
+    const simulation = await this.providerService.getViemClient({ chainId }).simulateContract({
+      address: ADDRESS,
+      abi: MULTICALL_ABI,
+      functionName: 'aggregate',
+      args: [calls.map(({ target, calldata }) => [target, calldata])],
+      blockTag: 'latest',
+    });
+    return (simulation.result as [number, string[]])[1].map((result, i) => this.ABI_CODER.decode(calls[i].decode, result));
   }
 
   async tryReadOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
-    const multicall = this.getMulticall(chainId);
-    const results: [boolean, string][] = await multicall.callStatic.tryAggregate(
-      false,
-      calls.map(({ target, calldata }) => [target, calldata])
+    const simulation = await this.providerService.getViemClient({ chainId }).simulateContract({
+      address: ADDRESS,
+      abi: MULTICALL_ABI,
+      functionName: 'tryAggregate',
+      args: [false, calls.map(({ target, calldata }) => [target, calldata])],
+      blockTag: 'latest',
+    });
+    return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
+      success ? { success, result: this.ABI_CODER.decode(calls[i].decode, returnData) } : { success }
     );
-    return results.map(([success, result], i) => (success ? { success, result: this.ABI_CODER.decode(calls[i].decode, result) } : { success }));
-  }
-
-  private getMulticall(chainId: ChainId) {
-    return new Contract(ADDRESS, MULTICALL_ABI, this.providerService.getEthersProvider({ chainId }));
   }
 }
 
 const MULTICALL_ABI = [
-  // https://github.com/mds1/multicall
-  'function aggregate(tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)',
-  'function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) payable returns (tuple(bool success, bytes returnData)[] returnData)',
-  'function aggregate3Value(tuple(address target, bool allowFailure, uint256 value, bytes callData)[] calls) payable returns (tuple(bool success, bytes returnData)[] returnData)',
-  'function blockAndAggregate(tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes32 blockHash, tuple(bool success, bytes returnData)[] returnData)',
-  'function getBasefee() view returns (uint256 basefee)',
-  'function getBlockHash(uint256 blockNumber) view returns (bytes32 blockHash)',
-  'function getBlockNumber() view returns (uint256 blockNumber)',
-  'function getChainId() view returns (uint256 chainid)',
-  'function getCurrentBlockCoinbase() view returns (address coinbase)',
-  'function getCurrentBlockDifficulty() view returns (uint256 difficulty)',
-  'function getCurrentBlockGasLimit() view returns (uint256 gaslimit)',
-  'function getCurrentBlockTimestamp() view returns (uint256 timestamp)',
-  'function getEthBalance(address addr) view returns (uint256 balance)',
-  'function getLastBlockHash() view returns (bytes32 blockHash)',
-  'function tryAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) payable returns (tuple(bool success, bytes returnData)[] returnData)',
-  'function tryBlockAndAggregate(bool requireSuccess, tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes32 blockHash, tuple(bool success, bytes returnData)[] returnData)',
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: 'address',
+            name: 'target',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes',
+            name: 'callData',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct Multicall3.Call[]',
+        name: 'calls',
+        type: 'tuple[]',
+      },
+    ],
+    name: 'aggregate',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: 'blockNumber',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bytes[]',
+        name: 'returnData',
+        type: 'bytes[]',
+      },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bool',
+        name: 'requireSuccess',
+        type: 'bool',
+      },
+      {
+        components: [
+          {
+            internalType: 'address',
+            name: 'target',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes',
+            name: 'callData',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct Multicall3.Call[]',
+        name: 'calls',
+        type: 'tuple[]',
+      },
+    ],
+    name: 'tryAggregate',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'bool',
+            name: 'success',
+            type: 'bool',
+          },
+          {
+            internalType: 'bytes',
+            name: 'returnData',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct Multicall3.Result[]',
+        name: 'returnData',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
 ];
 
 const SUPPORTED_CHAINS: ChainId[] = [

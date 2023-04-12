@@ -2,6 +2,7 @@ import { IProviderService } from '@services/providers';
 import { AmountOfTokenInput, ChainId, TimeString, Transaction } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
+import { mapTxToViemTx } from '@shared/viem';
 
 export class RPCSimulationSource implements ISimulationSource {
   constructor(private readonly providerService: IProviderService) {}
@@ -27,7 +28,11 @@ export class RPCSimulationSource implements ISimulationSource {
     if (!isValid(tx.value)) return invalidTx('"value" is not a valid');
 
     try {
-      const estimatedGas = await this.providerService.getEthersProvider({ chainId }).estimateGas(tx);
+      const viemTx = mapTxToViemTx(tx);
+      const estimatedGas = await this.providerService.getViemClient({ chainId }).estimateGas({
+        ...viemTx,
+        account: viemTx.from,
+      });
       return {
         successful: true,
         stageChanges: [],

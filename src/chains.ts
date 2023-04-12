@@ -146,7 +146,7 @@ export const Chains = {
     ids: ['velas'],
     nativeCurrency: { symbol: 'VLX', name: 'Velas' },
     wToken: '0xc579D1f3CF86749E05CD06f7ADe17856c2CE3126',
-    publicRPCs: ['https://evmexplorer.velas.com/rpc', 'https://explorer.velas.com/rpc'],
+    publicRPCs: ['https://evmexplorer.velas.com/api/eth-rpc', 'https://explorer.velas.com/rpc'],
     explorer: 'https://explorer.velas.com/',
   },
   GNOSIS: {
