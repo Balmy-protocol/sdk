@@ -1,4 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
+import { Address as ViemAddress } from 'viem';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
@@ -57,8 +58,8 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
     return this.providerService
-      .getEthersProvider({ chainId })
-      .getBalance(account)
+      .getViemClient({ chainId })
+      .getBalance({ address: account as ViemAddress, blockTag: 'latest' })
       .then((balance) => balance.toString());
   }
 }

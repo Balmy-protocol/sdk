@@ -4,6 +4,7 @@ import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 import { validateRequirements } from '@shared/requirements-and-support';
+import { mapTxToViemTx } from '@shared/viem';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
   providerService: IProviderService;
@@ -32,9 +33,13 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   }
 
   estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: Transaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+    const viemTx = mapTxToViemTx(tx);
     const promise = this.providerService
-      .getEthersProvider({ chainId })
-      .estimateGas(tx)
+      .getViemClient({ chainId })
+      .estimateGas({
+        ...viemTx,
+        account: viemTx.from,
+      })
       .then((estimate) => estimate.toString());
     return timeoutPromise(promise, config?.timeout);
   }
