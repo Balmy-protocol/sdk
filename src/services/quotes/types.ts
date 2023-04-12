@@ -1,7 +1,6 @@
-import { TransactionRequest } from '@ethersproject/providers';
-import { EIP1159GasPrice, GasSpeed, LegacyGasPrice, SupportedGasValues } from '@services/gas/types';
+import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, AmountOfTokenInput, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, AmountOfTokenInput, ChainId, SupportInChain, TimeString, TokenAddress, Transaction } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -68,9 +67,6 @@ export type QuoteRequest = {
 };
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { address: TokenAddress; price?: number };
-export type QuoteTx = Required<Pick<TransactionRequest, 'to' | 'from' | 'data'>> &
-  Partial<EIP1159GasPrice> &
-  Partial<LegacyGasPrice> & { value?: AmountOfToken };
 export type QuoteResponse = {
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
@@ -88,7 +84,7 @@ export type QuoteResponse = {
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
-  tx: QuoteTx;
+  tx: Transaction;
 };
 
 export type IndividualQuoteRequest = Omit<

@@ -1,6 +1,7 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
+import { ProviderService } from '@services/providers/provider-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
 import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
@@ -24,7 +25,8 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 };
 
 const FETCH_SERVICE = new FetchService(crossFetch);
-const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(new PublicRPCsSource()));
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(PROVIDER_SERVICE));
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
 const PORTALS_FI_METADATA_SOURCE = new PortalsFiMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);

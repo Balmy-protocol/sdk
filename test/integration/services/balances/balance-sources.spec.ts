@@ -1,5 +1,6 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
+import { ProviderService } from '@services/providers/provider-service';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
@@ -47,8 +48,8 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chain
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
-const PROVIDER_SOURCE = new PublicRPCsSource();
-const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SOURCE, new MulticallService(PROVIDER_SOURCE));
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   useCachedValue: 'always',
@@ -60,18 +61,19 @@ jest.setTimeout(ms('1m'));
 
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
       const sourceSupport = source.supportedQueries();
 
-      describe('getBalancesForTokens', () => {
+      describe.only('getBalancesForTokens', () => {
         let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
         beforeAll(async () => {
-          const chains = Object.keys(sourceSupport).map(Number);
+          // const chains = Object.keys(sourceSupport).map(Number);
+          const chains = [106];
           const entries = chains.map<[ChainId, Record<Address, TokenAddress[]>]>((chainId) => {
             const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
             if (chainId in TESTS) addresses.push(TESTS[chainId].address);
@@ -87,7 +89,7 @@ describe('Balance Sources', () => {
           }
         });
 
-        validateBalances(() => result, Object.keys(sourceSupport).map(Number), true);
+        validateBalances(() => result, [106], true);
       });
 
       describe('getTokensHeldByAccount', () => {

@@ -1,7 +1,7 @@
 import { IProviderService } from '@services/providers';
-import { ChainId, TimeString } from '@types';
+import { AmountOfTokenInput, ChainId, TimeString, Transaction } from '@types';
 import { BigNumber, utils } from 'ethers';
-import { ISimulationSource, SimulationResult, SimulationQueriesSupport, Transaction, FailedSimulation } from '../types';
+import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 
 export class RPCSimulationSource implements ISimulationSource {
   constructor(private readonly providerService: IProviderService) {}
@@ -59,7 +59,7 @@ function invalidTx(message: string): FailedSimulation {
   };
 }
 
-function isValid(value: string | undefined) {
+function isValid(value: AmountOfTokenInput | undefined) {
   if (!value) return true;
   try {
     BigNumber.from(value);

@@ -1,5 +1,6 @@
 import ms from 'ms';
 import { expect } from 'chai';
+import { ProviderService } from '@services/providers/provider-service';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
@@ -33,8 +34,9 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
     symbol: 'waUSDC',
   },
 };
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!, 'https');
-const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(new PublicRPCsSource()));
+const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   useCachedValue: 'always',
   useCachedValueIfCalculationFailed: 'always',

@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, ChainId, TimeString } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, Transaction } from '@types';
 
 type SimulationSupport = 'none' | 'gas-only' | 'state-changes';
 export type SimulationQueriesSupport = {
@@ -11,7 +11,6 @@ export type ISimulationSource = {
   simulateTransaction(_: { chainId: ChainId; tx: Transaction; config?: { timeout?: TimeString } }): Promise<SimulationResult>;
   simulateTransactionBundle(_: { chainId: ChainId; bundle: Transaction[]; config?: { timeout?: TimeString } }): Promise<SimulationResult[]>;
 };
-export type Transaction = { from: Address; to: Address; data?: string; value?: AmountOfToken };
 export type SuccessfulSimulation = {
   successful: true;
   estimatedGas: AmountOfToken;

@@ -1,9 +1,9 @@
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
-import { Address, AmountOfToken, ChainId, TimeString } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, Transaction } from '@types';
 import { BigNumber } from 'ethers';
 import { hexValue } from 'ethers/lib/utils';
-import { ISimulationSource, SimulationResult, SimulationQueriesSupport, Transaction, StateChange } from '../types';
+import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
 
 export class AlchemySimulationSource implements ISimulationSource {
   constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {}

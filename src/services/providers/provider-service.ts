@@ -13,7 +13,7 @@ export class ProviderService implements IProviderService {
     return this.source.getEthersProvider({ chainId });
   }
 
-  getViemProvider({ chainId }: { chainId: ChainId }) {
+  getViemClient({ chainId }: { chainId: ChainId }) {
     const transport = this.source.getViemTransport({ chainId });
     return createPublicClient({ transport });
   }

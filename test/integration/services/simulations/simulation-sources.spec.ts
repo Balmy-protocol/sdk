@@ -15,13 +15,15 @@ import {
 } from '@services/simulations/types';
 import { then, when } from '@test-utils/bdd';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { ProviderService } from '@services/providers/provider-service';
 dotenv.config();
 chai.use(chaiAsPromised);
 
 // const FETCH_SERVICE = new FetchService(crossFetch);
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 // const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(process.env.ALCHEMY_API_KEY!, 'https);
 // const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);
-const RPC_SIMULATION_SOURCE = new RPCSimulationSource(new PublicRPCsSource());
+const RPC_SIMULATION_SOURCE = new RPCSimulationSource(PROVIDER_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));

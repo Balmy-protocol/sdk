@@ -6,12 +6,13 @@ import { Chains } from '@chains';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { TryMulticallResult } from '@services/multicall';
+import { ProviderService } from '@services/providers/provider-service';
 
 jest.retryTimes(3);
 jest.setTimeout(ms('30s'));
 
-const PROVIDER = new PublicRPCsSource();
-const MULTICALL = new MulticallService(PROVIDER);
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const MULTICALL = new MulticallService(PROVIDER_SERVICE);
 
 describe('Multicall Service', () => {
   describe('tryReadOnlyMulticall', () => {

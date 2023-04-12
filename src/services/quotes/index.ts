@@ -4,7 +4,6 @@ export {
   IQuoteService,
   QuoteRequest,
   QuoteResponse,
-  QuoteTx,
   IndividualQuoteRequest,
   EstimatedQuoteRequest,
   EstimatedQuoteResponse,
