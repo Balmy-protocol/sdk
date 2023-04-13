@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import ms from 'ms';
-import { Address, AmountOfToken, AmountOfTokenLike, Chain, TimeString } from '@types';
+import { Address, AmountOfToken, AmountOfTokenLike, Chain, ChainId, TimeString, TokenAddress } from '@types';
 
 export function wait(time: TimeString | number) {
   return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
@@ -78,4 +78,14 @@ export function ruleOfThree({ a, matchA, b }: { a: AmountOfTokenLike; matchA: Am
   const bBN = BigNumber.from(b);
   if (bBN.isZero() || matchABN.isZero()) return constants.Zero.toString();
   return bBN.mul(matchA).div(a).toString();
+}
+
+export type TokenInChain = `${ChainId}:${TokenAddress}`;
+export function toTokenInChain(chainId: ChainId, address: TokenAddress): TokenInChain {
+  return `${chainId}:${address}`;
+}
+
+export function fromTokenInChain(tokenInChain: TokenAddress): { chainId: ChainId; address: TokenAddress } {
+  const [chainId, address] = tokenInChain.split(':');
+  return { chainId: parseInt(chainId), address };
 }

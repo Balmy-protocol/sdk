@@ -1,6 +1,7 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
 import { IPriceSource, TokenPrice } from '../types';
+import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedPriceSource implements IPriceSource {
@@ -70,14 +71,4 @@ function chainAndAddressRecordToTokenInChain(record: Record<ChainId, Record<Toke
     Object.entries(record).map<[TokenInChain, TokenPrice]>(([address, token]) => [toTokenInChain(parseInt(chainId), address), token])
   );
   return Object.fromEntries(entries);
-}
-
-type TokenInChain = `${ChainId}-${TokenAddress}`;
-function toTokenInChain(chainId: ChainId, address: TokenAddress): TokenInChain {
-  return `${chainId}-${address}`;
-}
-
-function fromTokenInChain(tokenInChain: TokenAddress): { chainId: ChainId; address: TokenAddress } {
-  const [chainId, address] = tokenInChain.split('-');
-  return { chainId: parseInt(chainId), address };
 }
