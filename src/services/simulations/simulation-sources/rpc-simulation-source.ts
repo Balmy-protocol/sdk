@@ -1,5 +1,5 @@
 import { IProviderService } from '@services/providers';
-import { AmountOfTokenInput, ChainId, TimeString, Transaction } from '@types';
+import { AmountOfTokenLike, ChainId, TimeString, Transaction } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 import { mapTxToViemTx } from '@shared/viem';
@@ -64,7 +64,7 @@ function invalidTx(message: string): FailedSimulation {
   };
 }
 
-function isValid(value: AmountOfTokenInput | undefined) {
+function isValid(value: AmountOfTokenLike | undefined) {
   if (!value) return true;
   try {
     BigNumber.from(value);

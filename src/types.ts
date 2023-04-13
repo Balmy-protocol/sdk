@@ -6,7 +6,7 @@ export type TokenAddress = Address;
 export type ChainId = number;
 export type TimeString = StringValue;
 export type AmountOfToken = string;
-export type AmountOfTokenInput = string | number | bigint;
+export type AmountOfTokenLike = string | number | bigint;
 export type Chain = Readonly<{
   chainId: ChainId;
   name: string;
@@ -21,12 +21,12 @@ export type Transaction = {
   from: Address;
   to: Address;
   data?: string;
-  value?: AmountOfTokenInput;
+  value?: AmountOfTokenLike;
   nonce?: number;
-  maxPriorityFeePerGas?: AmountOfTokenInput;
-  maxFeePerGas?: AmountOfTokenInput;
-  gasPrice?: AmountOfTokenInput;
-  gasLimit?: AmountOfTokenInput;
+  maxPriorityFeePerGas?: AmountOfTokenLike;
+  maxFeePerGas?: AmountOfTokenLike;
+  gasPrice?: AmountOfTokenLike;
+  gasLimit?: AmountOfTokenLike;
 };
 
 export type SupportRecord<Values extends object> = { [K in keyof Values]-?: undefined extends Values[K] ? 'optional' : 'present' };

@@ -13,6 +13,6 @@ export {
   FieldRequirementOptions,
   FieldsRequirements,
   AmountOfToken,
-  AmountOfTokenInput,
+  AmountOfTokenLike,
   Transaction,
 } from './types';
