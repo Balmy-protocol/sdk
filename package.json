@@ -47,7 +47,7 @@
     "viem": "0.3.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.5.1",
+    "@commitlint/cli": "17.6.0",
     "@commitlint/config-conventional": "17.4.4",
     "@ethersproject/abi": "5.7.0",
     "@ethersproject/providers": "5.7.2",
