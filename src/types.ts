@@ -17,7 +17,7 @@ export type Chain = Readonly<{
   explorer: string;
   testnet?: boolean;
 }>;
-export type Transaction = {
+export type TransactionRequest = {
   from: Address;
   to: Address;
   data?: string;

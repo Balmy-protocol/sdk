@@ -1,6 +1,6 @@
 import { ChainId } from '@types';
 import { IProviderService, IProviderSource } from './types';
-import { createPublicClient } from 'viem';
+import { PublicClient, createPublicClient } from 'viem';
 
 export class ProviderService implements IProviderService {
   constructor(private readonly source: IProviderSource) {}
@@ -13,7 +13,7 @@ export class ProviderService implements IProviderService {
     return this.source.getEthersProvider({ chainId });
   }
 
-  getViemClient({ chainId }: { chainId: ChainId }) {
+  getViemClient({ chainId }: { chainId: ChainId }): PublicClient {
     const transport = this.source.getViemTransport({ chainId });
     return createPublicClient({ transport });
   }

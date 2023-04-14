@@ -10,7 +10,7 @@ import {
   IQuickGasCostCalculatorBuilder,
   LegacyGasPrice,
 } from '@services/gas/types';
-import { ChainId, FieldsRequirements, SupportRecord, TimeString, Transaction } from '@types';
+import { ChainId, FieldsRequirements, SupportRecord, TimeString, TransactionRequest } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
@@ -56,7 +56,7 @@ async function getGasValues(multicallService: IMulticallService) {
 }
 
 function getL1Fee(
-  tx: Transaction,
+  tx: TransactionRequest,
   { overhead, l1BaseFee, scalar, decimals }: { overhead: BigNumber; l1BaseFee: BigNumber; scalar: BigNumber; decimals: BigNumber }
 ) {
   const l1GasUsed = getL1GasUsed(tx, overhead);
@@ -67,7 +67,7 @@ function getL1Fee(
   return scaled;
 }
 
-function getL1GasUsed(tx: Transaction, overhead: BigNumber) {
+function getL1GasUsed(tx: TransactionRequest, overhead: BigNumber) {
   const nonce = BigNumber.from(tx.nonce ?? 0xffffffff).toNumber();
   const value = BigNumber.from(tx.value ?? 0).toHexString();
   const gasLimit = BigNumber.from(tx.gasLimit ?? 0).toHexString();

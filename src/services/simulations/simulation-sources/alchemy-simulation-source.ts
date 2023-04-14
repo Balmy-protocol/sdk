@@ -1,6 +1,6 @@
 import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
-import { Address, AmountOfToken, ChainId, TimeString, Transaction } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
 import { BigNumber } from 'ethers';
 import { hexValue } from 'ethers/lib/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
@@ -22,7 +22,7 @@ export class AlchemySimulationSource implements ISimulationSource {
     config,
   }: {
     chainId: ChainId;
-    tx: Transaction;
+    tx: TransactionRequest;
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult> {
     try {
@@ -65,7 +65,7 @@ export class AlchemySimulationSource implements ISimulationSource {
 
   async simulateTransactionBundle(_: {
     chainId: ChainId;
-    bundle: Transaction[];
+    bundle: TransactionRequest[];
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult[]> {
     // const response = await this.callRPC<Result>(chainId, 'alchemy_simulateExecutionBundle', [bundle.map(fixTransaction)], config?.timeout)
@@ -77,7 +77,7 @@ export class AlchemySimulationSource implements ISimulationSource {
   }
 }
 
-function fixTransaction(tx: Transaction) {
+function fixTransaction(tx: TransactionRequest) {
   // Alchemy doesn't support zeroed data yet, so we make it undefied
   const valueBN = BigNumber.from(tx.value ?? 0);
   const dataBN = BigNumber.from(tx.data ?? 0);

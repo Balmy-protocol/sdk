@@ -1,4 +1,4 @@
-import { SourceId } from '../types';
+import { QuoteTransaction, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
@@ -9,7 +9,6 @@ import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderService } from '@services/providers';
 import { SourceInvalidConfigOrContextError, SourceNoBuyOrdersError, SourceNotFoundError } from '../errors';
-import { Transaction } from '@types';
 
 type ConstructorParameters = {
   providerService: IProviderService;
@@ -83,7 +82,7 @@ async function mapSourceResponseToResponse({
   request: SourceListRequest;
   response: SourceQuoteResponse;
 }): Promise<SourceListResponse> {
-  const tx: Transaction = {
+  const tx: QuoteTransaction = {
     to: response.tx.to,
     value: response.tx.value?.toString(),
     data: response.tx.calldata,

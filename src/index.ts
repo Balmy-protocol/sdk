@@ -14,5 +14,5 @@ export {
   FieldsRequirements,
   AmountOfToken,
   AmountOfTokenLike,
-  Transaction,
+  TransactionRequest,
 } from './types';

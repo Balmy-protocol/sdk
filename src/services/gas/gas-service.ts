@@ -1,4 +1,4 @@
-import { AmountOfToken, AmountOfTokenLike, ChainId, DefaultRequirements, FieldsRequirements, TimeString, Transaction } from '@types';
+import { AmountOfToken, AmountOfTokenLike, ChainId, DefaultRequirements, FieldsRequirements, TimeString, TransactionRequest } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
@@ -32,7 +32,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return Object.fromEntries(entries);
   }
 
-  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: Transaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
     const promise = this.providerService
       .getViemClient({ chainId })
@@ -74,7 +74,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   }: {
     chainId: ChainId;
     gasEstimation: AmountOfTokenLike;
-    tx?: Transaction;
+    tx?: TransactionRequest;
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {
     const gasCalculator = await this.getQuickGasCalculator({ chainId, config });

@@ -1,7 +1,7 @@
-import { Transaction } from '@types';
-import { Hex, TransactionRequest } from 'viem';
+import { TransactionRequest } from '@types';
+import { Hex, TransactionRequest as ViemTransactionRequest } from 'viem';
 
-export function mapTxToViemTx(tx: Transaction): TransactionRequest {
+export function mapTxToViemTx(tx: TransactionRequest): ViemTransactionRequest {
   return {
     ...tx,
     data: tx.data as Hex | undefined,
@@ -11,5 +11,5 @@ export function mapTxToViemTx(tx: Transaction): TransactionRequest {
     gasPrice: tx.gasPrice ? BigInt(tx.gasPrice) : undefined,
     maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : undefined,
     maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? BigInt(tx.maxPriorityFeePerGas) : undefined,
-  } as TransactionRequest;
+  } as ViemTransactionRequest;
 }

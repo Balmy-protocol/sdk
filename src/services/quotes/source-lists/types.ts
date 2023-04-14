@@ -1,8 +1,8 @@
 import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
-import { Address, AmountOfToken, TimeString, Transaction } from '@types';
-import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig } from '../types';
+import { Address, AmountOfToken, TimeString } from '@types';
+import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig, QuoteTransaction } from '../types';
 
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
@@ -31,5 +31,5 @@ export type SourceListResponse = {
   type: 'sell' | 'buy';
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
-  tx: Transaction;
+  tx: QuoteTransaction;
 };

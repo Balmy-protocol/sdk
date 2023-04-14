@@ -1,5 +1,5 @@
 import { IProviderService } from '@services/providers';
-import { AmountOfTokenLike, ChainId, TimeString, Transaction } from '@types';
+import { AmountOfTokenLike, ChainId, TimeString, TransactionRequest } from '@types';
 import { BigNumber, utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 import { mapTxToViemTx } from '@shared/viem';
@@ -19,7 +19,7 @@ export class RPCSimulationSource implements ISimulationSource {
     tx,
   }: {
     chainId: ChainId;
-    tx: Transaction;
+    tx: TransactionRequest;
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult> {
     if (!utils.isAddress(tx.from)) return invalidTx('"from" is not a valid address');
@@ -49,7 +49,7 @@ export class RPCSimulationSource implements ISimulationSource {
 
   async simulateTransactionBundle(_: {
     chainId: ChainId;
-    bundle: Transaction[];
+    bundle: TransactionRequest[];
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult[]> {
     throw new Error('Operation not supported');

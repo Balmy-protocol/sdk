@@ -10,6 +10,7 @@ export {
   FailedQuote,
   GlobalQuoteSourceConfig,
   AmountsOfToken,
+  QuoteTransaction,
 } from './types';
 export {
   COMPARE_BY,
