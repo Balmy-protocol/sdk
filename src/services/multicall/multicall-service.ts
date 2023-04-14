@@ -1,4 +1,5 @@
 import { AbiCoder } from 'ethers/lib/utils';
+import { Contract } from 'ethers';
 import { Address, ChainId } from '@types';
 import { IProviderService } from '@services/providers/types';
 import { IMulticallService } from './types';
@@ -6,44 +7,105 @@ import { chainsIntersection } from '@chains';
 import abi from './multicall-abi';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
+const ABI_CODER = new AbiCoder();
 export class MulticallService implements IMulticallService {
-  private readonly ABI_CODER = new AbiCoder();
-  constructor(private readonly providerService: IProviderService) {}
+  constructor(private readonly providerService: IProviderService, private readonly library: 'viem' | 'ethers' = 'ethers') {}
 
   supportedChains(): ChainId[] {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
   }
 
-  async readOnlyMulticall({
-    chainId,
-    calls,
-  }: {
+  async readOnlyMulticall(args: {
     chainId: ChainId;
     calls: { target: Address; calldata: string; decode: string[] }[];
   }): Promise<ReadonlyArray<any>[]> {
-    if (calls.length === 0) return [];
-    const simulation = await this.providerService.getViemClient({ chainId }).simulateContract({
-      address: ADDRESS,
-      abi,
-      functionName: 'aggregate',
-      args: [calls.map(({ target, calldata }) => [target, calldata])],
-      blockTag: 'latest',
-    });
-    return (simulation.result as [number, string[]])[1].map((result, i) => this.ABI_CODER.decode(calls[i].decode, result));
+    if (args.calls.length === 0) return [];
+    return this.library === 'viem'
+      ? readOnlyMulticallWithViem({ ...args, providerService: this.providerService })
+      : readOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
   }
 
-  async tryReadOnlyMulticall({ chainId, calls }: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
-    const simulation = await this.providerService.getViemClient({ chainId }).simulateContract({
-      address: ADDRESS,
-      abi,
-      functionName: 'tryAggregate',
-      args: [false, calls.map(({ target, calldata }) => [target, calldata])],
-      blockTag: 'latest',
-    });
-    return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
-      success ? { success, result: this.ABI_CODER.decode(calls[i].decode, returnData) } : { success }
-    );
+  async tryReadOnlyMulticall(args: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
+    if (args.calls.length === 0) return [];
+    return this.library === 'viem'
+      ? tryReadOnlyMulticallWithViem({ ...args, providerService: this.providerService })
+      : tryReadOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
   }
+}
+
+async function readOnlyMulticallWithViem({
+  chainId,
+  calls,
+  providerService,
+}: {
+  chainId: ChainId;
+  calls: { target: Address; calldata: string; decode: string[] }[];
+  providerService: IProviderService;
+}): Promise<ReadonlyArray<any>[]> {
+  const simulation = await providerService.getViemClient({ chainId }).simulateContract({
+    address: ADDRESS,
+    abi,
+    functionName: 'aggregate',
+    args: [calls.map(({ target, calldata }) => [target, calldata])],
+    blockTag: 'latest',
+  });
+  return (simulation.result as [number, string[]])[1].map((result, i) => ABI_CODER.decode(calls[i].decode, result));
+}
+
+async function readOnlyMulticallWithEthers({
+  chainId,
+  calls,
+  providerService,
+}: {
+  chainId: ChainId;
+  calls: { target: Address; calldata: string; decode: string[] }[];
+  providerService: IProviderService;
+}): Promise<ReadonlyArray<any>[]> {
+  const provider = providerService.getEthersProvider({ chainId });
+  const contract = new Contract(ADDRESS, abi, provider);
+  const [blockNumber, results]: [number, string[]] = await contract.callStatic.aggregate(
+    calls.map(({ target, calldata }) => [target, calldata])
+  );
+  return results.map((result, i) => ABI_CODER.decode(calls[i].decode, result));
+}
+
+async function tryReadOnlyMulticallWithViem({
+  chainId,
+  calls,
+  providerService,
+}: {
+  chainId: ChainId;
+  calls: { target: Address; calldata: string; decode: string[] }[];
+  providerService: IProviderService;
+}) {
+  const simulation = await providerService.getViemClient({ chainId }).simulateContract({
+    address: ADDRESS,
+    abi,
+    functionName: 'tryAggregate',
+    args: [false, calls.map(({ target, calldata }) => [target, calldata])],
+    blockTag: 'latest',
+  });
+  return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
+    success ? { success, result: ABI_CODER.decode(calls[i].decode, returnData) } : { success }
+  );
+}
+
+async function tryReadOnlyMulticallWithEthers({
+  chainId,
+  calls,
+  providerService,
+}: {
+  chainId: ChainId;
+  calls: { target: Address; calldata: string; decode: string[] }[];
+  providerService: IProviderService;
+}) {
+  const provider = providerService.getEthersProvider({ chainId });
+  const contract = new Contract(ADDRESS, abi, provider);
+  const results: [boolean, string][] = await contract.callStatic.tryAggregate(
+    false,
+    calls.map(({ target, calldata }) => [target, calldata])
+  );
+  return results.map(([success, result], i) => (success ? { success, result: ABI_CODER.decode(calls[i].decode, result) } : { success }));
 }
 
 const SUPPORTED_CHAINS: ChainId[] = [
