@@ -12,18 +12,41 @@ jest.retryTimes(3);
 jest.setTimeout(ms('30s'));
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const MULTICALL = new MulticallService(PROVIDER_SERVICE);
 
 describe('Multicall Service', () => {
   describe('tryReadOnlyMulticall', () => {
+    tryReadOnlyMulticallTest('ethers');
+    tryReadOnlyMulticallTest('viem');
+  });
+
+  describe('readOnlyMulticall', () => {
+    readOnlyMulticallTest('ethers');
+    readOnlyMulticallTest('viem');
+  });
+
+  function readOnlyMulticallTest(library: 'ethers' | 'viem') {
+    let response: ReadonlyArray<BigNumber>[];
+    when(`trying a call with ${library}`, () => {
+      given(async () => {
+        const calls = [{ target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] }];
+        response = await new MulticallService(PROVIDER_SERVICE, library).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+      });
+      then('both are reported correctly', () => {
+        expect(response).to.have.lengthOf(1);
+        expect(response[0]).to.eql([constants.Zero]);
+      });
+    });
+  }
+
+  function tryReadOnlyMulticallTest(library: 'ethers' | 'viem') {
     let response: TryMulticallResult<BigNumber>[];
-    when('trying a call that fails with another that works', () => {
+    when(`trying a call that fails with another that works with ${library}`, () => {
       given(async () => {
         const calls = [
           { target: DAI, calldata: TRANSFER_FROM_DATA, decode: ['uint256'] },
           { target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] },
         ];
-        response = await MULTICALL.tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+        response = await new MulticallService(PROVIDER_SERVICE, library).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
@@ -31,7 +54,7 @@ describe('Multicall Service', () => {
         expect(response[1]).to.eql({ success: true, result: [constants.Zero] });
       });
     });
-  });
+  }
 });
 
 const ERC20_ABI = [
