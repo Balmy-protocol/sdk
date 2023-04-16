@@ -1,6 +1,6 @@
 import { IFetchService } from '@services/fetch';
 import { IMulticallService } from '@services/multicall/types';
-import { ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { IAllowanceService, IAllowanceSource } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { AllowanceService } from '@services/allowances/allowance-service';
@@ -9,7 +9,7 @@ import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/a
 
 export type AllowanceSourceInput =
   | { type: 'rpc-multicall' }
-  | { type: 'cached'; underlyingSource: AllowanceSourceInput; expiration: ExpirationConfigOptions }
+  | { type: 'cached'; underlyingSource: AllowanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IAllowanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' };
 export type BuildAllowanceParams = { source: AllowanceSourceInput };
@@ -33,7 +33,7 @@ function buildSource(
       return new RPCAllowanceSource(multicallService);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
-      return new CachedAllowanceSource(underlying, source.expiration);
+      return new CachedAllowanceSource(underlying, source.config);
     case 'custom':
       return source.instance;
     case 'alchemy':

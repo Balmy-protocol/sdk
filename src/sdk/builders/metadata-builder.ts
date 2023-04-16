@@ -1,4 +1,4 @@
-import { ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IMulticallService } from '@services/multicall/types';
 import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
@@ -15,7 +15,7 @@ export type MetadataSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'portals-fi' }
   | { type: 'changelly'; apiKey: string }
-  | { type: 'cached'; underlyingSource: Exclude<MetadataSourceInput, { type: 'cached' }>; expiration: ExpirationConfigOptions }
+  | { type: 'cached'; underlyingSource: Exclude<MetadataSourceInput, { type: 'cached' }>; config: CacheConfig }
   | { type: 'custom'; instance: IMetadataSource<object> }
   | { type: 'aggregate'; sources: MetadataSourceInput[] };
 
@@ -77,7 +77,7 @@ function buildSource<T extends MetadataSourceInput>(
       return new ChangellyMetadataSource(fetchService, source.apiKey);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
-      return new CachedMetadataSource(underlying, source.expiration);
+      return new CachedMetadataSource(underlying, source.config);
     case 'rpc-multicall':
       return new RPCMetadataSource(multicallService);
     case 'custom':

@@ -71,6 +71,7 @@ describe('Cached Gas Calculator Builder', () => {
         const cached = new CachedGasCalculatorBuilder({
           wrapped,
           expiration: { default: { useCachedValue: 'always', useCachedValueIfCalculationFailed: 'always' } },
+          maxSize: 10,
         });
         for (const call of calls) {
           expect(await cached.build(call)).to.equal(RETURN_VALUE);

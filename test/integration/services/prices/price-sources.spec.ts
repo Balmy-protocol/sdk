@@ -30,8 +30,11 @@ const DEFI_LLAMA_PRICE_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
 const PORTALS_FI_PRICE_SOURCE = new PortalsFiPriceSource(FETCH_SERVICE);
 const ODOS_PRICE_SOURCE = new OdosPriceSource(FETCH_SERVICE);
 const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
-  useCachedValue: 'always',
-  useCachedValueIfCalculationFailed: 'always',
+  expiration: {
+    useCachedValue: 'always',
+    useCachedValueIfCalculationFailed: 'always',
+  },
+  maxSize: 100,
 });
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);

@@ -1,6 +1,6 @@
 import { ChainId, DefaultRequirements, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
 import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from '../types';
-import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { ConcurrentLRUCache, ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
@@ -9,18 +9,22 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
     default: ExpirationConfigOptions;
     overrides?: Record<ChainId, ExpirationConfigOptions>;
   };
+  maxSize: number;
 };
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> implements IQuickGasCostCalculatorBuilder<GasValues> {
-  private readonly cache: Cache<CacheContext, string, IQuickGasCostCalculator<GasValues>>;
+  private readonly cache: ConcurrentLRUCache<CacheContext, string, IQuickGasCostCalculator<GasValues>>;
   private readonly wrapped: IQuickGasCostCalculatorBuilder<GasValues>;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
-  constructor({ wrapped, expiration }: ConstructorParameters<GasValues>) {
+  constructor({ wrapped, expiration, maxSize }: ConstructorParameters<GasValues>) {
     this.wrapped = wrapped;
-    this.cache = new Cache<CacheContext, string, IQuickGasCostCalculator<GasValues>>({
+    this.cache = new ConcurrentLRUCache<CacheContext, string, IQuickGasCostCalculator<GasValues>>({
       calculate: (config, [cacheId]) => this.fromCacheKey(cacheId, config), // We know that we will only ask for one chain at a time
-      expirationConfig: expiration.default,
+      config: {
+        expiration: expiration.default,
+        maxSize: maxSize,
+      },
     });
     this.expirationOverrides = expiration.overrides ?? {};
   }

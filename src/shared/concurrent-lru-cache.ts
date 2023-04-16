@@ -1,33 +1,37 @@
 import { TimeString } from '@types';
 import ms, { StringValue } from 'ms';
+import { LRUCache } from 'lru-cache';
 import { timeoutPromise } from './timeouts';
 
 export type ExpirationConfigOptions = {
   useCachedValue: 'always' | { ifUnder: StringValue };
   useCachedValueIfCalculationFailed: 'always' | { ifUnder: StringValue };
 };
+export type CacheConfig = {
+  expiration: ExpirationConfigOptions;
+  maxSize: number;
+};
 type Timestamp = number;
 type StorableKey = string;
 type ToStorableKey<Key extends ValidKey> = (key: Key) => StorableKey;
 type ValidKey = string | number | symbol;
-type CacheConfig<Context, Key extends ValidKey, Value> = {
+type CacheConstructorParams<Context, Key extends ValidKey, Value> = {
   calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
-  expirationConfig: ExpirationConfigOptions;
+  config: CacheConfig;
 };
 
-export class ContextlessCache<Key extends ValidKey, Value> {
-  private readonly cache: Cache<undefined, Key, Value>;
+export class ContextlessConcurrentLRUCache<Key extends ValidKey, Value> {
+  private readonly cache: ConcurrentLRUCache<undefined, Key, Value>;
 
   constructor({
     calculate,
-    expirationConfig,
+    config,
   }: {
     calculate: (keys: Key[]) => Promise<Record<Key, Value>>;
-    expirationConfig: ExpirationConfigOptions;
-  }) {
-    this.cache = new Cache({
+  } & { config: CacheConfig }) {
+    this.cache = new ConcurrentLRUCache({
       calculate: (_, keys) => calculate(keys),
-      expirationConfig,
+      config,
     });
   }
 
@@ -64,24 +68,25 @@ export class ContextlessCache<Key extends ValidKey, Value> {
   }
 }
 
-export class Cache<Context, Key extends ValidKey, Value> {
+export class ConcurrentLRUCache<Context, Key extends ValidKey, Value> {
   private readonly calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
   private readonly storableKeyMapper: ToStorableKey<Key>;
   private readonly expirationConfig: ExpirationConfigOptions;
-  private readonly cache: Map<StorableKey, { lastUpdated: Timestamp; value: Value }> = new Map();
   private readonly beingCalculated: Map<StorableKey, Promise<any>> = new Map();
+  private readonly cache: LRUCache<string, { lastUpdated: Timestamp; value: Value }>;
 
-  constructor({ calculate, expirationConfig }: CacheConfig<Context, Key, Value>) {
-    this.calculate = calculate;
-    this.storableKeyMapper = (key) => key.toString().toLowerCase();
-    this.expirationConfig = expirationConfig;
-
+  constructor({ calculate, config }: CacheConstructorParams<Context, Key, Value>) {
     const isInvalid =
-      expirationConfig.useCachedValue !== 'always' &&
-      expirationConfig.useCachedValueIfCalculationFailed !== 'always' &&
-      ms(expirationConfig.useCachedValue.ifUnder) > ms(expirationConfig.useCachedValueIfCalculationFailed.ifUnder);
+      config.expiration.useCachedValue !== 'always' &&
+      config.expiration.useCachedValueIfCalculationFailed !== 'always' &&
+      ms(config.expiration.useCachedValue.ifUnder) > ms(config.expiration.useCachedValueIfCalculationFailed.ifUnder);
 
     if (isInvalid) throw new Error(`'useCachedValue' must be lower or equal than 'useCachedValueIfCalculationFailed'`);
+
+    this.calculate = calculate;
+    this.storableKeyMapper = (key) => key.toString().toLowerCase();
+    this.expirationConfig = config.expiration;
+    this.cache = new LRUCache({ max: config.maxSize });
   }
 
   async getOrCalculateSingle({

@@ -1,6 +1,6 @@
 import { ChainId } from '@types';
 import { Chains } from '@chains';
-import { ExpirationConfigOptions } from '@shared/generic-cache';
+import { ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderService } from '@services/providers/types';
 import { IMulticallService } from '@services/multicall/types';
@@ -37,7 +37,10 @@ export type GasSourceInput =
   | {
       type: 'cached';
       underlyingSource: CachelessInput;
-      expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
+      config: {
+        expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
+        maxSize: number;
+      };
     }
   | { type: 'changelly'; key: string }
   | { type: 'owlracle'; key: string }
@@ -106,7 +109,8 @@ export function buildGasService<Params extends BuildGasParams | undefined>(
     // Add caching if necessary
     gasCostCalculatorBuilder = new CachedGasCalculatorBuilder({
       wrapped: gasCostCalculatorBuilder,
-      expiration: { default: params.source.expiration, overrides: params.source.expiration.overrides },
+      expiration: { default: params.source.config.expiration, overrides: params.source.config.expiration.overrides },
+      maxSize: params.source.config.maxSize,
     });
   }
 
