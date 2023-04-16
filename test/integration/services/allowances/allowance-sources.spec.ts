@@ -38,8 +38,11 @@ const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
-  useCachedValue: 'always',
-  useCachedValueIfCalculationFailed: 'always',
+  expiration: {
+    useCachedValue: 'always',
+    useCachedValueIfCalculationFailed: 'always',
+  },
+  maxSize: 10,
 });
 
 jest.retryTimes(2);

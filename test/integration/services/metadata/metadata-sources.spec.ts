@@ -31,8 +31,11 @@ const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
 const PORTALS_FI_METADATA_SOURCE = new PortalsFiMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
 const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOURCE, {
-  useCachedValue: 'always',
-  useCachedValueIfCalculationFailed: 'always',
+  expiration: {
+    useCachedValue: 'always',
+    useCachedValueIfCalculationFailed: 'always',
+  },
+  maxSize: 100,
 });
 const CHANGELLY_METADATA_SOURCE = new ChangellyMetadataSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
 
