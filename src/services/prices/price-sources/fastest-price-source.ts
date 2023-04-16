@@ -1,8 +1,13 @@
-import { chainsUnion } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { IPriceSource, TokenPrice } from '../types';
-import { doesSourceSupportAnyOfTheChains, filterRequestForSource, fillResponseWithNewResult, doesResponseFulfillRequest } from './utils';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
+import {
+  filterRequestForSource,
+  fillResponseWithNewResult,
+  doesResponseFulfillRequest,
+  combineSupport,
+  getSourcesThatSupportRequestOrFail,
+} from './utils';
 
 // This source will take a list of sources and combine the results of each one to try to fulfill
 // the request. As soon as there there is a response that is valid for the request, it will be returned
@@ -11,40 +16,81 @@ export class FastestPriceSource implements IPriceSource {
     if (sources.length === 0) throw new Error('No sources were specified');
   }
 
-  async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
-    const chainsInRequest = Object.keys(addresses).map(Number);
-    const sourcesInChain = this.sources.filter((source) => doesSourceSupportAnyOfTheChains(source, chainsInRequest));
-    if (sourcesInChain.length === 0) throw new Error(`Current price sources can't support all the given chains`);
+  supportedQueries() {
+    return combineSupport(this.sources);
+  }
 
-    const reducedTimeout = reduceTimeout(config?.timeout, '100');
-    return new Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>>(async (resolve) => {
-      const result: Record<ChainId, Record<TokenAddress, TokenPrice>> = {};
-      const allPromises = sourcesInChain.map((source) =>
-        timeoutPromise(
-          source.getCurrentPrices({
-            addresses: filterRequestForSource(addresses, source),
-            config: { timeout: reducedTimeout },
-          }),
-          reducedTimeout
-        ).then((response) => {
-          fillResponseWithNewResult(result, response);
-          if (doesResponseFulfillRequest(result, addresses)) {
-            resolve(result);
-          }
-        })
-      );
+  getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
+    return executeFastest(
+      this.sources,
+      addresses,
+      'getCurrentPrices',
+      (source, filteredRequest, sourceTimeout) =>
+        source.getCurrentPrices({
+          addresses: filteredRequest,
+          config: { timeout: sourceTimeout },
+        }),
+      config?.timeout
+    );
+  }
 
-      Promise.allSettled(allPromises).then(() => {
-        if (!doesResponseFulfillRequest(result, addresses)) {
-          // We couldn't fulfil the request, so we know we didn't resolve.
-          // We will return whatever we could fetch
+  getHistoricalPrices({
+    addresses,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    return executeFastest(
+      this.sources,
+      addresses,
+      'getHistoricalPrices',
+      (source, filteredRequest, sourceTimeout) =>
+        source.getHistoricalPrices({
+          addresses: filteredRequest,
+          timestamp,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      config?.timeout
+    );
+  }
+}
+
+async function executeFastest<T>(
+  allSources: IPriceSource[],
+  fullRequest: Record<ChainId, TokenAddress[]>,
+  query: keyof PricesQueriesSupport,
+  getResult: (
+    source: IPriceSource,
+    filteredRequest: Record<ChainId, TokenAddress[]>,
+    sourceTimeout: TimeString | undefined
+  ) => Promise<Record<ChainId, Record<TokenAddress, T>>>,
+  timeout: TimeString | undefined
+) {
+  const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
+  const reducedTimeout = reduceTimeout(timeout, '100');
+  return new Promise<Record<ChainId, Record<TokenAddress, T>>>(async (resolve) => {
+    const result: Record<ChainId, Record<TokenAddress, T>> = {};
+    const allPromises = sourcesInChains.map((source) =>
+      timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout).then((response) => {
+        fillResponseWithNewResult(result, response);
+        if (doesResponseFulfillRequest(result, fullRequest)) {
           resolve(result);
         }
-      });
-    });
-  }
+      })
+    );
 
-  supportedChains() {
-    return chainsUnion(this.sources.map((source) => source.supportedChains()));
-  }
+    Promise.allSettled(allPromises).then(() => {
+      if (!doesResponseFulfillRequest(result, fullRequest)) {
+        // We couldn't fulfil the request, so we know we didn't resolve.
+        // We will return whatever we could fetch
+        resolve(result);
+      }
+    });
+  });
 }

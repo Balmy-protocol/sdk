@@ -1,6 +1,6 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
 import { Chains } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
@@ -38,6 +38,14 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
 export class CoingeckoPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
+  supportedQueries() {
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const entries = Object.keys(COINGECKO_CHAIN_KEYS)
+      .map(Number)
+      .map((chainId) => [chainId, support]);
+    return Object.fromEntries(entries);
+  }
+
   async getCurrentPrices({
     addresses,
     config,
@@ -53,6 +61,16 @@ export class CoingeckoPriceSource implements IPriceSource {
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
+  getHistoricalPrices(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    // TODO: Add support
+    throw new Error('Operation not supported');
+  }
+
   private async getCurrentPricesInChain(chainId: ChainId, addresses: TokenAddress[], timeout?: TimeString) {
     const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
     const [erc20LowerCased, nativePrice] = await Promise.all([
@@ -63,10 +81,6 @@ export class CoingeckoPriceSource implements IPriceSource {
       erc20LowerCased[Addresses.NATIVE_TOKEN.toLowerCase()] = nativePrice;
     }
     return Object.fromEntries(addresses.map((address) => [address, erc20LowerCased[address.toLowerCase()]]));
-  }
-
-  supportedChains(): ChainId[] {
-    return Object.keys(COINGECKO_CHAIN_KEYS).map(Number);
   }
 
   private async fetchNativePrice(chainId: ChainId, timeout?: TimeString): Promise<TokenPrice> {

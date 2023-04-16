@@ -1,6 +1,6 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, Timestamp, TokenPrice } from '../types';
 import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
@@ -12,6 +12,10 @@ export class CachedPriceSource implements IPriceSource {
       calculate: (context, tokensInChain) => this.fetchTokens(tokensInChain, context),
       expirationConfig,
     });
+  }
+
+  supportedQueries() {
+    return this.source.supportedQueries();
   }
 
   async getCurrentPrices({
@@ -26,9 +30,12 @@ export class CachedPriceSource implements IPriceSource {
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 
-  supportedChains() {
-    return this.source.supportedChains();
-  }
+  getHistoricalPrices(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {}
 
   private async fetchTokens(tokensInChain: TokenInChain[], context?: CacheContext): Promise<Record<TokenInChain, TokenPrice>> {
     const addresses = tokensInChainToAddresses(tokensInChain);

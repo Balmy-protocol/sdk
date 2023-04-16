@@ -1,6 +1,6 @@
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains, getChainByKey } from '@chains';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
 import { IFetchService } from '@services/fetch';
 import { utils } from 'ethers';
 import { isSameAddress } from '@shared/utils';
@@ -11,6 +11,12 @@ const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Cha
 
 export class MoralisPriceSource implements IPriceSource {
   constructor(private readonly fetchService: IFetchService, private readonly apiKey: string) {}
+
+  supportedQueries() {
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
+    return Object.fromEntries(entries);
+  }
 
   async getCurrentPrices({
     addresses,
@@ -34,8 +40,14 @@ export class MoralisPriceSource implements IPriceSource {
     await Promise.allSettled(promises);
     return result;
   }
-  supportedChains(): ChainId[] {
-    return SUPPORTED_CHAINS.map(({ chainId }) => chainId);
+
+  getHistoricalPrices(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    throw new Error('Operation not supported');
   }
 
   private async fetchPrice(chainId: ChainId, address: Address, config?: { timeout?: TimeString }): Promise<TokenPrice | undefined> {

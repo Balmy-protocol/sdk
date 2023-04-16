@@ -258,7 +258,7 @@ export async function loadTokens(chain: Chain) {
   const whale = (name: string) => TOKENS[chain.chainId][name].whale;
   const tokenSource = new DefiLlamaClient(new FetchService(crossFetch));
   const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')] };
-  const tokens = await tokenSource.getData({ addresses });
+  const tokens = await tokenSource.getCurrentTokenData({ addresses });
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
     tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
       ...tokens[chain.chainId][chain.wToken],

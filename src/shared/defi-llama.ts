@@ -48,7 +48,7 @@ const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
 export class DefiLlamaClient {
   constructor(private readonly fetch: IFetchService) {}
 
-  async getData({
+  async getCurrentTokenData({
     addresses,
     config,
   }: {

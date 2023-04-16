@@ -15,7 +15,7 @@ export class DefiLlamaMetadataSource implements IMetadataSource<BaseTokenMetadat
     config?: { timeout?: TimeString };
   }) {
     const result: Record<ChainId, Record<TokenAddress, BaseTokenMetadata>> = {};
-    const data = await this.defiLlama.getData(params);
+    const data = await this.defiLlama.getCurrentTokenData(params);
     for (const [chainIdString, tokens] of Object.entries(data)) {
       const chainId = Number(chainIdString);
       result[chainId] = {};
