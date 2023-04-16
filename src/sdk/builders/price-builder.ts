@@ -1,5 +1,5 @@
 import { IFetchService } from '@services/fetch';
-import { ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { IPriceService, IPriceSource } from '@services/prices';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { PriceService } from '@services/prices/price-service';
@@ -23,7 +23,7 @@ export type PriceSourceInput =
   | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'fastest'; sources: PriceSourceInput[] }
   | { type: 'aggregate'; sources: PriceSourceInput[]; by: PriceAggregationMethod }
-  | { type: 'cached'; underlyingSource: PriceSourceInput; expiration: ExpirationConfigOptions }
+  | { type: 'cached'; underlyingSource: PriceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IPriceSource };
 export type BuildPriceParams = { source: PriceSourceInput };
 
@@ -57,7 +57,7 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return coingecko;
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService });
-      return new CachedPriceSource(underlying, source.expiration);
+      return new CachedPriceSource(underlying, source.config);
     case 'prioritized':
       return new PrioritizedPriceSource(source.sources.map((source) => buildSource(source, { fetchService })));
     case 'fastest':

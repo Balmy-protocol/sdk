@@ -1,6 +1,6 @@
 import { IMulticallService } from '@services/multicall/types';
 import { IBalanceService, IBalanceSource } from '@services/balances/types';
-import { ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { IProviderService } from '@services/providers';
 import { BalanceService } from '@services/balances/balance-service';
@@ -12,7 +12,7 @@ import { PortalsFiBalanceSource } from '@services/balances/balance-sources/porta
 
 export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
-  | { type: 'cached'; underlyingSource: BalanceSourceInput; expiration: ExpirationConfigOptions }
+  | { type: 'cached'; underlyingSource: BalanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
   | { type: 'portals-fi'; key: string }
@@ -43,7 +43,7 @@ function buildSource(
       return new RPCBalanceSource(providerService, multicallService);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, providerService, multicallService });
-      return new CachedBalanceSource(underlying, source.expiration);
+      return new CachedBalanceSource(underlying, source.config);
     case 'custom':
       return source.instance;
     case 'alchemy':
