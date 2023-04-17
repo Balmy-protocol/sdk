@@ -9,7 +9,7 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
     default: ExpirationConfigOptions;
     overrides?: Record<ChainId, ExpirationConfigOptions>;
   };
-  maxSize: number;
+  maxSize?: number;
 };
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> implements IQuickGasCostCalculatorBuilder<GasValues> {
@@ -23,7 +23,7 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
       calculate: (config, [cacheId]) => this.fromCacheKey(cacheId, config), // We know that we will only ask for one chain at a time
       config: {
         expiration: expiration.default,
-        maxSize: maxSize,
+        maxSize: maxSize ?? Object.keys(wrapped.supportedSpeeds()).length,
       },
     });
     this.expirationOverrides = expiration.overrides ?? {};

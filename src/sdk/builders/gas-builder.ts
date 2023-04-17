@@ -39,7 +39,7 @@ export type GasSourceInput =
       underlyingSource: CachelessInput;
       config: {
         expiration: ExpirationConfigOptions & { overrides?: Record<ChainId, ExpirationConfigOptions> };
-        maxSize: number;
+        maxSize?: number;
       };
     }
   | { type: 'changelly'; key: string }
