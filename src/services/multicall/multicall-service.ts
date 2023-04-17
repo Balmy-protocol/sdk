@@ -18,6 +18,7 @@ export class MulticallService implements IMulticallService {
   async readOnlyMulticall(args: {
     chainId: ChainId;
     calls: { target: Address; calldata: string; decode: string[] }[];
+    block?: number;
   }): Promise<ReadonlyArray<any>[]> {
     if (args.calls.length === 0) return [];
     return this.library === 'viem'
@@ -25,7 +26,7 @@ export class MulticallService implements IMulticallService {
       : readOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
   }
 
-  async tryReadOnlyMulticall(args: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[] }) {
+  async tryReadOnlyMulticall(args: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[]; block?: number }) {
     if (args.calls.length === 0) return [];
     return this.library === 'viem'
       ? tryReadOnlyMulticallWithViem({ ...args, providerService: this.providerService })
@@ -36,10 +37,12 @@ export class MulticallService implements IMulticallService {
 async function readOnlyMulticallWithViem({
   chainId,
   calls,
+  block,
   providerService,
 }: {
   chainId: ChainId;
   calls: { target: Address; calldata: string; decode: string[] }[];
+  block?: number;
   providerService: IProviderService;
 }): Promise<ReadonlyArray<any>[]> {
   const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
@@ -47,7 +50,7 @@ async function readOnlyMulticallWithViem({
     abi,
     functionName: 'aggregate',
     args: [calls.map(({ target, calldata }) => [target, calldata])],
-    blockTag: 'latest',
+    blockNumber: block ? BigInt(block) : undefined,
   });
   return (simulation.result as [number, string[]])[1].map((result, i) => ABI_CODER.decode(calls[i].decode, result));
 }
@@ -55,16 +58,19 @@ async function readOnlyMulticallWithViem({
 async function readOnlyMulticallWithEthers({
   chainId,
   calls,
+  block,
   providerService,
 }: {
   chainId: ChainId;
   calls: { target: Address; calldata: string; decode: string[] }[];
+  block?: number;
   providerService: IProviderService;
 }): Promise<ReadonlyArray<any>[]> {
   const provider = providerService.getEthersProvider({ chainId });
   const contract = new Contract(ADDRESS, abi, provider);
   const [blockNumber, results]: [number, string[]] = await contract.callStatic.aggregate(
-    calls.map(({ target, calldata }) => [target, calldata])
+    calls.map(({ target, calldata }) => [target, calldata]),
+    { blockTag: block }
   );
   return results.map((result, i) => ABI_CODER.decode(calls[i].decode, result));
 }
@@ -72,10 +78,12 @@ async function readOnlyMulticallWithEthers({
 async function tryReadOnlyMulticallWithViem({
   chainId,
   calls,
+  block,
   providerService,
 }: {
   chainId: ChainId;
   calls: { target: Address; calldata: string; decode: string[] }[];
+  block?: number;
   providerService: IProviderService;
 }) {
   const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
@@ -83,7 +91,7 @@ async function tryReadOnlyMulticallWithViem({
     abi,
     functionName: 'tryAggregate',
     args: [false, calls.map(({ target, calldata }) => [target, calldata])],
-    blockTag: 'latest',
+    blockNumber: block ? BigInt(block) : undefined,
   });
   return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
     success ? { success, result: ABI_CODER.decode(calls[i].decode, returnData) } : { success }
@@ -93,17 +101,20 @@ async function tryReadOnlyMulticallWithViem({
 async function tryReadOnlyMulticallWithEthers({
   chainId,
   calls,
+  block,
   providerService,
 }: {
   chainId: ChainId;
   calls: { target: Address; calldata: string; decode: string[] }[];
+  block?: number;
   providerService: IProviderService;
 }) {
   const provider = providerService.getEthersProvider({ chainId });
   const contract = new Contract(ADDRESS, abi, provider);
   const results: [boolean, string][] = await contract.callStatic.tryAggregate(
     false,
-    calls.map(({ target, calldata }) => [target, calldata])
+    calls.map(({ target, calldata }) => [target, calldata]),
+    { blockTag: block }
   );
   return results.map(([success, result], i) => (success ? { success, result: ABI_CODER.decode(calls[i].decode, result) } : { success }));
 }
