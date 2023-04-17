@@ -1,4 +1,5 @@
 import { ChainId } from '@types';
+import { Transport } from 'viem';
 import { IProviderSource } from '../types';
 
 export class UpdatableProviderSource implements IProviderSource {
@@ -16,11 +17,7 @@ export class UpdatableProviderSource implements IProviderSource {
     return provider.getEthersProvider({ chainId });
   }
 
-  getViemTransport({ chainId }: { chainId: ChainId }) {
-    const provider = this.underlying();
-    if (!provider) {
-      throw new Error(`Provider is not set yet`);
-    }
-    return provider.getViemTransport({ chainId });
+  getViemTransport({ chainId }: { chainId: ChainId }): Transport {
+    throw new Error('We do not support updatable providers for viem at the moment');
   }
 }

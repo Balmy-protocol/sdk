@@ -42,7 +42,7 @@ async function readOnlyMulticallWithViem({
   calls: { target: Address; calldata: string; decode: string[] }[];
   providerService: IProviderService;
 }): Promise<ReadonlyArray<any>[]> {
-  const simulation = await providerService.getViemClient({ chainId }).simulateContract({
+  const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
     address: ADDRESS,
     abi,
     functionName: 'aggregate',
@@ -78,7 +78,7 @@ async function tryReadOnlyMulticallWithViem({
   calls: { target: Address; calldata: string; decode: string[] }[];
   providerService: IProviderService;
 }) {
-  const simulation = await providerService.getViemClient({ chainId }).simulateContract({
+  const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
     address: ADDRESS,
     abi,
     functionName: 'tryAggregate',

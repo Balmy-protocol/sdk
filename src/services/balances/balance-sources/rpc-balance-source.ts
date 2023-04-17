@@ -58,7 +58,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
     return this.providerService
-      .getViemClient({ chainId })
+      .getViemPublicClient({ chainId })
       .getBalance({ address: account as ViemAddress, blockTag: 'latest' })
       .then((balance) => balance.toString());
   }
