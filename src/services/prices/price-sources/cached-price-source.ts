@@ -1,6 +1,6 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, TokenPrice } from '../types';
 import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
@@ -12,6 +12,10 @@ export class CachedPriceSource implements IPriceSource {
       calculate: (context, tokensInChain) => this.fetchTokens(tokensInChain, context),
       config,
     });
+  }
+
+  supportedQueries() {
+    return this.source.supportedQueries();
   }
 
   async getCurrentPrices({
@@ -26,8 +30,19 @@ export class CachedPriceSource implements IPriceSource {
     return tokenInChainRecordToChainAndAddress(tokens);
   }
 
-  supportedChains() {
-    return this.source.supportedChains();
+  getHistoricalPrices({
+    addresses,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    // TODO: Support caching, but make it configurable
+    return this.source.getHistoricalPrices({ addresses, timestamp, searchWidth, config });
   }
 
   private async fetchTokens(tokensInChain: TokenInChain[], context?: CacheContext): Promise<Record<TokenInChain, TokenPrice>> {

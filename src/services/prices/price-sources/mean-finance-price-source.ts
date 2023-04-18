@@ -1,14 +1,16 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
 import { TokenInChain, fromTokenInChain, toTokenInChain } from '@shared/utils';
 import { MEAN_FINANCE_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/mean-finance';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 
 export class MeanFinancePriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
-  supportedChains(): ChainId[] {
-    return MEAN_FINANCE_SUPPORTED_CHAINS;
+  supportedQueries() {
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const entries = MEAN_FINANCE_SUPPORTED_CHAINS.map((chainId) => [chainId, support]);
+    return Object.fromEntries(entries);
   }
 
   async getCurrentPrices({
@@ -34,6 +36,15 @@ export class MeanFinancePriceSource implements IPriceSource {
       result[chainId][address] = price;
     }
     return result;
+  }
+
+  getHistoricalPrices(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    return Promise.reject(new Error('Operation not supported'));
   }
 }
 

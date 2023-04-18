@@ -15,4 +15,5 @@ export {
   AmountOfToken,
   AmountOfTokenLike,
   TransactionRequest,
+  Timestamp,
 } from './types';

@@ -1,6 +1,6 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { IPriceSource, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { Chains } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
@@ -10,6 +10,12 @@ const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.OPTIMISM, Chai
 
 export class OdosPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
+
+  supportedQueries() {
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
+    return Object.fromEntries(entries);
+  }
 
   async getCurrentPrices({
     addresses,
@@ -26,6 +32,15 @@ export class OdosPriceSource implements IPriceSource {
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
+  getHistoricalPrices(_: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
   private async getCurrentPricesInChain(chainId: string, addresses: TokenAddress[], timeout?: TimeString) {
     const params = addresses.map((address) => `token_addresses=${mapToken(address)}`).join('&');
     const url = `https://api.odos.xyz/pricing/token/${chainId}?${params}`;
@@ -33,10 +48,6 @@ export class OdosPriceSource implements IPriceSource {
     const body: Response = await response.json();
     const lowercased = toLowerCase(body.tokenPrices);
     return Object.fromEntries(addresses.map((address) => [address, lowercased[mapToken(address.toLowerCase())]]));
-  }
-
-  supportedChains(): ChainId[] {
-    return SUPPORTED_CHAINS.map(({ chainId }) => chainId);
   }
 }
 
