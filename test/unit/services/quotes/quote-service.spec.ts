@@ -122,8 +122,11 @@ const FAILING_METADATA_SERVICE: IMetadataService<BaseTokenMetadata> = {
 
 const PRICE_SERVICE: IPriceService = {
   supportedChains: () => [1],
+  supportedQueries: () => ({ [1]: { getCurrentPrices: true, getHistoricalPrices: true } }),
   getCurrentPrices: () => Promise.reject(new Error('Should not be called')),
   getCurrentPricesForChain: ({ addresses }) => Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, i * 10]))),
+  getHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
+  getHistoricalPricesForChain: () => Promise.reject(new Error('Should not be called')),
 };
 const FAILING_PRICE_SERVICE: IPriceService = {
   ...PRICE_SERVICE,
