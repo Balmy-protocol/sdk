@@ -1,16 +1,16 @@
 import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString, TokenAddress } from '@types';
-import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
 import { IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements, combineSupportInChains } from '@shared/requirements-and-support';
 
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedMetadataSource<TokenMetadata extends object> implements IMetadataSource<TokenMetadata> {
-  private readonly cache: Cache<CacheContext, TokenInChain, TokenMetadata>;
+  private readonly cache: ConcurrentLRUCache<CacheContext, TokenInChain, TokenMetadata>;
 
-  constructor(private readonly source: IMetadataSource<TokenMetadata>, expirationConfig: ExpirationConfigOptions) {
-    this.cache = new Cache<CacheContext, TokenInChain, TokenMetadata>({
+  constructor(private readonly source: IMetadataSource<TokenMetadata>, config: CacheConfig) {
+    this.cache = new ConcurrentLRUCache<CacheContext, TokenInChain, TokenMetadata>({
       calculate: (context, tokensInChain) => this.fetchMetadata(tokensInChain, context),
-      expirationConfig,
+      config,
     });
   }
 

@@ -29,7 +29,7 @@ export class RPCSimulationSource implements ISimulationSource {
 
     try {
       const viemTx = mapTxToViemTx(tx);
-      const estimatedGas = await this.providerService.getViemClient({ chainId }).estimateGas({
+      const estimatedGas = await this.providerService.getViemPublicClient({ chainId }).estimateGas({
         ...viemTx,
         account: viemTx.from,
       });

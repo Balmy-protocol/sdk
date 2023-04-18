@@ -1,6 +1,6 @@
 {
   "name": "@mean-finance/sdk",
-  "version": "0.0.69",
+  "version": "0.0.72",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -43,6 +43,7 @@
   "dependencies": {
     "cross-fetch": "3.1.5",
     "ethers": "5.7.2",
+    "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
     "viem": "0.3.0"
   },

@@ -35,7 +35,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
     const promise = this.providerService
-      .getViemClient({ chainId })
+      .getViemPublicClient({ chainId })
       .estimateGas({
         ...viemTx,
         account: viemTx.from,

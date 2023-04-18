@@ -6,7 +6,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
 export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
-  name: 'Changelly',
+  name: 'Changelly DEX',
   supports: {
     chains: [Chains.ETHEREUM, Chains.OPTIMISM, Chains.BNB_CHAIN, Chains.POLYGON, Chains.FANTOM, Chains.AVALANCHE].map(({ chainId }) => chainId),
     swapAndTransfer: true,

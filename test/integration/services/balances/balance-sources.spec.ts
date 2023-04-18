@@ -56,8 +56,11 @@ const FETCH_SERVICE = new FetchService(crossFetch);
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!, 'https');
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
-  useCachedValue: 'always',
-  useCachedValueIfCalculationFailed: 'always',
+  expiration: {
+    useCachedValue: 'always',
+    useCachedValueIfCalculationFailed: 'always',
+  },
+  maxSize: 100,
 });
 const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 

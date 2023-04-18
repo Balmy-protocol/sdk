@@ -1,20 +1,20 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
-import { ContextlessCache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig, ContextlessConcurrentLRUCache } from '@shared/concurrent-lru-cache';
 import { BalanceQueriesSupport, IBalanceSource } from '../types';
 
 export class CachedBalanceSource implements IBalanceSource {
-  private readonly cacheHeldByAccount: ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>;
-  private readonly cacheAmountInChain: ContextlessCache<KeyTokenInChain, AmountOfToken>;
+  private readonly cacheHeldByAccount: ContextlessConcurrentLRUCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>;
+  private readonly cacheAmountInChain: ContextlessConcurrentLRUCache<KeyTokenInChain, AmountOfToken>;
 
-  constructor(private readonly source: IBalanceSource, expirationConfig: ExpirationConfigOptions) {
-    this.cacheHeldByAccount = new ContextlessCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>({
+  constructor(private readonly source: IBalanceSource, config: CacheConfig) {
+    this.cacheHeldByAccount = new ContextlessConcurrentLRUCache<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>({
       calculate: (keysHeldByAccount) => this.fetchTokensHeldByAccount(keysHeldByAccount),
-      expirationConfig,
+      config,
     });
 
-    this.cacheAmountInChain = new ContextlessCache<KeyTokenInChain, AmountOfToken>({
+    this.cacheAmountInChain = new ContextlessConcurrentLRUCache<KeyTokenInChain, AmountOfToken>({
       calculate: (keysTokenInChain) => this.fetchBalancesForTokens(keysTokenInChain),
-      expirationConfig,
+      config,
     });
   }
 

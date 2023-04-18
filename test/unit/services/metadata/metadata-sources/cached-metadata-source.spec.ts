@@ -77,7 +77,10 @@ describe('Cached Metadata Source', () => {
     when(title, () => {
       then('it works as expected', async () => {
         const wrapped = new MockedMetadataSource();
-        const cached = new CachedMetadataSource(wrapped, { useCachedValue: 'always', useCachedValueIfCalculationFailed: 'always' });
+        const cached = new CachedMetadataSource(wrapped, {
+          expiration: { useCachedValue: 'always', useCachedValueIfCalculationFailed: 'always' },
+          maxSize: 100,
+        });
         for (const call of calls) {
           const result = await cached.getMetadata({ addresses, ...call });
           expect(result).to.eql(RETURN_VALUE);

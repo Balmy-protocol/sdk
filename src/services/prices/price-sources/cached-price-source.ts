@@ -1,16 +1,16 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { Cache, ExpirationConfigOptions } from '@shared/generic-cache';
+import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
 import { HistoricalPriceResult, IPriceSource, Timestamp, TokenPrice } from '../types';
 import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedPriceSource implements IPriceSource {
-  private readonly cache: Cache<CacheContext, TokenInChain, TokenPrice>;
+  private readonly cache: ConcurrentLRUCache<CacheContext, TokenInChain, TokenPrice>;
 
-  constructor(private readonly source: IPriceSource, expirationConfig: ExpirationConfigOptions) {
-    this.cache = new Cache<CacheContext, TokenInChain, TokenPrice>({
+  constructor(private readonly source: IPriceSource, config: CacheConfig) {
+    this.cache = new ConcurrentLRUCache<CacheContext, TokenInChain, TokenPrice>({
       calculate: (context, tokensInChain) => this.fetchTokens(tokensInChain, context),
-      expirationConfig,
+      config,
     });
   }
 

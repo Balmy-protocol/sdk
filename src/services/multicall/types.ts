@@ -8,6 +8,7 @@ export type IMulticallService = {
   }: {
     chainId: ChainId;
     calls: { target: Address; decode: string[]; calldata: string }[];
+    block?: number;
   }): Promise<ReadonlyArray<any>[]>;
   tryReadOnlyMulticall({
     chainId,
@@ -15,6 +16,7 @@ export type IMulticallService = {
   }: {
     chainId: ChainId;
     calls: { target: Address; decode: string[]; calldata: string }[];
+    block?: number;
   }): Promise<TryMulticallResult<any>[]>;
 };
 

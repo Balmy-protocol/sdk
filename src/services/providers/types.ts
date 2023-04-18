@@ -5,7 +5,7 @@ import { PublicClient, Transport } from 'viem';
 export type IProviderService = {
   supportedChains(): ChainId[];
   getEthersProvider(_: { chainId: ChainId }): providers.BaseProvider;
-  getViemClient(_: { chainId: ChainId }): PublicClient;
+  getViemPublicClient(_: { chainId: ChainId }): PublicClient;
 };
 
 export type IProviderSource = {
