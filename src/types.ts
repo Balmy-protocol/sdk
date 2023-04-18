@@ -5,6 +5,7 @@ export type Address = string;
 export type TokenAddress = Address;
 export type ChainId = number;
 export type TimeString = StringValue;
+export type Timestamp = number;
 export type AmountOfToken = string;
 export type AmountOfTokenLike = string | number | bigint;
 export type Chain = Readonly<{

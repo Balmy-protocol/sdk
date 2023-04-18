@@ -1,5 +1,6 @@
 import ms from 'ms';
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import crossFetch from 'cross-fetch';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
@@ -16,6 +17,7 @@ import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritiz
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
 import { MeanFinancePriceSource } from '@services/prices/price-sources/mean-finance-price-source';
+chai.use(chaiAsPromised);
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },

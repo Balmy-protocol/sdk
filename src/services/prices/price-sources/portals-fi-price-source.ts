@@ -1,6 +1,6 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { PortalsFiClient } from '@shared/portals-fi';
 
 export class PortalsFiPriceSource implements IPriceSource {
@@ -38,6 +38,6 @@ export class PortalsFiPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
-    throw new Error('Operation not supported');
+    return Promise.reject(new Error('Operation not supported'));
   }
 }

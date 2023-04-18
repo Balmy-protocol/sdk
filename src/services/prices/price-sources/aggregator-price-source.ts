@@ -1,7 +1,7 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
-import { ChainId, TimeString, TokenAddress } from '@types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { combineSupport, filterRequestForSource, getSourcesThatSupportRequestOrFail } from './utils';
 
 export type PriceAggregationMethod = 'median' | 'min' | 'max' | 'avg';

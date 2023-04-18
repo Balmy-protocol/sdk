@@ -1,4 +1,4 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress, Timestamp } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
@@ -48,17 +48,59 @@ const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
 export class DefiLlamaClient {
   constructor(private readonly fetch: IFetchService) {}
 
-  async getCurrentTokenData({
+  supportedChains(): ChainId[] {
+    return Object.keys(CHAIN_ID_TO_KEY).map(Number);
+  }
+
+  getCurrentTokenData({
     addresses,
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Required<FetchTokenResult>>>> {
+    return this.fetchAndMapTokens({
+      baseUrl: 'https://coins.llama.fi/prices/current/',
+      addresses,
+      config,
+    });
+  }
+
+  getHistoricalTokenData({
+    addresses,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }) {
+    const extraParams = searchWidth && { searchWidth };
+    return this.fetchAndMapTokens({
+      baseUrl: `https://coins.llama.fi/prices/historical/${timestamp}/`,
+      addresses,
+      extraParams,
+      config,
+    });
+  }
+
+  private async fetchAndMapTokens({
+    baseUrl,
+    addresses,
+    extraParams,
+    config,
+  }: {
+    baseUrl: string;
+    addresses: Record<ChainId, TokenAddress[]>;
+    extraParams?: Record<string, string>;
+    config?: { timeout?: TimeString };
+  }) {
     const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
       addresses.map((address) => toTokenId(Number(chainId), address))
     );
-    const coins = await this.fetchTokens(tokenIds, config);
+    const coins = await this.fetchTokens(baseUrl, tokenIds, config, extraParams);
     const result: Record<ChainId, Record<TokenAddress, Required<FetchTokenResult>>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
@@ -77,15 +119,16 @@ export class DefiLlamaClient {
     return result;
   }
 
-  supportedChains(): ChainId[] {
-    return Object.keys(CHAIN_ID_TO_KEY).map(Number);
-  }
-
-  private async fetchTokens(tokens: TokenId[], config?: { timeout?: TimeString }) {
+  private async fetchTokens(baseUrl: string, tokens: TokenId[], config?: { timeout?: TimeString }, extraParams: Record<string, string> = {}) {
     const chunkSize = 30;
     const chunks = [...Array(Math.ceil(tokens.length / chunkSize))].map((_) => tokens.splice(0, chunkSize));
+    const extraParamsString =
+      '?' +
+      Object.entries(extraParams)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('&=');
     const requests = chunks.map(async (chunk) => {
-      const url = 'https://coins.llama.fi/prices/current/' + chunk.join(',');
+      const url = baseUrl + chunk.join(',') + extraParamsString;
       const response = await this.fetch.fetch(url, { timeout: config?.timeout });
       if (!response.ok) {
         throw new Error('Request to Defi Llama API failed');

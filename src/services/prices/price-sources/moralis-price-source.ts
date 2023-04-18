@@ -1,6 +1,6 @@
-import { Address, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { Chains, getChainByKey } from '@chains';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { IFetchService } from '@services/fetch';
 import { utils } from 'ethers';
 import { isSameAddress } from '@shared/utils';
@@ -47,7 +47,7 @@ export class MoralisPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
-    throw new Error('Operation not supported');
+    return Promise.reject(new Error('Operation not supported'));
   }
 
   private async fetchPrice(chainId: ChainId, address: Address, config?: { timeout?: TimeString }): Promise<TokenPrice | undefined> {

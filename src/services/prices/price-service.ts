@@ -1,12 +1,18 @@
 import { timeoutPromise } from '@shared/timeouts';
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IPriceService, IPriceSource, TokenPrice } from './types';
 
 export class PriceService implements IPriceService {
-  constructor(private readonly tokenSource: IPriceSource) {}
+  constructor(private readonly priceSource: IPriceSource) {}
 
   supportedChains() {
-    return this.tokenSource.supportedChains();
+    return Object.entries(this.supportedQueries())
+      .filter(([, support]) => support.getCurrentPrices || support.getHistoricalPrices)
+      .map(([chainId]) => Number(chainId));
+  }
+
+  supportedQueries() {
+    return this.priceSource.supportedQueries();
   }
 
   async getCurrentPricesForChain({
@@ -30,6 +36,36 @@ export class PriceService implements IPriceService {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
-    return timeoutPromise(this.tokenSource.getCurrentPrices({ addresses, config }), config?.timeout);
+    return timeoutPromise(this.priceSource.getCurrentPrices({ addresses, config }), config?.timeout);
+  }
+
+  async getHistoricalPricesForChain({
+    chainId,
+    addresses,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
+    chainId: ChainId;
+    addresses: TokenAddress[];
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }) {
+    const byChainId = { [chainId]: addresses };
+    const result = await this.getHistoricalPrices({ addresses: byChainId, timestamp, searchWidth, config });
+    return result[chainId];
+  }
+
+  getHistoricalPrices({
+    config,
+    ...params
+  }: {
+    addresses: Record<ChainId, TokenAddress[]>;
+    timestamp: Timestamp;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }) {
+    return timeoutPromise(this.priceSource.getHistoricalPrices({ ...params, config }), config?.timeout);
   }
 }

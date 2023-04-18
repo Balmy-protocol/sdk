@@ -1,6 +1,6 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
-import { ChainId, TimeString, TokenAddress } from '@types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp } from '../types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import {
   doesResponseFulfillRequest,
   fillResponseWithNewResult,

@@ -1,8 +1,8 @@
-import { ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
 import { TokenInChain, fromTokenInChain, toTokenInChain } from '@shared/utils';
 import { MEAN_FINANCE_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/mean-finance';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, Timestamp, TokenPrice } from '../types';
+import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 
 export class MeanFinancePriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
@@ -44,7 +44,7 @@ export class MeanFinancePriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
-    throw new Error('Operation not supported');
+    return Promise.reject(new Error('Operation not supported'));
   }
 }
 
