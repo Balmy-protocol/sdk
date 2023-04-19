@@ -35,7 +35,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   },
 };
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!, 'https');
+const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!);
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {

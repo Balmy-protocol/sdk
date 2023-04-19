@@ -1,6 +1,7 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import { RPCSimulationSource } from '@services/simulations/simulation-sources/rpc-simulation-source';
+import { AlchemySimulationSource } from '@services/simulations/simulation-sources/alchemy-simulation-source';
 import { Chains } from '@chains';
 import { BigNumber, utils } from 'ethers';
 import chaiAsPromised from 'chai-as-promised';
@@ -21,7 +22,7 @@ chai.use(chaiAsPromised);
 
 // const FETCH_SERVICE = new FetchService(crossFetch);
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-// const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(process.env.ALCHEMY_API_KEY!, 'https);
+const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(process.env.ALCHEMY_API_KEY!);
 // const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);
 const RPC_SIMULATION_SOURCE = new RPCSimulationSource(PROVIDER_SERVICE);
 
@@ -34,7 +35,7 @@ const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 const ONE_ETHER = utils.parseEther('1').toString();
 
 describe('Simulation Sources', () => {
-  // simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE }); Skipped due to rate limiting issues
+  simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE });
   simulationSourceTest({ title: 'RPC Source', source: RPC_SIMULATION_SOURCE });
   // simulationSourceTest({ title: 'Blowfish Source', source: BLOWFISH_SIMULATION_SOURCE });
 
