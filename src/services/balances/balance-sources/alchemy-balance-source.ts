@@ -1,3 +1,4 @@
+import { TokenBalanceType, TokenBalancesResponseErc20 } from 'alchemy-sdk';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport } from '../types';
 import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
@@ -24,9 +25,13 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
     let pageKey: string | undefined = undefined;
     do {
       try {
-        const args: any[] = [account, 'erc20'];
-        if (pageKey) args.push({ pageKey });
-        const result = await timeoutPromise(buildAlchemyClient(this.alchemyKey, chainId).core.getTokenBalances(account), config?.timeout);
+        const result: TokenBalancesResponseErc20 = await timeoutPromise(
+          buildAlchemyClient(this.alchemyKey, chainId).core.getTokenBalances(account, {
+            type: TokenBalanceType.ERC20,
+            pageKey,
+          }),
+          config?.timeout
+        );
         allBalances.push(...result.tokenBalances);
         pageKey = result.pageKey;
       } catch (e) {

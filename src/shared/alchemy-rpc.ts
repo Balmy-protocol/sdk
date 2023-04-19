@@ -10,7 +10,6 @@ const ALCHEMY_NETWORKS: Record<ChainId, Network> = {
   [Chains.OPTIMISM.chainId]: Network.OPT_MAINNET,
   [Chains.ARBITRUM.chainId]: Network.ARB_MAINNET,
   [Chains.ASTAR.chainId]: Network.ASTAR_MAINNET,
-  [Chains.ASTAR.chainId]: Network.POLYGONZKEVM_MAINNET,
   // [Chains.POLYGON_ZKEVM.chainId]: Network.POLYGONZKEVM_MAINNET, TODO: Add support
 };
 
