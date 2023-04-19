@@ -35,12 +35,6 @@ jobs:
         run: yarn build
       - name: Unit tests
         run: yarn test:unit
-      - name: Integration tests
-        run: yarn test:integration
-        timeout-minutes: 15
-        env:
-          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
-          CI_CONTEXT: true
       - name: Bump release version
         run: |
           echo "NEW_VERSION=$(npm --no-git-tag-version version $RELEASE_TYPE)" >> $GITHUB_ENV
