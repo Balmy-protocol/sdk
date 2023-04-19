@@ -3,7 +3,7 @@ import { IProviderSource } from '@services/providers/types';
 import { EIP1993Provider, EIP1993ProviderSource } from '@services/providers/provider-sources/eip1993-provider';
 import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { FallbackSource } from '@services/providers/provider-sources/fallback-provider';
+import { FallbackProviderSourceConfig, FallbackSource } from '@services/providers/provider-sources/fallback-provider';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
 import { HttpProviderSource } from '@services/providers/provider-sources/http-provider';
@@ -23,7 +23,7 @@ export type ProviderSourceInput =
   | { type: 'llama-nodes'; key?: string }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
-  | { type: 'fallback'; sources: ProviderSourceInput[]; config?: { ethers?: { quorum?: number } } }
+  | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
   | { type: 'prioritized'; sources: ProviderSourceInput[] };
 
 export function buildProviderService(params?: BuildProviderParams) {
