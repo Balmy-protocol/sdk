@@ -1,11 +1,11 @@
-import { PublicClient, Transport, createPublicClient } from 'viem';
+import { PublicClient, createPublicClient } from 'viem';
 import { ChainId } from '@types';
 import { IProviderService, IProviderSource } from './types';
 
 export class ProviderService implements IProviderService {
-  // Viem transports have a lot of state and they even do some polling at regular intervals
-  // That's why we'll only create one transport per chain, and then re-use it
-  private readonly viemTransports: Map<ChainId, Transport> = new Map();
+  // Viem clients have a lot of state and they even do some polling at regular intervals
+  // That's why we'll only create one client per chain, and then re-use it
+  private readonly viemPublicClients: Map<ChainId, PublicClient> = new Map();
 
   constructor(private readonly source: IProviderSource) {}
 
@@ -18,10 +18,11 @@ export class ProviderService implements IProviderService {
   }
 
   getViemPublicClient({ chainId }: { chainId: ChainId }): PublicClient {
-    if (!this.viemTransports.has(chainId)) {
+    if (!this.viemPublicClients.has(chainId)) {
       const transport = this.source.getViemTransport({ chainId });
-      this.viemTransports.set(chainId, transport);
+      const client = createPublicClient({ transport });
+      this.viemPublicClients.set(chainId, client);
     }
-    return createPublicClient({ transport: this.viemTransports.get(chainId)! });
+    return this.viemPublicClients.get(chainId)!;
   }
 }
