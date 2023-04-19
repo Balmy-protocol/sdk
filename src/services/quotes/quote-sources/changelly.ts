@@ -38,8 +38,11 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
-      `&slippage=${slippagePercentage * 10}` +
-      `&recipientAddress=${recipient ?? takeFrom}`;
+      `&slippage=${slippagePercentage * 10}`;
+
+    if (recipient && !isSameAddress(recipient, takeFrom)) {
+      url += `&recipientAddress=${recipient}`;
+    }
 
     const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });

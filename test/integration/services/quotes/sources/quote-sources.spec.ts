@@ -36,8 +36,8 @@ import { ProviderService } from '@services/providers/provider-service';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: SourceId; chains: Chain[] | 'all' } = {
-  source: 'wido',
-  chains: [Chains.ARBITRUM],
+  source: 'changelly',
+  chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 
