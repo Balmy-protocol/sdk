@@ -20,7 +20,7 @@ import { BaseTokenMetadata } from '@services/metadata/types';
 import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
-import { utils } from 'ethers';
+import { formatUnits } from 'viem';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 import { SourceConfig, SourceWithConfigId } from './source-registry';
@@ -361,7 +361,7 @@ function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined
   const amountInUSD = amountToUSD(token.decimals, amount, price);
   return {
     amount: amount.toString(),
-    amountInUnits: utils.formatUnits(amount, token.decimals),
+    amountInUnits: formatUnits(BigInt(amount), token.decimals),
     amountInUSD,
   };
 }

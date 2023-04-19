@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { Address, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { getChainByKey } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
@@ -7,6 +6,7 @@ import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
+import { encodeFunctionData, parseAbi } from 'viem';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
@@ -82,10 +82,10 @@ const ERC20_ABI = [
   'function decimals() view returns (uint8)',
   'function name() view returns (string)',
 ];
+const PARSED_ABI = parseAbi(ERC20_ABI);
 
-const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);
 const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string[]; calldata: string }> = {
-  symbol: { decode: ['string'], calldata: ERC_20_INTERFACE.encodeFunctionData('symbol') },
-  name: { decode: ['string'], calldata: ERC_20_INTERFACE.encodeFunctionData('name') },
-  decimals: { decode: ['uint8'], calldata: ERC_20_INTERFACE.encodeFunctionData('decimals') },
+  symbol: { decode: ['string'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'symbol' }) },
+  name: { decode: ['string'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'name' }) },
+  decimals: { decode: ['uint8'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'decimals' }) },
 };

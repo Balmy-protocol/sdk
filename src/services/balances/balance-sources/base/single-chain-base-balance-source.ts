@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
@@ -132,18 +131,19 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
 }
 
 function isValidBalance(text: AmountOfToken | undefined) {
-  return !!toBigNumber(text);
+  return !!toBigInt(text);
 }
 
 function isValidBalanceAndNonZero(text: AmountOfToken | undefined) {
-  const bn = toBigNumber(text);
-  return bn && bn.gt(0);
+  const bn = toBigInt(text);
+  return bn && bn > 0n;
 }
 
-function toBigNumber(text: AmountOfToken | undefined): BigNumber | undefined {
+function toBigInt(text: AmountOfToken | undefined): bigint | undefined {
   try {
-    return BigNumber.from(text);
-  } catch {
-    return undefined;
-  }
+    if (text) {
+      return BigInt(text);
+    }
+  } catch {}
+  return undefined;
 }

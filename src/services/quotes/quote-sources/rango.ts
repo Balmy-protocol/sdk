@@ -3,7 +3,7 @@ import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { ChainId, TokenAddress } from '@types';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 
@@ -100,7 +100,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       minBuyAmount: BigNumber.from(outputAmountMin),
       type: 'sell',
       estimatedGas,
-      allowanceTarget: txTo ?? constants.AddressZero,
+      allowanceTarget: txTo ?? Addresses.ZERO_ADDRESS,
       tx,
     };
   }

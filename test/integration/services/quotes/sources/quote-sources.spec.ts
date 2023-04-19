@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { ethers } from 'hardhat';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { expect } from 'chai';
 import crossFetch from 'cross-fetch';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -206,7 +206,7 @@ describe('Quote Sources', () => {
                   [sellToken, buyToken, recipient, takeFrom] = await Promise.all([request.sellToken, request.buyToken, request.recipient, user]);
                   quote = await quotePromise;
                   const approveTx =
-                    isSameAddress(quote.allowanceTarget, constants.AddressZero) || isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)
+                    isSameAddress(quote.allowanceTarget, Addresses.ZERO_ADDRESS) || isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)
                       ? []
                       : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: sellToken, from: takeFrom })];
                   txs = [...approveTx, await execute({ quote, as: takeFrom })];

@@ -1,4 +1,5 @@
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
+import { encodeFunctionData, parseAbi } from 'viem';
 import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
@@ -30,7 +31,11 @@ export class RPCAllowanceSource implements IAllowanceSource {
     const calls = checks.map(({ token, owner, spender }) => ({
       target: token,
       decode: ['uint256'],
-      calldata: ERC_20_INTERFACE.encodeFunctionData('allowance', [owner, spender]),
+      calldata: encodeFunctionData({
+        abi: parseAbi(ERC20_ABI),
+        functionName: 'allowance',
+        args: [owner, spender],
+      }),
     }));
     const multicallResult: ReadonlyArray<BigNumber>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
@@ -45,4 +50,3 @@ export class RPCAllowanceSource implements IAllowanceSource {
 }
 
 const ERC20_ABI = ['function allowance(address owner, address spender) view returns (uint256)'];
-const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);

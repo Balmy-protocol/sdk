@@ -1,6 +1,5 @@
-import { BigNumber, ethers } from 'ethers';
-import { Address as ViemAddress } from 'viem';
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address as ViemAddress, encodeFunctionData, parseAbi } from 'viem';
+import { Address, AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
@@ -35,9 +34,13 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     const calls: { target: Address; decode: string[]; calldata: string }[] = pairs.map(({ account, token }) => ({
       target: token,
       decode: ['uint256'],
-      calldata: ERC_20_INTERFACE.encodeFunctionData('balanceOf', [account]),
+      calldata: encodeFunctionData({
+        abi: parseAbi(ERC20_ABI),
+        functionName: 'balanceOf',
+        args: [account],
+      }),
     }));
-    const multicallResults: ReadonlyArray<BigNumber>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults: ReadonlyArray<AmountOfTokenLike>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const { account, token } = pairs[i];
@@ -65,4 +68,3 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
 }
 
 const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
-const ERC_20_INTERFACE = new ethers.utils.Interface(ERC20_ABI);

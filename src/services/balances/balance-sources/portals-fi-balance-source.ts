@@ -2,7 +2,6 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { IFetchService } from '@services/fetch';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_KEY_TO_CHAIN_ID, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { BalanceQueriesSupport, IBalanceSource } from '../types';
-import { constants } from 'ethers';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
@@ -97,7 +96,7 @@ function fromKey(key: string): { chainId: ChainId; token: TokenAddress } {
   const [chainKey, token] = key.split(':');
   return {
     chainId: PORTALS_FI_KEY_TO_CHAIN_ID[chainKey],
-    token: isSameAddress(token, constants.AddressZero) ? Addresses.NATIVE_TOKEN : token,
+    token: isSameAddress(token, Addresses.ZERO_ADDRESS) ? Addresses.NATIVE_TOKEN : token,
   };
 }
 
