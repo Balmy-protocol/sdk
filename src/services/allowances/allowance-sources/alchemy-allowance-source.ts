@@ -1,11 +1,11 @@
 import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
-import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 
 export class AlchemyAllowanceSource implements IAllowanceSource {
-  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {}
+  constructor(private readonly alchemyKey: string) {}
 
   supportedChains(): ChainId[] {
     return alchemySupportedChains();
@@ -46,10 +46,9 @@ export class AlchemyAllowanceSource implements IAllowanceSource {
     { token, owner, spender }: AllowanceCheck,
     config?: { timeout?: TimeString }
   ): Promise<AmountOfToken> {
-    return this.callRPC<AmountOfToken>(chainId, 'alchemy_getTokenAllowance', [{ contract: token, owner, spender }], config?.timeout);
-  }
-
-  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {
-    return timeoutPromise(callAlchemyRPC(this.alchemyKey, this.protocol, chainId, method, params), timeout);
+    return timeoutPromise(
+      buildAlchemyClient(this.alchemyKey, chainId).core.send('alchemy_getTokenAllowance', [{ contract: token, owner, spender }]),
+      config?.timeout
+    );
   }
 }

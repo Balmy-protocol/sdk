@@ -1,4 +1,4 @@
-import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
 import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
 import { BigNumber } from 'ethers';
@@ -73,7 +73,7 @@ export class AlchemySimulationSource implements ISimulationSource {
   }
 
   private callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
-    return timeoutPromise(callAlchemyRPC(this.alchemyKey, 'https', chainId, method, params), timeout);
+    return timeoutPromise(buildAlchemyClient(this.alchemyKey, chainId).core.send(method, params), timeout);
   }
 }
 

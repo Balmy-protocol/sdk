@@ -11,7 +11,7 @@ export type AllowanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'cached'; underlyingSource: AllowanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IAllowanceSource }
-  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' };
+  | { type: 'alchemy'; key: string };
 export type BuildAllowanceParams = { source: AllowanceSourceInput };
 
 export function buildAllowanceService(
@@ -37,6 +37,6 @@ function buildSource(
     case 'custom':
       return source.instance;
     case 'alchemy':
-      return new AlchemyAllowanceSource(source.key, source.protocol ?? 'https');
+      return new AlchemyAllowanceSource(source.key);
   }
 }
