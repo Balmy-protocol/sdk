@@ -14,7 +14,7 @@ export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'cached'; underlyingSource: BalanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IBalanceSource }
-  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
+  | { type: 'alchemy'; key: string }
   | { type: 'portals-fi'; key: string }
   | { type: 'moralis'; key: string };
 export type BuildBalancesParams = { source: BalanceSourceInput };
@@ -47,7 +47,7 @@ function buildSource(
     case 'custom':
       return source.instance;
     case 'alchemy':
-      return new AlchemyBalanceSource(source.key, source.protocol ?? 'https');
+      return new AlchemyBalanceSource(source.key);
     case 'portals-fi':
       return new PortalsFiBalanceSource(fetchService, source.key);
     case 'moralis':

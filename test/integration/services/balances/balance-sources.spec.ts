@@ -54,7 +54,7 @@ const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService(crossFetch);
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
-const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!, 'https');
+const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',

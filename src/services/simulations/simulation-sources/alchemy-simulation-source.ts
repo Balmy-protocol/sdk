@@ -1,4 +1,4 @@
-import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
 import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
 import { BigNumber } from 'ethers';
@@ -6,7 +6,7 @@ import { hexValue } from 'ethers/lib/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
 
 export class AlchemySimulationSource implements ISimulationSource {
-  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {}
+  constructor(private readonly alchemyKey: string) {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = alchemySupportedChains().map<[ChainId, SimulationQueriesSupport]>((chainId) => [
@@ -42,7 +42,7 @@ export class AlchemySimulationSource implements ISimulationSource {
         estimatedGas: result.gasUsed,
       };
     } catch (e: any) {
-      const body = this.protocol === 'https' ? e.body : e.response;
+      const body = e.body;
       const parsed = JSON.parse(e.body);
       if ('error' in parsed) {
         const {
@@ -73,7 +73,7 @@ export class AlchemySimulationSource implements ISimulationSource {
   }
 
   private callRPC<T>(chainId: ChainId, method: string, params: any, timeout?: TimeString): Promise<T> {
-    return timeoutPromise(callAlchemyRPC(this.alchemyKey, 'https', chainId, method, params), timeout);
+    return timeoutPromise(buildAlchemyClient(this.alchemyKey, chainId).core.send(method, params), timeout);
   }
 }
 

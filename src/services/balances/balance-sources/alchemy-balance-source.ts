@@ -1,12 +1,13 @@
+import { TokenBalanceType, TokenBalancesResponseErc20 } from 'alchemy-sdk';
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport } from '../types';
-import { alchemySupportedChains, callAlchemyRPC } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { SingleAccountAndChainBaseBalanceSource } from './base/single-account-and-chain-base-balance-source';
 import { timeoutPromise } from '@shared/timeouts';
 
 // Note: when checking tokens held by an account, Alchemy returns about 300 tokens max
 export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource {
-  constructor(private readonly alchemyKey: string, private readonly protocol: 'https' | 'wss') {
+  constructor(private readonly alchemyKey: string) {
     super();
   }
 
@@ -24,12 +25,11 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
     let pageKey: string | undefined = undefined;
     do {
       try {
-        const args: any[] = [account, 'erc20'];
-        if (pageKey) args.push({ pageKey });
-        const result = await this.callRPC<{ tokenBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[]; pageKey?: string }>(
-          chainId,
-          'alchemy_getTokenBalances',
-          args,
+        const result: TokenBalancesResponseErc20 = await timeoutPromise(
+          buildAlchemyClient(this.alchemyKey, chainId).core.getTokenBalances(account, {
+            type: TokenBalanceType.ERC20,
+            pageKey,
+          }),
           config?.timeout
         );
         allBalances.push(...result.tokenBalances);
@@ -47,22 +47,20 @@ export class AlchemyBalanceSource extends SingleAccountAndChainBaseBalanceSource
     addresses: TokenAddress[],
     config?: { timeout?: TimeString }
   ): Promise<Record<TokenAddress, AmountOfToken>> {
-    const { tokenBalances } = await this.callRPC<{ tokenBalances: { contractAddress: TokenAddress; tokenBalance: string | null }[] }>(
-      chainId,
-      'alchemy_getTokenBalances',
-      [account, addresses],
+    const { tokenBalances } = await timeoutPromise(
+      buildAlchemyClient(this.alchemyKey, chainId).core.getTokenBalances(account, addresses),
       config?.timeout
     );
-
     return toRecord(tokenBalances);
   }
 
   protected fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }): Promise<AmountOfToken> {
-    return this.callRPC(chainId, 'eth_getBalance', [account, 'latest'], config?.timeout);
-  }
-
-  private callRPC<T>(chainId: ChainId, method: string, params: any, timeout: TimeString | undefined): Promise<T> {
-    return timeoutPromise(callAlchemyRPC(this.alchemyKey, this.protocol, chainId, method, params), timeout);
+    return timeoutPromise(
+      buildAlchemyClient(this.alchemyKey, chainId)
+        .core.getBalance(account)
+        .then((balance) => balance.toString()),
+      config?.timeout
+    );
   }
 }
 
