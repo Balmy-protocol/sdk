@@ -1,11 +1,11 @@
 import { IProviderService } from '@services/providers';
-import { AmountOfTokenLike, ChainId, TimeString, TransactionRequest } from '@types';
+import { AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TransactionRequest } from '@types';
 import { utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 import { mapTxToViemTx } from '@shared/viem';
 
 export class RPCSimulationSource implements ISimulationSource {
-  constructor(private readonly providerService: IProviderService) {}
+  constructor(private readonly providerService: IProviderService, private readonly library: 'ethers' | 'viem' = 'ethers') {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = this.providerService
@@ -28,15 +28,11 @@ export class RPCSimulationSource implements ISimulationSource {
     if (!isValid(tx.value)) return invalidTx('"value" is not a valid');
 
     try {
-      const viemTx = mapTxToViemTx(tx);
-      const estimatedGas = await this.providerService.getViemPublicClient({ chainId }).estimateGas({
-        ...viemTx,
-        account: viemTx.from,
-      });
+      const estimatedGas = await this.estimateGas(chainId, tx);
       return {
         successful: true,
         stageChanges: [],
-        estimatedGas: estimatedGas.toString(),
+        estimatedGas,
       };
     } catch (e: any) {
       return {
@@ -53,6 +49,18 @@ export class RPCSimulationSource implements ISimulationSource {
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult[]> {
     throw new Error('Operation not supported');
+  }
+
+  private estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
+    const viemTx = mapTxToViemTx(tx);
+    const promise =
+      this.library === 'viem'
+        ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
+            ...viemTx,
+            account: viemTx.from,
+          })
+        : this.providerService.getEthersProvider({ chainId }).estimateGas(tx);
+    return promise.then((estimate) => estimate.toString());
   }
 }
 

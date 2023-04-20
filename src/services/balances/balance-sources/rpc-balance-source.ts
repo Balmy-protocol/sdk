@@ -7,7 +7,11 @@ import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(private readonly providerService: IProviderService, private readonly multicallService: IMulticallService) {
+  constructor(
+    private readonly providerService: IProviderService,
+    private readonly multicallService: IMulticallService,
+    private readonly library: 'ethers' | 'viem' = 'ethers'
+  ) {
     super();
   }
 
@@ -60,10 +64,11 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
-    return this.providerService
-      .getViemPublicClient({ chainId })
-      .getBalance({ address: account as ViemAddress, blockTag: 'latest' })
-      .then((balance) => balance.toString());
+    const promise =
+      this.library === 'viem'
+        ? this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' })
+        : this.providerService.getEthersProvider({ chainId }).getBalance(account);
+    return promise.then((balance) => balance.toString());
   }
 }
 
