@@ -99,7 +99,7 @@ function collect<T>(results: Record<ChainId, Record<TokenAddress, T>>[]) {
         if (!(address in collected[chainId])) {
           collected[chainId][address] = [];
         }
-        if (typeof result?.[chainId]?.[address] !== undefined) {
+        if (typeof result?.[chainId]?.[address] !== 'undefined') {
           collected[chainId][address].push(result[chainId][address]);
         }
       }
