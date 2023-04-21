@@ -50,7 +50,17 @@ export const Chains = {
     ids: ['polygon', 'matic'],
     nativeCurrency: { symbol: 'MATIC', name: 'Matic' },
     wToken: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
-    publicRPCs: ['https://polygon-rpc.com/', 'https://rpc-mainnet.maticvigil.com/'],
+    publicRPCs: [
+      'https://polygon-rpc.com',
+      'https://polygon.llamarpc.com',
+      'https://rpc-mainnet.maticvigil.com',
+      'https://polygon-bor.publicnode.com',
+      'https://poly-rpc.gateway.pokt.network',
+      'https://polygon-mainnet.public.blastapi.io',
+      'https://rpc.ankr.com/polygon',
+      'https://rpc-mainnet.matic.quiknode.pro',
+      'https://matic-mainnet.chainstacklabs.com',
+    ],
     explorer: 'https://polygonscan.com/',
   },
   BNB_CHAIN: {
