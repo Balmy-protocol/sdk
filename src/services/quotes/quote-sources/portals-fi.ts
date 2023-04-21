@@ -14,7 +14,7 @@ export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
     swapAndTransfer: false,
     buyOrders: false,
   },
-  logoURI: 'ipfs://QmcZhhWGEp6JZkqv9727XrCyGQcdGFL8HtVvUT6fzxiCCo',
+  logoURI: 'ipfs://QmYJiiZAxFHSJb37y25unRUyWioTH6odKWmEZ1psD1DyuL',
 };
 type PortalsFiSupport = { buyOrders: false; swapAndTransfer: false };
 export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<PortalsFiSupport> {
