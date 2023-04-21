@@ -23,7 +23,16 @@ export const Chains = {
     ids: ['optimism'],
     nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
     wToken: '0x4200000000000000000000000000000000000006',
-    publicRPCs: ['https://mainnet.optimism.io/'],
+    publicRPCs: [
+      'https://mainnet.optimism.io/',
+      'https://1rpc.io/op',
+      'https://optimism.api.onfinality.io/public',
+      'https://endpoints.omniatech.io/v1/op/mainnet/public',
+      'https://opt-mainnet.g.alchemy.com/v2/demo',
+      'https://optimism.blockpi.network/v1/rpc/public',
+      'https://optimism-mainnet.public.blastapi.io',
+      'https://rpc.ankr.com/optimism	',
+    ],
     explorer: 'https://optimistic.etherscan.io/',
   },
   ARBITRUM: {
@@ -32,7 +41,15 @@ export const Chains = {
     ids: ['arbitrum'],
     nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
     wToken: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-    publicRPCs: ['https://arb1.arbitrum.io/rpc'],
+    publicRPCs: [
+      'https://arb1.arbitrum.io/rpc',
+      'https://arb-mainnet-public.unifra.io',
+      'https://arbitrum-one.public.blastapi.io',
+      'https://arb1.croswap.com/rpc',
+      'https://endpoints.omniatech.io/v1/arbitrum/one/public',
+      'https://arbitrum.blockpi.network/v1/rpc/public',
+      'https://rpc.ankr.com/arbitrum',
+    ],
     explorer: 'https://arbiscan.io/',
   },
   ARBITRUM_NOVA: {
@@ -190,7 +207,6 @@ export const Chains = {
     wToken: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000',
     publicRPCs: [
       'https://mainnet.boba.network/',
-      'https://mainnet.portal.pokt.network',
       'https://lightning-replica.boba.network',
       'https://boba-mainnet.gateway.pokt.network/v1/lb/623ad21b20354900396fed7f',
     ],
