@@ -9,7 +9,7 @@ export class AllowanceService implements IAllowanceService {
     return this.source.supportedChains();
   }
 
-  async getAllowance({
+  async getAllowanceInChain({
     chainId,
     token,
     owner,
@@ -22,11 +22,11 @@ export class AllowanceService implements IAllowanceService {
     spender: SpenderAddress;
     config?: { timeout?: TimeString };
   }): Promise<AmountOfToken> {
-    const { [spender]: result } = await this.getAllowances({ chainId, token, owner, spenders: [spender], config });
+    const { [spender]: result } = await this.getAllowancesInChain({ chainId, token, owner, spenders: [spender], config });
     return result;
   }
 
-  async getAllowances({
+  async getAllowancesInChain({
     chainId,
     token,
     owner,
@@ -40,7 +40,7 @@ export class AllowanceService implements IAllowanceService {
     config?: { timeout?: TimeString };
   }): Promise<Record<SpenderAddress, AmountOfToken>> {
     const allowancesInChain = spenders.map((spender) => ({ token, owner, spender }));
-    const result = await this.getMultipleAllowances({
+    const result = await this.getMultipleAllowancesInChain({
       chainId,
       check: allowancesInChain,
       config,
@@ -48,7 +48,15 @@ export class AllowanceService implements IAllowanceService {
     return result[token][owner];
   }
 
-  async getMultipleAllowances({ chainId, check, config }: { chainId: ChainId; check: AllowanceCheck[]; config?: { timeout?: TimeString } }) {
+  async getMultipleAllowancesInChain({
+    chainId,
+    check,
+    config,
+  }: {
+    chainId: ChainId;
+    check: AllowanceCheck[];
+    config?: { timeout?: TimeString };
+  }) {
     const result = await timeoutPromise(
       this.source.getAllowances({
         allowances: { [chainId]: check },

@@ -19,7 +19,7 @@ const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
   logoURI: 'ipfs://QmUUbaZvrD8Ymr2nV6db4Cbtd1aMCiSP7MoyvBv9LTnrmP',
 };
 type MeanFinanceConfig = {
-  alwaysUseTransformerRegistry?: boolean;
+  alwaysUseTransformers?: boolean;
   swapperContract?: Address;
   leftoverRecipient?: Address;
 };

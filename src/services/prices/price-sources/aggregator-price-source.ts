@@ -82,7 +82,9 @@ async function collectAllResults<T>(
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
   const reducedTimeout = reduceTimeout(timeout, '100');
   const promises = sourcesInChains.map((source) =>
-    timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout)
+    timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout, {
+      description: 'Timeouted while executing an aggregated price query',
+    })
   );
   const results = await filterRejectedResults(promises);
   return collect(results);

@@ -36,7 +36,9 @@ export class PriceService implements IPriceService {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
-    return timeoutPromise(this.priceSource.getCurrentPrices({ addresses, config }), config?.timeout);
+    return timeoutPromise(this.priceSource.getCurrentPrices({ addresses, config }), config?.timeout, {
+      description: 'Timeouted while fetching current prices',
+    });
   }
 
   async getHistoricalPricesForChain({
@@ -66,6 +68,8 @@ export class PriceService implements IPriceService {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }) {
-    return timeoutPromise(this.priceSource.getHistoricalPrices({ ...params, config }), config?.timeout);
+    return timeoutPromise(this.priceSource.getHistoricalPrices({ ...params, config }), config?.timeout, {
+      description: 'Timeouted while fetching historical prices',
+    });
   }
 }

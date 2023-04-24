@@ -78,7 +78,9 @@ async function executePrioritized<T>(
     const result: Record<ChainId, Record<TokenAddress, T>> = {};
     const fetchPromises = sourcesInChains.map(
       (source) =>
-        timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout).catch(() => ({})) // Handle rejection and return empty result
+        timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout, {
+          description: 'Timeouted while executing a prioritized price query',
+        }).catch(() => ({})) // Handle rejection and return empty result
     );
 
     let i = 0;

@@ -5,21 +5,21 @@ export type SpenderAddress = Address;
 
 export type IAllowanceService = {
   supportedChains(): ChainId[];
-  getAllowance(_: {
+  getAllowanceInChain(_: {
     chainId: ChainId;
     token: TokenAddress;
     owner: OwnerAddress;
     spender: SpenderAddress;
     config?: { timeout?: TimeString };
   }): Promise<AmountOfToken>;
-  getAllowances(_: {
+  getAllowancesInChain(_: {
     chainId: ChainId;
     token: TokenAddress;
     owner: OwnerAddress;
     spenders: SpenderAddress[];
     config?: { timeout?: TimeString };
   }): Promise<Record<SpenderAddress, AmountOfToken>>;
-  getMultipleAllowances(_: {
+  getMultipleAllowancesInChain(_: {
     chainId: ChainId;
     check: AllowanceCheck[];
     config?: { timeout?: TimeString };
