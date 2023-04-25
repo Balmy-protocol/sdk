@@ -72,6 +72,9 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<Kyber
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { outputAmount, totalGas, encodedSwapData, routerAddress } = await response.json();
+    if (!encodedSwapData) {
+      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, 'Failed to calculate a quote');
+    }
 
     const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : constants.Zero;
     const quote = {
