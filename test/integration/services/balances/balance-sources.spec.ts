@@ -17,6 +17,7 @@ import { formatUnits } from 'ethers/lib/utils';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
 import crossFetch from 'cross-fetch';
+import { CHAINS_WITH_KNOWN_RPC_ISSUES } from '@test-utils/other';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -76,7 +77,9 @@ describe('Balance Sources', () => {
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
-      const sourceSupport = source.supportedQueries();
+      const sourceSupport = Object.fromEntries(
+        Object.entries(source.supportedQueries()).filter(([chainId]) => !CHAINS_WITH_KNOWN_RPC_ISSUES.includes(Number(chainId)))
+      );
 
       describe('getBalancesForTokens', () => {
         let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
