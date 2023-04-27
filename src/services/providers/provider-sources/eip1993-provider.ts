@@ -12,8 +12,7 @@ export class EIP1993ProviderSource implements IProviderSource {
   }
 
   supportedClients() {
-    const support = { ethers: true, viem: false };
-    return { [this.ethersProvider.network.chainId]: support };
+    return { [this.ethersProvider.network.chainId]: { ethers: true, viem: false } };
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {

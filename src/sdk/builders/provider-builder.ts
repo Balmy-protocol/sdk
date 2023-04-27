@@ -1,3 +1,4 @@
+import { providers } from 'ethers';
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { EIP1993Provider, EIP1993ProviderSource } from '@services/providers/provider-sources/eip1993-provider';
@@ -11,10 +12,12 @@ import { LlamaNodesProviderSource } from '@services/providers/provider-sources/l
 import { UpdatableProviderSource } from '@services/providers/provider-sources/updatable-provider';
 import { WebSocketProviderSource } from '@services/providers/provider-sources/web-sockets-provider';
 import { ProviderService } from '@services/providers/provider-service';
+import { EthersProviderSource } from '@services/providers/provider-sources/ethers';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'eip-1993'; instance: EIP1993Provider }
+  | { type: 'ethers'; instance: providers.BaseProvider }
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]> }
@@ -37,6 +40,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new PublicRPCsSource();
     case 'eip-1993':
       return new EIP1993ProviderSource(source.instance);
+    case 'ethers':
+      return new EthersProviderSource(source.instance);
     case 'updatable':
       return new UpdatableProviderSource(() => {
         const input = source.provider();
