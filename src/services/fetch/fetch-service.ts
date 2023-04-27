@@ -6,26 +6,23 @@ export class FetchService implements IFetchService {
   constructor(private readonly realFetch: Fetch) {}
 
   async fetch(url: RequestInfo | URL, init?: RequestInit) {
-    if (!init?.timeout) {
-      // If not timeout was set, then just execute the call
-      return this.realFetch(url, init);
-    }
-
-    const { timeout: timeoutText, ...otherConfig } = init;
+    const { timeout: timeoutText, ...otherConfig } = init ?? {};
+    // We add a very long timeout if there isn't one, so we can be sure that all requests end at some point
+    const timeout = timeoutText ?? '5m';
     const controller = new AbortController();
-    const timeout = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       controller.abort();
-    }, ms(timeoutText));
+    }, ms(timeout));
     try {
       return await this.realFetch(url, { ...otherConfig, signal: controller.signal as AbortSignal });
     } catch (e: any) {
       if (e.message === 'The user aborted a request.') {
         // Trying to throw a better error
-        throw new TimeoutError(`Request to ${url}`, timeoutText);
+        throw new TimeoutError(`Request to ${url}`, timeout);
       }
       throw e;
     } finally {
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
     }
   }
 }
