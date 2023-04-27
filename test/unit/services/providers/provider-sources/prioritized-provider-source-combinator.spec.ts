@@ -8,26 +8,27 @@ import { IProviderSource } from '@services/providers/types';
 
 const PROVIDER_1 = new JsonRpcProvider();
 const PROVIDER_2 = new JsonRpcProvider();
+const FULL_SUPPORT = { ethers: true, viem: true };
 
 describe('Prioritized Provider Source Combinator', () => {
   const source1: IProviderSource = {
-    supportedChains: () => [Chains.POLYGON.chainId],
+    supportedClients: () => ({ [Chains.POLYGON.chainId]: FULL_SUPPORT }),
     getEthersProvider: () => PROVIDER_1,
     getViemTransport: () => http(),
   };
   const source2: IProviderSource = {
-    supportedChains: () => [Chains.POLYGON.chainId, Chains.ETHEREUM.chainId],
+    supportedClients: () => ({ [Chains.POLYGON.chainId]: FULL_SUPPORT, [Chains.ETHEREUM.chainId]: FULL_SUPPORT }),
     getEthersProvider: () => PROVIDER_2,
     getViemTransport: () => http(),
   };
   const fallbackSource = new PrioritizedProviderSourceCombinator([source1, source2]);
 
-  when('asking for supported chains', () => {
+  when('asking for supported clients', () => {
     then('the union of the given sources is returned', () => {
-      const supportedChains = fallbackSource.supportedChains();
-      expect(supportedChains).to.have.lengthOf(2);
-      expect(supportedChains).to.include(Chains.POLYGON.chainId);
-      expect(supportedChains).to.include(Chains.ETHEREUM.chainId);
+      const supportedClients = fallbackSource.supportedClients();
+      expect(Object.keys(supportedClients)).to.have.lengthOf(2);
+      expect(supportedClients[Chains.POLYGON.chainId]).to.eql(FULL_SUPPORT);
+      expect(supportedClients[Chains.ETHEREUM.chainId]).to.eql(FULL_SUPPORT);
     });
   });
 
