@@ -10,7 +10,13 @@ export class ProviderService implements IProviderService {
   constructor(private readonly source: IProviderSource) {}
 
   supportedChains(): ChainId[] {
-    return this.source.supportedChains();
+    return Object.entries(this.source.supportedClients())
+      .filter(([chainId, support]) => support.ethers || support.viem)
+      .map(([chainId]) => Number(chainId));
+  }
+
+  supportedClients() {
+    return this.source.supportedClients();
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {

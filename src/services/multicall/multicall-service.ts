@@ -9,7 +9,7 @@ import abi from './multicall-abi';
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const ABI_CODER = new AbiCoder();
 export class MulticallService implements IMulticallService {
-  constructor(private readonly providerService: IProviderService, private readonly library: 'viem' | 'ethers' = 'ethers') {}
+  constructor(private readonly providerService: IProviderService, private readonly client: 'viem' | 'ethers' = 'ethers') {}
 
   supportedChains(): ChainId[] {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
@@ -21,14 +21,14 @@ export class MulticallService implements IMulticallService {
     at?: ExecuteCallAt;
   }): Promise<ReadonlyArray<any>[]> {
     if (args.calls.length === 0) return [];
-    return this.library === 'viem'
+    return this.client === 'viem'
       ? readOnlyMulticallWithViem({ ...args, providerService: this.providerService })
       : readOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
   }
 
   async tryReadOnlyMulticall(args: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[]; at?: ExecuteCallAt }) {
     if (args.calls.length === 0) return [];
-    return this.library === 'viem'
+    return this.client === 'viem'
       ? tryReadOnlyMulticallWithViem({ ...args, providerService: this.providerService })
       : tryReadOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
   }

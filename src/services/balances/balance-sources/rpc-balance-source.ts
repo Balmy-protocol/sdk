@@ -10,7 +10,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   constructor(
     private readonly providerService: IProviderService,
     private readonly multicallService: IMulticallService,
-    private readonly library: 'ethers' | 'viem' = 'ethers'
+    private readonly client: 'ethers' | 'viem' = 'ethers'
   ) {
     super();
   }
@@ -65,7 +65,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
     const promise =
-      this.library === 'viem'
+      this.client === 'viem'
         ? this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' })
         : this.providerService.getEthersProvider({ chainId }).getBalance(account);
     return promise.then((balance) => balance.toString());

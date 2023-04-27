@@ -4,6 +4,11 @@ import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 
 export abstract class BaseHttpProvider implements IProviderSource {
+  supportedClients() {
+    const support = { ethers: true, viem: true };
+    return Object.fromEntries(this.supportedChains().map((chainId) => [chainId, support]));
+  }
+
   getEthersProvider({ chainId }: { chainId: ChainId }): BaseProvider {
     this.assertChainIsValid(chainId);
     const url = this.calculateUrl(chainId);
@@ -16,7 +21,7 @@ export abstract class BaseHttpProvider implements IProviderSource {
     return buildViemTransportForHttpSource(url, chainId);
   }
 
-  abstract supportedChains(): ChainId[];
+  protected abstract supportedChains(): ChainId[];
   protected abstract calculateUrl(chainId: ChainId): string;
 
   private assertChainIsValid(chainId: ChainId) {

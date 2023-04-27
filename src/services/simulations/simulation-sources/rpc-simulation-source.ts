@@ -5,7 +5,7 @@ import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSi
 import { mapTxToViemTx } from '@shared/viem';
 
 export class RPCSimulationSource implements ISimulationSource {
-  constructor(private readonly providerService: IProviderService, private readonly library: 'ethers' | 'viem' = 'ethers') {}
+  constructor(private readonly providerService: IProviderService, private readonly client: 'ethers' | 'viem' = 'ethers') {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = this.providerService
@@ -54,7 +54,7 @@ export class RPCSimulationSource implements ISimulationSource {
   private estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
     const promise =
-      this.library === 'viem'
+      this.client === 'viem'
         ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
             ...viemTx,
             account: viemTx.from,

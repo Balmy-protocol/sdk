@@ -5,8 +5,8 @@ import { IProviderSource } from '../types';
 export class UpdatableProviderSource implements IProviderSource {
   constructor(private readonly underlying: () => IProviderSource | undefined) {}
 
-  supportedChains(): ChainId[] {
-    return this.underlying()?.supportedChains() ?? [];
+  supportedClients() {
+    return this.underlying()?.supportedClients() ?? {};
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {
