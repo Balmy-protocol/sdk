@@ -24,12 +24,12 @@ describe('Multicall Service', () => {
     readOnlyMulticallTest('viem');
   });
 
-  function readOnlyMulticallTest(library: 'ethers' | 'viem') {
+  function readOnlyMulticallTest(client: 'ethers' | 'viem') {
     let response: ReadonlyArray<BigNumber>[];
-    when(`trying a call with ${library}`, () => {
+    when(`trying a call with ${client}`, () => {
       given(async () => {
         const calls = [{ target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] }];
-        response = await new MulticallService(PROVIDER_SERVICE, library).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+        response = await new MulticallService(PROVIDER_SERVICE, client).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(1);
@@ -38,15 +38,15 @@ describe('Multicall Service', () => {
     });
   }
 
-  function tryReadOnlyMulticallTest(library: 'ethers' | 'viem') {
+  function tryReadOnlyMulticallTest(client: 'ethers' | 'viem') {
     let response: TryMulticallResult<BigNumber>[];
-    when(`trying a call that fails with another that works with ${library}`, () => {
+    when(`trying a call that fails with another that works with ${client}`, () => {
       given(async () => {
         const calls = [
           { target: DAI, calldata: TRANSFER_FROM_DATA, decode: ['uint256'] },
           { target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] },
         ];
-        response = await new MulticallService(PROVIDER_SERVICE, library).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+        response = await new MulticallService(PROVIDER_SERVICE, client).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);

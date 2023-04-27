@@ -7,8 +7,9 @@ import { alchemySupportedChains, buildAlchemyUrl } from '@shared/alchemy-rpc';
 export class AlchemyProviderSource implements IProviderSource {
   constructor(private readonly key: string, private readonly protocol: 'https' | 'wss') {}
 
-  supportedChains(): ChainId[] {
-    return alchemySupportedChains();
+  supportedClients() {
+    const support = { ethers: true, viem: true };
+    return Object.fromEntries(alchemySupportedChains().map((chainId) => [chainId, support]));
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {

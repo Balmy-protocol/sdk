@@ -1,6 +1,6 @@
-import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
 import { IProviderSource } from '../types';
+import { combineClientSupport, sourcesWithSupport } from './utils';
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given chain
@@ -9,19 +9,19 @@ export class PrioritizedProviderSourceCombinator implements IProviderSource {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
 
-  supportedChains(): ChainId[] {
-    return chainsUnion(this.sources.map((source) => source.supportedChains()));
+  supportedClients() {
+    return combineClientSupport(this.sources);
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {
-    const source = this.sources.find((source) => source.supportedChains().includes(chainId));
-    if (!source) throw new Error(`Chain with id ${chainId} not supported`);
-    return source.getEthersProvider({ chainId });
+    const sources = sourcesWithSupport(chainId, this.sources, 'ethers');
+    if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
+    return sources[0].getEthersProvider({ chainId });
   }
 
   getViemTransport({ chainId }: { chainId: ChainId }) {
-    const source = this.sources.find((source) => source.supportedChains().includes(chainId));
-    if (!source) throw new Error(`Chain with id ${chainId} not supported`);
-    return source.getViemTransport({ chainId });
+    const sources = sourcesWithSupport(chainId, this.sources, 'ethers');
+    if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
+    return sources[0].getViemTransport({ chainId });
   }
 }

@@ -1,8 +1,8 @@
-import { chainsUnion } from '@chains';
 import { ChainId } from '@types';
 import { IProviderSource } from '../types';
 import { FallbackProvider } from '@ethersproject/providers';
 import { FallbackTransportConfig, fallback } from 'viem';
+import { combineClientSupport, sourcesWithSupport } from './utils';
 
 export type FallbackProviderSourceConfig = {
   ethers?: { quorum?: number };
@@ -13,19 +13,19 @@ export class FallbackSource implements IProviderSource {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
 
-  supportedChains(): ChainId[] {
-    return chainsUnion(this.sources.map((source) => source.supportedChains()));
+  supportedClients() {
+    return combineClientSupport(this.sources);
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {
-    const sources = this.sources.filter((source) => source.supportedChains().includes(chainId));
+    const sources = sourcesWithSupport(chainId, this.sources, 'ethers');
     if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
     const config = sources.map((source, i) => ({ provider: source.getEthersProvider({ chainId }), priority: i }));
     return new FallbackProvider(config, this.config?.ethers?.quorum);
   }
 
   getViemTransport({ chainId }: { chainId: ChainId }) {
-    const sources = this.sources.filter((source) => source.supportedChains().includes(chainId));
+    const sources = sourcesWithSupport(chainId, this.sources, 'viem');
     if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
     const transports = sources.map((source) => source.getViemTransport({ chainId }));
     return fallback(transports, this.config?.viem);

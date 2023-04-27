@@ -9,7 +9,7 @@ describe('Updatable Provider', () => {
   when('provider is undefined', () => {
     const source = new UpdatableProviderSource(() => undefined);
     then('there are no supported chains', () => {
-      expect(source.supportedChains()).to.have.lengthOf(0);
+      expect(source.supportedClients()).to.be.empty;
     });
     then('asking for a provider would fail', () => {
       expect(() => source.getEthersProvider({ chainId: 0 })).to.throw('Provider is not set yet');
@@ -23,7 +23,7 @@ describe('Updatable Provider', () => {
       provider = CUSTOM_PROVIDER_SOURCE;
     });
     then('it is reported correctly', () => {
-      expect(source.supportedChains()).to.eql([10]);
+      expect(source.supportedClients()).to.eql({ [10]: { ethers: true, viem: true } });
       expect(source.getEthersProvider({ chainId: 10 })).to.equal(ETHERS_PROVIDER);
     });
   });
@@ -31,7 +31,7 @@ describe('Updatable Provider', () => {
 
 const ETHERS_PROVIDER = new JsonRpcProvider('', 10);
 const CUSTOM_PROVIDER_SOURCE: IProviderSource = {
-  supportedChains: () => [10],
+  supportedClients: () => ({ [10]: { ethers: true, viem: true } }),
   getEthersProvider: () => ETHERS_PROVIDER,
   getViemTransport: () => http(),
 };

@@ -11,8 +11,9 @@ export class EIP1993ProviderSource implements IProviderSource {
     this.ethersProvider = new Web3Provider(provider);
   }
 
-  supportedChains(): ChainId[] {
-    return [this.ethersProvider.network.chainId];
+  supportedClients() {
+    const support = { ethers: true, viem: false };
+    return { [this.ethersProvider.network.chainId]: support };
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {
