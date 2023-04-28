@@ -2,10 +2,11 @@ import { Chains } from '@chains';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { ChainId, TokenAddress } from '@types';
+import { Address, ChainId, TokenAddress } from '@types';
 import { BigNumber } from 'ethers';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
+import { decodeFunctionData, parseAbi } from 'viem';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ETH',
@@ -81,11 +82,17 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
     }
     const {
       route: { outputAmount, outputAmountMin, fee },
-      tx: { txTo, txData, value, gasLimit, gasPrice },
+      tx: { txTo, txData, value, gasLimit, gasPrice, approveData },
     } = await response.json();
 
     const gasCost = BigNumber.from((fee as { name: string; amount: string }[]).find((fee) => fee.name === 'Network Fee')?.amount ?? 0);
     const estimatedGas = gasLimit ? BigNumber.from(gasLimit) : gasCost.div(gasPrice ?? 1);
+
+    let allowanceTarget: Address = Addresses.ZERO_ADDRESS;
+    if (approveData) {
+      const { args } = decodeFunctionData({ abi: ABI, data: approveData });
+      allowanceTarget = args[0];
+    }
 
     const tx = {
       to: txTo,
@@ -100,7 +107,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       minBuyAmount: BigNumber.from(outputAmountMin),
       type: 'sell',
       estimatedGas,
-      allowanceTarget: txTo ?? Addresses.ZERO_ADDRESS,
+      allowanceTarget,
       tx,
     };
   }
@@ -113,3 +120,5 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
 function mapToChainId(chainKey: string, address: TokenAddress, metadata: BaseTokenMetadata) {
   return isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${chainKey}.${metadata.symbol}` : `${chainKey}.${metadata.symbol}--${address}`;
 }
+
+const ABI = parseAbi(['function approve(address spender, uint256 value) returns (bool success)']);
