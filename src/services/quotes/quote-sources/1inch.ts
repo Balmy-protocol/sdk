@@ -108,6 +108,10 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
+      // Read body to avoid memory leaks.
+      // see https://github.com/nodejs/undici/blob/v5.21.2/README.md#garbage-collection
+      // see https://github.com/node-fetch/node-fetch/issues/83
+      await response.arrayBuffer();
       return constants.Zero;
     }
     const { estimatedGas } = await response.json();

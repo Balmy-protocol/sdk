@@ -55,7 +55,7 @@ export class PortalsFiClient {
       const url = `https://api.portals.fi/v2/tokens?${params}`;
       const response = await this.fetch.fetch(url, { timeout: config?.timeout });
       if (!response.ok) {
-        throw new Error('Request to Portals Fi API failed');
+        throw new Error('Request to Portals Fi API failed: ' + (await response.text()));
       }
       const result: Result = await response.json();
       return Object.fromEntries(result.tokens.map(({ key, name, decimals, symbol, price }) => [key, { name, decimals, symbol, price }]));

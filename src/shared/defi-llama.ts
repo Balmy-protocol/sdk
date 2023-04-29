@@ -131,7 +131,7 @@ export class DefiLlamaClient {
       const url = baseUrl + chunk.join(',') + extraParamsString;
       const response = await this.fetch.fetch(url, { timeout: config?.timeout });
       if (!response.ok) {
-        throw new Error('Request to Defi Llama API failed');
+        throw new Error('Request to Defi Llama API failed: ' + (await response.text()));
       }
       const { coins }: { coins: Record<TokenId, FetchTokenResult> } = await response.json();
       return coins;

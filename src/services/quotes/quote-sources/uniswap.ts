@@ -67,15 +67,14 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
       referer: 'https://app.uniswap.org/',
     };
     const response = await fetchService.fetch(url, { headers, timeout });
-    const body = await response.json();
     if (!response.ok) {
-      failed(UNISWAP_METADATA, chain, sellToken, buyToken, body);
+      failed(UNISWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     let {
       quote: quoteAmount,
       methodParameters: { calldata },
       gasUseEstimate,
-    } = body;
+    } = await response.json();
     const value = isSellTokenNativeToken && order.type === 'sell' ? order.sellAmount : undefined;
     const buyAmount = order.type === 'sell' ? BigNumber.from(quoteAmount) : order.buyAmount;
 

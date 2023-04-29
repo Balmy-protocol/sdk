@@ -73,9 +73,13 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
       fetch(fetchService, allowanceUrl, timeout),
     ]);
     if (!quoteResponse.ok) {
+      // Read body to avoid memory leaks.
+      await allowanceTargetResponse.arrayBuffer();
       failed(WIDO_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     if (!allowanceTargetResponse.ok) {
+      // Read body to avoid memory leaks.
+      await quoteResponse.arrayBuffer();
       failed(WIDO_METADATA, chain, sellToken, buyToken, await allowanceTargetResponse.text());
     }
     const [{ to, value, data, to_token_amount, min_to_token_amount }, { spender: allowanceTarget }] = await Promise.all([
