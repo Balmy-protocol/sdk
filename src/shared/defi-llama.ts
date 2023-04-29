@@ -129,12 +129,13 @@ export class DefiLlamaClient {
         .join('&=');
     const requests = chunks.map(async (chunk) => {
       const url = baseUrl + chunk.join(',') + extraParamsString;
-      const response = await this.fetch.fetch(url, { timeout: config?.timeout });
-      if (!response.ok) {
-        throw new Error('Request to Defi Llama API failed: ' + (await response.text()));
+      try {
+        const response = await this.fetch.fetch(url, { timeout: config?.timeout });
+        const { coins }: { coins: Record<TokenId, FetchTokenResult> } = await response.json();
+        return coins;
+      } catch {
+        throw new Error('Request to Defi Llama API failed');
       }
-      const { coins }: { coins: Record<TokenId, FetchTokenResult> } = await response.json();
-      return coins;
     });
     const responses = await Promise.all(requests);
     return responses.reduce((accum, curr) => ({ ...accum, ...curr }), {});

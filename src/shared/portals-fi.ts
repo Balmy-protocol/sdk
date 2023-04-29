@@ -53,12 +53,13 @@ export class PortalsFiClient {
     const requests = chunks.map(async (chunk) => {
       const params = chunk.map((tokenId) => `addresses=${tokenId}`).join('&');
       const url = `https://api.portals.fi/v2/tokens?${params}`;
-      const response = await this.fetch.fetch(url, { timeout: config?.timeout });
-      if (!response.ok) {
-        throw new Error('Request to Portals Fi API failed: ' + (await response.text()));
+      try {
+        const response = await this.fetch.fetch(url, { timeout: config?.timeout });
+        const result: Result = await response.json();
+        return Object.fromEntries(result.tokens.map(({ key, name, decimals, symbol, price }) => [key, { name, decimals, symbol, price }]));
+      } catch {
+        throw new Error('Request to Portals Fi API failed');
       }
-      const result: Result = await response.json();
-      return Object.fromEntries(result.tokens.map(({ key, name, decimals, symbol, price }) => [key, { name, decimals, symbol, price }]));
     });
     const responses = await Promise.all(requests);
     return responses.reduce((accum, curr) => ({ ...accum, ...curr }), {});

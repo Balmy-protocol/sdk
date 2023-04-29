@@ -1,4 +1,4 @@
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { Chain } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
@@ -106,16 +106,13 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}`;
 
-    const response = await fetchService.fetch(url, { timeout });
-    if (!response.ok) {
-      // Read body to avoid memory leaks.
-      // see https://github.com/nodejs/undici/blob/v5.21.2/README.md#garbage-collection
-      // see https://github.com/node-fetch/node-fetch/issues/83
-      await response.arrayBuffer();
-      return constants.Zero;
+    try {
+      const response = await fetchService.fetch(url, { timeout });
+      const { estimatedGas } = await response.json();
+      return BigNumber.from(estimatedGas);
+    } catch {
+      return undefined;
     }
-    const { estimatedGas } = await response.json();
-    return BigNumber.from(estimatedGas);
   }
 }
 
