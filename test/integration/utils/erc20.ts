@@ -7,7 +7,6 @@ import { isSameAddress } from '@shared/utils';
 import { Address, Chain, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
-import crossFetch from 'cross-fetch';
 import { TransactionResponse } from '@ethersproject/providers';
 import { SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { calculateGasSpent } from './other';
@@ -256,7 +255,7 @@ export async function mint({ of: token, amount, to: user }: { amount: Exclude<Bi
 export async function loadTokens(chain: Chain) {
   const address = (name: string) => TOKENS[chain.chainId][name].address;
   const whale = (name: string) => TOKENS[chain.chainId][name].whale;
-  const tokenSource = new DefiLlamaClient(new FetchService(crossFetch));
+  const tokenSource = new DefiLlamaClient(new FetchService());
   const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')] };
   const tokens = await tokenSource.getCurrentTokenData({ addresses });
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {

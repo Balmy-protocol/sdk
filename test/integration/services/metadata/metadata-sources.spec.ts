@@ -1,6 +1,5 @@
 import ms from 'ms';
 import { expect } from 'chai';
-import crossFetch from 'cross-fetch';
 import { ProviderService } from '@services/providers/provider-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
@@ -24,7 +23,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
-const FETCH_SERVICE = new FetchService(crossFetch);
+const FETCH_SERVICE = new FetchService();
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(PROVIDER_SERVICE));
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);

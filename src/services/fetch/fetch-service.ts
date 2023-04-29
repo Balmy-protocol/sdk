@@ -3,7 +3,7 @@ import { Fetch, IFetchService, RequestInit } from './types';
 import { TimeoutError } from '@shared/timeouts';
 
 export class FetchService implements IFetchService {
-  constructor(private readonly realFetch: Fetch) {}
+  constructor(private readonly realFetch: Fetch = fetch) {}
 
   async fetch(url: RequestInfo | URL, init?: RequestInit) {
     const { timeout: timeoutText, ...otherConfig } = init ?? {};

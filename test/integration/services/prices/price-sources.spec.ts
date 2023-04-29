@@ -1,7 +1,6 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import crossFetch from 'cross-fetch';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
@@ -27,7 +26,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
-const FETCH_SERVICE = new FetchService(crossFetch);
+const FETCH_SERVICE = new FetchService();
 const DEFI_LLAMA_PRICE_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
 const PORTALS_FI_PRICE_SOURCE = new PortalsFiPriceSource(FETCH_SERVICE);
 const ODOS_PRICE_SOURCE = new OdosPriceSource(FETCH_SERVICE);

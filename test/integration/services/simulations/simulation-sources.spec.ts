@@ -20,7 +20,7 @@ import { ProviderService } from '@services/providers/provider-service';
 dotenv.config();
 chai.use(chaiAsPromised);
 
-// const FETCH_SERVICE = new FetchService(crossFetch);
+// const FETCH_SERVICE = new FetchService();
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const ALCHEMY_SIMULATION_SOURCE = new AlchemySimulationSource(process.env.ALCHEMY_API_KEY!);
 // const BLOWFISH_SIMULATION_SOURCE = new BlowfishSimulationSource(FETCH_SERVICE, process.env.BLOWFISH_API_KEY!);

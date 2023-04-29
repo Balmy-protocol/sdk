@@ -3,7 +3,6 @@ import { ethers } from 'hardhat';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, utils } from 'ethers';
 import { expect } from 'chai';
-import crossFetch from 'cross-fetch';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
@@ -392,5 +391,5 @@ function getSources() {
 }
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const FETCH_SERVICE = new FetchService(crossFetch);
+const FETCH_SERVICE = new FetchService();
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much

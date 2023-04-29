@@ -1,6 +1,5 @@
 import ms from 'ms';
 import { expect } from 'chai';
-import crossFetch from 'cross-fetch';
 import { getChainByKey } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
@@ -19,7 +18,7 @@ import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap
 import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
 import { ProviderService } from '@services/providers/provider-service';
 
-const FETCH_SERVICE = new FetchService(crossFetch);
+const FETCH_SERVICE = new FetchService();
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const PARASWAP_SOURCE = new ParaswapGasPriceSource(FETCH_SERVICE);
 const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SERVICE);

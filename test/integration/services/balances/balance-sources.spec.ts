@@ -16,7 +16,6 @@ import chaiAsPromised from 'chai-as-promised';
 import { formatUnits } from 'ethers/lib/utils';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
-import crossFetch from 'cross-fetch';
 import { CHAINS_WITH_KNOWN_RPC_ISSUES } from '@test-utils/other';
 dotenv.config();
 chai.use(chaiAsPromised);
@@ -53,7 +52,7 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chain
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const FETCH_SERVICE = new FetchService(crossFetch);
+const FETCH_SERVICE = new FetchService();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
 const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
