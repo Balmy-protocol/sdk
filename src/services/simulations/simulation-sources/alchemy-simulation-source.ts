@@ -43,23 +43,26 @@ export class AlchemySimulationSource implements ISimulationSource {
       };
     } catch (e: any) {
       const body = e.body;
-      const parsed = JSON.parse(e.body);
-      if ('error' in parsed) {
-        const {
-          error: { message },
-        } = parsed;
-        return {
-          successful: false,
-          kind: 'INVALID_TRANSACTION',
-          message,
-        };
-      } else {
-        return {
-          successful: false,
-          kind: 'UNKNOWN_ERROR',
-          message: body,
-        };
+      try {
+        const parsed = JSON.parse(body);
+        if ('error' in parsed) {
+          const {
+            error: { message },
+          } = parsed;
+          return {
+            successful: false,
+            kind: 'INVALID_TRANSACTION',
+            message,
+          };
+        }
+      } catch (e) {
+        console.debug(e);
       }
+      return {
+        successful: false,
+        kind: 'UNKNOWN_ERROR',
+        message: body,
+      };
     }
   }
 
