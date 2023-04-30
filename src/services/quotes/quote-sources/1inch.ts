@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { Chain } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
@@ -41,13 +40,13 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
 
     const quote = {
       sellAmount: request.order.sellAmount,
-      buyAmount: BigNumber.from(toTokenAmount),
+      buyAmount: BigInt(toTokenAmount),
       estimatedGas,
       allowanceTarget: to,
       tx: {
         to,
         calldata: data,
-        value: BigNumber.from(value ?? 0),
+        value: value ?? 0,
       },
     };
 
@@ -109,7 +108,7 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
     try {
       const response = await fetchService.fetch(url, { timeout });
       const { estimatedGas } = await response.json();
-      return BigNumber.from(estimatedGas);
+      return BigInt(estimatedGas);
     } catch {
       return undefined;
     }

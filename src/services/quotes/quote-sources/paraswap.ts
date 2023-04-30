@@ -2,7 +2,6 @@ import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { Chain } from '@types';
-import { BigNumber } from 'ethers';
 import { GlobalQuoteSourceConfig } from '../types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
@@ -36,9 +35,9 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
     const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
     const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap }, config);
     const quote = {
-      sellAmount: BigNumber.from(route.srcAmount),
-      buyAmount: BigNumber.from(route.destAmount),
-      estimatedGas: BigNumber.from(route.gasCost),
+      sellAmount: BigInt(route.srcAmount),
+      buyAmount: BigInt(route.destAmount),
+      estimatedGas: BigInt(route.gasCost),
       allowanceTarget: route.tokenTransferProxy,
       tx: {
         to: route.contractAddress,
@@ -137,7 +136,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
       failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const { data, value } = await response.json();
-    return { data, value: BigNumber.from(value ?? 0) };
+    return { data, value: BigInt(value ?? 0) };
   }
 
   private isWrapingOrUnwrapingWithWToken(chain: Chain, priceRoute: any) {

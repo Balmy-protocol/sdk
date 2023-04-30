@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { ethers } from 'hardhat';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber, utils } from 'ethers';
+import { parseUnits, parseEther } from 'viem';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
@@ -49,7 +49,7 @@ describe('Quote Sources', () => {
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
-      const ONE_NATIVE_TOKEN = utils.parseEther('1');
+      const ONE_NATIVE_TOKEN = parseEther('1');
       let user = new Deferred<SignerWithAddress>(),
         recipient = new Deferred<SignerWithAddress>(),
         nativeToken = new Deferred<TestToken>(),
@@ -57,7 +57,7 @@ describe('Quote Sources', () => {
         STABLE_ERC20 = new Deferred<TestToken>(),
         RANDOM_ERC20 = new Deferred<TestToken>(),
         gasPrice = new Deferred<GasPrice>();
-      let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
+      let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
       let snapshot: SnapshotRestorer;
 
       beforeAll(async () => {
@@ -68,8 +68,8 @@ describe('Quote Sources', () => {
         await mintMany({
           to: userSigner,
           tokens: [
-            { amount: utils.parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
-            { amount: ONE_NATIVE_TOKEN.mul(3), token: tokens.nativeToken },
+            { amount: parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
+            { amount: ONE_NATIVE_TOKEN * 3n, token: tokens.nativeToken },
             { amount: ONE_NATIVE_TOKEN, token: tokens.wToken },
           ],
         });
@@ -103,7 +103,7 @@ describe('Quote Sources', () => {
             buyToken: nativeToken,
             order: {
               type: 'sell',
-              sellAmount: utils.parseUnits('1000', 6),
+              sellAmount: parseUnits('1000', 6),
             },
           },
         });
@@ -252,8 +252,8 @@ describe('Quote Sources', () => {
           buyToken: TestToken;
           type: 'sell' | 'buy';
           sourceId: SourceId;
-          sellAmount?: BigNumber;
-          buyAmount?: BigNumber;
+          sellAmount?: bigint;
+          buyAmount?: bigint;
         }
       ) {
         expect(quote.type).to.equal(type);
@@ -278,7 +278,7 @@ describe('Quote Sources', () => {
         if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
           expect(quote.tx.value).to.equal(quote.maxSellAmount);
         } else {
-          const isValueNotSet = (value?: BigNumber) => !value || value.isZero();
+          const isValueNotSet = (value?: bigint) => !value || value === 0n;
           expect(isValueNotSet(quote.tx.value)).to.be.true;
         }
       }
@@ -294,15 +294,15 @@ describe('Quote Sources', () => {
       }
 
       const TRESHOLD_PERCENTAGE = 3; // 3%
-      function validateQuote(from: TestToken, to: TestToken, fromAmount: BigNumber, toAmount: BigNumber) {
-        const fromPriceBN = utils.parseEther(`${from.price!}`);
-        const toPriceBN = utils.parseEther(`${to.price!}`);
-        const magnitudeFrom = utils.parseUnits('1', from.decimals);
-        const magnitudeTo = utils.parseUnits('1', to.decimals);
-        const expected = fromAmount.mul(fromPriceBN).mul(magnitudeTo).div(toPriceBN).div(magnitudeFrom);
+      function validateQuote(from: TestToken, to: TestToken, fromAmount: bigint, toAmount: bigint) {
+        const fromPriceBN = parseEther(`${from.price!}`);
+        const toPriceBN = parseEther(`${to.price!}`);
+        const magnitudeFrom = parseUnits('1', from.decimals);
+        const magnitudeTo = parseUnits('1', to.decimals);
+        const expected = (fromAmount * fromPriceBN * magnitudeTo) / (toPriceBN * magnitudeFrom);
 
-        const threshold = expected.mul(TRESHOLD_PERCENTAGE * 10).div(100 * 10);
-        const lowerThreshold = expected.sub(threshold);
+        const threshold = (expected * BigInt(TRESHOLD_PERCENTAGE * 10)) / BigInt(100 * 10);
+        const lowerThreshold = expected - threshold;
         expect(toAmount).to.be.gte(lowerThreshold);
       }
 

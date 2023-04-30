@@ -2,7 +2,6 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { ChainId } from '@types';
-import { BigNumber, constants } from 'ethers';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
@@ -76,11 +75,11 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<Kyber
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, 'Failed to calculate a quote');
     }
 
-    const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : constants.Zero;
+    const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n;
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(outputAmount),
-      estimatedGas: BigNumber.from(totalGas),
+      buyAmount: BigInt(outputAmount),
+      estimatedGas: BigInt(totalGas),
       allowanceTarget: routerAddress,
       tx: {
         to: routerAddress,

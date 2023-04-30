@@ -37,7 +37,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
         args: [owner, spender],
       }),
     }));
-    const multicallResult: ReadonlyArray<BigNumber>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResult: ReadonlyArray<BigNumber | bigint>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
     for (let i = 0; i < multicallResult.length; i++) {
       const { token, owner, spender } = checks[i];
