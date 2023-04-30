@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { ethers } from 'hardhat';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber, utils } from 'ethers';
+import { utils } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
@@ -37,7 +37,7 @@ describe('Quote Service', () => {
       const ONE_NATIVE_TOKEN = utils.parseEther('1');
       let user: SignerWithAddress;
       let nativeToken: TestToken, STABLE_ERC20: TestToken;
-      let initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
+      let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
       let snapshot: SnapshotRestorer;
 
       beforeAll(async () => {
