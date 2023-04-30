@@ -46,7 +46,7 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
       tx: {
         to,
         calldata: data,
-        value: value ?? 0,
+        value: BigInt(value ?? 0),
       },
     };
 
