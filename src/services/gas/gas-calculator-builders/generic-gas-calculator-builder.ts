@@ -7,7 +7,6 @@ import {
   SupportedGasValues,
 } from '@services/gas/types';
 import { ChainId, FieldsRequirements, TimeString } from '@types';
-import { BigNumber } from 'ethers';
 
 // This gas builder works by simply using the gas price provider to calculate gas costs. It will work independently from the chain
 export class GenericGasCalculatorBuilder<GasValues extends SupportedGasValues> implements IQuickGasCostCalculatorBuilder<GasValues> {
@@ -33,7 +32,7 @@ export class GenericGasCalculatorBuilder<GasValues extends SupportedGasValues> i
         const result = {} as GasEstimation<GasValues, Requirements>;
         for (const [speed, gasPriceForSpeed] of Object.entries(gasPriceData) as [string, GasPrice][]) {
           const actualGasPrice = 'maxFeePerGas' in gasPriceForSpeed ? gasPriceForSpeed.maxFeePerGas : gasPriceForSpeed.gasPrice;
-          const gasCostNativeToken = BigNumber.from(gasEstimation).mul(actualGasPrice).toString();
+          const gasCostNativeToken = (BigInt(gasEstimation) * BigInt(actualGasPrice)).toString();
           (result as any)[speed] = { gasCostNativeToken, ...gasPriceForSpeed };
         }
         return result;

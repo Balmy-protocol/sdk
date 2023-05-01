@@ -2,7 +2,6 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { AmountOfToken, TokenAddress } from '@types';
-import { BigNumber, constants } from 'ethers';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
@@ -78,20 +77,20 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContexSource<LiFiSuppor
       transactionRequest: { to, data, value },
     } = await response.json();
 
-    const estimatedGas = (gasCosts as { estimate: AmountOfToken }[]).reduce((accum, { estimate }) => accum.add(estimate), constants.Zero);
+    const estimatedGas = (gasCosts as { estimate: AmountOfToken }[]).reduce((accum, { estimate }) => accum + BigInt(estimate), 0n);
 
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(toAmount),
-      minBuyAmount: BigNumber.from(toAmountMin),
+      buyAmount: BigInt(toAmount),
+      minBuyAmount: BigInt(toAmountMin),
       type: 'sell',
       estimatedGas,
       allowanceTarget: approvalAddress,
       tx: {
         to,
         calldata: data,
-        value: BigNumber.from(value ?? 0),
+        value: BigInt(value ?? 0),
       },
     };
   }

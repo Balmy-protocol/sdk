@@ -5,7 +5,6 @@ import { getChainByKeyOrFail } from '@chains';
 import { QUOTE_SOURCES } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
-import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderService } from '@services/providers';
 import { SourceInvalidConfigOrContextError, SourceNoBuyOrdersError, SourceNotFoundError } from '../errors';
@@ -109,8 +108,8 @@ async function mapSourceResponseToResponse({
 
 function mapOrderToBigNumber(request: SourceListRequest): BuyOrder | SellOrder {
   return request.order.type === 'sell'
-    ? { type: 'sell', sellAmount: BigNumber.from(request.order.sellAmount) }
-    : { type: 'buy', buyAmount: BigNumber.from(request.order.buyAmount) };
+    ? { type: 'sell', sellAmount: BigInt(request.order.sellAmount) }
+    : { type: 'buy', buyAmount: BigInt(request.order.buyAmount) };
 }
 
 function mapRequestToSourceRequest(request: SourceListRequest) {

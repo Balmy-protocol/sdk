@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
@@ -74,17 +73,17 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
         fetch(fetchService, allowanceUrl, timeout),
       ]);
       return {
-        sellAmount: BigNumber.from(order.sellAmount),
-        maxSellAmount: BigNumber.from(order.sellAmount),
-        buyAmount: BigNumber.from(to_token_amount),
-        minBuyAmount: BigNumber.from(min_to_token_amount),
+        sellAmount: BigInt(order.sellAmount),
+        maxSellAmount: BigInt(order.sellAmount),
+        buyAmount: BigInt(to_token_amount),
+        minBuyAmount: BigInt(min_to_token_amount),
         type: 'sell',
         estimatedGas: undefined,
         allowanceTarget,
         tx: {
           calldata: data,
           to,
-          value: BigNumber.from(value ?? 0),
+          value: BigInt(value ?? 0),
         },
       };
     } catch (e) {

@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { Address } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
@@ -74,17 +73,17 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<Mea
     } = await response.json();
 
     return {
-      sellAmount: BigNumber.from(sellAmount),
-      maxSellAmount: BigNumber.from(maxSellAmount),
-      buyAmount: BigNumber.from(buyAmount),
-      minBuyAmount: BigNumber.from(minBuyAmount),
-      estimatedGas: BigNumber.from(estimatedGas),
+      sellAmount: BigInt(sellAmount),
+      maxSellAmount: BigInt(maxSellAmount),
+      buyAmount: BigInt(buyAmount),
+      minBuyAmount: BigInt(minBuyAmount),
+      estimatedGas: BigInt(estimatedGas),
       allowanceTarget,
       type: order.type,
       tx: {
         calldata: data,
         to,
-        value: BigNumber.from(value ?? 0),
+        value: BigInt(value ?? 0),
       },
     };
   }

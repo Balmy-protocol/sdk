@@ -1,4 +1,4 @@
-import { BigNumber, utils } from 'ethers';
+import { formatUnits, getAddress } from 'viem';
 import { Address } from '@types';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
@@ -46,7 +46,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
   }: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
     const gasPrice = await external.gasPrice.request();
     const legacyGasPrice = eip1159ToLegacy(gasPrice);
-    const parsedGasPrice = Number(utils.formatUnits(legacyGasPrice, 9));
+    const parsedGasPrice = Number(formatUnits(legacyGasPrice, 9));
     const checksummedSell = checksummAndMapIfNecessary(sellToken);
     const checksummedBuy = checksummAndMapIfNecessary(buyToken);
     const body = {
@@ -79,14 +79,14 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
 
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(outputTokenAmount),
+      buyAmount: BigInt(outputTokenAmount),
       calldata: data,
-      estimatedGas: BigNumber.from(gas),
+      estimatedGas: BigInt(gas),
       allowanceTarget: to,
       tx: {
         to,
         calldata: data,
-        value: BigNumber.from(value),
+        value: BigInt(value),
       },
     };
 
@@ -95,14 +95,14 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
 }
 
 function checksummAndMapIfNecessary(address: Address) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : utils.getAddress(address);
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : getAddress(address);
 }
 
-function eip1159ToLegacy(gasPrice: GasPrice): BigNumber {
+function eip1159ToLegacy(gasPrice: GasPrice): bigint {
   if ('gasPrice' in gasPrice) {
-    return BigNumber.from(gasPrice.gasPrice);
+    return BigInt(gasPrice.gasPrice);
   }
-  return BigNumber.from(gasPrice.maxFeePerGas);
+  return BigInt(gasPrice.maxFeePerGas);
 }
 
 type Response = {

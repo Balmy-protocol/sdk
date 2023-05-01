@@ -3,7 +3,6 @@ import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Address, ChainId, TokenAddress } from '@types';
-import { BigNumber } from 'ethers';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 import { decodeFunctionData, parseAbi } from 'viem';
@@ -85,8 +84,8 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       tx: { txTo, txData, value, gasLimit, gasPrice, approveData },
     } = await response.json();
 
-    const gasCost = BigNumber.from((fee as { name: string; amount: string }[]).find((fee) => fee.name === 'Network Fee')?.amount ?? 0);
-    const estimatedGas = gasLimit ? BigNumber.from(gasLimit) : gasCost.div(gasPrice ?? 1);
+    const gasCost = BigInt((fee as { name: string; amount: string }[]).find((fee) => fee.name === 'Network Fee')?.amount ?? 0);
+    const estimatedGas = gasLimit ? BigInt(gasLimit) : gasCost / BigInt(gasPrice ?? 1);
 
     let allowanceTarget: Address = Addresses.ZERO_ADDRESS;
     if (approveData) {
@@ -97,14 +96,14 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
     const tx = {
       to: txTo,
       calldata: txData,
-      value: BigNumber.from(value ?? 0),
+      value: BigInt(value ?? 0),
     };
 
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(outputAmount),
-      minBuyAmount: BigNumber.from(outputAmountMin),
+      buyAmount: BigInt(outputAmount),
+      minBuyAmount: BigInt(outputAmountMin),
       type: 'sell',
       estimatedGas,
       allowanceTarget,

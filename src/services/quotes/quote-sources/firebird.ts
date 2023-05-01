@@ -1,7 +1,6 @@
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
-import { BigNumber, constants } from 'ethers';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 
@@ -83,13 +82,13 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
 
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(totalTo),
-      estimatedGas: BigNumber.from(totalGas),
+      buyAmount: BigInt(totalTo),
+      estimatedGas: BigInt(totalGas),
       allowanceTarget: router,
       tx: {
         to: router,
         calldata: data,
-        value: isSameAddress(Addresses.NATIVE_TOKEN, sellToken) ? order.sellAmount : constants.Zero,
+        value: isSameAddress(Addresses.NATIVE_TOKEN, sellToken) ? order.sellAmount : 0n,
       },
     };
     return addQuoteSlippage(quote, 'sell', slippagePercentage);

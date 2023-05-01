@@ -1,5 +1,5 @@
-import { BigNumber, utils } from 'ethers';
 import { Chains } from '@chains';
+import { formatUnits } from 'viem';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 import { GasPrice } from '@services/gas/types';
@@ -55,8 +55,8 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContexSource<OpenO
   }: QuoteParams<OpenOceanSupport>): Promise<SourceQuoteResponse> {
     const [{ sellToken: sellTokenDataResult }, gasPriceResult] = await Promise.all([external.tokenData.request(), external.gasPrice.request()]);
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
-    const gasPrice = parseFloat(utils.formatUnits(legacyGasPrice, 9));
-    const amount = utils.formatUnits(order.sellAmount, sellTokenDataResult.decimals);
+    const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
+    const amount = formatUnits(order.sellAmount, sellTokenDataResult.decimals);
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     let url =
       `https://open-api.openocean.finance/v3/${chainKey}/swap_quote` +
@@ -81,23 +81,23 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContexSource<OpenO
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(outAmount),
-      minBuyAmount: BigNumber.from(minOutAmount),
+      buyAmount: BigInt(outAmount),
+      minBuyAmount: BigInt(minOutAmount),
       type: 'sell',
-      estimatedGas: BigNumber.from(estimatedGas),
+      estimatedGas: BigInt(estimatedGas),
       allowanceTarget: to,
       tx: {
         to,
         calldata: data,
-        value: BigNumber.from(value ?? 0),
+        value: BigInt(value ?? 0),
       },
     };
   }
 }
 
-function eip1159ToLegacy(gasPrice: GasPrice): BigNumber {
+function eip1159ToLegacy(gasPrice: GasPrice): bigint {
   if ('gasPrice' in gasPrice) {
-    return BigNumber.from(gasPrice.gasPrice);
+    return BigInt(gasPrice.gasPrice);
   }
-  return BigNumber.from(gasPrice.maxFeePerGas);
+  return BigInt(gasPrice.maxFeePerGas);
 }

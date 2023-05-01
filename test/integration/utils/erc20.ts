@@ -1,6 +1,6 @@
 import { setBalance, impersonateAccount, stopImpersonatingAccount } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Contract, BigNumberish, Bytes, utils, BigNumber } from 'ethers';
+import { Contract, BigNumberish, Bytes, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
@@ -214,7 +214,7 @@ export async function calculateBalancesFor({ tokens, addresses }: { tokens: IHas
   const promises = tokens.flatMap((token) =>
     addresses.map(async (hasAddress) => ({ token, hasAddress, balance: await balance({ of: hasAddress.address, for: token }) }))
   );
-  const balances: Record<Address, Record<TokenAddress, BigNumber>> = {};
+  const balances: Record<Address, Record<TokenAddress, bigint>> = {};
   const results = await Promise.all(promises);
   for (const { token, hasAddress, balance } of results) {
     if (!(hasAddress.address in balances)) balances[hasAddress.address] = {};
@@ -223,11 +223,13 @@ export async function calculateBalancesFor({ tokens, addresses }: { tokens: IHas
   return balances;
 }
 
-export function balance({ of, for: token }: { of: Address; for: IHasAddress }): Promise<BigNumber> {
+export async function balance({ of, for: token }: { of: Address; for: IHasAddress }): Promise<bigint> {
   if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
-    return ethers.provider.getBalance(of);
+    const balance = await ethers.provider.getBalance(of);
+    return BigInt(balance.toString());
   } else {
-    return new Contract(token.address, ERC20_ABI, ethers.provider).balanceOf(of);
+    const balance = await new Contract(token.address, ERC20_ABI, ethers.provider).balanceOf(of);
+    return BigInt(balance.toString());
   }
 }
 
@@ -283,16 +285,16 @@ export async function assertUsersBalanceIsReducedAsExpected({
   sellToken: IHasAddress;
   quote: SourceQuoteResponse | QuoteResponse;
   user: IHasAddress;
-  initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
+  initialBalances: Record<Address, Record<TokenAddress, bigint>>;
 }) {
   const initialBalance = initialBalances[user.address][sellToken.address];
   const bal = await balance({ of: user.address, for: sellToken });
   if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
     const gasSpent = await calculateGasSpent(...(txs ?? []));
-    expect(bal).to.equal(initialBalance.sub(gasSpent).sub(quote.tx.value ?? 0));
+    expect(bal).to.equal(initialBalance - gasSpent - BigInt(quote.tx.value ?? 0));
   } else {
-    const maxSellAmount = 'amount' in quote.maxSellAmount ? quote.maxSellAmount.amount : quote.maxSellAmount;
-    expect(bal).to.be.gte(initialBalance.sub(maxSellAmount));
+    const maxSellAmount = typeof quote.maxSellAmount === 'object' ? BigInt(quote.maxSellAmount.amount) : quote.maxSellAmount;
+    expect(bal).to.be.gte(initialBalance - maxSellAmount);
   }
 }
 
@@ -307,16 +309,16 @@ export async function assertRecipientsBalanceIsIncreasedAsExpected({
   buyToken: IHasAddress;
   quote: SourceQuoteResponse | QuoteResponse;
   recipient: IHasAddress;
-  initialBalances: Record<Address, Record<TokenAddress, BigNumber>>;
+  initialBalances: Record<Address, Record<TokenAddress, bigint>>;
 }) {
   const initialBalance = initialBalances[recipient.address][buyToken.address];
   const bal = await balance({ of: recipient.address, for: buyToken });
-  const minBuyAmount = 'amount' in quote.minBuyAmount ? quote.minBuyAmount.amount : quote.minBuyAmount;
+  const minBuyAmount = typeof quote.minBuyAmount === 'object' ? BigInt(quote.minBuyAmount.amount) : quote.minBuyAmount;
   if (isSameAddress(buyToken.address, Addresses.NATIVE_TOKEN)) {
     const gasSpent = await calculateGasSpent(...(txs ?? []));
-    expect(bal.sub(initialBalance).add(gasSpent)).to.be.gte(minBuyAmount);
+    expect(bal - initialBalance + gasSpent).to.be.gte(minBuyAmount);
   } else {
-    expect(bal.sub(initialBalance)).to.be.gte(minBuyAmount);
+    expect(bal - initialBalance).to.be.gte(minBuyAmount);
   }
 }
 

@@ -1,4 +1,3 @@
-import { BigNumber, constants } from 'ethers';
 import { Chains } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
@@ -53,13 +52,13 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
 
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(amount_out_total),
-      estimatedGas: BigNumber.from(estimate_gas_total),
+      buyAmount: BigInt(amount_out_total),
+      estimatedGas: BigInt(estimate_gas_total),
       allowanceTarget: to,
       tx: {
         to,
         calldata,
-        value: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : constants.Zero,
+        value: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n,
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);

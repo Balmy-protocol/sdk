@@ -1,7 +1,5 @@
 import { isSameAddress, ruleOfThree } from '@shared/utils';
-import { BigNumber } from 'ethers';
 import { QuoteResponse } from './types';
-import { TokenAddress } from '@types';
 
 export const COMPARE_BY = [
   // Compare spent gas and prioritize the ones with the least spent gas
@@ -111,9 +109,9 @@ function compareByMostSwapped(quote1: ComparableQuote, quote2: ComparableQuote, 
   const { sellAmount: sellAmount1, buyAmount: buyAmount1 } = extract(quote1);
   const { sellAmount: sellAmount2, buyAmount: buyAmount2 } = extract(quote2);
   const quote1BuyAmountRelativeToQuote2 = ruleOfThree({ a: sellAmount1.amount, matchA: buyAmount1.amount, b: sellAmount2.amount });
-  if (BigNumber.from(quote1BuyAmountRelativeToQuote2).gt(buyAmount2.amount)) {
+  if (BigInt(quote1BuyAmountRelativeToQuote2) > BigInt(buyAmount2.amount)) {
     return -1;
-  } else if (BigNumber.from(quote1BuyAmountRelativeToQuote2).lt(buyAmount2.amount)) {
+  } else if (BigInt(quote1BuyAmountRelativeToQuote2) < BigInt(buyAmount2.amount)) {
     return 1;
   }
   return 0;
@@ -128,9 +126,9 @@ function compareLeastGas(quote1: ComparableQuote, quote2: ComparableQuote) {
     } else {
       return 1;
     }
-  } else if (BigNumber.from(quote1.gas.estimatedGas).lt(quote2.gas.estimatedGas)) {
+  } else if (BigInt(quote1.gas.estimatedGas) < BigInt(quote2.gas.estimatedGas)) {
     return -1;
-  } else if (BigNumber.from(quote1.gas.estimatedGas).gt(quote2.gas.estimatedGas)) {
+  } else if (BigInt(quote1.gas.estimatedGas) > BigInt(quote2.gas.estimatedGas)) {
     return 1;
   }
   return 0;
