@@ -53,8 +53,8 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<Porta
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
-      context: { buyAmount, minBuyAmount },
-      tx: { to, data, value, gasLimit },
+      context: { buyAmount, minBuyAmount, value },
+      tx: { to, data, gasLimit },
     } = await response.json();
 
     return {

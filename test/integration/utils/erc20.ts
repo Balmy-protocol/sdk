@@ -293,8 +293,8 @@ export async function assertUsersBalanceIsReducedAsExpected({
     const gasSpent = await calculateGasSpent(...(txs ?? []));
     expect(bal).to.equal(initialBalance - gasSpent - BigInt(quote.tx.value ?? 0));
   } else {
-    const maxSellAmount = typeof quote.maxSellAmount === 'object' ? quote.maxSellAmount.amount : quote.maxSellAmount;
-    expect(bal).to.be.gte(initialBalance - BigInt(maxSellAmount));
+    const maxSellAmount = typeof quote.maxSellAmount === 'object' ? BigInt(quote.maxSellAmount.amount) : quote.maxSellAmount;
+    expect(bal).to.be.gte(initialBalance - maxSellAmount);
   }
 }
 
@@ -313,7 +313,7 @@ export async function assertRecipientsBalanceIsIncreasedAsExpected({
 }) {
   const initialBalance = initialBalances[recipient.address][buyToken.address];
   const bal = await balance({ of: recipient.address, for: buyToken });
-  const minBuyAmount = typeof quote.minBuyAmount === 'object' ? quote.minBuyAmount.amount : quote.minBuyAmount;
+  const minBuyAmount = typeof quote.minBuyAmount === 'object' ? BigInt(quote.minBuyAmount.amount) : quote.minBuyAmount;
   if (isSameAddress(buyToken.address, Addresses.NATIVE_TOKEN)) {
     const gasSpent = await calculateGasSpent(...(txs ?? []));
     expect(bal - initialBalance + gasSpent).to.be.gte(minBuyAmount);
