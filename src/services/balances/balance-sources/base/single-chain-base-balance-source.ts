@@ -131,12 +131,12 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
 }
 
 function isValidBalance(text: AmountOfToken | undefined) {
-  return !!toBigInt(text);
+  return typeof toBigInt(text) === 'bigint';
 }
 
 function isValidBalanceAndNonZero(text: AmountOfToken | undefined) {
   const bn = toBigInt(text);
-  return bn && bn > 0n;
+  return typeof bn === 'bigint' && bn > 0n;
 }
 
 function toBigInt(text: AmountOfToken | undefined): bigint | undefined {
