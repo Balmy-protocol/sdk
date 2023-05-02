@@ -55,9 +55,10 @@ export class AlchemySimulationSource implements ISimulationSource {
             message,
           };
         }
-      } catch (e) {
+      } catch (e2) {
         // TODO: Remove
         console.debug(e);
+        console.debug(e2);
       }
       return {
         successful: false,
