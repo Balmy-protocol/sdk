@@ -12,7 +12,7 @@ import { LlamaNodesProviderSource } from '@services/providers/provider-sources/l
 import { UpdatableProviderSource } from '@services/providers/provider-sources/updatable-provider';
 import { WebSocketProviderSource } from '@services/providers/provider-sources/web-sockets-provider';
 import { ProviderService } from '@services/providers/provider-service';
-import { EthersProviderSource } from '@services/providers/provider-sources/ethers';
+import { EthersProviderSource } from '@services/providers/provider-sources/ethers-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
