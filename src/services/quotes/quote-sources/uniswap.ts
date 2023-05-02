@@ -1,4 +1,4 @@
-import { BigNumber, Contract } from 'ethers';
+import { Contract } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
@@ -76,7 +76,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
       gasUseEstimate,
     } = await response.json();
     const value = isSellTokenNativeToken && order.type === 'sell' ? order.sellAmount : undefined;
-    const buyAmount = order.type === 'sell' ? BigNumber.from(quoteAmount) : order.buyAmount;
+    const buyAmount = order.type === 'sell' ? BigInt(quoteAmount) : order.buyAmount;
 
     if (isBuyTokenNativeToken) {
       // Use multicall to unwrap wToken
@@ -87,13 +87,13 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
 
       // Update calldata and gas estimate
       calldata = multicallData!;
-      gasUseEstimate = BigNumber.from(gasUseEstimate).add(12_500);
+      gasUseEstimate = BigInt(gasUseEstimate) + 12_500n;
     }
 
     const quote = {
-      sellAmount: order.type === 'sell' ? order.sellAmount : BigNumber.from(quoteAmount),
+      sellAmount: order.type === 'sell' ? order.sellAmount : BigInt(quoteAmount),
       buyAmount,
-      estimatedGas: BigNumber.from(gasUseEstimate),
+      estimatedGas: BigInt(gasUseEstimate),
       allowanceTarget: router,
       tx: {
         to: router,
@@ -105,8 +105,8 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
   }
 }
 
-function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: BigNumber, slippagePercentage: number) {
-  return type === 'sell' ? BigNumber.from(substractPercentage(buyAmount.toString(), slippagePercentage, 'up')) : buyAmount;
+function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: bigint, slippagePercentage: number) {
+  return type === 'sell' ? BigInt(substractPercentage(buyAmount, slippagePercentage, 'up')) : buyAmount;
 }
 
 function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {

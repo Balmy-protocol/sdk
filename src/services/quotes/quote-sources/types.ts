@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
@@ -29,8 +28,8 @@ type QuoteComponents = {
   fetchService: IFetchService;
 };
 
-export type SellOrder = { type: 'sell'; sellAmount: BigNumber };
-export type BuyOrder = { type: 'buy'; buyAmount: BigNumber };
+export type SellOrder = { type: 'sell'; sellAmount: bigint };
+export type BuyOrder = { type: 'buy'; buyAmount: bigint };
 type BaseOrder = SellOrder | BuyOrder;
 type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
@@ -54,17 +53,17 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAcco
 };
 
 export type SourceQuoteResponse = {
-  sellAmount: BigNumber;
-  maxSellAmount: BigNumber;
-  buyAmount: BigNumber;
-  minBuyAmount: BigNumber;
+  sellAmount: bigint;
+  maxSellAmount: bigint;
+  buyAmount: bigint;
+  minBuyAmount: bigint;
   type: 'sell' | 'buy';
   allowanceTarget: Address;
-  estimatedGas?: BigNumber;
+  estimatedGas?: bigint;
   tx: {
     to: Address;
     calldata: string;
-    value?: BigNumber;
+    value?: bigint;
   };
 };
 

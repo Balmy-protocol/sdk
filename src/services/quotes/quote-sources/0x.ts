@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
@@ -79,14 +78,14 @@ export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport,
     const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = await response.json();
 
     const quote = {
-      sellAmount: BigNumber.from(sellAmount),
-      buyAmount: BigNumber.from(buyAmount),
-      estimatedGas: BigNumber.from(estimatedGas),
+      sellAmount: BigInt(sellAmount),
+      buyAmount: BigInt(buyAmount),
+      estimatedGas: BigInt(estimatedGas),
       allowanceTarget,
       tx: {
         calldata: data,
         to,
-        value: BigNumber.from(value ?? 0),
+        value: BigInt(value ?? 0),
       },
     };
 

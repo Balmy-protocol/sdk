@@ -2,7 +2,6 @@ import { Addresses } from '@shared/constants';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { isSameAddress } from '@shared/utils';
 import { TokenAddress } from '@types';
-import { BigNumber } from 'ethers';
 import { failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
@@ -54,22 +53,22 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<Porta
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
-      context: { buyAmount, minBuyAmount },
-      tx: { to, data, value, gasLimit },
+      context: { buyAmount, minBuyAmount, value },
+      tx: { to, data, gasLimit },
     } = await response.json();
 
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
-      buyAmount: BigNumber.from(buyAmount),
-      minBuyAmount: BigNumber.from(minBuyAmount),
+      buyAmount: BigInt(buyAmount),
+      minBuyAmount: BigInt(minBuyAmount),
       type: 'sell',
-      estimatedGas: gasLimit ? BigNumber.from(gasLimit) : undefined, // Portals does not estimate gas when validate=false
+      estimatedGas: gasLimit ? BigInt(gasLimit) : undefined, // Portals does not estimate gas when validate=false
       allowanceTarget: to,
       tx: {
         to,
         calldata: data,
-        value: BigNumber.from(value ?? 0),
+        value: BigInt(value ?? 0),
       },
     };
   }
