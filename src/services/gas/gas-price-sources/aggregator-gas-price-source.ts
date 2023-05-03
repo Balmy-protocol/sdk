@@ -2,7 +2,6 @@ import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRe
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import { AmountOfToken, ChainId, FieldsRequirements, TimeString } from '@types';
-import { BigNumber } from 'ethers';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
 import { isEIP1159Compatible } from '../utils';
 
@@ -109,14 +108,14 @@ function aggregateLegacy(toAggregate: LegacyGasPrice[], method: GasPriceAggregat
 }
 
 function medianByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  const sorted = array.sort((a, b) => (BigNumber.from(a[property]).lte(b[property] as AmountOfToken) ? -1 : 1));
+  const sorted = array.sort((a, b) => (BigInt(a[property] as AmountOfToken) <= BigInt(b[property] as AmountOfToken) ? -1 : 1));
   return sorted[Math.floor(Math.max(sorted.length - 1, 0) / 2)];
 }
 
 function maxByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  return array.reduce((accum, curr) => (BigNumber.from(accum[property]).gte(curr[property] as AmountOfToken) ? accum : curr));
+  return array.reduce((accum, curr) => (BigInt(accum[property] as AmountOfToken) >= BigInt(curr[property] as AmountOfToken) ? accum : curr));
 }
 
 function minByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  return array.reduce((accum, curr) => (BigNumber.from(accum[property]).lte(curr[property] as AmountOfToken) ? accum : curr));
+  return array.reduce((accum, curr) => (BigInt(accum[property] as AmountOfToken) <= BigInt(curr[property] as AmountOfToken) ? accum : curr));
 }

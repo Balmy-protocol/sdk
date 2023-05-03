@@ -69,7 +69,7 @@ describe('Quote Service', () => {
                 type: 'sell',
                 sellAmount: ONE_NATIVE_TOKEN.toString(),
               },
-              slippagePercentage: 3,
+              slippagePercentage: 5,
               takerAddress: user.address,
             },
             config: {

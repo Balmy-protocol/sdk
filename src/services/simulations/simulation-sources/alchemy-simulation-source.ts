@@ -55,11 +55,7 @@ export class AlchemySimulationSource implements ISimulationSource {
             message,
           };
         }
-      } catch (e2) {
-        // TODO: Remove
-        console.debug(e);
-        console.debug(e2);
-      }
+      } catch {}
       return {
         successful: false,
         kind: 'UNKNOWN_ERROR',

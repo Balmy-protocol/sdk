@@ -1,6 +1,5 @@
-import { BigNumber } from 'ethers';
 import { encodeFunctionData, parseAbi } from 'viem';
-import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 import { timeoutPromise } from '@shared/timeouts';
@@ -37,7 +36,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
         args: [owner, spender],
       }),
     }));
-    const multicallResult: ReadonlyArray<BigNumber | bigint>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResult: ReadonlyArray<AmountOfTokenLike>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
     for (let i = 0; i < multicallResult.length; i++) {
       const { token, owner, spender } = checks[i];

@@ -10,7 +10,7 @@ import {
   IQuickGasCostCalculatorBuilder,
   LegacyGasPrice,
 } from '@services/gas/types';
-import { ChainId, FieldsRequirements, SupportRecord, TimeString, TransactionRequest } from '@types';
+import { AmountOfTokenLike, ChainId, FieldsRequirements, SupportRecord, TimeString, TransactionRequest } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
@@ -33,7 +33,7 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
       getGasPrice: () => ({ standard: { gasPrice: l2GasPrice.toString() } } as GasPriceResult<GasValues, Requirements>),
       calculateGasCost: ({ gasEstimation, tx }) => {
         const l1GasCost = (tx && getL1Fee(tx, l1GasValues)) ?? constants.Zero;
-        const l2GasCost = l2GasPrice.mul(gasEstimation);
+        const l2GasCost = l2GasPrice * BigInt(gasEstimation);
         const gasCostNativeToken = l1GasCost.add(l2GasCost).toString();
         return { standard: { gasCostNativeToken, gasPrice: l2GasPrice.toString() } } as GasEstimation<GasValues, Requirements>;
       },
@@ -42,22 +42,29 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
 }
 
 async function getGasValues(multicallService: IMulticallService) {
-  const [[overhead], [l1BaseFee], [decimals], [scalar], [l2GasPrice]]: ReadonlyArray<BigNumber>[] = await multicallService.readOnlyMulticall({
-    chainId: Chains.OPTIMISM.chainId,
-    calls: [
-      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: OVERHEAD_CALLDATA, decode: ['uint256'] },
-      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: L1_BASE_FEE_CALLDATA, decode: ['uint256'] },
-      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: DECIMALS_CALLDATA, decode: ['uint256'] },
-      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: SCALAR_CALLDATA, decode: ['uint256'] },
-      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: GAS_PRICE_CALLDATA, decode: ['uint256'] },
-    ],
-  });
-  return { overhead, l1BaseFee, decimals, scalar, l2GasPrice };
+  const [[overhead], [l1BaseFee], [decimals], [scalar], [l2GasPrice]]: ReadonlyArray<AmountOfTokenLike>[] =
+    await multicallService.readOnlyMulticall({
+      chainId: Chains.OPTIMISM.chainId,
+      calls: [
+        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: OVERHEAD_CALLDATA, decode: ['uint256'] },
+        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: L1_BASE_FEE_CALLDATA, decode: ['uint256'] },
+        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: DECIMALS_CALLDATA, decode: ['uint256'] },
+        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: SCALAR_CALLDATA, decode: ['uint256'] },
+        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: GAS_PRICE_CALLDATA, decode: ['uint256'] },
+      ],
+    });
+  return {
+    overhead: BigInt(overhead),
+    l1BaseFee: BigInt(l1BaseFee),
+    decimals: BigInt(decimals),
+    scalar: BigInt(scalar),
+    l2GasPrice: BigInt(l2GasPrice),
+  };
 }
 
 function getL1Fee(
   tx: TransactionRequest,
-  { overhead, l1BaseFee, scalar, decimals }: { overhead: BigNumber; l1BaseFee: BigNumber; scalar: BigNumber; decimals: BigNumber }
+  { overhead, l1BaseFee, scalar, decimals }: { overhead: bigint; l1BaseFee: bigint; scalar: bigint; decimals: bigint }
 ) {
   const l1GasUsed = getL1GasUsed(tx, overhead);
   const l1Fee = l1GasUsed.mul(l1BaseFee);
@@ -67,7 +74,7 @@ function getL1Fee(
   return scaled;
 }
 
-function getL1GasUsed(tx: TransactionRequest, overhead: BigNumber) {
+function getL1GasUsed(tx: TransactionRequest, overhead: bigint) {
   const nonce = BigNumber.from(tx.nonce ?? 0xffffffff).toNumber();
   const value = BigNumber.from(tx.value ?? 0).toHexString();
   const gasLimit = BigNumber.from(tx.gasLimit ?? 0).toHexString();
