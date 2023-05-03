@@ -1,9 +1,10 @@
 import ms from 'ms';
+import crossFetch from 'cross-fetch';
 import { Fetch, IFetchService, RequestInit } from './types';
 import { TimeoutError } from '@shared/timeouts';
 
 export class FetchService implements IFetchService {
-  constructor(private readonly realFetch: Fetch = fetch) {}
+  constructor(private readonly realFetch: Fetch = crossFetch) {}
 
   async fetch(url: RequestInfo | URL, init?: RequestInit) {
     const { timeout: timeoutText, ...otherConfig } = init ?? {};

@@ -4,5 +4,5 @@ import { FetchService } from '@services/fetch/fetch-service';
 export type BuildFetchParams = { fetch?: Fetch };
 
 export function buildFetchService(params?: BuildFetchParams) {
-  return new FetchService(params?.fetch ?? fetch);
+  return new FetchService(params?.fetch);
 }
