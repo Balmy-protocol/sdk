@@ -93,7 +93,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.FANTOM.chainId]: {
     STABLE_ERC20: {
       address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',
-      whale: '0xfb05aedf0cac43c6ce291d2d1be1eab568d155b4',
+      whale: '0x95bf7e307bc1ab0ba38ae10fc27084bc36fcd605',
     },
     RANDOM_ERC20: {
       address: '0xb3654dc3d10ea7645f8319668e8f54d2574fbdc8',
@@ -101,21 +101,21 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
     wToken: {
       address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-      whale: '0x2b4c76d0dc16be1c31d4c1dc53bf9b45987fc75c',
+      whale: '0x39b3bd37208cbade74d0fcbdbb12d606295b430a',
     },
   },
   [Chains.BNB_CHAIN.chainId]: {
     STABLE_ERC20: {
       address: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
-      whale: '0xc2f5b9a3d9138ab2b74d581fc11346219ebf43fe',
+      whale: '0x4f31fa980a675570939b737ebdde0471a4be40eb',
     },
     RANDOM_ERC20: {
       address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
-      whale: '0x0ed7e52944161450477ee417de9cd3a859b14fd0',
+      whale: '0x000000000000000000000000000000000000dead',
     },
     wToken: {
       address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-      whale: '0xacaac9311b0096e04dfe96b6d87dec867d3883dc',
+      whale: '0xd7d069493685a581d27824fc46eda46b7efc0063',
     },
   },
   [Chains.AVALANCHE.chainId]: {
