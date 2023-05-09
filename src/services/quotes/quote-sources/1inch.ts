@@ -1,9 +1,7 @@
 import { Chains } from '@chains';
 import { Chain } from '@types';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
-import { IFetchService } from '@services/fetch/types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
-import { GlobalQuoteSourceConfig } from '../types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
@@ -27,19 +25,20 @@ const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
 };
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
-export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInchSupport> {
+type OneInchConfig = { customDomain?: string };
+export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInchSupport, OneInchConfig> {
   getMetadata() {
     return ONE_INCH_METADATA;
   }
 
-  async quote({ components: { fetchService }, request, config }: QuoteParams<OneInchSupport>): Promise<SourceQuoteResponse> {
+  async quote(params: QuoteParams<OneInchSupport, OneInchConfig>): Promise<SourceQuoteResponse> {
     const [estimatedGas, { toTokenAmount, to, data, value, protocols }] = await Promise.all([
-      this.getGasEstimate(fetchService, request),
-      this.getQuote(fetchService, request, config),
+      this.getGasEstimate(params),
+      this.getQuote(params),
     ]);
 
     const quote = {
-      sellAmount: request.order.sellAmount,
+      sellAmount: params.request.order.sellAmount,
       buyAmount: BigInt(toTokenAmount),
       estimatedGas,
       allowanceTarget: to,
@@ -50,24 +49,25 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
       },
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(request.chain, protocols);
-    return addQuoteSlippage(quote, request.order.type, isWrapOrUnwrap ? 0 : request.config.slippagePercentage);
+    const isWrapOrUnwrap = isNativeWrapOrUnwrap(params.request.chain, protocols);
+    return addQuoteSlippage(quote, params.request.order.type, isWrapOrUnwrap ? 0 : params.request.config.slippagePercentage);
   }
 
-  private async getQuote(
-    fetchService: IFetchService,
-    {
+  private async getQuote({
+    components: { fetchService },
+    request: {
       chain,
       sellToken,
       buyToken,
       order,
       config: { slippagePercentage, timeout },
       accounts: { takeFrom, recipient },
-    }: SourceQuoteRequest<OneInchSupport>,
-    config: GlobalQuoteSourceConfig
-  ) {
+    },
+    config,
+  }: QuoteParams<OneInchSupport, OneInchConfig>) {
+    const domain = config?.customDomain ?? 'api.1inch.io';
     let url =
-      `https://api.1inch.io/v5.0/${chain.chainId}/swap` +
+      `https://${domain}/v5.0/${chain.chainId}/swap` +
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
@@ -95,16 +95,23 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
   }
 
   // We can't use the gas estimate on the /swap endpoint because we need to turn the estimates off
-  private async getGasEstimate(
-    fetchService: IFetchService,
-    { chain, sellToken, buyToken, order, config: { timeout } }: SourceQuoteRequest<OneInchSupport>
-  ) {
+  private async getGasEstimate({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      order,
+      config: { timeout },
+    },
+    config,
+  }: QuoteParams<OneInchSupport, OneInchConfig>) {
+    const domain = config?.customDomain ?? 'api.1inch.io';
     const url =
-      `https://api.1inch.io/v5.0/${chain.chainId}/quote` +
+      `https://${domain}/v5.0/${chain.chainId}/quote` +
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}`;
-
     try {
       const response = await fetchService.fetch(url, { timeout });
       const { estimatedGas } = await response.json();
