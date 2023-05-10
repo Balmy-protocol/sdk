@@ -26,7 +26,7 @@ import {
   mintMany,
   TestToken,
 } from '@test-utils/erc20';
-import { QUOTE_SOURCES, SourceWithConfigId } from '@services/quotes/source-registry';
+import { QUOTE_SOURCES, SOURCES_METADATA, SourceWithConfigId } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { Deferred } from '@shared/deferred';
@@ -34,9 +34,9 @@ import { TriggerablePromise } from '@shared/triggerable-promise';
 import { ProviderService } from '@services/providers/provider-service';
 
 // This is meant to be used for local testing. On the CI, we will do something different
-const RUN_FOR: { source: SourceId; chains: Chain[] | 'all' } = {
-  source: 'odos',
-  chains: [Chains.FANTOM],
+const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
+  source: 'changelly',
+  chains: [Chains.ARBITRUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 
