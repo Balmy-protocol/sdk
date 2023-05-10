@@ -4,9 +4,14 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
-export const MEAN_FINANCE_SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.OPTIMISM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.ARBITRUM].map(
-  ({ chainId }) => chainId
-);
+export const MEAN_FINANCE_SUPPORTED_CHAINS = [
+  Chains.ETHEREUM,
+  Chains.OPTIMISM,
+  Chains.POLYGON,
+  Chains.BNB_CHAIN,
+  Chains.ARBITRUM,
+  Chains.BASE_GOERLI,
+].map(({ chainId }) => chainId);
 
 const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
   name: 'Mean Finance',
