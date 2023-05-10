@@ -28,6 +28,7 @@ export type TransactionRequest = {
   maxFeePerGas?: AmountOfTokenLike;
   gasPrice?: AmountOfTokenLike;
   gasLimit?: AmountOfTokenLike;
+  type?: number;
 };
 
 export type SupportRecord<Values extends object> = { [K in keyof Values]-?: undefined extends Values[K] ? 'optional' : 'present' };
