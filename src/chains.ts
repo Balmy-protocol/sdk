@@ -337,6 +337,16 @@ export const Chains = {
     explorer: 'https://mumbai.polygonscan.com/',
     testnet: true,
   },
+  BASE_GOERLI: {
+    chainId: 84531,
+    name: 'Base Goerli',
+    ids: ['base-goerli'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x4200000000000000000000000000000000000006',
+    publicRPCs: ['https://goerli.base.org', 'https://base-goerli.public.blastapi.io'],
+    explorer: 'https://goerli.basescan.org/',
+    testnet: true,
+  },
 } satisfies Record<string, Chain>;
 
 export function getAllChains(): Chain[] {

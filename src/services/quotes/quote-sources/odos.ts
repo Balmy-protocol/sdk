@@ -18,6 +18,7 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
       Chains.AVALANCHE.chainId,
       Chains.BNB_CHAIN.chainId,
       Chains.FANTOM.chainId,
+      Chains.BASE_GOERLI.chainId,
     ],
     swapAndTransfer: false,
     buyOrders: false,
