@@ -9,7 +9,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'https://arbitrum-mainnet.infura.io/v3/',
   [Chains.AURORA.chainId]: 'https://aurora-mainnet.infura.io/v3/',
   [Chains.AVALANCHE.chainId]: 'https://avalanche-mainnet.infura.io/v3/',
-  [Chains.BNB_CHAIN.chainId]: 'https://bnbsmartchain-mainnet.infura.io/v3/',
   [Chains.CELO.chainId]: 'https://celo-mainnet.infura.io/v3/',
   [Chains.OPTIMISM.chainId]: 'https://optimism-mainnet.infura.io/v3/',
   [Chains.POLYGON.chainId]: 'https://polygon-mainnet.infura.io/v3/',

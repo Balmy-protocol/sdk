@@ -39,7 +39,9 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       `?fromTokenAddress=${sellToken}` +
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
-      `&slippage=${slippagePercentage * 10}`;
+      `&slippage=${slippagePercentage * 10}` +
+      `&takerAddress=${takeFrom}` +
+      `&skipValidation=true`;
 
     if (recipient && !isSameAddress(recipient, takeFrom)) {
       url += `&recipientAddress=${recipient}`;
