@@ -50,7 +50,7 @@ export class BalanceService implements IBalanceService {
     const resultsPerAccounts = await this.getBalancesForTokensForAccounts({ tokens: Object.fromEntries(entries), config });
     const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
     for (const chainId in tokens) {
-      result[chainId] = resultsPerAccounts[chainId][account];
+      result[chainId] = resultsPerAccounts[chainId]?.[account] ?? {};
     }
     return result;
   }

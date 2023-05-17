@@ -44,12 +44,14 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
         args: [account],
       }),
     }));
-    const multicallResults: ReadonlyArray<AmountOfTokenLike>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults = await this.multicallService.tryReadOnlyMulticall({ chainId, calls });
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (let i = 0; i < pairs.length; i++) {
+      const multicallResult = multicallResults[i];
+      if (!multicallResult.success) continue;
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResults[i][0].toString();
+      result[account][token] = multicallResult.result[0].toString();
     }
     return result;
   }

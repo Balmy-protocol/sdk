@@ -36,13 +36,15 @@ export class RPCAllowanceSource implements IAllowanceSource {
         args: [owner, spender],
       }),
     }));
-    const multicallResult: ReadonlyArray<AmountOfTokenLike>[] = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults = await this.multicallService.tryReadOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
-    for (let i = 0; i < multicallResult.length; i++) {
+    for (let i = 0; i < multicallResults.length; i++) {
+      const multicallResult = multicallResults[i];
+      if (!multicallResult.success) continue;
       const { token, owner, spender } = checks[i];
       if (!(token in result)) result[token] = {};
       if (!(owner in result[token])) result[token][owner] = {};
-      result[token][owner][spender] = multicallResult[i][0].toString();
+      result[token][owner][spender] = multicallResult.result[0].toString();
     }
     return result;
   }
