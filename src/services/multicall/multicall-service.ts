@@ -2,7 +2,7 @@ import { AbiCoder } from 'ethers/lib/utils';
 import { Contract } from 'ethers';
 import { Address, ChainId } from '@types';
 import { IProviderService } from '@services/providers/types';
-import { ExecuteCallAt, IMulticallService } from './types';
+import { ExecuteCallAt, IMulticallService, TryMulticallResult } from './types';
 import { chainsIntersection } from '@chains';
 import abi from './multicall-abi';
 
@@ -94,7 +94,7 @@ async function tryReadOnlyMulticallWithViem({
     blockNumber: at?.block?.number ? BigInt(at.block.number) : undefined,
   });
   return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
-    success ? { success, result: ABI_CODER.decode(calls[i].decode, returnData) } : { success }
+    success ? tryDecode(returnData, calls[i].decode) : { success }
   );
 }
 
@@ -116,7 +116,18 @@ async function tryReadOnlyMulticallWithEthers({
     calls.map(({ target, calldata }) => [target, calldata]),
     { blockTag: at?.block?.number }
   );
-  return results.map(([success, result], i) => (success ? { success, result: ABI_CODER.decode(calls[i].decode, result) } : { success }));
+  return results.map(([success, result], i) => (success ? tryDecode(result, calls[i].decode) : { success }));
+}
+
+function tryDecode(returnData: string, decode: string[]): TryMulticallResult<any> {
+  try {
+    return {
+      result: ABI_CODER.decode(decode, returnData),
+      success: true,
+    };
+  } catch {
+    return { success: false };
+  }
 }
 
 const SUPPORTED_CHAINS: ChainId[] = [
