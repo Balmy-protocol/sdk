@@ -25,7 +25,7 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
   }) {
     const byChainId = { [chainId]: addresses };
     const result = await this.getMetadata({ addresses: byChainId, config });
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 
   getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({

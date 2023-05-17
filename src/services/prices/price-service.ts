@@ -26,7 +26,7 @@ export class PriceService implements IPriceService {
   }): Promise<Record<TokenAddress, TokenPrice>> {
     const byChainId = { [chainId]: addresses };
     const result = await this.getCurrentPrices({ addresses: byChainId, config });
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 
   getCurrentPrices({
@@ -56,7 +56,7 @@ export class PriceService implements IPriceService {
   }) {
     const byChainId = { [chainId]: addresses };
     const result = await this.getHistoricalPrices({ addresses: byChainId, timestamp, searchWidth, config });
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 
   getHistoricalPrices({

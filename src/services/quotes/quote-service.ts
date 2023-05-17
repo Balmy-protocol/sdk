@@ -218,8 +218,8 @@ export class QuoteService implements IQuoteService {
         promises.prices,
         promises.gasCalculator,
       ]);
-      const sellToken = { ...tokens[request.sellToken], price: prices[request.sellToken] };
-      const buyToken = { ...tokens[request.buyToken], price: prices[request.buyToken] };
+      const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken] };
+      const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken] };
       let gas: QuoteResponse['gas'];
       if (response.estimatedGas) {
         const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.tx });

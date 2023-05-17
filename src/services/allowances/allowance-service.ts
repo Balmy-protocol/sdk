@@ -64,6 +64,6 @@ export class AllowanceService implements IAllowanceService {
       }),
       config?.timeout
     );
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 }
