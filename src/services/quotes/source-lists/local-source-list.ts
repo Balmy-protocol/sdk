@@ -100,6 +100,7 @@ async function mapSourceResponseToResponse({
       allowanceTarget: response.allowanceTarget,
       name: source.getMetadata().name,
       logoURI: source.getMetadata().logoURI,
+      customData: response.customData,
     },
     type: response.type,
     tx,

@@ -80,6 +80,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       failed(RANGO_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
+      requestId,
       route: { outputAmount, outputAmountMin, fee },
       tx: { txTo, txData, value, gasLimit, gasPrice, approveData },
     } = await response.json();
@@ -108,6 +109,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       estimatedGas,
       allowanceTarget,
       tx,
+      customData: { requestId },
     };
   }
 

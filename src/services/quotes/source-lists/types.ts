@@ -30,6 +30,6 @@ export type SourceListResponse = {
   estimatedGas?: AmountOfToken;
   type: 'sell' | 'buy';
   recipient: Address;
-  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
+  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
   tx: QuoteTransaction;
 };

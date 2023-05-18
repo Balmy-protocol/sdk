@@ -65,6 +65,7 @@ export type SourceQuoteResponse = {
     calldata: string;
     value?: bigint;
   };
+  customData?: Record<string, any>;
 };
 
 export type SourceQuoteRequest<
