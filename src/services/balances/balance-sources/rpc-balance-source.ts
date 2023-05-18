@@ -1,5 +1,5 @@
 import { Address as ViemAddress, encodeFunctionData, parseAbi } from 'viem';
-import { Address, AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';

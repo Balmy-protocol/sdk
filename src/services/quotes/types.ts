@@ -1,6 +1,6 @@
 import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, AmountOfTokenLike, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -54,7 +54,7 @@ export type QuoteRequest = {
   chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
-  order: { type: 'sell'; sellAmount: AmountOfTokenLike } | { type: 'buy'; buyAmount: AmountOfTokenLike };
+  order: { type: 'sell'; sellAmount: BigIntish } | { type: 'buy'; buyAmount: BigIntish };
   slippagePercentage: number;
   takerAddress: Address;
   recipient?: Address;

@@ -1,6 +1,6 @@
 import {
   AmountOfToken,
-  AmountOfTokenLike,
+  BigIntish,
   BasedOnRequirements,
   ChainId,
   DefaultRequirements,
@@ -29,7 +29,7 @@ export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues>
   }): Promise<GasPriceResult<GasValues, Requirements>>;
   calculateGasCost<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
-    gasEstimation: AmountOfTokenLike;
+    gasEstimation: BigIntish;
     tx?: TransactionRequest;
     config?: { timeout?: TimeString; fields?: Requirements };
   }): Promise<GasEstimation<GasValues, Requirements>>;
@@ -53,7 +53,7 @@ export type IQuickGasCostCalculator<
 > = {
   supportedSpeeds(): SupportInChain<GasValues>;
   getGasPrice(): GasPriceResult<GasValues, Requirements>;
-  calculateGasCost(_: { gasEstimation: AmountOfTokenLike; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
+  calculateGasCost(_: { gasEstimation: BigIntish; tx?: TransactionRequest }): GasEstimation<GasValues, Requirements>;
 };
 
 export type IGasPriceSource<GasValues extends SupportedGasValues> = {

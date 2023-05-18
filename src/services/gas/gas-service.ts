@@ -1,4 +1,4 @@
-import { AmountOfToken, AmountOfTokenLike, ChainId, DefaultRequirements, FieldsRequirements, TimeString, TransactionRequest } from '@types';
+import { AmountOfToken, BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, TransactionRequest } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from './types';
@@ -67,7 +67,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     config,
   }: {
     chainId: ChainId;
-    gasEstimation: AmountOfTokenLike;
+    gasEstimation: BigIntish;
     tx?: TransactionRequest;
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {

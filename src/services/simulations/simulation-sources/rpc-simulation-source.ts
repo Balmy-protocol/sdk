@@ -1,5 +1,5 @@
 import { IProviderService } from '@services/providers';
-import { AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TransactionRequest } from '@types';
+import { AmountOfToken, BigIntish, ChainId, TimeString, TransactionRequest } from '@types';
 import { utils } from 'ethers';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 import { mapTxToViemTx } from '@shared/viem';
@@ -72,7 +72,7 @@ function invalidTx(message: string): FailedSimulation {
   };
 }
 
-function isValid(value: AmountOfTokenLike | undefined) {
+function isValid(value: BigIntish | undefined) {
   if (!value) return true;
   try {
     BigInt(value);

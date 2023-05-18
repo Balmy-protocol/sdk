@@ -10,7 +10,7 @@ import {
   IQuickGasCostCalculatorBuilder,
   LegacyGasPrice,
 } from '@services/gas/types';
-import { AmountOfTokenLike, ChainId, FieldsRequirements, SupportRecord, TimeString, TransactionRequest } from '@types';
+import { BigIntish, ChainId, FieldsRequirements, SupportRecord, TimeString, TransactionRequest } from '@types';
 
 const OPTIMISM_GAS_ORACLE_ADDRESS = '0x420000000000000000000000000000000000000F';
 
@@ -42,17 +42,16 @@ export class OptimismGasCalculatorBuilder implements IQuickGasCostCalculatorBuil
 }
 
 async function getGasValues(multicallService: IMulticallService) {
-  const [[overhead], [l1BaseFee], [decimals], [scalar], [l2GasPrice]]: ReadonlyArray<AmountOfTokenLike>[] =
-    await multicallService.readOnlyMulticall({
-      chainId: Chains.OPTIMISM.chainId,
-      calls: [
-        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: OVERHEAD_CALLDATA, decode: ['uint256'] },
-        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: L1_BASE_FEE_CALLDATA, decode: ['uint256'] },
-        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: DECIMALS_CALLDATA, decode: ['uint256'] },
-        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: SCALAR_CALLDATA, decode: ['uint256'] },
-        { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: GAS_PRICE_CALLDATA, decode: ['uint256'] },
-      ],
-    });
+  const [[overhead], [l1BaseFee], [decimals], [scalar], [l2GasPrice]]: ReadonlyArray<BigIntish>[] = await multicallService.readOnlyMulticall({
+    chainId: Chains.OPTIMISM.chainId,
+    calls: [
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: OVERHEAD_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: L1_BASE_FEE_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: DECIMALS_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: SCALAR_CALLDATA, decode: ['uint256'] },
+      { target: OPTIMISM_GAS_ORACLE_ADDRESS, calldata: GAS_PRICE_CALLDATA, decode: ['uint256'] },
+    ],
+  });
   return {
     overhead: BigInt(overhead),
     l1BaseFee: BigInt(l1BaseFee),

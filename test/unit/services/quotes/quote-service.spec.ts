@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { then, when } from '@test-utils/bdd';
 import { GasSpeed, IGasService, IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
-import { AmountOfTokenLike, ChainId, TokenAddress, TransactionRequest } from '@types';
+import { BigIntish, ChainId, TokenAddress, TransactionRequest } from '@types';
 import { QuoteService } from '@services/quotes/quote-service';
 import { IQuoteSourceList, QuoteRequest } from '@services/quotes';
 import { IPriceService } from '@services/prices';
@@ -134,7 +134,7 @@ const FAILING_PRICE_SERVICE: IPriceService = {
 
 const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {
   supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' } as any),
-  calculateGasCost: (_: { gasEstimation: AmountOfTokenLike; tx?: TransactionRequest }) =>
+  calculateGasCost: (_: { gasEstimation: BigIntish; tx?: TransactionRequest }) =>
     ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10', gasCostNativeToken: '10' } } as any),
   getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } } as any),
 };
@@ -143,7 +143,7 @@ const GAS_SERVICE: IGasService<DefaultGasValues> = {
   supportedChains: () => [1],
   estimateGas: (_: { chainId: ChainId; tx: TransactionRequest }) => Promise.reject(new Error('Should not be called')),
   getGasPrice: (_: { chainId: ChainId; options?: { speed?: GasSpeed } }) => Promise.reject(new Error('Should not be called')),
-  calculateGasCost: (_: { chainId: ChainId; gasEstimation: AmountOfTokenLike; tx?: TransactionRequest; options?: { speed?: GasSpeed } }) =>
+  calculateGasCost: (_: { chainId: ChainId; gasEstimation: BigIntish; tx?: TransactionRequest; options?: { speed?: GasSpeed } }) =>
     Promise.reject(new Error('Should not be called')),
   getQuickGasCalculator: (_: { chainId: ChainId }) => Promise.resolve(GAS_CALCULATOR) as any,
 };

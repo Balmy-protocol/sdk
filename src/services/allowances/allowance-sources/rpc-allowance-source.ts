@@ -1,5 +1,5 @@
 import { encodeFunctionData, parseAbi } from 'viem';
-import { AmountOfToken, AmountOfTokenLike, ChainId, TimeString, TokenAddress } from '@types';
+import { AmountOfToken, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 import { timeoutPromise } from '@shared/timeouts';

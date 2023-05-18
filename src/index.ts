@@ -13,7 +13,7 @@ export {
   FieldRequirementOptions,
   FieldsRequirements,
   AmountOfToken,
-  AmountOfTokenLike,
+  BigIntish,
   TransactionRequest,
   Timestamp,
 } from './types';
