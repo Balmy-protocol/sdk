@@ -1,12 +1,13 @@
 import ms from 'ms';
 import { expect } from 'chai';
-import { BigNumber, constants, utils } from 'ethers';
+import { utils } from 'ethers';
 import { given, then, when } from '@test-utils/bdd';
 import { Chains } from '@chains';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { TryMulticallResult } from '@services/multicall';
 import { ProviderService } from '@services/providers/provider-service';
+import { BigIntish } from '@types';
 
 jest.retryTimes(3);
 jest.setTimeout(ms('30s'));
@@ -25,7 +26,7 @@ describe('Multicall Service', () => {
   });
 
   function readOnlyMulticallTest(client: 'ethers' | 'viem') {
-    let response: ReadonlyArray<BigNumber>[];
+    let response: ReadonlyArray<BigIntish>[];
     when(`trying a call with ${client}`, () => {
       given(async () => {
         const calls = [{ target: DAI, calldata: ALLOWANCE_OF_DATA, decode: ['uint256'] }];
@@ -33,13 +34,13 @@ describe('Multicall Service', () => {
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(1);
-        expect(response[0]).to.eql([constants.Zero]);
+        expect(response[0]).to.eql([0n]);
       });
     });
   }
 
   function tryReadOnlyMulticallTest(client: 'ethers' | 'viem') {
-    let response: TryMulticallResult<BigNumber>[];
+    let response: TryMulticallResult<BigIntish>[];
     when(`trying a call that fails with another that works with ${client}`, () => {
       given(async () => {
         const calls = [
@@ -51,7 +52,7 @@ describe('Multicall Service', () => {
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
         expect(response[0].success).to.be.false;
-        expect(response[1]).to.eql({ success: true, result: [constants.Zero] });
+        expect(response[1]).to.eql({ success: true, result: [0n] });
       });
     });
   }

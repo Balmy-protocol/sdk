@@ -11,17 +11,16 @@ import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-b
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
-import { utils } from 'ethers';
 import { IBalanceSource } from '@services/balances/types';
 import chaiAsPromised from 'chai-as-promised';
-import { formatUnits } from 'ethers/lib/utils';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
 import { CHAINS_WITH_KNOWN_RPC_ISSUES } from '@test-utils/other';
+import { formatUnits, parseUnits } from 'viem';
 dotenv.config();
 chai.use(chaiAsPromised);
 
-const TESTS: Record<ChainId, { address: TokenAddress; minAmount: string; decimals: number; symbol: string }> = {
+const TESTS: Record<ChainId, { address: TokenAddress; minAmount: `${number}`; decimals: number; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: {
     address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
     minAmount: '6.519182750064400737',
@@ -163,7 +162,7 @@ describe('Balance Sources', () => {
                   chainId,
                   address: Addresses.NATIVE_TOKEN,
                   decimals: 18,
-                  minAmount: CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? '0' : formatUnits(1, 18),
+                  minAmount: CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS.has(Number(chainId)) ? '0' : (formatUnits(1n, 18) as `${number}`),
                 });
               }
             });
@@ -187,12 +186,12 @@ describe('Balance Sources', () => {
         chainId: ChainId | string;
         address: TokenAddress;
         decimals: number;
-        minAmount: string;
+        minAmount: `${number}`;
       }) {
-        const amount = result[Number(chainId)][DEAD_ADDRESS][address];
+        const amount = BigInt(result[Number(chainId)][DEAD_ADDRESS][address]);
         expect(
-          utils.parseUnits(minAmount, decimals).lte(amount),
-          `Expected to have at least ${minAmount}. Instead found ${utils.formatUnits(amount, decimals)}`
+          parseUnits(minAmount, decimals) <= amount,
+          `Expected to have at least ${minAmount}. Instead found ${formatUnits(amount, decimals)}`
         ).to.be.true;
       }
     });

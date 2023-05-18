@@ -3,7 +3,7 @@ import chai, { expect } from 'chai';
 import { RPCSimulationSource } from '@services/simulations/simulation-sources/rpc-simulation-source';
 import { AlchemySimulationSource } from '@services/simulations/simulation-sources/alchemy-simulation-source';
 import { Chains } from '@chains';
-import { BigNumber, utils } from 'ethers';
+import { utils } from 'ethers';
 import chaiAsPromised from 'chai-as-promised';
 import dotenv from 'dotenv';
 import {
@@ -17,6 +17,7 @@ import {
 import { then, when } from '@test-utils/bdd';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { ProviderService } from '@services/providers/provider-service';
+import { parseEther } from 'viem';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -32,7 +33,7 @@ jest.setTimeout(ms('1m'));
 const OWNER = '0x0000000000000000000000000000000000000001';
 const TAKER = '0x0000000000000000000000000000000000000002';
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
-const ONE_ETHER = utils.parseEther('1').toString();
+const ONE_ETHER = parseEther('1').toString();
 
 describe('Simulation Sources', () => {
   simulationSourceTest({ title: 'Alchemy Source', source: ALCHEMY_SIMULATION_SOURCE });
@@ -183,7 +184,7 @@ describe('Simulation Sources', () => {
 });
 
 function expectGasToBeSet(simulationResult: SuccessfulSimulation) {
-  expect(BigNumber.from(simulationResult.estimatedGas).gt(0)).to.be.true;
+  expect(BigInt(simulationResult.estimatedGas) > 0).to.be.true;
 }
 
 const ERC20_ABI = [

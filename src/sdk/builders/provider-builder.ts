@@ -1,4 +1,4 @@
-import { providers } from 'ethers';
+import { BaseProvider } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { EIP1993Provider, EIP1993ProviderSource } from '@services/providers/provider-sources/eip1993-provider';
@@ -17,7 +17,7 @@ import { EthersProviderSource } from '@services/providers/provider-sources/ether
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'eip-1993'; instance: EIP1993Provider }
-  | { type: 'ethers'; instance: providers.BaseProvider }
+  | { type: 'ethers'; instance: BaseProvider }
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]> }

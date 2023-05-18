@@ -9,7 +9,6 @@ import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/a
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains, getChainByKey } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
-import { BigNumber } from 'ethers';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -77,9 +76,9 @@ describe('Allowance Sources', () => {
             expect(Object.keys(result[chainId][TESTS[chainId].address][OWNER])).to.have.lengthOf(1);
           });
           test(`${TESTS[chainId].symbol}`, () => {
-            const amount = BigNumber.from(result[chainId][TESTS[chainId].address][OWNER][SPENDER]);
-            const minExpected = BigNumber.from(2).pow(200);
-            expect(amount.gte(minExpected)).to.be.true;
+            const amount = BigInt(result[chainId][TESTS[chainId].address][OWNER][SPENDER]);
+            const minExpected = 2n ** 200n;
+            expect(amount >= minExpected).to.be.true;
           });
         });
       }
