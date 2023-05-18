@@ -1,4 +1,4 @@
-import { AmountOfToken, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
+import { AmountOfToken, BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress, Chain } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -14,7 +14,7 @@ import {
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
 import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
-import { amountToUSD, calculateGasDetails, isSameAddress } from '@shared/utils';
+import { amountToUSD, isSameAddress } from '@shared/utils';
 import { IGasService, IMetadataService, IPriceService, TokenPrice } from '..';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
@@ -375,6 +375,15 @@ function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
 
 function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse): EstimatedQuoteResponse {
   return response;
+}
+
+function calculateGasDetails(chain: Chain, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
+  return {
+    estimatedCost: gasCostNativeToken.toString(),
+    estimatedCostInUnits: formatUnits(BigInt(gasCostNativeToken), 18).toString(),
+    estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
+    gasTokenSymbol: chain.nativeCurrency.symbol,
+  };
 }
 
 type Promises = {

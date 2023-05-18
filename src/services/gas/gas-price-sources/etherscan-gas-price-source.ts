@@ -2,7 +2,7 @@ import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
 import { IGasPriceSource, GasPrice, GasPriceResult, GasValueForVersions } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
-import { utils } from 'ethers';
+import { parseUnits } from 'viem';
 
 const CHAINS = {
   [Chains.ETHEREUM.chainId]: 'etherscan.io',
@@ -35,7 +35,8 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
     const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
     const {
       result: { SafeGasPrice, ProposeGasPrice, FastGasPrice, suggestBaseFee },
-    }: { result: { SafeGasPrice: string; ProposeGasPrice: string; FastGasPrice: string; suggestBaseFee?: string } } = await response.json();
+    }: { result: { SafeGasPrice: `${number}`; ProposeGasPrice: `${number}`; FastGasPrice: `${number}`; suggestBaseFee?: `${number}` } } =
+      await response.json();
     return {
       standard: calculateGas(SafeGasPrice, suggestBaseFee),
       fast: calculateGas(ProposeGasPrice, suggestBaseFee),
@@ -44,12 +45,12 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
   }
 }
 
-function calculateGas(price: string, baseFee?: string): GasPrice {
-  const gasPrice = utils.parseUnits(price, 'gwei');
+function calculateGas(price: `${number}`, baseFee?: `${number}`): GasPrice {
+  const gasPrice = parseUnits(price, 9);
   if (!baseFee) return { gasPrice: gasPrice.toString() };
-  const base = utils.parseUnits(baseFee, 'gwei');
+  const base = parseUnits(baseFee, 9);
   return {
     maxFeePerGas: gasPrice.toString(),
-    maxPriorityFeePerGas: gasPrice.sub(base).toString(),
+    maxPriorityFeePerGas: (gasPrice - base).toString(),
   };
 }

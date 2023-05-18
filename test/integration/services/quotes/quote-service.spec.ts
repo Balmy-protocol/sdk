@@ -1,7 +1,6 @@
 import ms from 'ms';
 import { ethers } from 'hardhat';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { utils } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { given, then, when } from '@test-utils/bdd';
 import { fork } from '@test-utils/evm';
@@ -20,6 +19,7 @@ import {
 } from '@test-utils/erc20';
 import { buildSDK } from '@builder';
 import { CONFIG } from './quote-tests-config';
+import { parseEther } from 'viem';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
@@ -34,7 +34,7 @@ describe('Quote Service', () => {
   for (const chainId of chains) {
     const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
-      const ONE_NATIVE_TOKEN = utils.parseEther('1');
+      const ONE_NATIVE_TOKEN = parseEther('1');
       let user: SignerWithAddress;
       let nativeToken: TestToken, STABLE_ERC20: TestToken;
       let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
@@ -44,7 +44,7 @@ describe('Quote Service', () => {
         await fork(chain);
         [user] = await ethers.getSigners();
         ({ nativeToken, STABLE_ERC20 } = await loadTokens(chain));
-        await mint({ amount: ONE_NATIVE_TOKEN.mul(3), of: nativeToken, to: user });
+        await mint({ amount: ONE_NATIVE_TOKEN * 3n, of: nativeToken, to: user });
         initialBalances = await calculateBalancesFor({
           tokens: [nativeToken, STABLE_ERC20],
           addresses: [user],
