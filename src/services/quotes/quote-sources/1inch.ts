@@ -4,7 +4,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
-const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
+export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
   supports: {
     chains: [

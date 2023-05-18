@@ -9,12 +9,14 @@ import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy
 import { MoralisBalanceSource } from '@services/balances/balance-sources/moralis-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
+import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 
 export type BalanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'cached'; underlyingSource: BalanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string }
+  | { type: '1inch' }
   | { type: 'portals-fi'; key: string }
   | { type: 'moralis'; key: string };
 export type BuildBalancesParams = { source: BalanceSourceInput };
@@ -50,6 +52,8 @@ function buildSource(
       return new AlchemyBalanceSource(source.key);
     case 'portals-fi':
       return new PortalsFiBalanceSource(fetchService, source.key);
+    case '1inch':
+      return new OneInchBalanceSource(fetchService);
     case 'moralis':
       return new MoralisBalanceSource(fetchService, source.key);
   }

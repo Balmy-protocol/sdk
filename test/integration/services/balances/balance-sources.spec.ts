@@ -7,6 +7,7 @@ import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
+import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -41,10 +42,10 @@ const TESTS: Record<ChainId, { address: TokenAddress; minAmount: string; decimal
     symbol: 'Cake',
   },
   [Chains.ETHEREUM.chainId]: {
-    address: '0x006699d34aa3013605d468d2755a2fe59a16b12b',
-    minAmount: '832083.085854486582358197',
+    address: '0x0000000000095413afc295d19edeb1ad7b71c952',
+    minAmount: '0.000000000000017',
     decimals: 18,
-    symbol: 'Zild',
+    symbol: 'LON',
   },
 };
 const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chains.AURORA.chainId, Chains.OASIS_EMERALD.chainId]);
@@ -63,6 +64,7 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   maxSize: 100,
 });
 const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
+const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -71,6 +73,7 @@ describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
+  balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
 

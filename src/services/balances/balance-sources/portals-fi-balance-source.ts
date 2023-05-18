@@ -1,16 +1,13 @@
 import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_KEY_TO_CHAIN_ID, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
-import { BalanceQueriesSupport, IBalanceSource } from '../types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
+import { OnlyTokensHeldBalanceSource } from './base/only-tokens-held-balance-source';
 
-export class PortalsFiBalanceSource implements IBalanceSource {
-  constructor(private readonly fetchService: IFetchService, private readonly key: string) {}
-
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    const entries = PORTALS_FI_SUPPORTED_CHAINS.map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: true }]);
-    return Object.fromEntries(entries);
+export class PortalsFiBalanceSource extends OnlyTokensHeldBalanceSource {
+  constructor(private readonly fetchService: IFetchService, private readonly key: string) {
+    super();
   }
 
   async getTokensHeldByAccounts({
@@ -45,26 +42,8 @@ export class PortalsFiBalanceSource implements IBalanceSource {
     return merged;
   }
 
-  async getBalancesForTokens({
-    tokens,
-    config,
-  }: {
-    tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
-    const entries: [ChainId, Address[]][] = Object.entries(tokens).map(([chainId, tokens]) => [Number(chainId), Object.keys(tokens)]);
-    const tokensHeldByAccount = await this.getTokensHeldByAccounts({ accounts: Object.fromEntries(entries), config });
-    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
-    for (const chainId in tokens) {
-      result[chainId] = {};
-      for (const account in tokens[chainId]) {
-        result[chainId][account] = {};
-        for (const token of tokens[chainId][account]) {
-          result[chainId][account][token] = tokensHeldByAccount?.[chainId]?.[account]?.[token] ?? '0';
-        }
-      }
-    }
-    return result;
+  protected supportedChains(): ChainId[] {
+    return PORTALS_FI_SUPPORTED_CHAINS;
   }
 
   private async fetchTokensHeldByAccount(
