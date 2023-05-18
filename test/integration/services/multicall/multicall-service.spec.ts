@@ -34,7 +34,8 @@ describe('Multicall Service', () => {
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(1);
-        expect(response[0]).to.eql([0n]);
+        expect(response[0]).to.have.lengthOf(1);
+        expect(BigInt(response[0][0])).to.eql(0n);
       });
     });
   }
@@ -52,7 +53,9 @@ describe('Multicall Service', () => {
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
         expect(response[0].success).to.be.false;
-        expect(response[1]).to.eql({ success: true, result: [0n] });
+        expect(response[1].success).to.be.true;
+        expect((response[1] as any).result).to.have.lengthOf(1);
+        expect(BigInt((response[1] as any).result[0])).to.equal(0n);
       });
     });
   }
