@@ -3,13 +3,15 @@ import { IFetchService } from '@services/fetch/types';
 import { TokenInChain, fromTokenInChain, toTokenInChain } from '@shared/utils';
 import { MEAN_FINANCE_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/mean-finance';
 import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { Chains } from '@chains';
 
 export class MeanFinancePriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
     const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
-    const entries = MEAN_FINANCE_SUPPORTED_CHAINS.map((chainId) => [chainId, support]);
+    const entries = MEAN_FINANCE_SUPPORTED_CHAINS.filter((chainId) => chainId !== Chains.BASE_GOERLI.chainId) // Mean's price source does not support Base goerli
+      .map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
 

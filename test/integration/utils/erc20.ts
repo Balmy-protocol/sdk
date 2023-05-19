@@ -1,10 +1,10 @@
 import { setBalance, impersonateAccount, stopImpersonatingAccount } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Contract, BigNumberish, Bytes, utils } from 'ethers';
+import { Contract } from 'ethers';
 import { ethers } from 'hardhat';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { Address, Chain, ChainId, TokenAddress } from '@types';
+import { Address, BigIntish, Chain, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { TransactionResponse } from '@ethersproject/providers';
@@ -14,6 +14,7 @@ import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { DefiLlamaClient } from '@shared/defi-llama';
+import { parseEther } from 'viem';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
@@ -234,21 +235,21 @@ export async function balance({ of, for: token }: { of: Address; for: IHasAddres
   }
 }
 
-export function approve({ amount, to, for: token, from }: { amount: BigNumberish; to: Address; for: IHasAddress; from: SignerWithAddress }) {
+export function approve({ amount, to, for: token, from }: { amount: BigIntish; to: Address; for: IHasAddress; from: SignerWithAddress }) {
   return new Contract(token.address, ERC20_ABI, from).approve(to, amount);
 }
 
-export async function mintMany({ to, tokens }: { to: IHasAddress; tokens: { token: TestToken; amount: Exclude<BigNumberish, Bytes> }[] }) {
+export async function mintMany({ to, tokens }: { to: IHasAddress; tokens: { token: TestToken; amount: BigIntish }[] }) {
   await Promise.all(tokens.map(({ token, amount }) => mint({ amount, of: token, to })));
 }
 
-export async function mint({ of: token, amount, to: user }: { amount: Exclude<BigNumberish, Bytes>; of: TestToken; to: IHasAddress }) {
+export async function mint({ of: token, amount, to: user }: { amount: BigIntish; of: TestToken; to: IHasAddress }) {
   if (isSameAddress(token.address, Addresses.NATIVE_TOKEN)) {
     await setBalance(user.address, amount);
   } else {
     await impersonateAccount(token.whale!);
     const whaleSigner = await ethers.getSigner(token.whale!);
-    await setBalance(whaleSigner.address, utils.parseEther('1'));
+    await setBalance(whaleSigner.address, parseEther('1'));
     const contract = new Contract(token.address, ERC20_ABI, whaleSigner);
     await contract.transfer(user.address, amount);
     await stopImpersonatingAccount(token.whale!);

@@ -1,5 +1,4 @@
 import ms from 'ms';
-import { utils } from 'ethers';
 import { expect } from 'chai';
 import { given, then, when } from '@test-utils/bdd';
 import { Chains } from '@chains';
@@ -9,6 +8,7 @@ import { CONFIG } from './quote-tests-config';
 import { FailedQuote } from '@services/quotes';
 import { ChainId, DefaultRequirements, FieldsRequirements, TimeString, TokenAddress } from '@types';
 import { IMetadataSource, MetadataResult } from '@services/metadata';
+import { parseEther } from 'viem';
 
 jest.setTimeout(ms('1m'));
 
@@ -47,7 +47,7 @@ describe('Failing Quote', () => {
           buyToken: '0x0000000000000000000000000000000000000001',
           order: {
             type: 'sell',
-            sellAmount: utils.parseEther('1').toString(),
+            sellAmount: parseEther('1'),
           },
           slippagePercentage: 3,
           takerAddress: '0x0000000000000000000000000000000000000002',

@@ -2,7 +2,7 @@ import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
 import { IGasPriceSource, GasPriceResult, LegacyGasPrice, GasValueForVersion } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
-import { utils } from 'ethers';
+import { parseUnits } from 'viem';
 
 type GasValues = GasValueForVersion<'standard' | 'fast' | 'instant', LegacyGasPrice>;
 export class ChangellyGasPriceSource implements IGasPriceSource<GasValues> {
@@ -35,12 +35,12 @@ export class ChangellyGasPriceSource implements IGasPriceSource<GasValues> {
 
 function calculateGas(result: Result, value: keyof Result): LegacyGasPrice {
   return {
-    gasPrice: utils.parseUnits(result[value], 'gwei').toString(),
+    gasPrice: parseUnits(result[value], 9).toString(),
   };
 }
 
 type Result = {
-  low: string;
-  medium: string;
-  high: string;
+  low: `${number}`;
+  medium: `${number}`;
+  high: `${number}`;
 };

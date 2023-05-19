@@ -2,7 +2,7 @@ import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
 import { IGasPriceSource, EIP1159GasPrice, GasPriceResult, GasValueForVersion } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
-import { utils } from 'ethers';
+import { parseUnits } from 'viem';
 
 type GasValues = GasValueForVersion<'standard' | 'fast' | 'instant', EIP1159GasPrice>;
 export class EthGasStationGasPriceSource implements IGasPriceSource<GasValues> {
@@ -35,7 +35,7 @@ export class EthGasStationGasPriceSource implements IGasPriceSource<GasValues> {
 
 function calculateGas(baseFee: number, priorityFee: number): EIP1159GasPrice {
   return {
-    maxFeePerGas: utils.parseUnits(`${baseFee + priorityFee}`, 'gwei').toString(),
-    maxPriorityFeePerGas: utils.parseUnits(`${priorityFee}`, 'gwei').toString(),
+    maxFeePerGas: parseUnits(`${baseFee + priorityFee}`, 9).toString(),
+    maxPriorityFeePerGas: parseUnits(`${priorityFee}`, 9).toString(),
   };
 }

@@ -1,5 +1,5 @@
 import { AbiCoder } from 'ethers/lib/utils';
-import { Contract } from 'ethers';
+import { Contract } from '@ethersproject/contracts';
 import { Address, ChainId } from '@types';
 import { IProviderService } from '@services/providers/types';
 import { ExecuteCallAt, IMulticallService, TryMulticallResult } from './types';
