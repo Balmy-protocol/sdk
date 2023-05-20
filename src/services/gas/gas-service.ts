@@ -14,7 +14,7 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
 export class GasService<GasValues extends SupportedGasValues> implements IGasService<GasValues> {
   private readonly providerService: IProviderService;
   private readonly gasCostCalculatorBuilder: IQuickGasCostCalculatorBuilder<GasValues>;
-  private readonly client: 'ethers' | 'viem' = 'ethers';
+  private readonly client: 'ethers' | 'viem' = 'viem';
 
   constructor({ providerService, gasCostCalculatorBuilder }: ConstructorParameters<GasValues>) {
     this.providerService = providerService;

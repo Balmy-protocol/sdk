@@ -3,5 +3,5 @@ import { MulticallService } from '@services/multicall/multicall-service';
 
 export type BuildMulticallParams = { client: 'ethers' | 'viem' };
 export function buildMulticallService(params: BuildMulticallParams | undefined, providerService: IProviderService) {
-  return new MulticallService(providerService, params?.client ?? 'ethers');
+  return new MulticallService(providerService, params?.client);
 }
