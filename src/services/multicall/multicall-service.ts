@@ -9,7 +9,7 @@ import abi from './multicall-abi';
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const ABI_CODER = new AbiCoder();
 export class MulticallService implements IMulticallService {
-  constructor(private readonly providerService: IProviderService, private readonly client: 'viem' | 'ethers' = 'ethers') {}
+  constructor(private readonly providerService: IProviderService, private readonly client: 'viem' | 'ethers' = 'viem') {}
 
   supportedChains(): ChainId[] {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);

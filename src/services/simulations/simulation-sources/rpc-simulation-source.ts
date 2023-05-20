@@ -5,7 +5,7 @@ import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSi
 import { mapTxToViemTx } from '@shared/viem';
 
 export class RPCSimulationSource implements ISimulationSource {
-  constructor(private readonly providerService: IProviderService, private readonly client: 'ethers' | 'viem' = 'ethers') {}
+  constructor(private readonly providerService: IProviderService, private readonly client: 'ethers' | 'viem' = 'viem') {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = this.providerService

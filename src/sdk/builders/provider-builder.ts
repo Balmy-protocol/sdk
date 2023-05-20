@@ -20,7 +20,7 @@ export type ProviderSourceInput =
   | { type: 'ethers'; instance: BaseProvider }
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
-  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]> }
+  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
   | { type: 'infura'; key: string }
   | { type: 'llama-nodes'; key?: string }
@@ -50,7 +50,7 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'custom':
       return source.instance;
     case 'public-rpcs':
-      return new PublicRPCsSource(source.rpcsPerChain);
+      return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
     case 'alchemy':
       return new AlchemyProviderSource(source.key, source.protocol ?? 'https');
     case 'llama-nodes':

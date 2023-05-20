@@ -10,7 +10,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   constructor(
     private readonly providerService: IProviderService,
     private readonly multicallService: IMulticallService,
-    private readonly client: 'ethers' | 'viem' = 'ethers'
+    private readonly client: 'ethers' | 'viem' = 'viem'
   ) {
     super();
   }

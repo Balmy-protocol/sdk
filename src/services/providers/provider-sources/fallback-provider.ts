@@ -5,7 +5,7 @@ import { FallbackTransportConfig, fallback } from 'viem';
 import { combineClientSupport, sourcesWithSupport } from './utils';
 
 export type FallbackProviderSourceConfig = {
-  ethers?: { quorum?: number };
+  ethers?: { quorum?: number; prioritizeByOrder?: boolean };
   viem?: Pick<FallbackTransportConfig, 'rank' | 'retryCount' | 'retryDelay'>;
 };
 export class FallbackSource implements IProviderSource {
@@ -20,7 +20,10 @@ export class FallbackSource implements IProviderSource {
   getEthersProvider({ chainId }: { chainId: ChainId }) {
     const sources = sourcesWithSupport(chainId, this.sources, 'ethers');
     if (sources.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
-    const config = sources.map((source, i) => ({ provider: source.getEthersProvider({ chainId }), priority: i }));
+    const config = sources.map((source, i) => ({
+      provider: source.getEthersProvider({ chainId }),
+      priority: this.config?.ethers?.prioritizeByOrder === false ? 0 : i,
+    }));
     return new FallbackProvider(config, this.config?.ethers?.quorum);
   }
 

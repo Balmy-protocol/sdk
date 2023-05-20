@@ -1,11 +1,11 @@
 import { getAllChains } from '@chains';
 import { ChainId, Chain } from '@types';
 import { HttpProviderSource } from './http-provider';
-import { FallbackSource } from './fallback-provider';
+import { FallbackProviderSourceConfig, FallbackSource } from './fallback-provider';
 
 export class PublicRPCsSource extends FallbackSource {
-  constructor(publicRPCs?: Record<ChainId, string[]>) {
-    super(buildSources(calculateRPCs(publicRPCs)), { ethers: { quorum: 1 }, viem: { rank: false } });
+  constructor(params?: { publicRPCs?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }) {
+    super(buildSources(calculateRPCs(params?.publicRPCs)), params?.config);
   }
 }
 
