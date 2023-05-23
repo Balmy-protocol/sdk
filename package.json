@@ -45,7 +45,7 @@
     "ethers": "5.7.2",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
-    "viem": "0.3.13"
+    "viem": "0.3.35"
   },
   "devDependencies": {
     "@commitlint/cli": "17.6.1",
