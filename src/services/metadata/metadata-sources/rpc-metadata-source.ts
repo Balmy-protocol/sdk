@@ -7,7 +7,11 @@ import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import { encodeFunctionData, parseAbi } from 'viem';
-
+export async function executeInChunks<T, K>(array: T[], chunkSize: number, execute: (input: T[]) => Promise<K[]>): Promise<K[]> {
+  const chunks = [...Array(Math.ceil(array.length / chunkSize))].map((_, i) => array.slice(i * chunkSize, (i + 1) * chunkSize));
+  const results = await Promise.all(chunks.map(execute));
+  return results.flat();
+}
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
 export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties> {
@@ -49,7 +53,12 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     for (const field of fieldsToFetch) {
       calls.push(...addressesWithoutNativeToken.map((address) => ({ target: address, ...DECODE_DATA[field] })));
     }
-    const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults = await executeInChunks(calls, 50, (chunk) =>
+      this.multicallService.readOnlyMulticall({
+        chainId: chainId,
+        calls: chunk,
+      })
+    );
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
