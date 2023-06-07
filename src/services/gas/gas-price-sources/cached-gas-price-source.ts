@@ -1,10 +1,10 @@
-import { ChainId, DefaultRequirements, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
-import { IQuickGasCostCalculatorBuilder, IQuickGasCostCalculator, SupportedGasValues } from '../types';
+import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
+import { SupportedGasValues, IGasPriceSource, GasPriceResult } from '../types';
 import { ConcurrentLRUCache, ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
-  wrapped: IQuickGasCostCalculatorBuilder<GasValues>;
+  underlying: IGasPriceSource<GasValues>;
   expiration: {
     default: ExpirationConfigOptions;
     overrides?: Record<ChainId, ExpirationConfigOptions>;
@@ -12,51 +12,52 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
   maxSize?: number;
 };
 type CacheContext = { timeout?: TimeString } | undefined;
-export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> implements IQuickGasCostCalculatorBuilder<GasValues> {
-  private readonly cache: ConcurrentLRUCache<CacheContext, string, IQuickGasCostCalculator<GasValues>>;
-  private readonly wrapped: IQuickGasCostCalculatorBuilder<GasValues>;
+export class CachedGasPriceSource<GasValues extends SupportedGasValues> implements IGasPriceSource<GasValues> {
+  private readonly cache: ConcurrentLRUCache<CacheContext, string, GasPriceResult<GasValues>>;
+  private readonly underlying: IGasPriceSource<GasValues>;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
-  constructor({ wrapped, expiration, maxSize }: ConstructorParameters<GasValues>) {
-    this.wrapped = wrapped;
-    this.cache = new ConcurrentLRUCache<CacheContext, string, IQuickGasCostCalculator<GasValues>>({
+  constructor({ underlying, expiration, maxSize }: ConstructorParameters<GasValues>) {
+    this.underlying = underlying;
+    this.cache = new ConcurrentLRUCache<CacheContext, string, GasPriceResult<GasValues>>({
       calculate: (config, [cacheId]) => this.fromCacheKey(cacheId, config), // We know that we will only ask for one chain at a time
       config: {
         expiration: expiration.default,
-        maxSize: maxSize ?? Object.keys(wrapped.supportedSpeeds()).length,
+        maxSize: maxSize ?? Object.keys(underlying.supportedSpeeds()).length,
       },
     });
     this.expirationOverrides = expiration.overrides ?? {};
   }
 
   supportedSpeeds() {
-    return this.wrapped.supportedSpeeds();
+    return this.underlying.supportedSpeeds();
   }
 
-  async build<Requirements extends FieldsRequirements<GasValues>>({
+  async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
     chainId,
     config,
   }: {
     chainId: ChainId;
     config?: { fields?: Requirements; timeout?: TimeString };
-  }) {
+  }): Promise<GasPriceResult<GasValues, Requirements>> {
     const expirationConfig = this.expirationOverrides[chainId];
     const key = this.toCacheKey(chainId, config?.fields);
-    const calculator = await this.cache.getOrCalculateSingle({
+    const gasPrice = await this.cache.getOrCalculateSingle({
       key,
       context: config,
       expirationConfig,
       timeout: config?.timeout,
     });
-    return calculator as IQuickGasCostCalculator<GasValues, Requirements>;
+    return gasPrice as GasPriceResult<GasValues, Requirements>;
   }
 
   private toCacheKey<Requirements extends FieldsRequirements<GasValues>>(chainId: ChainId, requirements: Requirements | undefined) {
-    const support = this.wrapped.supportedSpeeds()[chainId];
+    const support = this.underlying.supportedSpeeds()[chainId];
     const fieldRequirements = calculateFieldRequirements(support, requirements);
     const requiredFields = Object.entries(fieldRequirements)
       .filter(([, requirement]) => requirement === 'required')
       .map(([field]) => field)
+      .sort()
       .join(',');
     return `${chainId}-${requiredFields}`;
   }
@@ -70,10 +71,10 @@ export class CachedGasCalculatorBuilder<GasValues extends SupportedGasValues> im
     >;
     // We set the default to best effort here, even if it wasn't set on the original request. The idea is that we try our best to fetch all properties,
     // so that if we have a future request with the same required fields and best effort is set, then we can use the cached values
-    const calculator = await this.wrapped.build({
+    const gasPrice = await this.underlying.getGasPrice({
       chainId: Number(chainIdString),
       config: { ...config, fields: { requirements, default: 'best effort' } },
     });
-    return { [cacheId]: calculator } as Record<string, IQuickGasCostCalculator<GasValues, DefaultRequirements<GasValues>>>;
+    return { [cacheId]: gasPrice } as Record<string, GasPriceResult<GasValues>>;
   }
 }
