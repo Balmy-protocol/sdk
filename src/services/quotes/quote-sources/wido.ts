@@ -86,8 +86,8 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
           value: BigInt(value ?? 0),
         },
       };
-    } catch (e) {
-      failed(WIDO_METADATA, chain, sellToken, buyToken);
+    } catch (e: any) {
+      failed(WIDO_METADATA, chain, sellToken, buyToken, e.message);
     }
   }
 }
