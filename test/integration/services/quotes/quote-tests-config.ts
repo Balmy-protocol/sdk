@@ -18,6 +18,9 @@ if (process.env.FIREBIRD_API_KEY) {
 if (process.env.CHANGELLY_API_KEY) {
   CONFIG.custom!.changelly = { apiKey: process.env.CHANGELLY_API_KEY };
 }
+if (process.env.ZRX_API_KEY) {
+  CONFIG.custom!['0x'] = { apiKey: process.env.ZRX_API_KEY };
+}
 
 export function supportedChains() {
   const sources = QUOTE_SOURCES;
