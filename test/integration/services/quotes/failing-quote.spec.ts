@@ -58,7 +58,7 @@ describe('Failing Quote', () => {
         },
       });
     });
-    then('all quotes fail', () => {
+    then('all quotes are unsuccessful', () => {
       for (const response of responses) {
         expect('failed' in response, `Expected ${(response as QuoteResponse).source?.name} to fail, but it didn't`).to.be.true;
       }

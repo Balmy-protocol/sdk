@@ -1,14 +1,9 @@
 import { ChainId } from '@types';
-import { Chains } from '@chains';
 import { ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderService } from '@services/providers/types';
 import { IMulticallService } from '@services/multicall/types';
-import { ExtractGasValues, IGasPriceSource, IGasService, IQuickGasCostCalculatorBuilder, SupportedGasValues } from '@services/gas/types';
-import { CachedGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/cached-gas-calculator-builder';
-import { GasCalculatorBuilderCombiner } from '@services/gas/gas-calculator-builders/gas-calculator-builder-combiner';
-import { GenericGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/generic-gas-calculator-builder';
-import { OptimismGasCalculatorBuilder } from '@services/gas/gas-calculator-builders/optimism';
+import { ExtractGasValues, IGasPriceSource, IGasService } from '@services/gas/types';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
@@ -21,10 +16,8 @@ import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
 import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
+import { CachedGasPriceSource } from '@services/gas/gas-price-sources/cached-gas-price-source';
 
-// TODO: When Optimism moves to Bedrock, we won't need a special gas calculator builder for it. When that happens, we can have only one calculation
-// builder and move the cache to the source level (now it's at the calculator builder level). When we do that, we can remove this here and simplify
-// quite a lot of things
 type CachelessInput = Exclude<GasSourceInput, { type: 'cached' }>;
 type SingleSourceInput = Exclude<CachelessInput, { type: 'fastest' } | { type: 'aggregate' } | { type: 'prioritized' }>;
 
@@ -98,27 +91,14 @@ export function buildGasService<Params extends BuildGasParams | undefined>(
   multicallService: IMulticallService
 ): IGasService<ExtractGasValues<CalculateSourceFromParams<Params>>> {
   const sourceInput: CachelessInput | undefined = params?.source?.type === 'cached' ? params.source.underlyingSource : params?.source;
-  const source = buildSource(sourceInput, { fetchService, multicallService, providerService }) as IGasPriceSource<
+  const gasPriceSource = buildSource(sourceInput, { fetchService, multicallService, providerService }) as IGasPriceSource<
     CalculateGasValuesFromSourceParams<Params>
   >;
-
-  let gasCostCalculatorBuilder = buildGasCalculatorBuilder({ gasPriceSource: source, multicallService }) as IQuickGasCostCalculatorBuilder<
-    CalculateGasValuesFromSourceParams<Params>
-  >;
-  if (params?.source?.type === 'cached') {
-    // Add caching if necessary
-    gasCostCalculatorBuilder = new CachedGasCalculatorBuilder({
-      wrapped: gasCostCalculatorBuilder,
-      expiration: { default: params.source.config.expiration, overrides: params.source.config.expiration.overrides },
-      maxSize: params.source.config.maxSize,
-    });
-  }
-
-  return new GasService({ providerService, gasCostCalculatorBuilder });
+  return new GasService({ providerService, gasPriceSource });
 }
 
 function buildSource(
-  source: CachelessInput | undefined,
+  source: GasSourceInput | undefined,
   {
     providerService,
     multicallService,
@@ -130,6 +110,13 @@ function buildSource(
       return new AggregatorGasPriceSource(calculatePublicSources({ fetchService, providerService }), 'median');
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
+    case 'cached':
+      const underlying = buildSource(source.underlyingSource, { fetchService, providerService, multicallService });
+      return new CachedGasPriceSource({
+        underlying,
+        expiration: { default: source.config.expiration, overrides: source.config.expiration.overrides },
+        maxSize: source.config.maxSize,
+      });
     case 'paraswap':
       return new ParaswapGasPriceSource(fetchService);
     case 'rpc':
@@ -191,18 +178,4 @@ function calculatePublicSources({
   const etherscan = new EtherscanGasPriceSource(fetchService);
   const paraswap = new ParaswapGasPriceSource(fetchService);
   return [openOcean, rpc, ethGasStation, polygonGasStation, etherscan, paraswap];
-}
-
-function buildGasCalculatorBuilder<GasValues extends SupportedGasValues>({
-  gasPriceSource,
-  multicallService,
-}: {
-  gasPriceSource: IGasPriceSource<GasValues>;
-  multicallService: IMulticallService;
-}) {
-  const defaultCalculatorBuilder = new GenericGasCalculatorBuilder(gasPriceSource);
-  const calculatorBuilderOverrides = {
-    [Chains.OPTIMISM.chainId]: new OptimismGasCalculatorBuilder(multicallService),
-  };
-  return new GasCalculatorBuilderCombiner({ defaultCalculatorBuilder, calculatorBuilderOverrides });
 }
