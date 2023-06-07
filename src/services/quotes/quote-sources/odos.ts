@@ -44,13 +44,13 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
     },
     config,
   }: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
-    const checksummedSell = checksummAndMapIfNecessary(sellToken);
-    const checksummedBuy = checksummAndMapIfNecessary(buyToken);
+    const checksummedSell = checksumAndMapIfNecessary(sellToken);
+    const checksummedBuy = checksumAndMapIfNecessary(buyToken);
     const body = {
       chainId: chain.chainId,
       inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
       outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
-      userAddr: takeFrom,
+      userAddr: checksum(takeFrom),
       slippageLimitPercent: slippagePercentage,
       sourceBlacklist: config?.sourceBlacklist,
       simulate: false,
@@ -90,8 +90,12 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
   }
 }
 
-function checksummAndMapIfNecessary(address: Address) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : getAddress(address);
+function checksumAndMapIfNecessary(address: Address) {
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : checksum(address);
+}
+
+function checksum(address: Address) {
+  return getAddress(address);
 }
 
 type Response = {
