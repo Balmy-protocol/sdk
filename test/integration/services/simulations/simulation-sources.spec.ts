@@ -169,7 +169,7 @@ describe('Simulation Sources', () => {
 
       if (sourceSupport.bundle === 'none') {
         when('bundles are not supported', () => {
-          then('trying to execute a bundle simulation will fail', async () => {
+          then('trying to execute a bundle simulation will reject', async () => {
             await expect(
               source.simulateTransactionBundle({
                 chainId: Chains.ETHEREUM.chainId,

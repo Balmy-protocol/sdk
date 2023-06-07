@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai';
 import { ChainId, FieldRequirementOptions, FieldsRequirements, SupportRecord, TimeString } from '@types';
 import { then, when } from '@test-utils/bdd';
-import { EIP1159GasPrice, GasPriceResult, IGasPriceSource, IQuickGasCostCalculator, IQuickGasCostCalculatorBuilder } from '@services/gas/types';
+import { EIP1159GasPrice, GasPriceResult, IGasPriceSource } from '@services/gas/types';
 import chaiAsPromised from 'chai-as-promised';
 import { Chains } from '@chains';
 import { CachedGasPriceSource } from '@services/gas/gas-price-sources/cached-gas-price-source';
