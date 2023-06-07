@@ -8,4 +8,4 @@ export async function calculateGasSpent(...txs: TransactionResponse[]): Promise<
   return gasSpentEach.reduce((accum, curr) => accum + curr, 0n);
 }
 
-export const CHAINS_WITH_KNOWN_ISSUES = [Chains.AURORA, Chains.OASIS_EMERALD].map(({ chainId }) => chainId);
+export const CHAINS_WITH_KNOWN_ISSUES = [Chains.AURORA, Chains.ASTAR, Chains.OASIS_EMERALD].map(({ chainId }) => chainId);
