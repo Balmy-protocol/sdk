@@ -15,7 +15,7 @@ import { IBalanceSource } from '@services/balances/types';
 import chaiAsPromised from 'chai-as-promised';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
-import { CHAINS_WITH_KNOWN_RPC_ISSUES } from '@test-utils/other';
+import { CHAINS_WITH_KNOWN_ISSUES } from '@test-utils/other';
 import { formatUnits, parseUnits } from 'viem';
 dotenv.config();
 chai.use(chaiAsPromised);
@@ -79,7 +79,7 @@ describe('Balance Sources', () => {
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
       const sourceSupport = Object.fromEntries(
-        Object.entries(source.supportedQueries()).filter(([chainId]) => !CHAINS_WITH_KNOWN_RPC_ISSUES.includes(Number(chainId)))
+        Object.entries(source.supportedQueries()).filter(([chainId]) => !CHAINS_WITH_KNOWN_ISSUES.includes(Number(chainId)))
       );
 
       describe('getBalancesForTokens', () => {

@@ -9,7 +9,7 @@ import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { TransactionResponse } from '@ethersproject/providers';
 import { SourceQuoteResponse } from '@services/quotes/quote-sources/types';
-import { calculateGasSpent } from './other';
+import { CHAINS_WITH_KNOWN_ISSUES, calculateGasSpent } from './other';
 import { expect } from 'chai';
 import { QuoteResponse } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
@@ -210,7 +210,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
 } satisfies Record<ChainId, ChainTokens>;
 
 export function chainsWithTestData(chainIds: ChainId[]) {
-  return chainIds.filter((chainId) => chainId in TOKENS);
+  return chainIds.filter((chainId) => chainId in TOKENS).filter((chainId) => !CHAINS_WITH_KNOWN_ISSUES.includes(chainId));
 }
 
 export async function calculateBalancesFor({ tokens, addresses }: { tokens: IHasAddress[]; addresses: IHasAddress[] }) {
