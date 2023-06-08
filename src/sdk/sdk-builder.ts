@@ -1,7 +1,7 @@
 import { BuildFetchParams, buildFetchService } from './builders/fetch-builder';
 import { BuildProviderParams, buildProviderService } from './builders/provider-builder';
 import { buildGasService, BuildGasParams, CalculateGasValuesFromSourceParams } from './builders/gas-builder';
-import { BuildMulticallParams, buildMulticallService } from './builders/multicall-builder';
+import { buildMulticallService } from './builders/multicall-builder';
 import { BuildBalancesParams } from './builders';
 import { BuildMetadataParams, buildMetadataService, CalculateMetadataFromSourceParams } from './builders/metadata-builder';
 import { BuildQuoteParams, buildQuoteService } from './builders/quote-builder';
@@ -15,7 +15,7 @@ export function buildSDK<Params extends BuildParams = {}>(
 ): ISDK<CalculateMetadataFromSourceParams<Params['metadata']>, CalculateGasValuesFromSourceParams<Params['gas']>> {
   const fetchService = buildFetchService(params?.fetch);
   const providerService = buildProviderService(params?.provider);
-  const multicallService = buildMulticallService(params?.multicall, providerService);
+  const multicallService = buildMulticallService(providerService);
   const balanceService = buildBalanceService(params?.balances, fetchService, providerService, multicallService);
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, fetchService, providerService, multicallService);
@@ -38,7 +38,6 @@ export function buildSDK<Params extends BuildParams = {}>(
 
 export type BuildParams = {
   fetch?: BuildFetchParams;
-  multicall?: BuildMulticallParams;
   provider?: BuildProviderParams;
   balances?: BuildBalancesParams;
   allowances?: BuildAllowanceParams;

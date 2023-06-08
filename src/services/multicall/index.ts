@@ -1,1 +1,1 @@
-export { IMulticallService, TryMulticallResult, ExecuteCallAt } from './types';
+export { IMulticallService, ExecuteCallAt, CallResult, SuccessfulCall, FailedCall } from './types';

@@ -1,10 +1,11 @@
-import { Address as ViemAddress, encodeFunctionData, parseAbi } from 'viem';
-import { Address, AmountOfToken, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
+import { Address as ViemAddress } from 'viem';
+import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
+import { ERC20_ABI } from '@shared/abis/erc20';
 
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   constructor(
@@ -35,23 +36,20 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
-    const calls: { target: Address; decode: string[]; calldata: string }[] = pairs.map(({ account, token }) => ({
-      target: token,
-      decode: ['uint256'],
-      calldata: encodeFunctionData({
-        abi: parseAbi(ERC20_ABI),
-        functionName: 'balanceOf',
-        args: [account],
-      }),
+    const calls = pairs.map(({ account, token }) => ({
+      address: token,
+      abi: { humanReadable: ERC20_ABI },
+      functionName: 'balanceOf',
+      args: [account],
     }));
     const multicallResults = await this.multicallService.tryReadOnlyMulticall({ chainId, calls });
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const multicallResult = multicallResults[i];
-      if (!multicallResult.success) continue;
+      if (multicallResult.status === 'failure') continue;
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResult.result[0].toString();
+      result[account][token] = multicallResult.result.toString();
     }
     return result;
   }
@@ -73,5 +71,3 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     return promise.then((balance) => balance.toString());
   }
 }
-
-const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];

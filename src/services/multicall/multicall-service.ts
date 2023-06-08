@@ -1,132 +1,58 @@
-import { AbiCoder } from 'ethers/lib/utils';
-import { Contract } from '@ethersproject/contracts';
 import { Address, ChainId } from '@types';
 import { IProviderService } from '@services/providers/types';
-import { ExecuteCallAt, IMulticallService, TryMulticallResult } from './types';
+import { ExecuteCallAt, IMulticallService, MulticallArgs } from './types';
 import { chainsIntersection } from '@chains';
-import abi from './multicall-abi';
+import { Address as ViemAddress, parseAbi } from 'viem';
 
 const ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
-const ABI_CODER = new AbiCoder();
 export class MulticallService implements IMulticallService {
-  constructor(private readonly providerService: IProviderService, private readonly client: 'viem' | 'ethers' = 'viem') {}
+  constructor(private readonly providerService: IProviderService) {}
 
   supportedChains(): ChainId[] {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
   }
 
-  async readOnlyMulticall(args: {
+  async readOnlyMulticall(args: MulticallArgs): Promise<any[]> {
+    if (args.calls.length === 0) return [];
+    return this.viemMulticall({ ...args, allowFailure: false });
+  }
+
+  async tryReadOnlyMulticall(args: MulticallArgs) {
+    if (args.calls.length === 0) return [];
+    const results = await this.viemMulticall({ ...args, allowFailure: true });
+    return results.map(({ error, status, result }) => (status === 'success' ? { status, result } : { status, error: error.message }));
+  }
+
+  private async viemMulticall<TAllowFailure extends boolean>({
+    chainId,
+    calls,
+    at,
+    allowFailure,
+    batching,
+  }: {
     chainId: ChainId;
-    calls: { target: Address; calldata: string; decode: string[] }[];
+    calls: {
+      address: Address;
+      abi: { humanReadable: string[] } | { json: readonly any[] };
+      functionName: string;
+      args?: any[];
+    }[];
+    allowFailure: TAllowFailure;
+    batching?: { maxSizeInBytes: number };
     at?: ExecuteCallAt;
-  }): Promise<ReadonlyArray<any>[]> {
-    if (args.calls.length === 0) return [];
-    return this.client === 'viem'
-      ? readOnlyMulticallWithViem({ ...args, providerService: this.providerService })
-      : readOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
-  }
-
-  async tryReadOnlyMulticall(args: { chainId: ChainId; calls: { target: Address; calldata: string; decode: string[] }[]; at?: ExecuteCallAt }) {
-    if (args.calls.length === 0) return [];
-    return this.client === 'viem'
-      ? tryReadOnlyMulticallWithViem({ ...args, providerService: this.providerService })
-      : tryReadOnlyMulticallWithEthers({ ...args, providerService: this.providerService });
-  }
-}
-
-async function readOnlyMulticallWithViem({
-  chainId,
-  calls,
-  at,
-  providerService,
-}: {
-  chainId: ChainId;
-  calls: { target: Address; calldata: string; decode: string[] }[];
-  at?: ExecuteCallAt;
-  providerService: IProviderService;
-}): Promise<ReadonlyArray<any>[]> {
-  const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
-    address: ADDRESS,
-    abi,
-    functionName: 'aggregate',
-    args: [calls.map(({ target, calldata }) => [target, calldata])],
-    blockNumber: at?.block?.number ? BigInt(at.block.number) : undefined,
-  });
-  return (simulation.result as [number, string[]])[1].map((result, i) => ABI_CODER.decode(calls[i].decode, result));
-}
-
-async function readOnlyMulticallWithEthers({
-  chainId,
-  calls,
-  at,
-  providerService,
-}: {
-  chainId: ChainId;
-  calls: { target: Address; calldata: string; decode: string[] }[];
-  at?: ExecuteCallAt;
-  providerService: IProviderService;
-}): Promise<ReadonlyArray<any>[]> {
-  const provider = providerService.getEthersProvider({ chainId });
-  const contract = new Contract(ADDRESS, abi, provider);
-  const [blockNumber, results]: [number, string[]] = await contract.callStatic.aggregate(
-    calls.map(({ target, calldata }) => [target, calldata]),
-    { blockTag: at?.block?.number }
-  );
-  return results.map((result, i) => ABI_CODER.decode(calls[i].decode, result));
-}
-
-async function tryReadOnlyMulticallWithViem({
-  chainId,
-  calls,
-  at,
-  providerService,
-}: {
-  chainId: ChainId;
-  calls: { target: Address; calldata: string; decode: string[] }[];
-  at?: ExecuteCallAt;
-  providerService: IProviderService;
-}) {
-  const simulation = await providerService.getViemPublicClient({ chainId }).simulateContract({
-    address: ADDRESS,
-    abi,
-    functionName: 'tryAggregate',
-    args: [false, calls.map(({ target, calldata }) => [target, calldata])],
-    blockNumber: at?.block?.number ? BigInt(at.block.number) : undefined,
-  });
-  return (simulation.result as { success: boolean; returnData: string }[]).map(({ success, returnData }, i) =>
-    success ? tryDecode(returnData, calls[i].decode) : { success }
-  );
-}
-
-async function tryReadOnlyMulticallWithEthers({
-  chainId,
-  calls,
-  at,
-  providerService,
-}: {
-  chainId: ChainId;
-  calls: { target: Address; calldata: string; decode: string[] }[];
-  at?: ExecuteCallAt;
-  providerService: IProviderService;
-}) {
-  const provider = providerService.getEthersProvider({ chainId });
-  const contract = new Contract(ADDRESS, abi, provider);
-  const results: [boolean, string][] = await contract.callStatic.tryAggregate(
-    false,
-    calls.map(({ target, calldata }) => [target, calldata]),
-    { blockTag: at?.block?.number }
-  );
-  return results.map(([success, result], i) => (success ? tryDecode(result, calls[i].decode) : { success }));
-}
-
-function tryDecode(returnData: string, decode: string[]): TryMulticallResult<any> {
-  try {
-    return {
-      result: ABI_CODER.decode(decode, returnData),
-      success: true,
-    };
-  } catch {
-    return { success: false };
+  }) {
+    return this.providerService.getViemPublicClient({ chainId }).multicall({
+      allowFailure,
+      multicallAddress: ADDRESS,
+      contracts: calls.map(({ address, abi, functionName, args }) => ({
+        address: address as ViemAddress,
+        abi: 'humanReadable' in abi ? parseAbi(abi.humanReadable) : abi.json,
+        functionName,
+        args,
+      })),
+      blockNumber: at?.block?.number ? BigInt(at.block.number) : undefined,
+      batchSize: batching?.maxSizeInBytes,
+    });
   }
 }
 

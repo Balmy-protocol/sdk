@@ -1,5 +1,4 @@
 export { BuildFetchParams } from './fetch-builder';
-export { BuildMulticallParams } from './multicall-builder';
 export { BuildGasParams, GasSourceInput } from './gas-builder';
 export { BuildProviderParams, ProviderSourceInput } from './provider-builder';
 export { BuildQuoteParams, QuoteSourceListInput } from './quote-builder';
