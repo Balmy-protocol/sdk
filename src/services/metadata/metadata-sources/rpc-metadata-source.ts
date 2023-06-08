@@ -54,7 +54,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
       const tokenMetadata = Object.fromEntries(
-        fieldsToFetch.map((field, j) => [field, multicallResults[addressesWithoutNativeToken.length * j + i][0]])
+        fieldsToFetch.map((field, j) => [field, multicallResults[addressesWithoutNativeToken.length * j + i]])
       ) as MetadataResult<RPCMetadataProperties, Requirements>;
       result[address] = tokenMetadata;
     }

@@ -131,7 +131,7 @@ describe('Metadata Sources', () => {
               expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
             });
             test(chain?.nativeCurrency?.symbol ?? 'Native token', () => {
-              validateMetadata({ chainId, address: Addresses.NATIVE_TOKEN });
+              validateMetadata({ chainId, address: Addresses.NATIVE_TOKEN, symbol: chain!.nativeCurrency.symbol });
             });
             if (chainId in TESTS) {
               test(`${TESTS[chainId].symbol}`, () => {
@@ -141,12 +141,16 @@ describe('Metadata Sources', () => {
           });
         }
 
-        function validateMetadata({ chainId, address }: { chainId: ChainId; address: TokenAddress }) {
+        function validateMetadata({ chainId, address, symbol }: { chainId: ChainId; address: TokenAddress; symbol: string }) {
           const token = result[chainId][address];
           for (const { fields: fieldsExist, on } of fields) {
             if (on !== 'all chains' && !on.includes(chainId)) continue;
             for (const field of fieldsExist) {
-              expect(token).to.have.property(field as any);
+              if (field === 'symbol') {
+                expect(token[field]).to.equal(symbol);
+              } else {
+                expect(token[field]).to.not.be.undefined;
+              }
             }
           }
         }
