@@ -6,7 +6,7 @@ import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
-import { encodeFunctionData, parseAbi } from 'viem';
+import { ERC20_ABI } from '@shared/abis/erc20';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
@@ -45,9 +45,9 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
       .filter(([, requirement]) => requirement !== 'can ignore')
       .map(([field]) => field as keyof RPCMetadataProperties);
     if (fieldsToFetch.length === 0) return {};
-    const calls: { target: Address; decode: string[]; calldata: string }[] = [];
+    const calls: { address: Address; abi: { humanReadable: string[] }; functionName: string }[] = [];
     for (const field of fieldsToFetch) {
-      calls.push(...addressesWithoutNativeToken.map((address) => ({ target: address, ...DECODE_DATA[field] })));
+      calls.push(...addressesWithoutNativeToken.map((address) => ({ address, functionName: field, abi: { humanReadable: ERC20_ABI } })));
     }
     const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
@@ -76,16 +76,3 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     return result;
   }
 }
-
-const ERC20_ABI = [
-  'function symbol() view returns (string)',
-  'function decimals() view returns (uint8)',
-  'function name() view returns (string)',
-];
-const PARSED_ABI = parseAbi(ERC20_ABI);
-
-const DECODE_DATA: Record<keyof RPCMetadataProperties, { decode: string[]; calldata: string }> = {
-  symbol: { decode: ['string'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'symbol' }) },
-  name: { decode: ['string'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'name' }) },
-  decimals: { decode: ['uint8'], calldata: encodeFunctionData({ abi: PARSED_ABI, functionName: 'decimals' }) },
-};
