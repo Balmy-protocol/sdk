@@ -1,7 +1,6 @@
 import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
 import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
-import { BigNumber } from 'ethers';
 import { hexValue } from 'ethers/lib/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
 
@@ -80,10 +79,10 @@ export class AlchemySimulationSource implements ISimulationSource {
 
 function fixTransaction(tx: TransactionRequest) {
   // Alchemy doesn't support zeroed data yet, so we make it undefied
-  const valueBN = BigNumber.from(tx.value ?? 0);
-  const dataBN = BigNumber.from(tx.data ?? 0);
-  const value = valueBN.isZero() ? undefined : hexValue(valueBN.toHexString());
-  const data = dataBN.isZero() ? undefined : tx.data;
+  const valueBN = BigInt(tx.value ?? 0);
+  const dataBN = BigInt(tx.data ?? 0);
+  const value = valueBN === 0n ? undefined : hexValue(valueBN);
+  const data = dataBN === 0n ? undefined : tx.data;
   return { ...tx, data, value };
 }
 

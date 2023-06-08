@@ -14,7 +14,6 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
 export class GasService<GasValues extends SupportedGasValues> implements IGasService<GasValues> {
   private readonly providerService: IProviderService;
   private readonly gasPriceSource: IGasPriceSource<GasValues>;
-  private readonly client: 'ethers' | 'viem' = 'viem';
 
   constructor({ providerService, gasPriceSource }: ConstructorParameters<GasValues>) {
     this.providerService = providerService;
@@ -89,13 +88,12 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
 
   private estimateGasInternal(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
-    const promise =
-      this.client === 'viem'
-        ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
-            ...viemTx,
-            account: viemTx.from,
-          })
-        : this.providerService.getEthersProvider({ chainId }).estimateGas(tx);
-    return promise.then((estimate) => estimate.toString());
+    return this.providerService
+      .getViemPublicClient({ chainId })
+      .estimateGas({
+        ...viemTx,
+        account: viemTx.from,
+      })
+      .then((estimate) => estimate.toString());
   }
 }

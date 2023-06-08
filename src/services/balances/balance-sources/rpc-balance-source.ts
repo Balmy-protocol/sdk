@@ -8,11 +8,7 @@ import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-s
 import { ERC20_ABI } from '@shared/abis/erc20';
 
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(
-    private readonly providerService: IProviderService,
-    private readonly multicallService: IMulticallService,
-    private readonly client: 'ethers' | 'viem' = 'viem'
-  ) {
+  constructor(private readonly providerService: IProviderService, private readonly multicallService: IMulticallService) {
     super();
   }
 
@@ -64,10 +60,9 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
-    const promise =
-      this.client === 'viem'
-        ? this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' })
-        : this.providerService.getEthersProvider({ chainId }).getBalance(account);
-    return promise.then((balance) => balance.toString());
+    return this.providerService
+      .getViemPublicClient({ chainId })
+      .getBalance({ address: account as ViemAddress, blockTag: 'latest' })
+      .then((balance) => balance.toString());
   }
 }

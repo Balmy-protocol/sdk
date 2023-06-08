@@ -1,11 +1,11 @@
 import { IProviderService } from '@services/providers';
 import { AmountOfToken, BigIntish, ChainId, TimeString, TransactionRequest } from '@types';
-import { utils } from 'ethers';
+import { isAddress } from 'viem';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, FailedSimulation } from '../types';
 import { mapTxToViemTx } from '@shared/viem';
 
 export class RPCSimulationSource implements ISimulationSource {
-  constructor(private readonly providerService: IProviderService, private readonly client: 'ethers' | 'viem' = 'viem') {}
+  constructor(private readonly providerService: IProviderService) {}
 
   supportedQueries(): Record<ChainId, SimulationQueriesSupport> {
     const entries = this.providerService
@@ -22,8 +22,8 @@ export class RPCSimulationSource implements ISimulationSource {
     tx: TransactionRequest;
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult> {
-    if (!utils.isAddress(tx.from)) return invalidTx('"from" is not a valid address');
-    if (!utils.isAddress(tx.to)) return invalidTx('"to" is not a valid address');
+    if (!isAddress(tx.from)) return invalidTx('"from" is not a valid address');
+    if (!isAddress(tx.to)) return invalidTx('"to" is not a valid address');
     if (!isValid(tx.data)) return invalidTx('"data" is not a valid');
     if (!isValid(tx.value)) return invalidTx('"value" is not a valid');
 
@@ -53,14 +53,13 @@ export class RPCSimulationSource implements ISimulationSource {
 
   private estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
-    const promise =
-      this.client === 'viem'
-        ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
-            ...viemTx,
-            account: viemTx.from,
-          })
-        : this.providerService.getEthersProvider({ chainId }).estimateGas(tx);
-    return promise.then((estimate) => estimate.toString());
+    return this.providerService
+      .getViemPublicClient({ chainId })
+      .estimateGas({
+        ...viemTx,
+        account: viemTx.from,
+      })
+      .then((estimate) => estimate.toString());
   }
 }
 
