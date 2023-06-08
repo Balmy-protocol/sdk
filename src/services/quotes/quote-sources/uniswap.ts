@@ -1,4 +1,3 @@
-import { Contract } from 'ethers';
 import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
@@ -6,6 +5,7 @@ import { isSameAddress, substractPercentage, timeToSeconds } from '@shared/utils
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { encodeFunctionData, parseAbi } from 'viem';
 
 const ROUTER_ADDRESS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
@@ -81,9 +81,16 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
     if (isBuyTokenNativeToken) {
       // Use multicall to unwrap wToken
       const minBuyAmount = calculateMinBuyAmount(order.type, buyAmount, slippagePercentage);
-      const routerContract = new Contract(router, ROUTER_ABI);
-      const { data: unwrapData } = await routerContract.populateTransaction.unwrapWETH9(minBuyAmount, recipient);
-      const { data: multicallData } = await routerContract.populateTransaction.multicall([calldata, unwrapData]);
+      const unwrapData = encodeFunctionData({
+        abi: ROUTER_ABI,
+        functionName: 'unwrapWETH9',
+        args: [minBuyAmount, recipient],
+      });
+      const multicallData = encodeFunctionData({
+        abi: ROUTER_ABI,
+        functionName: 'multicall',
+        args: [[calldata, unwrapData]],
+      });
 
       // Update calldata and gas estimate
       calldata = multicallData!;
@@ -113,7 +120,9 @@ function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {
   return isSameAddress(address, Addresses.NATIVE_TOKEN) ? chain.wToken : address;
 }
 
-const ROUTER_ABI = [
+const ROUTER_HUMAN_READABLE_ABI = [
   'function unwrapWETH9(uint256 amountMinimum, address recipient) payable',
   'function multicall(bytes[] data) payable returns (bytes[] memory results)',
 ];
+
+const ROUTER_ABI = parseAbi(ROUTER_HUMAN_READABLE_ABI);

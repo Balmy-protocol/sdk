@@ -3,7 +3,6 @@ import chai, { expect } from 'chai';
 import { RPCSimulationSource } from '@services/simulations/simulation-sources/rpc-simulation-source';
 import { AlchemySimulationSource } from '@services/simulations/simulation-sources/alchemy-simulation-source';
 import { Chains } from '@chains';
-import { utils } from 'ethers';
 import chaiAsPromised from 'chai-as-promised';
 import dotenv from 'dotenv';
 import {
@@ -17,7 +16,7 @@ import {
 import { then, when } from '@test-utils/bdd';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { ProviderService } from '@services/providers/provider-service';
-import { parseEther } from 'viem';
+import { encodeFunctionData, parseAbi, parseEther } from 'viem';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -193,14 +192,10 @@ const ERC20_ABI = [
   'function approve(address to, uint amount)',
   'function balanceOf(address owner) view returns (uint)',
 ];
-const ERC_20_INTERFACE = new utils.Interface(ERC20_ABI);
-const APPROVE_DATA = ERC_20_INTERFACE.encodeFunctionData('approve', [TAKER, ONE_ETHER]);
-const TRANSFER_FROM_DATA = ERC_20_INTERFACE.encodeFunctionData('transferFrom', [OWNER, TAKER, ONE_ETHER]);
-const TRANSFER_DATA = ERC_20_INTERFACE.encodeFunctionData('transfer', [TAKER, ONE_ETHER]);
+const APPROVE_DATA = encodeFunctionData({ abi: parseAbi(ERC20_ABI), functionName: 'approve', args: [TAKER, ONE_ETHER] });
+const TRANSFER_FROM_DATA = encodeFunctionData({ abi: parseAbi(ERC20_ABI), functionName: 'transferFrom', args: [OWNER, TAKER, ONE_ETHER] });
+const TRANSFER_DATA = encodeFunctionData({ abi: parseAbi(ERC20_ABI), functionName: 'transfer', args: [TAKER, ONE_ETHER] });
 
 const MULTICALL_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
-const MULTICALL_ABI = [
-  'function aggregate(tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)',
-];
-const MULTICALL_INTERFACE = new utils.Interface(MULTICALL_ABI);
-const AGGREGATE_DATA = MULTICALL_INTERFACE.encodeFunctionData('aggregate', [[]]);
+const MULTICALL_ABI = ['function aggregate((address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)'];
+const AGGREGATE_DATA = encodeFunctionData({ abi: parseAbi(MULTICALL_ABI), functionName: 'aggregate', args: [[]] });
