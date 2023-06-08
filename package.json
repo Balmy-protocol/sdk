@@ -59,7 +59,7 @@
     "@types/node": "18.16.3",
     "@types/ws": "^8.5.4",
     "chai": "4.3.7",
-    "dotenv": "16.0.3",
+    "dotenv": "16.1.4",
     "ethers": "5.7.2",
     "hardhat": "2.13.0",
     "husky": "8.0.3",
