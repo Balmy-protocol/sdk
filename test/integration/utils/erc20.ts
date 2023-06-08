@@ -231,7 +231,7 @@ export async function balance({ of, for: token }: { of: Address; for: IHasAddres
     const balance = await ethers.provider.getBalance(of);
     return BigInt(balance.toString());
   } else {
-    const balance = await new ethers.Contract(token.address, ERC20_ABI, ethers.provider).balanceOf(of);
+    const balance = await new Contract(token.address, ERC20_ABI, ethers.provider).balanceOf(of);
     return BigInt(balance.toString());
   }
 }
