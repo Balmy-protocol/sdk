@@ -197,7 +197,5 @@ const TRANSFER_FROM_DATA = encodeFunctionData({ abi: parseAbi(ERC20_ABI), functi
 const TRANSFER_DATA = encodeFunctionData({ abi: parseAbi(ERC20_ABI), functionName: 'transfer', args: [TAKER, ONE_ETHER] });
 
 const MULTICALL_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
-const MULTICALL_ABI = [
-  'function aggregate(tuple(address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)',
-];
+const MULTICALL_ABI = ['function aggregate((address target, bytes callData)[] calls) payable returns (uint256 blockNumber, bytes[] returnData)'];
 const AGGREGATE_DATA = encodeFunctionData({ abi: parseAbi(MULTICALL_ABI), functionName: 'aggregate', args: [[]] });
