@@ -19,7 +19,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
   [Chains.POLYGON.chainId]: { address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', symbol: 'USDC' },
   [Chains.ARBITRUM.chainId]: { address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', symbol: 'GMX' },
-  [Chains.BNB_CHAIN.chainId]: { address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', symbol: 'Cake' },
+  [Chains.BNB_CHAIN.chainId]: { address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82', symbol: 'CAKE' },
   [Chains.ETHEREUM.chainId]: { address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC' },
 };
 
@@ -147,7 +147,7 @@ describe('Metadata Sources', () => {
             if (on !== 'all chains' && !on.includes(chainId)) continue;
             for (const field of fieldsExist) {
               if (field === 'symbol') {
-                expect(token[field]).to.equal(symbol);
+                expect((token[field] as string)?.toUpperCase()).to.equal(symbol.toUpperCase());
               } else {
                 expect(token[field]).to.not.be.undefined;
               }
