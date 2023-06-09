@@ -51,7 +51,7 @@ export class MulticallService implements IMulticallService {
         args,
       })),
       blockNumber: at?.block?.number ? BigInt(at.block.number) : undefined,
-      batchSize: batching?.maxSizeInBytes,
+      batchSize: batching?.maxSizeInBytes ?? 0,
     });
   }
 }
