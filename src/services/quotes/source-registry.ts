@@ -1,20 +1,20 @@
 import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from './types';
 import { Without } from '@utility-types';
 import { IQuoteSource, QuoteSourceSupport } from './quote-sources/types';
-import { OdosQuoteSource } from './quote-sources/odos';
-import { ParaswapQuoteSource } from './quote-sources/paraswap';
-import { ZRXQuoteSource } from './quote-sources/0x';
-import { OneInchQuoteSource } from './quote-sources/1inch';
-import { UniswapQuoteSource } from './quote-sources/uniswap';
-import { OpenOceanQuoteSource } from './quote-sources/open-ocean';
-import { LiFiQuoteSource } from './quote-sources/li-fi';
-import { KyberswapQuoteSource } from './quote-sources/kyberswap';
-import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird';
-import { RangoQuoteSource } from './quote-sources/rango';
-import { ChangellyQuoteSource } from './quote-sources/changelly';
-import { MeanFinanceQuoteSource } from './quote-sources/mean-finance';
-import { WidoQuoteSource } from './quote-sources/wido';
-import { PortalsFiQuoteSource } from './quote-sources/portals-fi';
+import { OdosQuoteSource } from './quote-sources/odos-quote-source';
+import { ParaswapQuoteSource } from './quote-sources/paraswap-quote-source';
+import { ZRXQuoteSource } from './quote-sources/0x-quote-source';
+import { OneInchQuoteSource } from './quote-sources/1inch-quote-source';
+import { UniswapQuoteSource } from './quote-sources/uniswap-quote-source';
+import { OpenOceanQuoteSource } from './quote-sources/open-ocean-quote-source';
+import { LiFiQuoteSource } from './quote-sources/li-fi-quote-source';
+import { KyberswapQuoteSource } from './quote-sources/kyberswap-quote-source';
+import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird-quote-source';
+import { RangoQuoteSource } from './quote-sources/rango-quote-source';
+import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
+import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
+import { WidoQuoteSource } from './quote-sources/wido-quote-source';
+import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 
 export const QUOTE_SOURCES = {
   paraswap: new ParaswapQuoteSource(),

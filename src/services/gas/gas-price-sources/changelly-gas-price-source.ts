@@ -1,7 +1,7 @@
 import { ChainId, FieldsRequirements, SupportRecord, TimeString } from '@types';
 import { IGasPriceSource, GasPriceResult, LegacyGasPrice, GasValueForVersion } from '@services/gas/types';
 import { IFetchService } from '@services/fetch/types';
-import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly-quote-source';
 import { parseUnits } from 'viem';
 
 type GasValues = GasValueForVersion<'standard' | 'fast' | 'instant', LegacyGasPrice>;
