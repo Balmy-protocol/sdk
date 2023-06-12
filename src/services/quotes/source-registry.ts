@@ -15,6 +15,7 @@ import { ChangellyQuoteSource } from './quote-sources/changelly';
 import { MeanFinanceQuoteSource } from './quote-sources/mean-finance';
 import { WidoQuoteSource } from './quote-sources/wido';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi';
+import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
 
 export const QUOTE_SOURCES = {
   paraswap: new ParaswapQuoteSource(),
@@ -31,6 +32,7 @@ export const QUOTE_SOURCES = {
   'mean-finance': new MeanFinanceQuoteSource(),
   wido: new WidoQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
+  enso: new EnsoQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(
