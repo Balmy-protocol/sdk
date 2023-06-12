@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
@@ -58,7 +58,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amount_out_total),
       estimatedGas: BigInt(estimate_gas_total),
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
         to,
         calldata,

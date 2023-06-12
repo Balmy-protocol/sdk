@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const ZRX_API: Record<ChainId, string> = {
@@ -81,7 +81,7 @@ export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport,
       sellAmount: BigInt(sellAmount),
       buyAmount: BigInt(buyAmount),
       estimatedGas: BigInt(estimatedGas),
-      allowanceTarget,
+      allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
       tx: {
         calldata: data,
         to,

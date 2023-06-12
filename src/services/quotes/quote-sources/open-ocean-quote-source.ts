@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { formatUnits } from 'viem';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { GasPrice } from '@services/gas/types';
 import { ChainId } from '@types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
@@ -85,7 +85,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContexSource<OpenO
       minBuyAmount: BigInt(minOutAmount),
       type: 'sell',
       estimatedGas: BigInt(estimatedGas),
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
         to,
         calldata: data,

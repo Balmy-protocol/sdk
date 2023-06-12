@@ -4,7 +4,7 @@ import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { ChainId } from '@types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'arbitrum',
@@ -80,7 +80,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<Kyber
       sellAmount: order.sellAmount,
       buyAmount: BigInt(outputAmount),
       estimatedGas: BigInt(totalGas),
-      allowanceTarget: routerAddress,
+      allowanceTarget: calculateAllowanceTarget(sellToken, routerAddress),
       tx: {
         to: routerAddress,
         calldata: encodedSwapData,

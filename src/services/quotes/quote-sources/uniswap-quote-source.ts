@@ -3,7 +3,7 @@ import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, substractPercentage, timeToSeconds } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { encodeFunctionData, parseAbi } from 'viem';
 
@@ -101,7 +101,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<Uniswap
       sellAmount: order.type === 'sell' ? order.sellAmount : BigInt(quoteAmount),
       buyAmount,
       estimatedGas: BigInt(gasUseEstimate),
-      allowanceTarget: router,
+      allowanceTarget: calculateAllowanceTarget(sellToken, router),
       tx: {
         to: router,
         calldata,

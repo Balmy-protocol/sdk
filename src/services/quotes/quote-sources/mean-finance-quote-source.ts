@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { Address } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 export const MEAN_FINANCE_SUPPORTED_CHAINS = [
@@ -83,7 +83,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<Mea
       buyAmount: BigInt(buyAmount),
       minBuyAmount: BigInt(minBuyAmount),
       estimatedGas: BigInt(estimatedGas),
-      allowanceTarget,
+      allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
       tx: {
         calldata: data,

@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { TimeString } from '@types';
 import { IFetchService } from '@services/fetch';
@@ -79,7 +79,7 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSuppor
         minBuyAmount: BigInt(min_to_token_amount),
         type: 'sell',
         estimatedGas: undefined,
-        allowanceTarget,
+        allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
         tx: {
           calldata: data,
           to,
