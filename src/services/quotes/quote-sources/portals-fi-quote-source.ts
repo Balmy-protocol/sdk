@@ -2,7 +2,7 @@ import { Addresses } from '@shared/constants';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { isSameAddress } from '@shared/utils';
 import { TokenAddress } from '@types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 
@@ -64,7 +64,7 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<Porta
       minBuyAmount: BigInt(minBuyAmount),
       type: 'sell',
       estimatedGas: gasLimit ? BigInt(gasLimit) : undefined, // Portals does not estimate gas when validate=false
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
         to,
         calldata: data,

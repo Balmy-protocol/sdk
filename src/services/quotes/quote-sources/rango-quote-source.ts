@@ -4,7 +4,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Address, ChainId, TokenAddress } from '@types';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { decodeFunctionData, parseAbi } from 'viem';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
@@ -107,7 +107,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       minBuyAmount: BigInt(outputAmountMin),
       type: 'sell',
       estimatedGas,
-      allowanceTarget,
+      allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
       tx,
       customData: { requestId },
     };

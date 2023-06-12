@@ -5,7 +5,7 @@ import { Chain } from '@types';
 import { GlobalQuoteSourceConfig } from '../types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   name: 'Paraswap',
@@ -38,7 +38,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<Parasw
       sellAmount: BigInt(route.srcAmount),
       buyAmount: BigInt(route.destAmount),
       estimatedGas: BigInt(route.gasCost),
-      allowanceTarget: route.tokenTransferProxy,
+      allowanceTarget: calculateAllowanceTarget(request.sellToken, route.tokenTransferProxy),
       tx: {
         to: route.contractAddress,
         calldata: data,

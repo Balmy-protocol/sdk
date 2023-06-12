@@ -3,7 +3,7 @@ import { Address } from '@types';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { Addresses } from '@shared/constants';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
@@ -78,7 +78,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSuppor
       buyAmount: BigInt(outputTokenAmount),
       calldata: data,
       estimatedGas: BigInt(gas),
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
         to,
         calldata: data,

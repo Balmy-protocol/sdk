@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { Chain } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
@@ -41,7 +41,7 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInch
       sellAmount: params.request.order.sellAmount,
       buyAmount: BigInt(toTokenAmount),
       estimatedGas,
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(params.request.sellToken, to),
       tx: {
         to,
         calldata: data,

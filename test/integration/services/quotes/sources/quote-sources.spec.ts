@@ -204,10 +204,9 @@ describe('Quote Sources', () => {
                 given(async () => {
                   [sellToken, buyToken, recipient, takeFrom] = await Promise.all([request.sellToken, request.buyToken, request.recipient, user]);
                   quote = await quotePromise;
-                  const approveTx =
-                    isSameAddress(quote.allowanceTarget, Addresses.ZERO_ADDRESS) || isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)
-                      ? []
-                      : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: sellToken, from: takeFrom })];
+                  const approveTx = isSameAddress(quote.allowanceTarget, Addresses.ZERO_ADDRESS)
+                    ? []
+                    : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: sellToken, from: takeFrom })];
                   txs = [...approveTx, await execute({ quote, as: takeFrom })];
                 });
                 then('result is as expected', async () => {
@@ -276,6 +275,7 @@ describe('Quote Sources', () => {
         }
         validateMinBuyMaxSell(sourceId, quote);
         if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
+          expect(quote.allowanceTarget).to.equal(Addresses.ZERO_ADDRESS);
           expect(quote.tx.value).to.equal(quote.maxSellAmount);
         } else {
           const isValueNotSet = (value?: bigint) => !value || value === 0n;

@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
   name: 'Firebird',
@@ -84,7 +84,7 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
       sellAmount: order.sellAmount,
       buyAmount: BigInt(totalTo),
       estimatedGas: BigInt(totalGas),
-      allowanceTarget: router,
+      allowanceTarget: calculateAllowanceTarget(sellToken, router),
       tx: {
         to: router,
         calldata: data,

@@ -4,7 +4,7 @@ import { isSameAddress } from '@shared/utils';
 import { AmountOfToken, TokenAddress } from '@types';
 import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 
 const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   name: 'Li.Fi',
@@ -86,7 +86,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContexSource<LiFiSuppor
       minBuyAmount: BigInt(toAmountMin),
       type: 'sell',
       estimatedGas,
-      allowanceTarget: approvalAddress,
+      allowanceTarget: calculateAllowanceTarget(sellToken, approvalAddress),
       tx: {
         to,
         calldata: data,
