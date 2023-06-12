@@ -1,6 +1,6 @@
 import ms from 'ms';
 import { Address, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits, toHex, trim } from 'viem';
 
 export function wait(time: TimeString | number) {
   return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
@@ -79,4 +79,9 @@ export function toTokenInChain(chainId: ChainId, address: TokenAddress): TokenIn
 export function fromTokenInChain(tokenInChain: TokenAddress): { chainId: ChainId; address: TokenAddress } {
   const [chainId, address] = tokenInChain.split(':');
   return { chainId: parseInt(chainId), address };
+}
+
+export function toTrimmedHex(value: BigIntish) {
+  const trimmed = trim(toHex(value));
+  return trimmed.startsWith('0x0') && trimmed !== '0x0' ? trimmed.replace('0x0', '0x') : trimmed;
 }

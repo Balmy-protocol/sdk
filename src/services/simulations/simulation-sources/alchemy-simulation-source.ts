@@ -1,7 +1,7 @@
 import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
 import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
-import { toHex, trim } from 'viem';
+import { toTrimmedHex } from '@shared/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
 
 export class AlchemySimulationSource implements ISimulationSource {
@@ -81,7 +81,7 @@ function fixTransaction(tx: TransactionRequest) {
   // Alchemy doesn't support zeroed data yet, so we make it undefied
   const valueBN = BigInt(tx.value ?? 0);
   const dataBN = BigInt(tx.data ?? 0);
-  const value = valueBN === 0n ? undefined : trim(toHex(valueBN));
+  const value = valueBN === 0n ? undefined : toTrimmedHex(valueBN);
   const data = dataBN === 0n ? undefined : tx.data;
   return { ...tx, data, value };
 }

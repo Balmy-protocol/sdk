@@ -2,8 +2,7 @@ import { Address, ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { Chains, getChainByKey } from '@chains';
 import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { IFetchService } from '@services/fetch';
-import { toHex, trim } from 'viem';
-import { isSameAddress } from '@shared/utils';
+import { isSameAddress, toTrimmedHex } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
 
@@ -70,5 +69,5 @@ export class MoralisPriceSource implements IPriceSource {
 }
 
 function chainIdToValidChain(chainId: ChainId) {
-  return trim(toHex(chainId));
+  return toTrimmedHex(chainId);
 }

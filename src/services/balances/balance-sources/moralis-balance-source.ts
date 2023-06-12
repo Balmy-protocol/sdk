@@ -2,7 +2,7 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { Chains } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
-import { toHex, trim } from 'viem';
+import { toTrimmedHex } from '@shared/utils';
 import { SingleAccountAndChainBaseBalanceSource } from './base/single-account-and-chain-base-balance-source';
 
 const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.CRONOS];
@@ -60,7 +60,7 @@ export class MoralisBalanceSource extends SingleAccountAndChainBaseBalanceSource
 }
 
 function chainIdToValidChain(chainId: ChainId) {
-  return trim(toHex(chainId));
+  return toTrimmedHex(chainId);
 }
 
 function toRecord(balances: { token_address: string; balance: string }[]) {
