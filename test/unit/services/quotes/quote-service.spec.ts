@@ -7,7 +7,7 @@ import { IQuoteSourceList, QuoteRequest } from '@services/quotes';
 import { IPriceService } from '@services/prices';
 import { IMetadataService } from '@services/metadata';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly-quote-source';
 import { SourceListResponse } from '@services/quotes/source-lists/types';
 
 describe('Quote Service', () => {
