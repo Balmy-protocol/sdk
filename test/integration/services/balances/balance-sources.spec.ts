@@ -47,7 +47,11 @@ const TESTS: Record<ChainId, { address: TokenAddress; minAmount: `${number}`; de
     symbol: 'LON',
   },
 };
-const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chains.AURORA.chainId, Chains.OASIS_EMERALD.chainId]);
+const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
+  Chains.AURORA.chainId,
+  Chains.OASIS_EMERALD.chainId,
+  Chains.POLYGON_ZKEVM.chainId,
+]);
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 

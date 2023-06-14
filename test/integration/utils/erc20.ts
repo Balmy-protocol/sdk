@@ -177,6 +177,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
     },
   },
+  [Chains.POLYGON_ZKEVM.chainId]: {
+    STABLE_ERC20: {
+      address: '0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035',
+      whale: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+    },
+    RANDOM_ERC20: {
+      address: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
+      whale: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+    },
+    wToken: {
+      address: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+      whale: '0x89715e5b0deb3dcf82ca6485ad2a496ca502223d',
+    },
+  },
   // Note: we are disabling EVMOS because tests fail to load quite often on that network
   // [Chains.EVMOS.chainId]: {
   //   STABLE_ERC20: {
