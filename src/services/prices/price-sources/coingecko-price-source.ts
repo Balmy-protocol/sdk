@@ -34,6 +34,7 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
   [Chains.FUSE.chainId]: { chainKey: 'fuse', nativeTokenKey: 'fuse-network-token' },
   [Chains.ARBITRUM.chainId]: { chainKey: 'arbitrum-one', nativeTokenKey: 'ethereum' },
   [Chains.GNOSIS.chainId]: { chainKey: 'xdai', nativeTokenKey: 'xdai' },
+  [Chains.POLYGON.chainId]: { chainKey: 'polygon-zkevm', nativeTokenKey: 'ethereum' },
 };
 export class CoingeckoPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
