@@ -28,7 +28,6 @@ const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ROOTSTOCK.chainId]: 'rsk',
   [Chains.EVMOS.chainId]: 'evmos',
   [Chains.CANTO.chainId]: 'canto',
-  [Chains.POLYGON_ZKEVM.chainId]: 'polygon_zkevm',
 
   // TODO: these chains are also supported by DefiLlama. We should add them
   // "kcc",

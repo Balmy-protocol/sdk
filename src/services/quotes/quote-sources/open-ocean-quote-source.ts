@@ -23,7 +23,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ONTOLOGY.chainId]: 'ont',
   [Chains.AURORA.chainId]: 'aurora',
   [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
-  [Chains.POLYGON_ZKEVM.chainId]: 'polygon_zkevm',
 };
 
 const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {

@@ -325,15 +325,6 @@ export const Chains = {
     publicRPCs: ['https://mycrypto.rsk.co', 'https://public-node.rsk.co'],
     explorer: 'https://explorer.rsk.co/',
   },
-  POLYGON_ZKEVM: {
-    chainId: 1101,
-    name: 'Polygon zkEVM',
-    ids: ['polygon-zkevm'],
-    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
-    wToken: '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9',
-    publicRPCs: ['https://zkevm-rpc.com', 'https://rpc.ankr.com/polygon_zkevm', 'https://rpc.polygon-zkevm.gateway.fm'],
-    explorer: 'https://zkevm.polygonscan.com/',
-  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
