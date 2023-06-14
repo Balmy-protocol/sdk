@@ -17,6 +17,7 @@ import { AggregatorGasPriceSource } from '@services/gas/gas-price-sources/aggreg
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
 import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
 import { ProviderService } from '@services/providers/provider-service';
+import { CHAINS_WITH_KNOWN_ISSUES } from '@test-utils/other';
 
 const FETCH_SERVICE = new FetchService();
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
@@ -51,6 +52,7 @@ describe('Gas Price Sources', () => {
     describe(title, () => {
       for (const chainIdString in source.supportedSpeeds()) {
         const chainId = Number(chainIdString);
+        if (CHAINS_WITH_KNOWN_ISSUES.includes(chainId)) continue;
         const chain = getChainByKey(chainId);
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test.concurrent(`Gas prices are valid values`, async () => {
