@@ -7,7 +7,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
 const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
-  name: 'Li.Fi',
+  name: 'LI.FI',
   supports: {
     chains: [
       Chains.ETHEREUM.chainId,
