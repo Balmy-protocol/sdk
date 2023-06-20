@@ -7,3 +7,4 @@ export * from './providers';
 export * from './quotes';
 export * from './metadata';
 export * from './prices';
+export * from './logs';
