@@ -21,7 +21,7 @@ import { CHAINS_WITH_KNOWN_ISSUES } from '@test-utils/other';
 import { LogsService } from '@services/logs/logs-service';
 
 const LOGS_SERVICE = new LogsService('ALL');
-const FETCH_SERVICE = new FetchService(1 as any);
+const FETCH_SERVICE = new FetchService();
 const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const PARASWAP_SOURCE = new ParaswapGasPriceSource(FETCH_SERVICE);
 const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SERVICE);
@@ -29,7 +29,7 @@ const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(FETCH_SERVICE);
 const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSource({ config: { ethers: { quorum: 1 } } })));
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [OPEN_OCEAN_SOURCE], 'median');
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [OPEN_OCEAN_SOURCE, RPC_SOURCE], 'median');
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
 const CHANGELLY_GAS_SOURCE = new ChangellyGasPriceSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
