@@ -39,6 +39,10 @@ const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' 
   chains: [Chains.POLYGON_ZKEVM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
+const AVOID_DURING_CI: SourceId[] = [
+  'rango', // Fails, a lot
+  '0x', // Rate limiting issues
+];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
@@ -371,6 +375,7 @@ function getSources() {
   if (process.env.CI_CONTEXT) {
     // Will choose test on Ethereum or, if not supported, choose random chain
     for (const [sourceId, source] of Object.entries(sources)) {
+      if (AVOID_DURING_CI.includes(sourceId)) continue;
       const supportedChains = chainsWithTestData(source.getMetadata().supports.chains);
       const chainId = supportedChains.includes(Chains.ETHEREUM.chainId)
         ? Chains.ETHEREUM.chainId

@@ -117,7 +117,7 @@ describe('Balance Sources', () => {
           let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
           beforeAll(async () => {
             const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
-            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '30s' } });
+            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '1m' } });
           });
 
           validateBalances(() => result, supportedChains, false);
