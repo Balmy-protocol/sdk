@@ -191,6 +191,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x89715e5b0deb3dcf82ca6485ad2a496ca502223d',
     },
   },
+  [Chains.KAVA.chainId]: {
+    STABLE_ERC20: {
+      address: '0xdb0e1e86b01c4ad25241b1843e407efc4d615248',
+      whale: '0xcc35FD8B11e66aB413dc520c920F396c2c1096Eb',
+    },
+    RANDOM_ERC20: {
+      address: '0xe1da44c0da55b075ae8e2e4b6986adc76ac77d73',
+      whale: '0x3a724E0082b0E833670cF762Ea6bd711bcBdFf37',
+    },
+    wToken: {
+      address: '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b',
+      whale: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+    },
+  },
   // Note: we are disabling EVMOS because tests fail to load quite often on that network
   // [Chains.EVMOS.chainId]: {
   //   STABLE_ERC20: {

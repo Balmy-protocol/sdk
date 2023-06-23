@@ -334,6 +334,15 @@ export const Chains = {
     publicRPCs: ['https://zkevm-rpc.com', 'https://rpc.ankr.com/polygon_zkevm', 'https://rpc.polygon-zkevm.gateway.fm'],
     explorer: 'https://zkevm.polygonscan.com/',
   },
+  KAVA: {
+    chainId: 2222,
+    name: 'Kava',
+    ids: ['kava'],
+    nativeCurrency: { symbol: 'KAVA', name: 'Kava' },
+    wToken: '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b',
+    publicRPCs: ['https://evm.kava.io', 'https://evm2.kava.io'],
+    explorer: 'https://explorer.kava.io',
+  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
