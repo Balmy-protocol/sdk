@@ -13,7 +13,7 @@ export type AllowanceSourceInput =
   | { type: 'cached'; underlyingSource: AllowanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IAllowanceSource }
   | { type: 'alchemy'; key: string }
-  | { type: 'magpie'; key: IAllowanceSource };
+  | { type: 'magpie' };
 export type BuildAllowanceParams = { source: AllowanceSourceInput };
 
 export function buildAllowanceService(
