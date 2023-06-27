@@ -205,6 +205,22 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
     },
   },
+  // Note: hardhat + Celo throws `Errors: Invalid value undefined supplied to : RpcBlockWithTransactions | null/sha3Uncles: HASH, Invalid value undefined supplied to : RpcBlockWithTransactions | null/difficulty` error.
+  // Ref.: https://github.com/NomicFoundation/hardhat/issues/3590
+  // [Chains.CELO.chainId]: {
+  //   STABLE_ERC20: {
+  //     address: '0x765de816845861e75a25fca122bb6898b8b1282a',
+  //     whale: '0x246f4599eFD3fA67AC44335Ed5e749E518Ffd8bB',
+  //   },
+  //   RANDOM_ERC20: {
+  //     address: '0xc668583dcbdc9ae6fa3ce46462758188adfdfc24',
+  //     whale: '0x08baFb4400A102Dddc5e5d584abf0aA38E174c57',
+  //   },
+  //   wToken: {
+  //     address: '0x149d5bf28fbace2950b52d4aca1c79bfd9bbb6fc',
+  //     whale: '0xA5c453BC33FD9C5C798Ac24F666fa2B49E0a87fe',
+  //   },
+  // },
   // Note: we are disabling EVMOS because tests fail to load quite often on that network
   // [Chains.EVMOS.chainId]: {
   //   STABLE_ERC20: {

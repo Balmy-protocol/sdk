@@ -19,6 +19,7 @@ const SUPPORTED_CHAINS = [
   Chains.BOBA,
   Chains.POLYGON_ZKEVM,
   Chains.KAVA,
+  Chains.CELO,
 ];
 
 type GasValues = GasValueForVersions<'standard' | 'fast' | 'instant'>;

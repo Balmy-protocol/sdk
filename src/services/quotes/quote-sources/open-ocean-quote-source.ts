@@ -25,6 +25,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
   [Chains.POLYGON_ZKEVM.chainId]: 'polygon_zkevm',
   [Chains.KAVA.chainId]: 'kava',
+  [Chains.CELO.chainId]: 'celo',
 };
 
 const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
