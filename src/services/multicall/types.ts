@@ -2,7 +2,7 @@ import { Address, BigIntish, ChainId } from '@types';
 
 export type IMulticallService = {
   supportedChains(): ChainId[];
-  readOnlyMulticall<T>(_: MulticallArgs): Promise<T[]>;
+  readOnlyMulticall<T = any>(_: MulticallArgs): Promise<T[]>;
   tryReadOnlyMulticall<T = any>(_: MulticallArgs): Promise<CallResult<T>[]>;
 };
 

@@ -25,9 +25,9 @@ export class MulticallService implements IMulticallService {
     return chainsIntersection(this.providerService.supportedChains(), SUPPORTED_CHAINS);
   }
 
-  async readOnlyMulticall(args: MulticallArgs): Promise<any[]> {
+  async readOnlyMulticall<T>(args: MulticallArgs): Promise<T[]> {
     if (args.calls.length === 0) return [];
-    return this.multicall({ ...args, allowFailure: false });
+    return this.multicall({ ...args, allowFailure: false }) as Promise<T[]>;
   }
 
   async tryReadOnlyMulticall<T>(args: MulticallArgs) {
