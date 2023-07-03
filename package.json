@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "alchemy-sdk": "2.9.0",
-    "cross-fetch": "3.1.5",
+    "cross-fetch": "3.1.8",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
     "viem": "1.0.5"
