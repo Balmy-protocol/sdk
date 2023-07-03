@@ -10,6 +10,7 @@ export const MEAN_FINANCE_SUPPORTED_CHAINS = [
   Chains.POLYGON,
   Chains.BNB_CHAIN,
   Chains.ARBITRUM,
+  Chains.GNOSIS,
   Chains.BASE_GOERLI,
 ].map(({ chainId }) => chainId);
 
