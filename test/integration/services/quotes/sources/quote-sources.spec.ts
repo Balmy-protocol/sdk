@@ -41,7 +41,6 @@ const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' 
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 const AVOID_DURING_CI: SourceId[] = [
   'rango', // Fails, a lot
-  '0x', // Rate limiting issues
 ];
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
