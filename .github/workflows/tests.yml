@@ -51,7 +51,7 @@ jobs:
         timeout-minutes: 15
 
   integration-quotes:
-    needs: ["integration"]
+    needs: ['integration']
     runs-on: ubuntu-latest
     steps:
       - name: Check out github repository
