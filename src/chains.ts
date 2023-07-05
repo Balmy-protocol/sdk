@@ -203,8 +203,12 @@ export const Chains = {
     publicRPCs: [
       'https://rpc.gnosischain.com/',
       'https://gnosischain-rpc.gateway.pokt.network',
+      'https://xdai-rpc.gateway.pokt.network',
       'https://rpc.ankr.com/gnosis',
       'https://xdai-archive.blockscout.com',
+      'https://gnosis-mainnet.public.blastapi.io',
+      'https://gnosis.blockpi.network/v1/rpc/public',
+      'https://rpc.gnosis.gateway.fm',
     ],
     explorer: 'https://gnosisscan.io/',
   },

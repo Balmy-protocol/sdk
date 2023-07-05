@@ -1,9 +1,8 @@
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
 
 const ZRX_API: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'https://api.0x.org',
@@ -27,9 +26,9 @@ const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   },
   logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
 };
-type ZRXConfig = { apiKey?: string };
+type ZRXConfig = { apiKey: string };
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
-export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport, ZRXConfig> {
+export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig> {
   getMetadata() {
     return ZRX_METADATA;
   }
@@ -66,10 +65,9 @@ export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport,
       url += `&buyAmount=${order.buyAmount.toString()}`;
     }
 
-    const headers: HeadersInit = {};
-    if (config?.apiKey) {
-      headers['0x-api-key'] = config.apiKey;
-    }
+    const headers: HeadersInit = {
+      ['0x-api-key']: config.apiKey,
+    };
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
@@ -90,5 +88,9 @@ export class ZRXQuoteSource extends AlwaysValidConfigAndContexSource<ZRXSupport,
     };
 
     return addQuoteSlippage(quote, order.type, isSameAddress(to, chain.wToken) ? 0 : slippagePercentage);
+  }
+
+  isConfigAndContextValid(config: Partial<ZRXConfig> | undefined): config is ZRXConfig {
+    return !!config?.apiKey;
   }
 }
