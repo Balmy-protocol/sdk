@@ -3,7 +3,7 @@ import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculator, SupportedGasValues, IGasPriceSource, GasEstimation, GasPrice } from './types';
 import { timeoutPromise } from '@shared/timeouts';
-import { validateRequirements } from '@shared/requirements-and-support';
+import { doesResponseMeetRequirements, validateRequirements } from '@shared/requirements-and-support';
 import { mapTxToViemTx } from '@shared/viem';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
@@ -45,6 +45,9 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     validateRequirements(this.supportedSpeeds(), [chainId], config?.fields);
     const support = this.supportedSpeeds()[chainId];
     const gasPriceData = await timeoutPromise(this.gasPriceSource.getGasPrice({ chainId, config }), config?.timeout);
+    if (!doesResponseMeetRequirements(gasPriceData, config?.fields)) {
+      throw new Error('Failed to fetch gas prices that meet the given requirements');
+    }
     return {
       supportedSpeeds: () => support,
       getGasPrice: () => gasPriceData,
