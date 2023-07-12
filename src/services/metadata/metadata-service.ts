@@ -1,4 +1,4 @@
-import { validateRequirements } from '@shared/requirements-and-support';
+import { doesResponseMeetRequirements, validateRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, DefaultRequirements, FieldsRequirements, TimeString, TokenAddress } from '@types';
 import { IMetadataService, IMetadataSource } from './types';
@@ -28,7 +28,7 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
     return result[chainId] ?? {};
   }
 
-  getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
+  async getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
     addresses,
     config,
   }: {
@@ -37,6 +37,10 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
   }) {
     const chains = Object.keys(addresses).map(Number);
     validateRequirements(this.supportedProperties(), chains, config?.fields);
-    return timeoutPromise(this.metadataSource.getMetadata({ addresses, config }), config?.timeout);
+    const response = await timeoutPromise(this.metadataSource.getMetadata({ addresses, config }), config?.timeout);
+    if (!doesResponseMeetRequirements(response, config?.fields)) {
+      throw new Error('Failed to fetch metadata that meets the given requirements');
+    }
+    return response;
   }
 }
