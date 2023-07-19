@@ -52,6 +52,3 @@ export type BuildParams = {
   quotes?: BuildQuoteParams;
   logs?: BuildLogsParams;
 };
-
-const sdk = buildSDK();
-const arbitrary = sdk.permit2Service.arbitrary;

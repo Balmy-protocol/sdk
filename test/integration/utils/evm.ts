@@ -7,6 +7,7 @@ export const fork = async ({ chain, blockNumber }: { chain: Chain; blockNumber?:
     {
       forking: {
         jsonRpcUrl: getUrl(chain),
+        blockNumber,
       },
     },
   ];

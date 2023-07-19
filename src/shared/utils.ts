@@ -31,6 +31,7 @@ export function mulDivByNumber(amount: BigIntish, mul: number, div: number, roun
 
 export function calculateDeadline(txValidFor: TimeString): number;
 export function calculateDeadline(txValidFor: undefined): undefined;
+export function calculateDeadline(txValidFor: TimeString | undefined): number | undefined;
 export function calculateDeadline(txValidFor: TimeString | undefined): number | undefined {
   return txValidFor ? Math.floor((Date.now() + ms(txValidFor)) / 1000) : undefined;
 }

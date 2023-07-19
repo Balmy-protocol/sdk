@@ -44,8 +44,6 @@ await tokenContract.approve(
 );
 ```
 
-# TODO
-
 ### Arbitrary Calls
 
 Re-deploying contracts can be difficult and time-consuming. Also, sometimes it's just impossible to migrate liquidity. This service will allow you to integrate your existing contract with Permit2, without having to re-deploy.

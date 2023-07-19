@@ -5,3 +5,4 @@ coverage
 .env
 newrelic_agent.log
 yarn-error.log
+cache
