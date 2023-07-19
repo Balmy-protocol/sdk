@@ -6,6 +6,7 @@ export {
   TimeString,
   Chain,
   ChainId,
+  ContractCall,
   Address,
   TokenAddress,
   SupportRecord,

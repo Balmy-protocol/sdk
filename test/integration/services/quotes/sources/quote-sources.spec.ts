@@ -64,7 +64,7 @@ describe('Quote Sources', () => {
       let snapshot: SnapshotRestorer;
 
       beforeAll(async () => {
-        await fork(chain);
+        await fork({ chain });
         const [userSigner, recipientSigner] = await ethers.getSigners();
         const tokens = await loadTokens(chain);
 

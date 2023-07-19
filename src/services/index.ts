@@ -8,3 +8,4 @@ export * from './quotes';
 export * from './metadata';
 export * from './prices';
 export * from './logs';
+export * from './permit2';

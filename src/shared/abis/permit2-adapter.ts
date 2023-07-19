@@ -1,0 +1,18 @@
+export const PERMIT2_ADAPTER_ABI = [
+  'constructor(address _permit2)',
+  'error AddressEmptyCode(address target)',
+  'error AddressInsufficientBalance(address account)',
+  'error FailedInnerCall()',
+  'error InvalidNativeAmount(uint256 received, uint256 expected)',
+  'error ReceivedTooLittleTokenOut(uint256 received, uint256 expected)',
+  'error SafeERC20FailedOperation(address token)',
+  'error TransactionDeadlinePassed(uint256 current, uint256 deadline)',
+  'function NATIVE_TOKEN() view returns (address)',
+  'function PERMIT2() view returns (address)',
+  'function buyOrderSwap((uint256 deadline, address tokenIn, uint256 maxAmountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 amountOut, (address recipient, uint256 shareBps)[] transferOut, address unspentTokenInRecipient) _params) payable returns (uint256 _amountIn, uint256 _amountOut)',
+  'function buyOrderSwapWithGasMeasurement((uint256 deadline, address tokenIn, uint256 maxAmountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 amountOut, (address recipient, uint256 shareBps)[] transferOut, address unspentTokenInRecipient) _params) payable returns (uint256 _amountIn, uint256 _amountOut, uint256 _gasSpent)',
+  'function executeWithBatchPermit(((address token, uint256 amount)[] tokens, uint256 nonce, bytes signature) _batchPermit, (address token, address allowanceTarget)[] _allowanceTargets, (address target, bytes data, uint256 value)[] _contractCalls, (address token, (address recipient, uint256 shareBps)[] distribution)[] _transferOut, uint256 _deadline) payable returns (bytes[] _executionResults, uint256[] _tokenBalances)',
+  'function executeWithPermit((address token, uint256 amount, uint256 nonce, bytes signature) _permit, (address token, address allowanceTarget)[] _allowanceTargets, (address target, bytes data, uint256 value)[] _contractCalls, (address token, (address recipient, uint256 shareBps)[] distribution)[] _transferOut, uint256 _deadline) payable returns (bytes[] _executionResults, uint256[] _tokenBalances)',
+  'function sellOrderSwap((uint256 deadline, address tokenIn, uint256 amountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 minAmountOut, (address recipient, uint256 shareBps)[] transferOut) _params) payable returns (uint256 _amountIn, uint256 _amountOut)',
+  'function sellOrderSwapWithGasMeasurement((uint256 deadline, address tokenIn, uint256 amountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 minAmountOut, (address recipient, uint256 shareBps)[] transferOut) _params) payable returns (uint256 _amountIn, uint256 _amountOut, uint256 _gasSpent)',
+];

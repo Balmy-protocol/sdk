@@ -49,6 +49,8 @@ jobs:
       - name: Run integration tests
         run: yarn test:integration
         timeout-minutes: 15
+        env:
+          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
 
   integration-quotes:
     needs: ['integration']
@@ -70,7 +72,7 @@ jobs:
         run: yarn --frozen-lockfile
 
       - name: Run integration tests
-        run: yarn test:integration
+        run: yarn test:integration:quotes
         timeout-minutes: 15
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
