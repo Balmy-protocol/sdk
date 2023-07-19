@@ -41,7 +41,7 @@ describe('Quote Service', () => {
       let snapshot: SnapshotRestorer;
 
       beforeAll(async () => {
-        await fork(chain);
+        await fork({ chain });
         [user] = await ethers.getSigners();
         ({ nativeToken, STABLE_ERC20 } = await loadTokens(chain));
         await mint({ amount: ONE_NATIVE_TOKEN * 3n, of: nativeToken, to: user });
