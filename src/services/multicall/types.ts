@@ -1,4 +1,4 @@
-import { Address, BigIntish, ChainId } from '@types';
+import { BigIntish, ChainId, ContractCall } from '@types';
 
 export type IMulticallService = {
   supportedChains(): ChainId[];
@@ -12,12 +12,7 @@ export type FailedCall = { status: 'failure'; result?: undefined; error: string 
 export type ExecuteCallAt = { block: { number: BigIntish } };
 export type MulticallArgs = {
   chainId: ChainId;
-  calls: {
-    address: Address;
-    abi: { humanReadable: string[] } | { json: readonly any[] };
-    functionName: string;
-    args?: any[];
-  }[];
+  calls: ContractCall[];
   batching?: { maxSizeInBytes: number };
   at?: ExecuteCallAt;
 };
