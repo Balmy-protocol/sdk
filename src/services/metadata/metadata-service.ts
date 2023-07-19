@@ -38,9 +38,21 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
     const chains = Object.keys(addresses).map(Number);
     validateRequirements(this.supportedProperties(), chains, config?.fields);
     const response = await timeoutPromise(this.metadataSource.getMetadata({ addresses, config }), config?.timeout);
-    if (!doesResponseMeetRequirements(response, config?.fields)) {
-      throw new Error('Failed to fetch metadata that meets the given requirements');
-    }
+    validateResponse(addresses, response, config?.fields);
     return response;
+  }
+}
+
+function validateResponse<Values extends object, Requirements extends FieldsRequirements<Values>>(
+  request: Record<ChainId, TokenAddress[]>,
+  response: Record<ChainId, Record<TokenAddress, Values>>,
+  requirements: Requirements | undefined
+) {
+  for (const chainId in request) {
+    for (const token of request[chainId]) {
+      if (!doesResponseMeetRequirements(response[chainId][token], requirements)) {
+        throw new Error('Failed to fetch metadata that meets the given requirements');
+      }
+    }
   }
 }
