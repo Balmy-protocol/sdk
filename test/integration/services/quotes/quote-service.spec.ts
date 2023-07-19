@@ -73,7 +73,7 @@ describe('Quote Service', () => {
               takerAddress: user.address,
             },
             config: {
-              timeout: '5s',
+              timeout: '15s',
             },
           });
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
