@@ -116,7 +116,7 @@ export type ArbitraryCallWithNativeParams = {
 
 export type GenericContractCall = (EncondedContractCall | ContractCall) & { value?: BigIntish };
 export type DistributionTarget = { recipient: Address; shareBps: number };
-type EncondedContractCall = { target: Address; data: string };
+type EncondedContractCall = { to: Address; data: string };
 
 export type Permit2Transaction = {
   to: Address;
