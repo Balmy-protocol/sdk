@@ -130,7 +130,8 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     const encodedCalls = calls.map((call) =>
       'data' in call
         ? {
-            ...call,
+            target: call.to,
+            data: call.data,
             value: call.value ?? 0,
           }
         : {
