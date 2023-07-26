@@ -13,7 +13,7 @@ export type IPermit2ArbitraryService = {
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): Permit2Transaction;
   buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): Permit2Transaction;
-  buildArbitraryCallWithNative(params: ArbitraryCallWithNativeParams): Permit2Transaction;
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): Permit2Transaction;
 };
 
 export type SinglePermitParams = {
@@ -106,17 +106,16 @@ export type BaseArbitraryCallParams = {
   distribution?: Record<TokenAddress, DistributionTarget[]>;
 };
 
-export type ArbitraryCallWithNativeParams = {
+export type ArbitraryCallWithoutPermitParams = {
   calls: GenericContractCall[];
-  amountOfNative: BigIntish;
   txValidFor: TimeString;
   allowanceTargets?: { token: TokenAddress; target: Address }[];
   distribution?: Record<TokenAddress, DistributionTarget[]>;
 };
 
-export type GenericContractCall = (EncondedContractCall | ContractCall) & { value?: BigIntish };
+export type GenericContractCall = (EncodedContractCall | ContractCall) & { value?: BigIntish };
 export type DistributionTarget = { recipient: Address; shareBps: number };
-type EncondedContractCall = { to: Address; data: string };
+type EncodedContractCall = { to: Address; data: string };
 
 export type Permit2Transaction = {
   to: Address;

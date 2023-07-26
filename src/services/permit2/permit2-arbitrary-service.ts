@@ -1,12 +1,11 @@
 import { encodeFunctionData, parseAbi } from 'viem';
-import { BigIntish } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { calculateDeadline } from '@shared/utils';
 import { PERMIT2_ADAPTER_ABI } from '@shared/abis/permit2-adapter';
 import { Addresses } from '@shared/constants';
 import {
   ArbitraryCallWithBatchPermitParams,
-  ArbitraryCallWithNativeParams,
+  ArbitraryCallWithoutPermitParams,
   ArbitraryCallWithPermitParams,
   BaseArbitraryCallParams,
   BatchPermitData,
@@ -98,10 +97,9 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     });
   }
 
-  buildArbitraryCallWithNative(params: ArbitraryCallWithNativeParams): Permit2Transaction {
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): Permit2Transaction {
     const permitData = {
-      token: Addresses.ZERO_ADDRESS,
-      amount: params.amountOfNative,
+      tokens: [],
       nonce: 0,
       signature: '0x',
       deadline: calculateDeadline(params.txValidFor),
@@ -109,8 +107,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return this.buildArbitraryCallInternal({
       ...params,
       permitData,
-      value: params.amountOfNative,
-      functionName: 'executeWithPermit',
+      functionName: 'executeWithBatchPermit',
     });
   }
 
@@ -120,8 +117,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     allowanceTargets,
     distribution,
     functionName,
-    value,
-  }: BaseArbitraryCallParams & { functionName: string; value?: BigIntish }) {
+  }: BaseArbitraryCallParams & { functionName: string }) {
     if (calls.length === 0) throw new Error('Must submit at least one call');
     const repeatedToken = findRepeatedKey(distribution ?? {});
     if (repeatedToken) throw new Error(`Found token '${repeatedToken}' more than once, with different casing`);
@@ -145,6 +141,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
           }
     );
     const transferOut = Object.entries(distribution ?? {}).map(([token, distribution]) => ({ token, distribution }));
+    const totalValue = calls.reduce((sum, { value }) => sum + BigInt(value ?? 0), 0n);
 
     const data = encodeFunctionData({
       abi: parseAbi(PERMIT2_ADAPTER_ABI),
@@ -155,7 +152,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return {
       to: PERMIT2_ADAPTER_ADDRESS,
       data,
-      value: value?.toString(),
+      value: totalValue.toString(),
     };
   }
 }
