@@ -7,7 +7,7 @@ export {
   BatchPermitData,
   ArbitraryCallWithPermitParams,
   ArbitraryCallWithBatchPermitParams,
-  ArbitraryCallWithNativeParams,
+  ArbitraryCallWithoutPermitParams,
   GenericContractCall,
   DistributionTarget,
   Permit2Transaction,
