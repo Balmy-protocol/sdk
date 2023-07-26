@@ -106,11 +106,11 @@ describe('Permit2 Arbitrary Service', () => {
     expect(vaultBalance).to.be.gt(0);
   });
 
-  it('buildArbitraryCallWithNative', async () => {
+  it('buildArbitraryCallWithoutPermit', async () => {
     const VAULT = '0xc4d4500326981eacd020e20a81b1c479c161c7ef';
 
     // Build tx
-    const tx = arbitrary.buildArbitraryCallWithNative({
+    const tx = arbitrary.buildArbitraryCallWithoutPermit({
       // Provide allowance for vault
       allowanceTargets: [{ token: wToken.address, target: VAULT }],
 
@@ -139,7 +139,6 @@ describe('Permit2 Arbitrary Service', () => {
       },
 
       // Set special config
-      amountOfNative: AMOUNT_TO_DEPOSIT_WETH,
       txValidFor: '2y',
     });
 
