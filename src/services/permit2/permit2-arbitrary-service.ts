@@ -99,7 +99,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
 
   buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): Permit2Transaction {
     const permitData = {
-      token: Addresses.ZERO_ADDRESS,
+      tokens: [],
       nonce: 0,
       signature: '0x',
       deadline: calculateDeadline(params.txValidFor),
@@ -107,7 +107,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return this.buildArbitraryCallInternal({
       ...params,
       permitData,
-      functionName: 'executeWithPermit',
+      functionName: 'executeWithBatchPermit',
     });
   }
 
