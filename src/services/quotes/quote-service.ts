@@ -25,6 +25,7 @@ import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 import { SourceConfig, SourceWithConfigId } from './source-registry';
 import {
+  FailedToGenerateAnyQuotesError,
   FailedToGenerateQuoteError,
   SourceNoBuyOrdersError,
   SourceNoSwapAndTransferError,
@@ -198,6 +199,27 @@ export class QuoteService implements IQuoteService {
     );
 
     return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
+  }
+
+  async getBestQuote({
+    request,
+    config,
+  }: {
+    request: QuoteRequest;
+    config?: { choose?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
+  }): Promise<QuoteResponse> {
+    const allQuotes = await this.getAllQuotes({
+      request,
+      config: {
+        timeout: config?.timeout,
+        sort: config?.choose,
+        ignoredFailed: true,
+      },
+    });
+    if (allQuotes.length === 0) {
+      throw new FailedToGenerateAnyQuotesError(request.chainId, request.sellToken, request.buyToken);
+    }
+    return allQuotes[0];
   }
 
   private async listResponseToQuoteResponse({

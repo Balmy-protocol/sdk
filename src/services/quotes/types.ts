@@ -48,6 +48,16 @@ export type IQuoteService = {
       timeout?: TimeString;
     };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+  getBestQuote(_: {
+    request: QuoteRequest;
+    config?: {
+      choose?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+      timeout?: TimeString;
+    };
+  }): Promise<QuoteResponse>;
 };
 
 export type QuoteRequest = {
