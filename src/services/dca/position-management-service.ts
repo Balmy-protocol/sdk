@@ -114,7 +114,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'increasePosition',
-          args: [BigInt(positionId), 0n, 0],
+          args: [BigInt(positionId), BigInt(increaseInfo.amount), amountOfSwaps],
         }),
       };
     }
