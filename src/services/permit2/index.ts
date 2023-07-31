@@ -10,5 +10,4 @@ export {
   ArbitraryCallWithoutPermitParams,
   GenericContractCall,
   DistributionTarget,
-  Permit2Transaction,
 } from './types';

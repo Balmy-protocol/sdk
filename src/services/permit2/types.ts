@@ -1,19 +1,21 @@
-import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, TimeString, TokenAddress, TransactionResponse } from '@types';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
 
 export type IPermit2Service = {
   permit2ContractAddress: Address;
   arbitrary: IPermit2ArbitraryService;
   calculateNonce(params: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<string>;
+  preparePermitData(params: GenericSinglePermitParams): Promise<PermitData>;
+  prepareBatchPermitData(params: GenericBatchPermitParams): Promise<BatchPermitData>;
 };
 
 export type IPermit2ArbitraryService = {
   contractAddress: Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
-  buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): Permit2Transaction;
-  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): Permit2Transaction;
-  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): Permit2Transaction;
+  buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): TransactionResponse;
+  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): TransactionResponse;
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): TransactionResponse;
 };
 
 export type SinglePermitParams = {
@@ -24,6 +26,7 @@ export type SinglePermitParams = {
   amount: BigIntish;
   signatureValidFor: TimeString;
 };
+export type GenericSinglePermitParams = { spender: Address } & SinglePermitParams;
 
 export type BatchPermitParams = {
   appId: BigIntish;
@@ -32,6 +35,7 @@ export type BatchPermitParams = {
   tokens: Record<TokenAddress, BigIntish>;
   signatureValidFor: TimeString;
 };
+export type GenericBatchPermitParams = { spender: Address } & BatchPermitParams;
 
 export type PermitData = {
   dataToSign: {
@@ -116,9 +120,3 @@ export type ArbitraryCallWithoutPermitParams = {
 export type GenericContractCall = (EncodedContractCall | ContractCall) & { value?: BigIntish };
 export type DistributionTarget = { recipient: Address; shareBps: number };
 type EncodedContractCall = { to: Address; data: string };
-
-export type Permit2Transaction = {
-  to: Address;
-  data: string;
-  value?: AmountOfToken;
-};
