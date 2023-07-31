@@ -470,7 +470,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
         takerAddress: COMPANION_SWAPPER_ADDRESS,
         recipient: COMPANION_SWAPPER_ADDRESS,
         txValidFor,
-        filters: { includeSources: ['mean-finance'] }, // For now, we only need this source
+        filters: { includeSources: ['mean-finance'] }, // TODO: allow more sources and simulate to find the best one
         sourceConfig: { custom: { ['mean-finance']: { leftoverRecipient } } },
       },
       config: {
