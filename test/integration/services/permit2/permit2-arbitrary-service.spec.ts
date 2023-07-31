@@ -8,12 +8,12 @@ import { IPermit2ArbitraryService } from '@services/permit2/types';
 import { fork } from '@test-utils/evm';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { Permit2ArbitraryService } from '@services/permit2/permit2-arbitrary-service';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { TestToken, approve, balance, loadTokens, mint } from '@test-utils/erc20';
 import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
 import { Uint } from '@shared/constants';
 import { parseUnits } from 'viem';
+import { Permit2Service } from '@services/permit2/permit2-service';
 
 jest.retryTimes(3).setTimeout(ms('2m'));
 
@@ -45,7 +45,7 @@ describe('Permit2 Arbitrary Service', () => {
     await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS, for: wToken, from: user });
     chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     snapshot = await takeSnapshot();
-    arbitrary = new Permit2ArbitraryService(new MulticallService(new ProviderService(new PublicRPCsSource())));
+    arbitrary = new Permit2Service(new MulticallService(new ProviderService(new PublicRPCsSource()))).arbitrary;
   });
 
   afterEach(async () => {
