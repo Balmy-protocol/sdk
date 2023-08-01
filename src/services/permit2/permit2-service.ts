@@ -2,13 +2,11 @@ import { Address, BigIntish, ChainId } from '@types';
 import { IMulticallService } from '@services/multicall';
 import {
   BatchPermitData,
-  BatchPermitParams,
   GenericBatchPermitParams,
   GenericSinglePermitParams,
   IPermit2ArbitraryService,
   IPermit2Service,
   PermitData,
-  SinglePermitParams,
 } from './types';
 import { Permit2ArbitraryService } from './permit2-arbitrary-service';
 import { PERMIT2_ADDRESS, WORDS_FOR_NONCE_CALCULATION } from './utils/config';

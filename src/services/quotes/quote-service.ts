@@ -375,8 +375,11 @@ export class QuoteService implements IQuoteService {
   }
 }
 
-function ifNotFailed<T1 extends object, T2 extends object>(response: T1 | FailedQuote, mapped: (_: T1) => T2): T2 | FailedQuote {
-  return 'failed' in response ? response : mapped(response);
+export function ifNotFailed<T1 extends FailedQuote | object, T2>(
+  response: T1 | FailedQuote,
+  mapped: (_: T1) => T2
+): T1 extends FailedQuote ? FailedQuote : T2 {
+  return ('failed' in response ? response : mapped(response)) as T1 extends FailedQuote ? FailedQuote : T2;
 }
 
 function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: AmountOfToken) {

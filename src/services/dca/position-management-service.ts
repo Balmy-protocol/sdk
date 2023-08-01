@@ -3,6 +3,7 @@ import { Address, BigIntish, ChainId, TokenAddress, TransactionResponse } from '
 import companionAbi from '@shared/abis/companion';
 import dcaHubAbi from '@shared/abis/dca-hub';
 import { SinglePermitParams, PermitData, IPermit2Service } from '@services/permit2';
+import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
 import { isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
@@ -28,6 +29,26 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     private readonly quoteService: IQuoteService
   ) {}
 
+  getAllowanceTarget({
+    chainId,
+    from,
+    depositWith,
+    usePermit2,
+  }: {
+    chainId: ChainId;
+    from: TokenAddress;
+    depositWith: TokenAddress;
+    usePermit2?: boolean;
+  }): Address {
+    if (usePermit2) {
+      return PERMIT2_ADDRESS;
+    } else if (isSameAddress(from, depositWith)) {
+      return DCA_HUB_ADDRESS;
+    } else {
+      return COMPANION_ADDRESS;
+    }
+  }
+
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
     return this.permit2Service.preparePermitData({ ...args, spender: COMPANION_ADDRESS });
   }
@@ -42,11 +63,35 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     permissions,
     deposit,
   }: CreateDCAPositionParams): Promise<TransactionResponse> {
-    const depositInfo =
-      'nativeAmount' in deposit
-        ? { token: Addresses.NATIVE_TOKEN, amount: BigInt(deposit.nativeAmount), value: BigInt(deposit.nativeAmount) }
-        : { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
+    let depositInfo: { token: Address; amount: bigint; value: bigint };
+    if ('token' in deposit) {
+      const amount = BigInt(deposit.amount);
+      depositInfo = { token: deposit.token, amount, value: isSameAddress(deposit.token, Addresses.NATIVE_TOKEN) ? amount : 0n };
+    } else {
+      depositInfo = { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
+    }
 
+    if ('token' in deposit && !isSameAddress(deposit.token, Addresses.NATIVE_TOKEN)) {
+      // If don't need to use Permit2, then just call the hub
+      return {
+        to: DCA_HUB_ADDRESS,
+        data: encodeFunctionData({
+          abi: dcaHubAbi,
+          functionName: 'deposit',
+          args: [
+            from.variantId as ViemAddress,
+            to.variantId as ViemAddress,
+            depositInfo.amount,
+            amountOfSwaps,
+            swapInterval,
+            owner as ViemAddress,
+            permissions.map(({ operator, permissions }) => ({ operator: operator as ViemAddress, permissions })),
+          ],
+        }),
+      };
+    }
+
+    // If we get to this point, then we'll use the Companion for the deposit
     const calls: Call[] = [];
 
     // Handle take from caller (if necessary)
@@ -101,13 +146,20 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
     if (!increase) {
       increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
-    } else if ('nativeAmount' in increase) {
-      increaseInfo = { token: Addresses.NATIVE_TOKEN, amount: BigInt(increase.nativeAmount), value: BigInt(increase.nativeAmount) };
+    } else if ('token' in increase) {
+      const amount = BigInt(increase.amount);
+      increaseInfo = { token: increase.token, amount, value: isSameAddress(increase.token, Addresses.NATIVE_TOKEN) ? amount : 0n };
     } else {
       increaseInfo = { token: increase.permitData.token, amount: BigInt(increase.permitData.amount), value: 0n };
     }
 
-    if (increaseInfo.amount === 0n || amountOfSwaps === 0) {
+    const isDirectIncrease =
+      !increase ||
+      increaseInfo.amount === 0n ||
+      amountOfSwaps === 0 ||
+      ('token' in increase && !isSameAddress(increase.token, Addresses.NATIVE_TOKEN));
+
+    if (isDirectIncrease) {
       // If don't need to use Permit2, then just call the hub
       return {
         to: DCA_HUB_ADDRESS,

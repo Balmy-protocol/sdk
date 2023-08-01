@@ -6,6 +6,7 @@ export type IDCAService = {
 };
 
 export type IDCAPositionManagementService = {
+  getAllowanceTarget(_: { chainId: ChainId; from: TokenAddress; depositWith: TokenAddress; usePermit2?: boolean }): Address;
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
   buildCreatePositionTx(_: CreateDCAPositionParams): Promise<TransactionResponse>;
   buildIncreasePositionTx(_: IncreaseDCAPositionParams): Promise<TransactionResponse>;
@@ -92,8 +93,8 @@ export type DCAPermissionPermit = {
 };
 
 export type AddFunds = { swapConfig?: DCAActionSwapConfig } & (
-  | { nativeAmount: BigIntish }
   | { permitData: PermitData['permitData']; signature: string }
+  | { token: TokenAddress; amount: BigIntish }
 );
 
 type PositionToken = {
