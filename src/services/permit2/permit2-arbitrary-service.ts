@@ -1,6 +1,6 @@
 import { encodeFunctionData, parseAbi } from 'viem';
 import { calculateDeadline } from '@shared/utils';
-import { PERMIT2_ADAPTER_ABI } from '@shared/abis/permit2-adapter';
+import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import {
   ArbitraryCallWithBatchPermitParams,
   ArbitraryCallWithoutPermitParams,
@@ -90,7 +90,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     const totalValue = calls.reduce((sum, { value }) => sum + BigInt(value ?? 0), 0n);
 
     const data = encodeFunctionData({
-      abi: parseAbi(PERMIT2_ADAPTER_ABI),
+      abi: permit2AdapterAbi as any, // We cast as any to avoid type checks
       functionName,
       args: [permitData, allowances, encodedCalls, transferOut, deadline],
     });

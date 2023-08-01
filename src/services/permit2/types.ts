@@ -1,9 +1,24 @@
-import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, TimeString, TokenAddress, TransactionResponse } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, SupportInChain, TimeString, TokenAddress, TransactionResponse } from '@types';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
+import {
+  CompareQuotesBy,
+  CompareQuotesUsing,
+  EstimatedQuoteRequest,
+  EstimatedQuoteResponse,
+  SourceId,
+  SourceMetadata,
+  QuoteRequest,
+  QuoteResponse,
+  QuoteTransaction,
+} from '@services/quotes';
+import { SupportedGasValues } from '@services/gas/types';
+import { IgnoreFailedQuotes } from '@services/quotes/types';
+import { Either } from '@utility-types';
 
 export type IPermit2Service = {
   permit2ContractAddress: Address;
   arbitrary: IPermit2ArbitraryService;
+  quotes: IPermit2QuoteService;
   calculateNonce(params: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<string>;
   preparePermitData(params: GenericSinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: GenericBatchPermitParams): Promise<BatchPermitData>;
@@ -16,6 +31,53 @@ export type IPermit2ArbitraryService = {
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): TransactionResponse;
   buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): TransactionResponse;
   buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): TransactionResponse;
+};
+
+export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
+
+export type IPermit2QuoteService = {
+  contractAddress: Address;
+  preparePermitData(params: SinglePermitParams): Promise<PermitData>;
+
+  supportedSources(): Record<SourceId, SourceMetadata>;
+  supportedChains(): ChainId[];
+  supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
+  supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
+
+  estimateQuotes(_: {
+    request: EstimatedQuoteRequest;
+    config?: { timeout?: TimeString };
+  }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponseWithTx>>[];
+  estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
+    request: EstimatedQuoteRequest;
+    config?: {
+      ignoredFailed?: IgnoreFailed;
+      sort?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+      timeout?: TimeString;
+    };
+  }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponseWithTx>[]>;
+
+  verifyAndPrepareQuotes<IgnoreFailed extends boolean = true>(
+    _: {
+      chainId: ChainId;
+      quotes: EstimatedQuoteResponseWithTx[];
+      takerAddress: Address;
+      recipient?: Address;
+      config?: {
+        ignoredFailed?: IgnoreFailed;
+        sort?: {
+          by: CompareQuotesBy;
+          using?: CompareQuotesUsing;
+        };
+      };
+    } & (
+      | { permitData: PermitData['permitData'] & { signature: string }; txValidFor?: undefined }
+      | { txValidFor?: TimeString; permitData?: undefined }
+    )
+  ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
 };
 
 export type SinglePermitParams = {

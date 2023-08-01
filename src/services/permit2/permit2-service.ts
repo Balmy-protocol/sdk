@@ -5,6 +5,7 @@ import {
   GenericBatchPermitParams,
   GenericSinglePermitParams,
   IPermit2ArbitraryService,
+  IPermit2QuoteService,
   IPermit2Service,
   PermitData,
 } from './types';
@@ -14,13 +15,17 @@ import { calculateDeadline } from '@shared/utils';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
 import { PERMIT2_ABI } from '@shared/abis/permit2';
 import { Uint } from '@shared/constants';
+import { Permit2QuoteService } from './permit2-quote-service';
+import { IGasService, IQuoteService } from '..';
 
 export class Permit2Service implements IPermit2Service {
   readonly permit2ContractAddress: Address = PERMIT2_ADDRESS;
   readonly arbitrary: IPermit2ArbitraryService;
+  readonly quotes: IPermit2QuoteService;
 
-  constructor(private readonly multicallService: IMulticallService) {
+  constructor(private readonly multicallService: IMulticallService, quoteService: IQuoteService, gasService: IGasService) {
     this.arbitrary = new Permit2ArbitraryService(this);
+    this.quotes = new Permit2QuoteService(this, quoteService, multicallService, gasService);
   }
 
   async calculateNonce({ chainId, appId, user }: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<string> {

@@ -5586,10 +5586,10 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
-viem@1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-1.0.5.tgz#e796ef944b9d5f6239de5fb5fea1d69774c8f437"
-  integrity sha512-PvCPjvgk/H0S9bEA2tBoeNoTBHuJ7Ocs++BIcl8AO5djxlkjdbkPq73d/PJ8KnU7+o3PeX+tLmozxS/upiNUnQ==
+viem@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-1.1.0.tgz#0484d605cdadc7a90346a68f61af8b10badf5ed3"
+  integrity sha512-3xGywzwr0KDGlFHZ6AsTB/S7FtoE9BQZUYVECbaRTYEDZgB4X8JAMj/UGCCPJgT+q61bk0dclEAYm0703KiIpw==
   dependencies:
     "@adraffy/ens-normalize" "1.9.0"
     "@noble/curves" "1.0.0"
