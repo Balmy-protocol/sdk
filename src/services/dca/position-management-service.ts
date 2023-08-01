@@ -71,7 +71,8 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       depositInfo = { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
     }
 
-    if ('token' in deposit && !isSameAddress(deposit.token, Addresses.NATIVE_TOKEN)) {
+    const needsSwap = !isSameAddress(depositInfo.token, from.variantId);
+    if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the hub
       return {
         to: DCA_HUB_ADDRESS,
@@ -102,7 +103,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     }
 
     // Handle swap
-    if (!isSameAddress(depositInfo.token, from.variantId)) {
+    if (needsSwap) {
       const { swapData } = await this.getSwapData({
         request: {
           chainId,
@@ -155,13 +156,19 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       increaseInfo = { token: increase.permitData.token, amount: BigInt(increase.permitData.amount), value: 0n };
     }
 
-    const isDirectIncrease =
-      !increase ||
-      increaseInfo.amount === 0n ||
-      amountOfSwaps === 0 ||
-      ('token' in increase && !isSameAddress(increase.token, Addresses.NATIVE_TOKEN));
+    const bigIntPositionId = BigInt(positionId);
+    const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
+      chainId,
+      calls: [
+        { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: { json: dcaHubAbi }, address: DCA_HUB_ADDRESS, functionName: 'userPosition', args: [bigIntPositionId] },
+      ],
+    });
 
-    if (isDirectIncrease) {
+    const needsSwap = !isSameAddress(increaseInfo.token, position.from);
+    const callHubDirectly = !increase || increaseInfo.amount === 0n || amountOfSwaps === 0 || ('token' in increase && !needsSwap);
+
+    if (callHubDirectly) {
       // If don't need to use Permit2, then just call the hub
       return {
         to: DCA_HUB_ADDRESS,
@@ -175,7 +182,6 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
 
     // If we get to this point, then we'll use the Companion for the increase
     const calls: Call[] = [];
-    const bigIntPositionId = BigInt(positionId);
 
     if ('permitData' in increase!) {
       // Handle take from caller (if necessary)
@@ -184,15 +190,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       calls.push(buildTakeFromCaller(increaseInfo.token, increaseInfo.amount));
     }
 
-    const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
-      chainId,
-      calls: [
-        { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
-        { abi: { json: dcaHubAbi }, address: DCA_HUB_ADDRESS, functionName: 'userPosition', args: [bigIntPositionId] },
-      ],
-    });
-
-    if (!isSameAddress(increaseInfo.token, position.from)) {
+    if (needsSwap) {
       const { swapData } = await this.getSwapData({
         request: {
           chainId,
