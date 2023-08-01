@@ -609,6 +609,11 @@ export default [
         name: '_amount',
         type: 'uint256',
       },
+      {
+        internalType: 'address',
+        name: '_recipient',
+        type: 'address',
+      },
     ],
     name: 'takeFromCaller',
     outputs: [],

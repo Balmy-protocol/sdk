@@ -96,7 +96,9 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
 
     // Handle take from caller (if necessary)
     if ('permitData' in deposit) {
-      calls.push(buildTakeFromCaller(deposit.permitData, deposit.signature));
+      calls.push(buildTakeFromCallerWithPermit(deposit.permitData, deposit.signature));
+    } else if (!isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN)) {
+      calls.push(buildTakeFromCaller(depositInfo.token, depositInfo.amount));
     }
 
     // Handle swap
@@ -177,7 +179,9 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
 
     if ('permitData' in increase!) {
       // Handle take from caller (if necessary)
-      calls.push(buildTakeFromCaller(increase.permitData, increase.signature));
+      calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature));
+    } else if (!isSameAddress(increaseInfo.token, Addresses.NATIVE_TOKEN)) {
+      calls.push(buildTakeFromCaller(increaseInfo.token, increaseInfo.amount));
     }
 
     const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
@@ -573,11 +577,19 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
   }
 }
 
-function buildTakeFromCaller({ token, amount, nonce, deadline }: PermitData['permitData'], signature: string): Hex {
+function buildTakeFromCallerWithPermit({ token, amount, nonce, deadline }: PermitData['permitData'], signature: string): Hex {
   return encodeFunctionData({
     abi: companionAbi,
     functionName: 'permitTakeFromCaller',
     args: [token as ViemAddress, BigInt(amount), BigInt(nonce), BigInt(deadline), signature as Hex, COMPANION_SWAPPER_ADDRESS],
+  });
+}
+
+function buildTakeFromCaller(token: TokenAddress, amount: BigIntish): Hex {
+  return encodeFunctionData({
+    abi: companionAbi,
+    functionName: 'takeFromCaller',
+    args: [token as ViemAddress, BigInt(amount), COMPANION_SWAPPER_ADDRESS],
   });
 }
 
