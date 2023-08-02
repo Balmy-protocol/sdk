@@ -22,4 +22,4 @@ export const PERMIT2_SUPPORTED_CHAINS = [
   Chains.POLYGON_ZKEVM,
   Chains.HECO,
   Chains.OKC,
-];
+].map(({ chainId }) => chainId);

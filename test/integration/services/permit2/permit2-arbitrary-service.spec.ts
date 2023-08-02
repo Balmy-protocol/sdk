@@ -32,7 +32,7 @@ describe('Permit2 Arbitrary Service', () => {
   let snapshot: SnapshotRestorer;
 
   beforeAll(async () => {
-    await fork({ chain: CHAIN, blockNumber: 107042557 });
+    await fork({ chain: CHAIN, blockNumber: 107705868 });
     [user] = await ethers.getSigners();
     ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(CHAIN));
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
