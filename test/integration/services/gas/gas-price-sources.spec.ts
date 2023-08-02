@@ -39,7 +39,7 @@ jest.setTimeout(ms('30s'));
 
 describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
-  gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
+  // gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE }); We comment this out because of rate limiting
   // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE }); We comment this out because of rate limiting
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
