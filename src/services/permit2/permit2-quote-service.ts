@@ -11,7 +11,7 @@ import { Either } from '@utility-types';
 import { IGasService } from '@services/gas';
 import { Addresses } from '@shared/constants';
 import { IProviderService } from '..';
-import { Contract } from 'alchemy-sdk';
+import { BigNumber, Contract } from 'alchemy-sdk';
 
 export class Permit2QuoteService implements IPermit2QuoteService {
   readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
@@ -167,7 +167,10 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     if (ethersSupported) {
       const provider = this.providerService.getEthersProvider({ chainId });
       const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
-      return contract.callStatic.simulate(calls, { value: value ?? 0 });
+      const result: { success: boolean; result: Hex; gasSpent: BigNumber }[] = await contract
+        .connect(account)
+        .callStatic.simulate(calls, { value: value ?? 0 });
+      return result.map(({ success, result, gasSpent }) => ({ success, result, gasSpent: gasSpent.toBigInt() }));
     }
     const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
       address: this.contractAddress,
