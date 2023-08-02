@@ -21,13 +21,13 @@ import { buildSDK } from '@builder';
 import { parseEther } from 'viem';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
-// jest.retryTimes(3);
+jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 const {
   permit2Service: { quotes: permit2QuoteService },
 } = buildSDK();
-// const chains = chainsWithTestData(permit2QuoteService.supportedChains());
+// const chains = chainsWithTestData(permit2QuoteService.supportedChains()); // TODO: Enable when we deploy the adapter to more chains
 const chains = [Chains.POLYGON.chainId];
 
 describe('Permit2 Quote Service', () => {

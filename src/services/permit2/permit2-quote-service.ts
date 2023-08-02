@@ -163,26 +163,21 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     value?: bigint;
     calls: string[];
   }): Promise<ReadonlyArray<SimulationResult>> {
-    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
-    if (false) {
-      const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
-        address: this.contractAddress,
-        abi: permit2AdapterAbi,
-        functionName: 'simulate',
-        args: [calls as Hex[]],
-        account: account as ViemAddress,
-        value: value ?? 0n,
-      });
-      return result;
+    const ethersSupported = this.providerService.supportedClients()[chainId]?.ethers;
+    if (ethersSupported) {
+      const provider = this.providerService.getEthersProvider({ chainId });
+      const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
+      return contract.callStatic.simulate(calls, { value: value ?? 0 });
     }
-    const provider = this.providerService.getEthersProvider({ chainId });
-    // provider.call({
-    //   to: this.contractAddress,
-    //   data: calls[0],
-    //   from:
-    // })
-    const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
-    return contract.callStatic.simulate(calls, { value: value ?? 0 });
+    const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
+      address: this.contractAddress,
+      abi: permit2AdapterAbi,
+      functionName: 'simulate',
+      args: [calls as Hex[]],
+      account: account as ViemAddress,
+      value: value ?? 0n,
+    });
+    return result;
   }
 }
 
@@ -208,19 +203,6 @@ function buildRealQuote(
 ): QuoteResponse {
   recipient = recipient ?? takerAddress;
   const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
-  console.log({
-    deadline,
-    tokenIn: mapIfNative(quote.sellToken.address),
-    amountIn: BigInt(quote.maxSellAmount.amount),
-    nonce: permitData ? BigInt(permitData.nonce) : 0n,
-    signature: (permitData?.signature as Hex) ?? '0x',
-    allowanceTarget: quote.source.allowanceTarget as ViemAddress,
-    swapper: estimatedTx.to as ViemAddress,
-    swapData: estimatedTx.data as Hex,
-    tokenOut: mapIfNative(quote.buyToken.address),
-    minAmountOut: BigInt(quote.minBuyAmount.amount),
-    transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
-  });
   const data =
     quote.type === 'sell'
       ? encodeFunctionData({
@@ -239,7 +221,6 @@ function buildRealQuote(
               tokenOut: mapIfNative(quote.buyToken.address),
               minAmountOut: BigInt(quote.minBuyAmount.amount),
               transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
-              // transferOut: [],
             },
           ],
         })
@@ -263,7 +244,6 @@ function buildRealQuote(
             },
           ],
         });
-  console.log(data);
   return {
     ...quote,
     recipient,
