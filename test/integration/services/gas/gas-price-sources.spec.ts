@@ -28,8 +28,8 @@ const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SER
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(FETCH_SERVICE);
 const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSource({ config: { ethers: { quorum: 1 } } })));
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
-const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [OPEN_OCEAN_SOURCE, RPC_SOURCE], 'median');
+const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([PARASWAP_SOURCE, RPC_SOURCE]);
+const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [PARASWAP_SOURCE, RPC_SOURCE], 'median');
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
 const CHANGELLY_GAS_SOURCE = new ChangellyGasPriceSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
@@ -39,7 +39,7 @@ jest.setTimeout(ms('30s'));
 
 describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'RPC Source', source: RPC_SOURCE });
-  // gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE }); We comment this out because of rate limiting
+  gasPriceSourceTest({ title: 'Open Ocean Source', source: OPEN_OCEAN_SOURCE });
   // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE }); We comment this out because of rate limiting
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });

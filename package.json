@@ -32,6 +32,7 @@
     "lint:check": "prettier --check .",
     "lint:fix": "sort-package-json && prettier --write .",
     "prepare": "husky install",
+    "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
     "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration -t \"^(?!.*\\[External Quotes\\]).*$\"",
     "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose -t \".*\\[External Quotes\\].*\"",
     "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
