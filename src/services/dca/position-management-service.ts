@@ -96,10 +96,11 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     const calls: Call[] = [];
 
     // Handle take from caller (if necessary)
+    const recipient = needsSwap ? COMPANION_SWAPPER_ADDRESS : COMPANION_ADDRESS;
     if ('permitData' in deposit) {
-      calls.push(buildTakeFromCallerWithPermit(deposit.permitData, deposit.signature));
+      calls.push(buildTakeFromCallerWithPermit(deposit.permitData, deposit.signature, recipient));
     } else if (!isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN)) {
-      calls.push(buildTakeFromCaller(depositInfo.token, depositInfo.amount));
+      calls.push(buildTakeFromCaller(depositInfo.token, depositInfo.amount, recipient));
     }
 
     // Handle swap
@@ -183,11 +184,12 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     // If we get to this point, then we'll use the Companion for the increase
     const calls: Call[] = [];
 
+    const recipient = needsSwap ? COMPANION_SWAPPER_ADDRESS : COMPANION_ADDRESS;
     if ('permitData' in increase!) {
       // Handle take from caller (if necessary)
-      calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature));
+      calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature, recipient));
     } else if (!isSameAddress(increaseInfo.token, Addresses.NATIVE_TOKEN)) {
-      calls.push(buildTakeFromCaller(increaseInfo.token, increaseInfo.amount));
+      calls.push(buildTakeFromCaller(increaseInfo.token, increaseInfo.amount, recipient));
     }
 
     if (needsSwap) {
@@ -575,19 +577,23 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
   }
 }
 
-function buildTakeFromCallerWithPermit({ token, amount, nonce, deadline }: PermitData['permitData'], signature: string): Hex {
+function buildTakeFromCallerWithPermit(
+  { token, amount, nonce, deadline }: PermitData['permitData'],
+  signature: string,
+  recipient: Address
+): Hex {
   return encodeFunctionData({
     abi: companionAbi,
     functionName: 'permitTakeFromCaller',
-    args: [token as ViemAddress, BigInt(amount), BigInt(nonce), BigInt(deadline), signature as Hex, COMPANION_SWAPPER_ADDRESS],
+    args: [token as ViemAddress, BigInt(amount), BigInt(nonce), BigInt(deadline), signature as Hex, recipient as ViemAddress],
   });
 }
 
-function buildTakeFromCaller(token: TokenAddress, amount: BigIntish): Hex {
+function buildTakeFromCaller(token: TokenAddress, amount: BigIntish, recipient: Address): Hex {
   return encodeFunctionData({
     abi: companionAbi,
     functionName: 'takeFromCaller',
-    args: [token as ViemAddress, BigInt(amount), COMPANION_SWAPPER_ADDRESS],
+    args: [token as ViemAddress, BigInt(amount), recipient as ViemAddress],
   });
 }
 
