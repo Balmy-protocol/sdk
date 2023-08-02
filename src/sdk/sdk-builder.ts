@@ -19,13 +19,13 @@ export function buildSDK<Params extends BuildParams = {}>(
   const fetchService = buildFetchService(params?.fetch);
   const providerService = buildProviderService(params?.provider);
   const multicallService = buildMulticallService(providerService);
-  const permit2Service = buildPermit2Service(multicallService);
   const balanceService = buildBalanceService(params?.balances, fetchService, providerService, multicallService);
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, logsService, fetchService, providerService, multicallService);
   const metadataService = buildMetadataService<Params['metadata']>(params?.metadata, fetchService, multicallService);
   const priceService = buildPriceService(params?.price, fetchService);
   const quoteService = buildQuoteService(params?.quotes, providerService, fetchService, gasService as any, metadataService as any, priceService);
+  const permit2Service = buildPermit2Service(multicallService, quoteService, providerService, gasService as any);
   const dcaService = buildDCAService(multicallService, permit2Service, quoteService);
 
   return {

@@ -90,6 +90,7 @@ export type QuoteResponse = {
     estimatedCostInUnits: string;
     gasTokenSymbol: string;
     estimatedCostInUSD?: string;
+    gasTokenPrice?: number;
   };
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };

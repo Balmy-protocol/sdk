@@ -1,4 +1,4 @@
-import { AmountOfToken, BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress, Chain } from '@types';
+import { BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -249,7 +249,7 @@ export class QuoteService implements IQuoteService {
         const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
         gas = {
           estimatedGas: response.estimatedGas,
-          ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
+          ...calculateGasDetails(getChainByKeyOrFail(request.chainId).nativeCurrency.symbol, gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
         };
       }
       return {
@@ -382,7 +382,7 @@ export function ifNotFailed<T1 extends FailedQuote | object, T2>(
   return ('failed' in response ? response : mapped(response)) as T1 extends FailedQuote ? FailedQuote : T2;
 }
 
-function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: AmountOfToken) {
+export function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: BigIntish) {
   const amountInUSD = amountToUSD(token.decimals, amount, price);
   return {
     amount: amount.toString(),
@@ -402,12 +402,13 @@ function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse)
   return response;
 }
 
-function calculateGasDetails(chain: Chain, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
+export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
   return {
     estimatedCost: gasCostNativeToken.toString(),
     estimatedCostInUnits: formatUnits(BigInt(gasCostNativeToken), 18).toString(),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
-    gasTokenSymbol: chain.nativeCurrency.symbol,
+    gasTokenPrice: nativeTokenPrice,
+    gasTokenSymbol,
   };
 }
 

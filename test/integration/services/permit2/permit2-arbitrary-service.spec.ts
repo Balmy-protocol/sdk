@@ -2,18 +2,15 @@ import ms from 'ms';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { Chains } from '@chains';
-import { MulticallService } from '@services/multicall/multicall-service';
-import { ProviderService } from '@services/providers/provider-service';
 import { IPermit2ArbitraryService } from '@services/permit2/types';
 import { fork } from '@test-utils/evm';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { TestToken, approve, balance, loadTokens, mint } from '@test-utils/erc20';
 import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
 import { Uint } from '@shared/constants';
 import { parseUnits } from 'viem';
-import { Permit2Service } from '@services/permit2/permit2-service';
+import { buildSDK } from '@builder';
 
 jest.retryTimes(3).setTimeout(ms('2m'));
 
@@ -45,7 +42,7 @@ describe('Permit2 Arbitrary Service', () => {
     await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS, for: wToken, from: user });
     chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     snapshot = await takeSnapshot();
-    arbitrary = new Permit2Service(new MulticallService(new ProviderService(new PublicRPCsSource()))).arbitrary;
+    arbitrary = buildSDK().permit2Service.arbitrary;
   });
 
   afterEach(async () => {
