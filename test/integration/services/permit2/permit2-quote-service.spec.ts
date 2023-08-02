@@ -30,7 +30,7 @@ const {
 // const chains = chainsWithTestData(permit2QuoteService.supportedChains()); // TODO: Enable when we deploy the adapter to more chains
 const chains = [Chains.POLYGON.chainId];
 
-describe('Permit2 Quote Service', () => {
+describe('Permit2 Quote Service [External Quotes]', () => {
   for (const chainId of chains) {
     const chain = getChainByKeyOrFail(chainId);
     describe(`${chain.name}`, () => {
