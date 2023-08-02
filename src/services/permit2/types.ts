@@ -7,13 +7,11 @@ import {
   EstimatedQuoteResponse,
   SourceId,
   SourceMetadata,
-  QuoteRequest,
   QuoteResponse,
   QuoteTransaction,
 } from '@services/quotes';
 import { SupportedGasValues } from '@services/gas/types';
 import { IgnoreFailedQuotes } from '@services/quotes/types';
-import { Either } from '@utility-types';
 
 export type IPermit2Service = {
   permit2ContractAddress: Address;
@@ -38,12 +36,10 @@ export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedT
 export type IPermit2QuoteService = {
   contractAddress: Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
-
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
   supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
-
   estimateQuotes(_: {
     request: EstimatedQuoteRequest;
     config?: { timeout?: TimeString };
@@ -59,7 +55,6 @@ export type IPermit2QuoteService = {
       timeout?: TimeString;
     };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponseWithTx>[]>;
-
   verifyAndPrepareQuotes<IgnoreFailed extends boolean = true>(
     _: {
       chainId: ChainId;

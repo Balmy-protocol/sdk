@@ -1,15 +1,17 @@
 import { EstimatedQuoteResponseWithTx, IPermit2QuoteService, IPermit2Service, PermitData, SinglePermitParams } from './types';
 import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
-import { Address, ChainId, TimeString } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CompareQuotesBy, CompareQuotesUsing, QuoteResponse, IQuoteService, sortQuotesBy } from '@services/quotes';
 import { calculateGasDetails, ifNotFailed, toAmountOfToken } from '@services/quotes/quote-service';
 import { EstimatedQuoteRequest, FailedQuote, IgnoreFailedQuotes, SourceId, SourceMetadata } from '@services/quotes/types';
-import { calculateDeadline } from '@shared/utils';
+import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { encodeFunctionData, decodeAbiParameters, parseAbiParameters, Hex, Address as ViemAddress } from 'viem';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import { Either } from '@utility-types';
-import { IMulticallService } from '@services/multicall';
 import { IGasService } from '@services/gas';
+import { Addresses } from '@shared/constants';
+import { IProviderService } from '..';
+import { Contract } from 'alchemy-sdk';
 
 export class Permit2QuoteService implements IPermit2QuoteService {
   readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
@@ -17,7 +19,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   constructor(
     private readonly permit2Service: IPermit2Service,
     private readonly quotesService: IQuoteService,
-    private readonly multicallService: IMulticallService,
+    private readonly providerService: IProviderService,
     private readonly gasService: IGasService
   ) {}
 
@@ -99,7 +101,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]
   > {
     const quotes = estimatedQuotes.map((estimatedQuote) => buildRealQuote(quoteData, estimatedQuote));
-    const responses = await this.verifyAndCorrect(chainId, quotes);
+    const responses = await this.verifyAndCorrect(chainId, quoteData.takerAddress, quotes);
 
     if (config?.sort) {
       const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
@@ -115,20 +117,13 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     return result as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
-  private async verifyAndCorrect(chainId: ChainId, quotes: QuoteResponse[]): Promise<(QuoteResponse | FailedQuote)[]> {
+  private async verifyAndCorrect(chainId: ChainId, takerAddress: Address, quotes: QuoteResponse[]): Promise<(QuoteResponse | FailedQuote)[]> {
     const calls = quotes.map(({ tx }) => tx.data);
-    const gasCalculator = await this.gasService.getQuickGasCalculator({ chainId, config: { timeout: '2s' } });
-    const [encodedResults] = await this.multicallService.readOnlyMulticall<SimulationResult[]>({
-      chainId,
-      calls: [
-        {
-          address: this.contractAddress,
-          abi: { json: permit2AdapterAbi },
-          functionName: 'simulate',
-          args: [calls],
-        },
-      ],
-    });
+    const maxValue = quotes.reduce((max, { tx: { value } }) => (value && max < (BigInt(value) ?? 0n) ? BigInt(value) : max), 0n);
+    const [gasCalculator, encodedResults] = await Promise.all([
+      this.gasService.getQuickGasCalculator({ chainId, config: { timeout: '2s' } }),
+      this.simulate({ chainId, calls, account: takerAddress, value: maxValue }),
+    ]);
     const decodedResults = encodedResults.map(({ success, result, gasSpent }) => {
       const [amountIn, amountOut] = success ? decodeAbiParameters(parseAbiParameters('uint256 amountIn, uint256 amountOut'), result) : [0n, 0n];
       return { success, gasSpent, amountIn, amountOut, rawResult: result };
@@ -156,6 +151,39 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       return { ...quote, sellAmount, buyAmount, gas };
     });
   }
+
+  private async simulate({
+    chainId,
+    calls,
+    account,
+    value,
+  }: {
+    chainId: ChainId;
+    account: Address;
+    value?: bigint;
+    calls: string[];
+  }): Promise<ReadonlyArray<SimulationResult>> {
+    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
+    if (false) {
+      const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
+        address: this.contractAddress,
+        abi: permit2AdapterAbi,
+        functionName: 'simulate',
+        args: [calls as Hex[]],
+        account: account as ViemAddress,
+        value: value ?? 0n,
+      });
+      return result;
+    }
+    const provider = this.providerService.getEthersProvider({ chainId });
+    // provider.call({
+    //   to: this.contractAddress,
+    //   data: calls[0],
+    //   from:
+    // })
+    const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
+    return contract.callStatic.simulate(calls, { value: value ?? 0 });
+  }
 }
 
 type SimulationResult = {
@@ -180,6 +208,19 @@ function buildRealQuote(
 ): QuoteResponse {
   recipient = recipient ?? takerAddress;
   const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
+  console.log({
+    deadline,
+    tokenIn: mapIfNative(quote.sellToken.address),
+    amountIn: BigInt(quote.maxSellAmount.amount),
+    nonce: permitData ? BigInt(permitData.nonce) : 0n,
+    signature: (permitData?.signature as Hex) ?? '0x',
+    allowanceTarget: quote.source.allowanceTarget as ViemAddress,
+    swapper: estimatedTx.to as ViemAddress,
+    swapData: estimatedTx.data as Hex,
+    tokenOut: mapIfNative(quote.buyToken.address),
+    minAmountOut: BigInt(quote.minBuyAmount.amount),
+    transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
+  });
   const data =
     quote.type === 'sell'
       ? encodeFunctionData({
@@ -188,16 +229,17 @@ function buildRealQuote(
           args: [
             {
               deadline,
-              tokenIn: quote.sellToken.address as ViemAddress,
+              tokenIn: mapIfNative(quote.sellToken.address),
               amountIn: BigInt(quote.maxSellAmount.amount),
               nonce: permitData ? BigInt(permitData.nonce) : 0n,
               signature: (permitData?.signature as Hex) ?? '0x',
               allowanceTarget: quote.source.allowanceTarget as ViemAddress,
               swapper: estimatedTx.to as ViemAddress,
               swapData: estimatedTx.data as Hex,
-              tokenOut: quote.buyToken.address as ViemAddress,
+              tokenOut: mapIfNative(quote.buyToken.address),
               minAmountOut: BigInt(quote.minBuyAmount.amount),
               transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
+              // transferOut: [],
             },
           ],
         })
@@ -207,20 +249,21 @@ function buildRealQuote(
           args: [
             {
               deadline,
-              tokenIn: quote.sellToken.address as ViemAddress,
+              tokenIn: mapIfNative(quote.sellToken.address),
               maxAmountIn: BigInt(quote.maxSellAmount.amount),
               nonce: permitData ? BigInt(permitData.nonce) : 0n,
               signature: (permitData?.signature as Hex) ?? '0x',
               allowanceTarget: quote.source.allowanceTarget as ViemAddress,
               swapper: estimatedTx.to as ViemAddress,
               swapData: estimatedTx.data as Hex,
-              tokenOut: quote.buyToken.address as ViemAddress,
+              tokenOut: mapIfNative(quote.buyToken.address),
               amountOut: BigInt(quote.minBuyAmount.amount),
               transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
               unspentTokenInRecipient: takerAddress as ViemAddress,
             },
           ],
         });
+  console.log(data);
   return {
     ...quote,
     recipient,
@@ -238,4 +281,8 @@ function mapToUnsigned({ recipient, tx, ...quote }: QuoteResponse): EstimatedQuo
     ...quote,
     estimatedTx: tx,
   };
+}
+
+function mapIfNative(token: TokenAddress): ViemAddress {
+  return isSameAddress(token, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : (token as ViemAddress);
 }
