@@ -38,7 +38,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   }
 
   supportedChains() {
-    return PERMIT2_SUPPORTED_CHAINS.map(({ chainId }) => chainId);
+    return PERMIT2_SUPPORTED_CHAINS;
   }
 
   supportedSourcesInChain({ chainId }: { chainId: ChainId }) {

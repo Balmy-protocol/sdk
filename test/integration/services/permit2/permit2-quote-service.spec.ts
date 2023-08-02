@@ -30,6 +30,12 @@ const {
 // const chains = chainsWithTestData(permit2QuoteService.supportedChains()); // TODO: Enable when we deploy the adapter to more chains
 const chains = [Chains.POLYGON.chainId];
 
+// This test validates quotes, but the SDK can't connect to the local test network. So we need to use addresses that have enough
+// balance, because we can't simulate it on the real chain
+const NATIVE_WHALES = {
+  [Chains.POLYGON.chainId]: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
+};
+
 describe('Permit2 Quote Service [External Quotes]', () => {
   for (const chainId of chains) {
     const chain = getChainByKeyOrFail(chainId);
@@ -42,7 +48,9 @@ describe('Permit2 Quote Service [External Quotes]', () => {
 
       beforeAll(async () => {
         await fork({ chain });
-        [user] = await ethers.getSigners();
+        const whale = NATIVE_WHALES[chainId];
+        if (!whale) throw new Error('Whale not set');
+        user = await ethers.getImpersonatedSigner(whale);
         ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(chain));
         await mint({ amount: ONE_NATIVE_TOKEN * 3n, of: nativeToken, to: user });
         await mint({ amount: ONE_NATIVE_TOKEN * 3n, of: wToken, to: user });
@@ -59,7 +67,7 @@ describe('Permit2 Quote Service [External Quotes]', () => {
 
       when('swapping 1 native token to stables', () => {
         let quote: QuoteResponse;
-        let txs: TransactionResponse[];
+        let response: TransactionResponse;
         given(async () => {
           const estimatedQuotes = await permit2QuoteService.estimateAllQuotes({
             request: {
@@ -85,18 +93,18 @@ describe('Permit2 Quote Service [External Quotes]', () => {
           });
           quote = quotes[0];
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
-          txs = [await user.sendTransaction({ gasPrice, ...tx })];
+          response = await user.sendTransaction({ gasPrice, ...tx });
         });
         then('result is as expected', async () => {
           await assertUsersBalanceIsReducedAsExpected({
-            txs,
+            txs: [response],
             sellToken: nativeToken,
             quote,
             user,
             initialBalances,
           });
           await assertRecipientsBalanceIsIncreasedAsExpected({
-            txs,
+            txs: [response],
             buyToken: STABLE_ERC20,
             quote,
             recipient: user,
