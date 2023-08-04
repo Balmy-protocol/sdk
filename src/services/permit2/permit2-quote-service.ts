@@ -163,24 +163,24 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     value?: bigint;
     calls: string[];
   }): Promise<ReadonlyArray<SimulationResult>> {
-    const ethersSupported = this.providerService.supportedClients()[chainId]?.ethers;
-    if (ethersSupported) {
-      const provider = this.providerService.getEthersProvider({ chainId });
-      const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
-      const result: { success: boolean; result: Hex; gasSpent: BigNumber }[] = await contract
-        .connect(account)
-        .callStatic.simulate(calls, { value: value ?? 0 });
-      return result.map(({ success, result, gasSpent }) => ({ success, result, gasSpent: gasSpent.toBigInt() }));
+    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
+    if (viemSupported) {
+      const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
+        address: this.contractAddress,
+        abi: permit2AdapterAbi,
+        functionName: 'simulate',
+        args: [calls as Hex[]],
+        account: account as ViemAddress,
+        value: value ?? 0n,
+      });
+      return result;
     }
-    const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
-      address: this.contractAddress,
-      abi: permit2AdapterAbi,
-      functionName: 'simulate',
-      args: [calls as Hex[]],
-      account: account as ViemAddress,
-      value: value ?? 0n,
-    });
-    return result;
+    const provider = this.providerService.getEthersProvider({ chainId });
+    const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
+    const result: { success: boolean; result: Hex; gasSpent: BigNumber }[] = await contract
+      .connect(account)
+      .callStatic.simulate(calls, { value: value ?? 0 });
+    return result.map(({ success, result, gasSpent }) => ({ success, result, gasSpent: gasSpent.toBigInt() }));
   }
 }
 

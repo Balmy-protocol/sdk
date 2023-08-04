@@ -27,14 +27,15 @@ jest.setTimeout(ms('5m'));
 const {
   permit2Service: { quotes: permit2QuoteService },
 } = buildSDK();
-// const chains = chainsWithTestData(permit2QuoteService.supportedChains()); // TODO: Enable when we deploy the adapter to more chains
-const chains = [Chains.POLYGON.chainId];
 
 // This test validates quotes, but the SDK can't connect to the local test network. So we need to use addresses that have enough
 // balance, because we can't simulate it on the real chain
 const NATIVE_WHALES = {
   [Chains.POLYGON.chainId]: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
+  [Chains.ETHEREUM.chainId]: '0x00000000219ab540356cbb839cbe05303d7705fa',
+  [Chains.BNB_CHAIN.chainId]: '0xf977814e90da44bfa03b6295a0616a897441acec',
 };
+const chains = Object.keys(NATIVE_WHALES).map(Number);
 
 describe('Permit2 Quote Service [External Quotes]', () => {
   for (const chainId of chains) {
