@@ -129,4 +129,4 @@ export type IgnoreFailedQuotes<
   Response extends QuoteResponse | EstimatedQuoteResponse
 > = IgnoredFailed extends true ? Response : Response | FailedQuote;
 
-export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };
+export type FailedQuote = { failed: true; source: { id: string; name: string; logoURI: string }; error: any };

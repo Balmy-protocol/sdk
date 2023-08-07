@@ -139,7 +139,7 @@ export class QuoteService implements IQuoteService {
     const quote = await quotes[0];
 
     if ('failed' in quote) {
-      throw new FailedToGenerateQuoteError(quote.name, request.chainId, request.sellToken, request.buyToken, quote.error);
+      throw new FailedToGenerateQuoteError(quote.source.name, request.chainId, request.sellToken, request.buyToken, quote.error);
     }
 
     return quote;
@@ -266,8 +266,11 @@ export class QuoteService implements IQuoteService {
       const metadata = this.supportedSources()[sourceId];
       return {
         failed: true,
-        name: metadata.name,
-        logoURI: metadata.logoURI,
+        source: {
+          id: sourceId,
+          name: metadata.name,
+          logoURI: metadata.logoURI,
+        },
         error: e instanceof Error ? e.message : JSON.stringify(e),
       };
     }
