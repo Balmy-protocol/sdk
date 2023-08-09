@@ -399,7 +399,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     const { swapData } = await this.getSwapData({
       request: {
         chainId,
-        sellToken: position.from,
+        sellToken: position.to,
         buyToken: outToken,
         order: { type: 'sell', sellAmount: position.remaining },
       },
