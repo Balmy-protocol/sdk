@@ -113,6 +113,15 @@ export const Chains = {
     ],
     explorer: 'https://bscscan.com/',
   },
+  BASE: {
+    chainId: 8453,
+    name: 'Base',
+    ids: ['base'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x4200000000000000000000000000000000000006',
+    publicRPCs: ['https://mainnet.base.org', 'https://base-mainnet.public.blastapi.io', 'https://base.blockpi.network/v1/rpc/public'],
+    explorer: 'https://basescan.org/',
+  },
   FANTOM: {
     chainId: 250,
     name: 'Fantom',
