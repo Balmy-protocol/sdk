@@ -401,7 +401,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
         chainId,
         sellToken: position.to,
         buyToken: outToken,
-        order: { type: 'sell', sellAmount: position.remaining },
+        order: { type: 'sell', sellAmount: position.swapped },
       },
       leftoverRecipient: recipient,
       swapConfig: withdraw?.swapConfig,
