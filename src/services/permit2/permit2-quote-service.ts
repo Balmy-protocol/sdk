@@ -133,8 +133,11 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       if (!success) {
         return {
           failed: true,
-          name: quote.source.name,
-          logoURI: quote.source.logoURI,
+          source: {
+            id: quote.source.id,
+            name: quote.source.name,
+            logoURI: quote.source.logoURI,
+          },
           error: `Failed with ${rawResult}`,
         };
       }
