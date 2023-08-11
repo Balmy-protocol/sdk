@@ -296,7 +296,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     const calls: Call[] = [];
 
     const position = await this.getUserPosition(chainId, positionId);
-    const shouldConvert = reduce.convertTo && !isSameAddress(position.to, reduce.convertTo);
+    const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
     if (amountOfSwaps === 0 || !shouldConvert) {
       // In these two scenarios, we can use the normal reduce
       const amount =
