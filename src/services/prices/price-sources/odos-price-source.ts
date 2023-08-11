@@ -6,7 +6,7 @@ import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 
-const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.OPTIMISM, Chains.AVALANCHE, Chains.ARBITRUM, Chains.BNB_CHAIN];
+const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.OPTIMISM, Chains.AVALANCHE, Chains.ARBITRUM, Chains.BNB_CHAIN, Chains.BASE];
 
 export class OdosPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
