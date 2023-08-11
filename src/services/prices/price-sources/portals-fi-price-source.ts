@@ -1,7 +1,8 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import { PortalsFiClient } from '@shared/portals-fi';
+import { nowInSeconds } from './utils';
 
 export class PortalsFiPriceSource implements IPriceSource {
   private readonly portalsFi: PortalsFiClient;
@@ -19,14 +20,14 @@ export class PortalsFiPriceSource implements IPriceSource {
   async getCurrentPrices(params: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
-    const result: Record<ChainId, Record<TokenAddress, TokenPrice>> = {};
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
     const data = await this.portalsFi.getData(params);
     for (const [chainIdString, tokens] of Object.entries(data)) {
       const chainId = Number(chainIdString);
       result[chainId] = {};
       for (const [address, token] of Object.entries(tokens)) {
-        result[chainId][address] = token.price;
+        result[chainId][address] = { price: token.price, timestamp: nowInSeconds() };
       }
     }
     return result;
@@ -37,7 +38,7 @@ export class PortalsFiPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 }

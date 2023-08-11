@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { given, then, when } from '@test-utils/bdd';
 import { ChainId, TokenAddress } from '@types';
 import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
-import { IPriceSource, TokenPrice } from '@services/prices';
+import { IPriceSource, PriceResult, TokenPrice } from '@services/prices';
 chai.use(chaiAsPromised);
 
 const TOKEN_A = '0x0000000000000000000000000000000000000001';
@@ -92,7 +92,7 @@ describe('Aggregator Price Source', () => {
     method: PriceAggregationMethod;
   }) {
     when(`aggregating by ${method}`, () => {
-      let result: Record<TokenAddress, TokenPrice>;
+      let result: Record<TokenAddress, PriceResult>;
       given(async () => {
         const sources = prices.map((price) => buildSource(price));
         const allTokens = [...new Set(prices.flatMap((prices) => Object.keys(prices)))];

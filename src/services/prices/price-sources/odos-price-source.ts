@@ -1,10 +1,11 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
 import { Chains } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
+import { nowInSeconds } from './utils';
 
 const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.OPTIMISM, Chains.AVALANCHE, Chains.ARBITRUM, Chains.BNB_CHAIN, Chains.BASE];
 
@@ -23,7 +24,7 @@ export class OdosPriceSource implements IPriceSource {
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
     const promises = Object.entries(addresses).map(async ([chainId, addresses]) => [
       Number(chainId),
@@ -37,7 +38,7 @@ export class OdosPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 
@@ -47,7 +48,9 @@ export class OdosPriceSource implements IPriceSource {
     const response = await this.fetch.fetch(url, { timeout });
     const body: Response = await response.json();
     const lowercased = toLowerCase(body.tokenPrices);
-    return Object.fromEntries(addresses.map((address) => [address, lowercased[mapToken(address.toLowerCase())]]));
+    return Object.fromEntries(
+      addresses.map((address) => [address, { price: lowercased[mapToken(address.toLowerCase())], timestamp: nowInSeconds() }])
+    );
   }
 }
 
