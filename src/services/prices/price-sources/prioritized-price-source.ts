@@ -1,6 +1,6 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import {
   doesResponseFulfillRequest,
   fillResponseWithNewResult,
@@ -44,7 +44,7 @@ export class PrioritizedPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return executePrioritized(
       this.sources,
       addresses,
