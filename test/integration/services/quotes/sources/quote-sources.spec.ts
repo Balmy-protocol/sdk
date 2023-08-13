@@ -12,7 +12,7 @@ import { Addresses } from '@shared/constants';
 import { addPercentage, isSameAddress, substractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { IQuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
-import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
+import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';
@@ -83,7 +83,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           tokens: [tokens.nativeToken, tokens.wToken, tokens.STABLE_ERC20, tokens.RANDOM_ERC20],
           addresses: [userSigner, recipientSigner],
         });
-        const gasPriceResult = await new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
+        const gasPriceResult = await new RPCGasPriceSource(PROVIDER_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
 
         // Resolve all deferred
         user.resolve(userSigner);
