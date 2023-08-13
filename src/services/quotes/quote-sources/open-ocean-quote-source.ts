@@ -4,7 +4,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { GasPrice } from '@services/gas/types';
 import { ChainId } from '@types';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth',
@@ -38,7 +38,7 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-export class OpenOceanQuoteSource extends AlwaysValidConfigAndContexSource<OpenOceanSupport> {
+export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport> {
   getMetadata() {
     return OPEN_OCEAN_METADATA;
   }

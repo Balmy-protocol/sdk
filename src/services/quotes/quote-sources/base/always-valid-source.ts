@@ -1,6 +1,6 @@
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, QuoteSourceSupport, SourceQuoteResponse } from '../types';
 
-export abstract class AlwaysValidConfigAndContexSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}>
+export abstract class AlwaysValidConfigAndContextSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}>
   implements IQuoteSource<Support, CustomQuoteSourceConfig>
 {
   abstract getMetadata(): QuoteSourceMetadata<Support>;

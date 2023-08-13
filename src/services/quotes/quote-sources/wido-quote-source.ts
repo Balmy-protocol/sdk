@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { TimeString } from '@types';
 import { IFetchService } from '@services/fetch';
 
@@ -25,7 +25,7 @@ const WIDO_METADATA: QuoteSourceMetadata<WidoSupport> = {
   logoURI: 'ipfs://QmVA2eTK8SBnF2iqUdxvTEUgZbcjBq47P1QejQCRSd9im7',
 };
 type WidoSupport = { buyOrders: false; swapAndTransfer: true };
-export class WidoQuoteSource extends AlwaysValidConfigAndContexSource<WidoSupport> {
+export class WidoQuoteSource extends AlwaysValidConfigAndContextSource<WidoSupport> {
   getMetadata() {
     return WIDO_METADATA;
   }

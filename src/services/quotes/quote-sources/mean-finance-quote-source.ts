@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { Address } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 export const MEAN_FINANCE_SUPPORTED_CHAINS = [
   Chains.ETHEREUM,
@@ -30,7 +30,7 @@ type MeanFinanceConfig = {
   leftoverRecipient?: Address;
 };
 type MeanFinanceSupport = { buyOrders: true; swapAndTransfer: true };
-export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContexSource<MeanFinanceSupport, MeanFinanceConfig> {
+export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<MeanFinanceSupport, MeanFinanceConfig> {
   getMetadata() {
     return MEAN_METADATA;
   }
