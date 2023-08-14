@@ -64,3 +64,7 @@ export function getSourcesThatSupportRequestOrFail(
   if (sourcesInChain.length === 0) throw new Error(`Current price sources can't support all the given chains`);
   return sourcesInChain;
 }
+
+export function nowInSeconds() {
+  return Math.floor(Date.now() / 1000);
+}

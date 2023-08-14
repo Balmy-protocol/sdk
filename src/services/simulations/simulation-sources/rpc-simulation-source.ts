@@ -53,13 +53,19 @@ export class RPCSimulationSource implements ISimulationSource {
 
   private estimateGas(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
-    return this.providerService
-      .getViemPublicClient({ chainId })
-      .estimateGas({
-        ...viemTx,
-        account: viemTx.from,
-      })
-      .then((estimate) => estimate.toString());
+    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
+    return viemSupported
+      ? this.providerService
+          .getViemPublicClient({ chainId })
+          .estimateGas({
+            ...viemTx,
+            account: viemTx.from,
+          })
+          .then((estimate) => estimate.toString())
+      : this.providerService
+          .getEthersProvider({ chainId })
+          .estimateGas(tx)
+          .then((estimate) => estimate.toString());
   }
 }
 

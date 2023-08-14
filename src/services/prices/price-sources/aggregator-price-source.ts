@@ -1,7 +1,7 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import { combineSupport, filterRequestForSource, getSourcesThatSupportRequestOrFail } from './utils';
 
 export type PriceAggregationMethod = 'median' | 'min' | 'max' | 'avg';
@@ -26,7 +26,7 @@ export class AggregatorPriceSource implements IPriceSource {
         }),
       config?.timeout
     );
-    return this.aggregate(collected, aggregateCurrentPrices);
+    return this.aggregate(collected, aggregatePrices);
   }
 
   async getHistoricalPrices({
@@ -39,7 +39,7 @@ export class AggregatorPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const collected = await collectAllResults(
       this.sources,
       addresses,
@@ -53,7 +53,7 @@ export class AggregatorPriceSource implements IPriceSource {
         }),
       config?.timeout
     );
-    return this.aggregate(collected, aggregateHistoricalPrices);
+    return this.aggregate(collected, aggregatePrices);
   }
 
   private aggregate<T>(collected: Record<ChainId, Record<TokenAddress, T[]>>, aggregate: (results: T[], method: PriceAggregationMethod) => T) {
@@ -110,28 +110,7 @@ function collect<T>(results: Record<ChainId, Record<TokenAddress, T>>[]) {
   return collected;
 }
 
-function aggregateCurrentPrices(results: TokenPrice[], method: PriceAggregationMethod): TokenPrice {
-  switch (method) {
-    case 'median':
-      const sorted = results.sort();
-      if (sorted.length > 0 && sorted.length % 2 === 0) {
-        const middleLow = sorted[sorted.length / 2 - 1];
-        const middleHigh = sorted[sorted.length / 2];
-        return (middleLow + middleHigh) / 2;
-      } else {
-        return sorted[Math.floor(sorted.length / 2)];
-      }
-    case 'avg':
-      const sum = sumAll(results);
-      return sum / results.length;
-    case 'max':
-      return Math.max(...results);
-    case 'min':
-      return Math.min(...results);
-  }
-}
-
-function aggregateHistoricalPrices(results: HistoricalPriceResult[], method: PriceAggregationMethod): HistoricalPriceResult {
+function aggregatePrices(results: PriceResult[], method: PriceAggregationMethod): PriceResult {
   const sorted = results.sort((a, b) => a.price - b.price);
   switch (method) {
     case 'median':

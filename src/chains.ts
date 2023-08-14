@@ -113,6 +113,15 @@ export const Chains = {
     ],
     explorer: 'https://bscscan.com/',
   },
+  BASE: {
+    chainId: 8453,
+    name: 'Base',
+    ids: ['base'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x4200000000000000000000000000000000000006',
+    publicRPCs: ['https://mainnet.base.org', 'https://base-mainnet.public.blastapi.io', 'https://base.blockpi.network/v1/rpc/public'],
+    explorer: 'https://basescan.org/',
+  },
   FANTOM: {
     chainId: 250,
     name: 'Fantom',
@@ -203,8 +212,12 @@ export const Chains = {
     publicRPCs: [
       'https://rpc.gnosischain.com/',
       'https://gnosischain-rpc.gateway.pokt.network',
+      'https://xdai-rpc.gateway.pokt.network',
       'https://rpc.ankr.com/gnosis',
       'https://xdai-archive.blockscout.com',
+      'https://gnosis-mainnet.public.blastapi.io',
+      'https://gnosis.blockpi.network/v1/rpc/public',
+      'https://rpc.gnosis.gateway.fm',
     ],
     explorer: 'https://gnosisscan.io/',
   },
@@ -341,7 +354,7 @@ export const Chains = {
     nativeCurrency: { symbol: 'KAVA', name: 'Kava' },
     wToken: '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b',
     publicRPCs: ['https://evm.kava.io', 'https://evm2.kava.io'],
-    explorer: 'https://explorer.kava.io',
+    explorer: 'https://explorer.kava.io/',
   },
   ETHEREUM_GOERLI: {
     chainId: 5,
