@@ -27,6 +27,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.AURORA.chainId]: 'AURORA',
   [Chains.HECO.chainId]: 'HECO',
   [Chains.EVMOS.chainId]: 'EVMOS',
+  [Chains.POLYGON_ZKEVM.chainId]: 'POLYGONZK',
 };
 
 const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {

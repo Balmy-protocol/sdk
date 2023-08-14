@@ -34,7 +34,7 @@ const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
 const CHANGELLY_GAS_SOURCE = new ChangellyGasPriceSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
 
-jest.retryTimes(2);
+jest.retryTimes(3);
 jest.setTimeout(ms('30s'));
 
 describe('Gas Price Sources', () => {

@@ -27,6 +27,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.VELAS.chainId,
       Chains.AURORA.chainId,
       Chains.EVMOS.chainId,
+      Chains.POLYGON_ZKEVM.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
