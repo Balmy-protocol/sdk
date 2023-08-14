@@ -15,7 +15,7 @@ import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compa
 import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, isSameAddress } from '@shared/utils';
-import { IGasService, IMetadataService, IPriceService, TokenPrice } from '..';
+import { IGasService, IMetadataService, IPriceService, PriceResult, TokenPrice } from '..';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
@@ -240,8 +240,8 @@ export class QuoteService implements IQuoteService {
         promises.prices,
         promises.gasCalculator,
       ]);
-      const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken] };
-      const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken] };
+      const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken]?.price };
+      const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken]?.price };
       let gas: QuoteResponse['gas'];
       if (response.estimatedGas) {
         const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.tx });
@@ -249,7 +249,11 @@ export class QuoteService implements IQuoteService {
         const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
         gas = {
           estimatedGas: response.estimatedGas,
-          ...calculateGasDetails(getChainByKeyOrFail(request.chainId).nativeCurrency.symbol, gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
+          ...calculateGasDetails(
+            getChainByKeyOrFail(request.chainId).nativeCurrency.symbol,
+            gasCostNativeToken,
+            prices[Addresses.NATIVE_TOKEN].price
+          ),
         };
       }
       return {
@@ -315,13 +319,18 @@ export class QuoteService implements IQuoteService {
         },
       })
       .catch(() => Promise.reject(new Error(`Failed to fetch the quote's tokens`)));
+    const emptyPriceResult = { price: 0, timestamp: 0 };
     const prices = this.priceService
       .getCurrentPricesForChain({
         chainId: request.chainId,
         addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
         config: { timeout: reducedTimeout },
       })
-      .catch(() => ({ [request.sellToken]: 0, [request.buyToken]: 0, [Addresses.NATIVE_TOKEN]: 0 }));
+      .catch(() => ({
+        [request.sellToken]: emptyPriceResult,
+        [request.buyToken]: emptyPriceResult,
+        [Addresses.NATIVE_TOKEN]: emptyPriceResult,
+      }));
     const gasCalculator = this.gasService
       .getQuickGasCalculator({
         chainId: request.chainId,
@@ -417,6 +426,6 @@ export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: 
 
 type Promises = {
   tokens: Promise<Record<TokenAddress, BaseTokenMetadata>>;
-  prices: Promise<Record<TokenAddress, TokenPrice>>;
+  prices: Promise<Record<TokenAddress, PriceResult>>;
   gasCalculator: Promise<IQuickGasCostCalculator<DefaultGasValues>>;
 };

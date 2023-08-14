@@ -1,6 +1,6 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 
 export class DefiLlamaPriceSource implements IPriceSource {
@@ -19,14 +19,14 @@ export class DefiLlamaPriceSource implements IPriceSource {
   async getCurrentPrices(params: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
-    const result: Record<ChainId, Record<TokenAddress, TokenPrice>> = {};
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
     const data = await this.defiLlama.getCurrentTokenData(params);
     for (const [chainIdString, tokens] of Object.entries(data)) {
       const chainId = Number(chainIdString);
       result[chainId] = {};
       for (const [address, token] of Object.entries(tokens)) {
-        result[chainId][address] = token.price;
+        result[chainId][address] = { price: token.price, timestamp: token.timestamp };
       }
     }
     return result;
@@ -37,8 +37,8 @@ export class DefiLlamaPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
-    const result: Record<ChainId, Record<TokenAddress, HistoricalPriceResult>> = {};
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
     const data = await this.defiLlama.getHistoricalTokenData(params);
     for (const [chainIdString, tokens] of Object.entries(data)) {
       const chainId = Number(chainIdString);

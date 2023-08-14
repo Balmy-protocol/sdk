@@ -233,7 +233,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     permissionPermit,
   }: ReduceDCAPositionParams): Promise<TransactionResponse> {
     const position = await this.getUserPosition(chainId, positionId);
-    const shouldConvert = reduce.convertTo && !isSameAddress(position.to, reduce.convertTo);
+    const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
 
     if (!shouldConvert) {
       // If don't need to convert anything, then just call the hub
@@ -296,7 +296,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     const calls: Call[] = [];
 
     const position = await this.getUserPosition(chainId, positionId);
-    const shouldConvert = reduce.convertTo && !isSameAddress(position.to, reduce.convertTo);
+    const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
     if (amountOfSwaps === 0 || !shouldConvert) {
       // In these two scenarios, we can use the normal reduce
       const amount =

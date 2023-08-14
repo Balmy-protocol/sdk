@@ -1,6 +1,6 @@
 {
   "name": "@mean-finance/sdk",
-  "version": "0.0.131",
+  "version": "0.0.136",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -42,7 +42,7 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
-    "alchemy-sdk": "2.9.0",
+    "alchemy-sdk": "2.9.2",
     "cross-fetch": "3.1.5",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
@@ -59,9 +59,9 @@
     "@nomiclabs/hardhat-ethers": "2.2.3",
     "@types/jest": "29.5.1",
     "@types/node": "18.16.3",
-    "@types/ws": "^8.5.4",
+    "@types/ws": "^8.5.5",
     "chai": "4.3.7",
-    "dotenv": "16.0.3",
+    "dotenv": "16.3.1",
     "ethers": "5.7.2",
     "hardhat": "2.13.0",
     "husky": "8.0.3",

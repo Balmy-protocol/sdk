@@ -8,6 +8,7 @@ import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
+import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -68,6 +69,7 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
 });
 const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
+const MAGPIE_BALANCE_SOURCE = new MagpieBalanceSource(FETCH_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
@@ -79,6 +81,7 @@ describe('Balance Sources', () => {
   balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
+  // balanceSourceTest({ title: 'Magpie', source: MAGPIE_BALANCE_SOURCE }); Note: fails to return all tokens since there are so many
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {

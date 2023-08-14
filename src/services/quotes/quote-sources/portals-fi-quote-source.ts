@@ -3,7 +3,7 @@ import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared
 import { isSameAddress } from '@shared/utils';
 import { TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 
 export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
@@ -16,7 +16,7 @@ export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
   logoURI: 'ipfs://QmYJiiZAxFHSJb37y25unRUyWioTH6odKWmEZ1psD1DyuL',
 };
 type PortalsFiSupport = { buyOrders: false; swapAndTransfer: false };
-export class PortalsFiQuoteSource extends AlwaysValidConfigAndContexSource<PortalsFiSupport> {
+export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<PortalsFiSupport> {
   getMetadata() {
     return PORTALS_FI_METADATA;
   }
