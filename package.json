@@ -1,6 +1,6 @@
 {
   "name": "@mean-finance/sdk",
-  "version": "0.0.106",
+  "version": "0.0.136",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -32,7 +32,9 @@
     "lint:check": "prettier --check .",
     "lint:fix": "sort-package-json && prettier --write .",
     "prepare": "husky install",
-    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration",
+    "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
+    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration -t \"^(?!.*\\[External Quotes\\]).*$\"",
+    "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose -t \".*\\[External Quotes\\].*\"",
     "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
   },
   "lint-staged": {
@@ -40,15 +42,15 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
-    "alchemy-sdk": "2.8.0",
+    "alchemy-sdk": "2.9.0",
     "cross-fetch": "3.1.5",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
-    "viem": "1.0.5"
+    "viem": "1.2.0"
   },
   "devDependencies": {
     "@commitlint/cli": "17.6.1",
-    "@commitlint/config-conventional": "17.6.1",
+    "@commitlint/config-conventional": "17.6.7",
     "@ethersproject/abi": "5.7.0",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",

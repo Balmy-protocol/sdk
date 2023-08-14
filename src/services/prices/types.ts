@@ -9,24 +9,24 @@ export type IPriceService = {
     chainId: ChainId;
     addresses: TokenAddress[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<TokenAddress, TokenPrice>>;
+  }): Promise<Record<TokenAddress, PriceResult>>;
   getCurrentPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>>;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
   getHistoricalPricesForChain(_: {
     chainId: ChainId;
     addresses: TokenAddress[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<TokenAddress, HistoricalPriceResult>>;
+  }): Promise<Record<TokenAddress, PriceResult>>;
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>>;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
 };
 
 export type PricesQueriesSupport = {
@@ -34,18 +34,18 @@ export type PricesQueriesSupport = {
   getCurrentPrices: true;
 };
 
-export type HistoricalPriceResult = { price: TokenPrice; timestamp: Timestamp };
+export type PriceResult = { price: TokenPrice; timestamp: Timestamp };
 
 export type IPriceSource = {
   supportedQueries(): Record<ChainId, PricesQueriesSupport>;
   getCurrentPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>>;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>>;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
 };

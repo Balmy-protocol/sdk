@@ -30,6 +30,17 @@ export type TransactionRequest = {
   gasLimit?: BigIntish;
   type?: number;
 };
+export type TransactionResponse = {
+  to: string;
+  data: string;
+  value?: AmountOfToken;
+};
+export type ContractCall = {
+  address: Address;
+  abi: { humanReadable: string[] } | { json: readonly any[] };
+  functionName: string;
+  args?: any[];
+};
 
 export type SupportRecord<Values extends object> = { [K in keyof Values]-?: undefined extends Values[K] ? 'optional' : 'present' };
 export type SupportInChain<Values extends object> = {

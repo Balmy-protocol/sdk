@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { AmountOfToken, TokenAddress } from '@types';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
@@ -34,7 +34,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   logoURI: 'ipfs://QmUgcnaNxsgQdjBjytxvXfeSfsDryh9bF4mNaz1Bp5QwJ4',
 };
 type LiFiSupport = { buyOrders: false; swapAndTransfer: true };
-export class LiFiQuoteSource extends AlwaysValidConfigAndContexSource<LiFiSupport> {
+export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSupport> {
   getMetadata() {
     return LI_FI_METADATA;
   }

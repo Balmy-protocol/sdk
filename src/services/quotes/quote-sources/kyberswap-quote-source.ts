@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { ChainId } from '@types';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
@@ -31,7 +31,7 @@ const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
   logoURI: 'ipfs://QmNcTVyqeVtNoyrT546VgJTD4vsZEkWp6zhDJ4qhgKkhbK',
 };
 type KyberswapSupport = { buyOrders: false; swapAndTransfer: true };
-export class KyberswapQuoteSource extends AlwaysValidConfigAndContexSource<KyberswapSupport> {
+export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<KyberswapSupport> {
   getMetadata() {
     return KYBERSWAP_METADATA;
   }

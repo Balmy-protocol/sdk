@@ -70,7 +70,8 @@ describe('Token Price Sources', () => {
             config: { timeout: '10s' },
           }),
         validation: (price) => {
-          expect(typeof price).to.equal('number');
+          expect(typeof price.price).to.equal('number');
+          expect(typeof price.timestamp).to.equal('number');
         },
       });
       queryTest({

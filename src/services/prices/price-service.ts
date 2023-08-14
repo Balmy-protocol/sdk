@@ -1,6 +1,6 @@
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { IPriceService, IPriceSource, TokenPrice } from './types';
+import { IPriceService, IPriceSource, PriceResult } from './types';
 
 export class PriceService implements IPriceService {
   constructor(private readonly priceSource: IPriceSource) {}
@@ -23,7 +23,7 @@ export class PriceService implements IPriceService {
     chainId: ChainId;
     addresses: TokenAddress[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<TokenAddress, TokenPrice>> {
+  }): Promise<Record<TokenAddress, PriceResult>> {
     const byChainId = { [chainId]: addresses };
     const result = await this.getCurrentPrices({ addresses: byChainId, config });
     return result[chainId] ?? {};
@@ -35,7 +35,7 @@ export class PriceService implements IPriceService {
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return timeoutPromise(this.priceSource.getCurrentPrices({ addresses, config }), config?.timeout, {
       description: 'Timeouted while fetching current prices',
     });

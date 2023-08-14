@@ -40,8 +40,9 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       `&toTokenAddress=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
       `&slippage=${slippagePercentage * 10}` +
-      `&takerAddress=${takeFrom}` +
       `&skipValidation=true`;
+    // We are disabling RFQ because it fails often when validation is turned off. But we can't turn it on or the simulation quote would fail
+    // `&takerAddress=${takeFrom}`
 
     if (recipient && !isSameAddress(recipient, takeFrom)) {
       url += `&recipientAddress=${recipient}`;

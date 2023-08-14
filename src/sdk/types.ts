@@ -9,6 +9,9 @@ import { IQuoteService } from '@services/quotes/types';
 import { IMetadataService } from '@services/metadata/types';
 import { CalculateMetadataFromSourceParams } from './builders/metadata-builder';
 import { CalculateGasValuesFromSourceParams } from './builders/gas-builder';
+import { ILogsService } from '@services/logs';
+import { IPermit2Service } from '@services/permit2';
+import { IDCAService } from '@services/dca';
 
 export type ISDK<
   TokenMetadata extends object = CalculateMetadataFromSourceParams<undefined>,
@@ -22,5 +25,8 @@ export type ISDK<
   balanceService: IBalanceService;
   quoteService: IQuoteService;
   priceService: IPriceService;
+  logsService: ILogsService;
   metadataService: IMetadataService<TokenMetadata>;
+  permit2Service: IPermit2Service;
+  dcaService: IDCAService;
 };

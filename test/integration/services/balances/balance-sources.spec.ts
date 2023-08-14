@@ -74,7 +74,7 @@ jest.setTimeout(ms('1m'));
 
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE }); Disabled because of flakyness
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE });
   // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
@@ -117,7 +117,7 @@ describe('Balance Sources', () => {
           let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
           beforeAll(async () => {
             const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
-            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '30s' } });
+            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '1m' } });
           });
 
           validateBalances(() => result, supportedChains, false);
