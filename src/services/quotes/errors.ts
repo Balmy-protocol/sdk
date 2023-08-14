@@ -39,3 +39,10 @@ export class FailedToGenerateQuoteError extends Error {
     super(`${sourceName}: failed to calculate a quote between ${sellToken} and ${buyToken} on ${chain}${context}`);
   }
 }
+
+export class FailedToGenerateAnyQuotesError extends Error {
+  constructor(chainId: ChainId, sellToken: TokenAddress, buyToken: TokenAddress) {
+    const chain = getChainByKey(chainId)?.name ?? `chain with id ${chainId}`;
+    super(`Failed to calculate a quote between ${sellToken} and ${buyToken} on ${chain}`);
+  }
+}

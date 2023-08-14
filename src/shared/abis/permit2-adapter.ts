@@ -1,18 +1,294 @@
-export const PERMIT2_ADAPTER_ABI = [
-  'constructor(address _permit2)',
-  'error AddressEmptyCode(address target)',
-  'error AddressInsufficientBalance(address account)',
-  'error FailedInnerCall()',
-  'error InvalidNativeAmount(uint256 received, uint256 expected)',
-  'error ReceivedTooLittleTokenOut(uint256 received, uint256 expected)',
-  'error SafeERC20FailedOperation(address token)',
-  'error TransactionDeadlinePassed(uint256 current, uint256 deadline)',
-  'function NATIVE_TOKEN() view returns (address)',
-  'function PERMIT2() view returns (address)',
-  'function buyOrderSwap((uint256 deadline, address tokenIn, uint256 maxAmountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 amountOut, (address recipient, uint256 shareBps)[] transferOut, address unspentTokenInRecipient) _params) payable returns (uint256 _amountIn, uint256 _amountOut)',
-  'function buyOrderSwapWithGasMeasurement((uint256 deadline, address tokenIn, uint256 maxAmountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 amountOut, (address recipient, uint256 shareBps)[] transferOut, address unspentTokenInRecipient) _params) payable returns (uint256 _amountIn, uint256 _amountOut, uint256 _gasSpent)',
-  'function executeWithBatchPermit(((address token, uint256 amount)[] tokens, uint256 nonce, bytes signature) _batchPermit, (address token, address allowanceTarget)[] _allowanceTargets, (address target, bytes data, uint256 value)[] _contractCalls, (address token, (address recipient, uint256 shareBps)[] distribution)[] _transferOut, uint256 _deadline) payable returns (bytes[] _executionResults, uint256[] _tokenBalances)',
-  'function executeWithPermit((address token, uint256 amount, uint256 nonce, bytes signature) _permit, (address token, address allowanceTarget)[] _allowanceTargets, (address target, bytes data, uint256 value)[] _contractCalls, (address token, (address recipient, uint256 shareBps)[] distribution)[] _transferOut, uint256 _deadline) payable returns (bytes[] _executionResults, uint256[] _tokenBalances)',
-  'function sellOrderSwap((uint256 deadline, address tokenIn, uint256 amountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 minAmountOut, (address recipient, uint256 shareBps)[] transferOut) _params) payable returns (uint256 _amountIn, uint256 _amountOut)',
-  'function sellOrderSwapWithGasMeasurement((uint256 deadline, address tokenIn, uint256 amountIn, uint256 nonce, bytes signature, address allowanceTarget, address swapper, bytes swapData, address tokenOut, uint256 minAmountOut, (address recipient, uint256 shareBps)[] transferOut) _params) payable returns (uint256 _amountIn, uint256 _amountOut, uint256 _gasSpent)',
-];
+export default [
+  { inputs: [{ internalType: 'contract IPermit2', name: '_permit2', type: 'address' }], stateMutability: 'nonpayable', type: 'constructor' },
+  { inputs: [{ internalType: 'address', name: 'target', type: 'address' }], name: 'AddressEmptyCode', type: 'error' },
+  { inputs: [{ internalType: 'address', name: 'account', type: 'address' }], name: 'AddressInsufficientBalance', type: 'error' },
+  { inputs: [], name: 'FailedInnerCall', type: 'error' },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'received', type: 'uint256' },
+      { internalType: 'uint256', name: 'expected', type: 'uint256' },
+    ],
+    name: 'InvalidNativeAmount',
+    type: 'error',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'received', type: 'uint256' },
+      { internalType: 'uint256', name: 'expected', type: 'uint256' },
+    ],
+    name: 'ReceivedTooLittleTokenOut',
+    type: 'error',
+  },
+  { inputs: [{ internalType: 'address', name: 'token', type: 'address' }], name: 'SafeERC20FailedOperation', type: 'error' },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'bool', name: 'success', type: 'bool' },
+          { internalType: 'bytes', name: 'result', type: 'bytes' },
+          { internalType: 'uint256', name: 'gasSpent', type: 'uint256' },
+        ],
+        internalType: 'struct ISimulationAdapter.SimulationResult',
+        name: 'result',
+        type: 'tuple',
+      },
+    ],
+    name: 'SimulatedCall',
+    type: 'error',
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'current', type: 'uint256' },
+      { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+    ],
+    name: 'TransactionDeadlinePassed',
+    type: 'error',
+  },
+  {
+    inputs: [],
+    name: 'NATIVE_TOKEN',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'PERMIT2',
+    outputs: [{ internalType: 'contract IPermit2', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          { internalType: 'address', name: 'tokenIn', type: 'address' },
+          { internalType: 'uint256', name: 'maxAmountIn', type: 'uint256' },
+          { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'address', name: 'allowanceTarget', type: 'address' },
+          { internalType: 'address', name: 'swapper', type: 'address' },
+          { internalType: 'bytes', name: 'swapData', type: 'bytes' },
+          { internalType: 'address', name: 'tokenOut', type: 'address' },
+          { internalType: 'uint256', name: 'amountOut', type: 'uint256' },
+          {
+            components: [
+              { internalType: 'address', name: 'recipient', type: 'address' },
+              { internalType: 'uint256', name: 'shareBps', type: 'uint256' },
+            ],
+            internalType: 'struct Token.DistributionTarget[]',
+            name: 'transferOut',
+            type: 'tuple[]',
+          },
+          { internalType: 'address', name: 'unspentTokenInRecipient', type: 'address' },
+        ],
+        internalType: 'struct ISwapPermit2Adapter.BuyOrderSwapParams',
+        name: '_params',
+        type: 'tuple',
+      },
+    ],
+    name: 'buyOrderSwap',
+    outputs: [
+      { internalType: 'uint256', name: '_amountIn', type: 'uint256' },
+      { internalType: 'uint256', name: '_amountOut', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              { internalType: 'address', name: 'token', type: 'address' },
+              { internalType: 'uint256', name: 'amount', type: 'uint256' },
+            ],
+            internalType: 'struct IPermit2.TokenPermissions[]',
+            name: 'tokens',
+            type: 'tuple[]',
+          },
+          { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.BatchPermit',
+        name: '_batchPermit',
+        type: 'tuple',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'address', name: 'allowanceTarget', type: 'address' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.AllowanceTarget[]',
+        name: '_allowanceTargets',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'target', type: 'address' },
+          { internalType: 'bytes', name: 'data', type: 'bytes' },
+          { internalType: 'uint256', name: 'value', type: 'uint256' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.ContractCall[]',
+        name: '_contractCalls',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          {
+            components: [
+              { internalType: 'address', name: 'recipient', type: 'address' },
+              { internalType: 'uint256', name: 'shareBps', type: 'uint256' },
+            ],
+            internalType: 'struct Token.DistributionTarget[]',
+            name: 'distribution',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.TransferOut[]',
+        name: '_transferOut',
+        type: 'tuple[]',
+      },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+    ],
+    name: 'executeWithBatchPermit',
+    outputs: [
+      { internalType: 'bytes[]', name: '_executionResults', type: 'bytes[]' },
+      { internalType: 'uint256[]', name: '_tokenBalances', type: 'uint256[]' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'uint256', name: 'amount', type: 'uint256' },
+          { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.SinglePermit',
+        name: '_permit',
+        type: 'tuple',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'address', name: 'allowanceTarget', type: 'address' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.AllowanceTarget[]',
+        name: '_allowanceTargets',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'target', type: 'address' },
+          { internalType: 'bytes', name: 'data', type: 'bytes' },
+          { internalType: 'uint256', name: 'value', type: 'uint256' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.ContractCall[]',
+        name: '_contractCalls',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          {
+            components: [
+              { internalType: 'address', name: 'recipient', type: 'address' },
+              { internalType: 'uint256', name: 'shareBps', type: 'uint256' },
+            ],
+            internalType: 'struct Token.DistributionTarget[]',
+            name: 'distribution',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.TransferOut[]',
+        name: '_transferOut',
+        type: 'tuple[]',
+      },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+    ],
+    name: 'executeWithPermit',
+    outputs: [
+      { internalType: 'bytes[]', name: '_executionResults', type: 'bytes[]' },
+      { internalType: 'uint256[]', name: '_tokenBalances', type: 'uint256[]' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          { internalType: 'address', name: 'tokenIn', type: 'address' },
+          { internalType: 'uint256', name: 'amountIn', type: 'uint256' },
+          { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'address', name: 'allowanceTarget', type: 'address' },
+          { internalType: 'address', name: 'swapper', type: 'address' },
+          { internalType: 'bytes', name: 'swapData', type: 'bytes' },
+          { internalType: 'address', name: 'tokenOut', type: 'address' },
+          { internalType: 'uint256', name: 'minAmountOut', type: 'uint256' },
+          {
+            components: [
+              { internalType: 'address', name: 'recipient', type: 'address' },
+              { internalType: 'uint256', name: 'shareBps', type: 'uint256' },
+            ],
+            internalType: 'struct Token.DistributionTarget[]',
+            name: 'transferOut',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct ISwapPermit2Adapter.SellOrderSwapParams',
+        name: '_params',
+        type: 'tuple',
+      },
+    ],
+    name: 'sellOrderSwap',
+    outputs: [
+      { internalType: 'uint256', name: '_amountIn', type: 'uint256' },
+      { internalType: 'uint256', name: '_amountOut', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes[]', name: '_calls', type: 'bytes[]' }],
+    name: 'simulate',
+    outputs: [
+      {
+        components: [
+          { internalType: 'bool', name: 'success', type: 'bool' },
+          { internalType: 'bytes', name: 'result', type: 'bytes' },
+          { internalType: 'uint256', name: 'gasSpent', type: 'uint256' },
+        ],
+        internalType: 'struct ISimulationAdapter.SimulationResult[]',
+        name: '_results',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes', name: '_call', type: 'bytes' }],
+    name: 'simulateAndRevert',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes4', name: '_interfaceId', type: 'bytes4' }],
+    name: 'supportsInterface',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  { stateMutability: 'payable', type: 'receive' },
+] as const;

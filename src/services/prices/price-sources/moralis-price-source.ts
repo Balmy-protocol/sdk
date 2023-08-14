@@ -1,10 +1,11 @@
 import { Address, ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { Chains, getChainByKey } from '@chains';
-import { HistoricalPriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
 import { IFetchService } from '@services/fetch';
 import { isSameAddress, toTrimmedHex } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
+import { nowInSeconds } from './utils';
 
 const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.FANTOM, Chains.ARBITRUM, Chains.CRONOS];
 
@@ -23,8 +24,8 @@ export class MoralisPriceSource implements IPriceSource {
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, TokenPrice>>> {
-    const result: Record<ChainId, Record<TokenAddress, TokenPrice>> = Object.fromEntries(
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const result: Record<ChainId, Record<TokenAddress, PriceResult>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [Number(chainId), {}])
     );
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
@@ -45,18 +46,18 @@ export class MoralisPriceSource implements IPriceSource {
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, HistoricalPriceResult>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 
-  private async fetchPrice(chainId: ChainId, address: Address, config?: { timeout?: TimeString }): Promise<TokenPrice | undefined> {
+  private async fetchPrice(chainId: ChainId, address: Address, config?: { timeout?: TimeString }): Promise<PriceResult | undefined> {
     const addressToFetch = isSameAddress(address, Addresses.NATIVE_TOKEN) ? getChainByKey(chainId)?.wToken : address;
     if (!addressToFetch) return undefined;
     const body = await this.fetch(
       `https://deep-index.moralis.io/api/v2/erc20/${addressToFetch.toLowerCase()}/price?chain=${chainIdToValidChain(chainId)}`,
       config?.timeout
     );
-    return body.usdPrice;
+    return { price: body.usdPrice, timestamp: nowInSeconds() };
   }
 
   private async fetch(url: string, timeout?: TimeString): Promise<any> {

@@ -1,4 +1,4 @@
-import { AmountOfToken, BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress, Chain } from '@types';
+import { BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import {
   EstimatedQuoteResponse,
   EstimatedQuoteRequest,
@@ -15,7 +15,7 @@ import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compa
 import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, isSameAddress } from '@shared/utils';
-import { IGasService, IMetadataService, IPriceService, TokenPrice } from '..';
+import { IGasService, IMetadataService, IPriceService, PriceResult, TokenPrice } from '..';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { Addresses } from '@shared/constants';
@@ -25,6 +25,7 @@ import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
 import { SourceConfig, SourceWithConfigId } from './source-registry';
 import {
+  FailedToGenerateAnyQuotesError,
   FailedToGenerateQuoteError,
   SourceNoBuyOrdersError,
   SourceNoSwapAndTransferError,
@@ -138,7 +139,7 @@ export class QuoteService implements IQuoteService {
     const quote = await quotes[0];
 
     if ('failed' in quote) {
-      throw new FailedToGenerateQuoteError(quote.name, request.chainId, request.sellToken, request.buyToken, quote.error);
+      throw new FailedToGenerateQuoteError(quote.source.name, request.chainId, request.sellToken, request.buyToken, quote.error);
     }
 
     return quote;
@@ -200,6 +201,27 @@ export class QuoteService implements IQuoteService {
     return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
   }
 
+  async getBestQuote({
+    request,
+    config,
+  }: {
+    request: QuoteRequest;
+    config?: { choose?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
+  }): Promise<QuoteResponse> {
+    const allQuotes = await this.getAllQuotes({
+      request,
+      config: {
+        timeout: config?.timeout,
+        sort: config?.choose,
+        ignoredFailed: true,
+      },
+    });
+    if (allQuotes.length === 0) {
+      throw new FailedToGenerateAnyQuotesError(request.chainId, request.sellToken, request.buyToken);
+    }
+    return allQuotes[0];
+  }
+
   private async listResponseToQuoteResponse({
     sourceId,
     request,
@@ -218,8 +240,8 @@ export class QuoteService implements IQuoteService {
         promises.prices,
         promises.gasCalculator,
       ]);
-      const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken] };
-      const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken] };
+      const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken]?.price };
+      const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken]?.price };
       let gas: QuoteResponse['gas'];
       if (response.estimatedGas) {
         const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.tx });
@@ -227,7 +249,11 @@ export class QuoteService implements IQuoteService {
         const { gasCostNativeToken, ...gasPrice } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
         gas = {
           estimatedGas: response.estimatedGas,
-          ...calculateGasDetails(getChainByKeyOrFail(request.chainId), gasCostNativeToken, prices[Addresses.NATIVE_TOKEN]),
+          ...calculateGasDetails(
+            getChainByKeyOrFail(request.chainId).nativeCurrency.symbol,
+            gasCostNativeToken,
+            prices[Addresses.NATIVE_TOKEN].price
+          ),
         };
       }
       return {
@@ -244,8 +270,11 @@ export class QuoteService implements IQuoteService {
       const metadata = this.supportedSources()[sourceId];
       return {
         failed: true,
-        name: metadata.name,
-        logoURI: metadata.logoURI,
+        source: {
+          id: sourceId,
+          name: metadata.name,
+          logoURI: metadata.logoURI,
+        },
         error: e instanceof Error ? e.message : JSON.stringify(e),
       };
     }
@@ -290,13 +319,18 @@ export class QuoteService implements IQuoteService {
         },
       })
       .catch(() => Promise.reject(new Error(`Failed to fetch the quote's tokens`)));
+    const emptyPriceResult = { price: 0, timestamp: 0 };
     const prices = this.priceService
       .getCurrentPricesForChain({
         chainId: request.chainId,
         addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
         config: { timeout: reducedTimeout },
       })
-      .catch(() => ({ [request.sellToken]: 0, [request.buyToken]: 0, [Addresses.NATIVE_TOKEN]: 0 }));
+      .catch(() => ({
+        [request.sellToken]: emptyPriceResult,
+        [request.buyToken]: emptyPriceResult,
+        [Addresses.NATIVE_TOKEN]: emptyPriceResult,
+      }));
     const gasCalculator = this.gasService
       .getQuickGasCalculator({
         chainId: request.chainId,
@@ -353,11 +387,14 @@ export class QuoteService implements IQuoteService {
   }
 }
 
-function ifNotFailed<T1 extends object, T2 extends object>(response: T1 | FailedQuote, mapped: (_: T1) => T2): T2 | FailedQuote {
-  return 'failed' in response ? response : mapped(response);
+export function ifNotFailed<T1 extends FailedQuote | object, T2>(
+  response: T1 | FailedQuote,
+  mapped: (_: T1) => T2
+): T1 extends FailedQuote ? FailedQuote : T2 {
+  return ('failed' in response ? response : mapped(response)) as T1 extends FailedQuote ? FailedQuote : T2;
 }
 
-function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: AmountOfToken) {
+export function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: BigIntish) {
   const amountInUSD = amountToUSD(token.decimals, amount, price);
   return {
     amount: amount.toString(),
@@ -377,17 +414,18 @@ function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse)
   return response;
 }
 
-function calculateGasDetails(chain: Chain, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
+export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
   return {
     estimatedCost: gasCostNativeToken.toString(),
     estimatedCostInUnits: formatUnits(BigInt(gasCostNativeToken), 18).toString(),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
-    gasTokenSymbol: chain.nativeCurrency.symbol,
+    gasTokenPrice: nativeTokenPrice,
+    gasTokenSymbol,
   };
 }
 
 type Promises = {
   tokens: Promise<Record<TokenAddress, BaseTokenMetadata>>;
-  prices: Promise<Record<TokenAddress, TokenPrice>>;
+  prices: Promise<Record<TokenAddress, PriceResult>>;
   gasCalculator: Promise<IQuickGasCostCalculator<DefaultGasValues>>;
 };

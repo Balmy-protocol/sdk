@@ -1,6 +1,6 @@
 {
   "name": "@mean-finance/sdk",
-  "version": "0.0.116",
+  "version": "0.0.136",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -32,8 +32,9 @@
     "lint:check": "prettier --check .",
     "lint:fix": "sort-package-json && prettier --write .",
     "prepare": "husky install",
-    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration --testPathIgnorePatterns=test/integration/services/quotes",
-    "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration/services/quotes",
+    "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
+    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration -t \"^(?!.*\\[External Quotes\\]).*$\"",
+    "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose -t \".*\\[External Quotes\\].*\"",
     "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
   },
   "lint-staged": {
@@ -45,7 +46,7 @@
     "cross-fetch": "3.1.5",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
-    "viem": "1.0.5"
+    "viem": "1.2.0"
   },
   "devDependencies": {
     "@commitlint/cli": "17.6.1",
@@ -58,9 +59,9 @@
     "@nomiclabs/hardhat-ethers": "2.2.3",
     "@types/jest": "29.5.1",
     "@types/node": "18.16.3",
-    "@types/ws": "^8.5.4",
+    "@types/ws": "^8.5.5",
     "chai": "4.3.7",
-    "dotenv": "16.0.3",
+    "dotenv": "16.3.1",
     "ethers": "5.7.2",
     "hardhat": "2.13.0",
     "husky": "8.0.3",

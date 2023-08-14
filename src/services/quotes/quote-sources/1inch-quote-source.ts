@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { Chain } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
@@ -26,7 +26,7 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
 };
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
 type OneInchConfig = { customDomain?: string };
-export class OneInchQuoteSource extends AlwaysValidConfigAndContexSource<OneInchSupport, OneInchConfig> {
+export class OneInchQuoteSource extends AlwaysValidConfigAndContextSource<OneInchSupport, OneInchConfig> {
   getMetadata() {
     return ONE_INCH_METADATA;
   }

@@ -1,87 +1,32 @@
 import { encodeFunctionData, parseAbi } from 'viem';
-import { BigIntish } from '@types';
-import { IMulticallService } from '@services/multicall';
 import { calculateDeadline } from '@shared/utils';
-import { PERMIT2_ADAPTER_ABI } from '@shared/abis/permit2-adapter';
-import { Addresses } from '@shared/constants';
+import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import {
   ArbitraryCallWithBatchPermitParams,
-  ArbitraryCallWithNativeParams,
+  ArbitraryCallWithoutPermitParams,
   ArbitraryCallWithPermitParams,
   BaseArbitraryCallParams,
   BatchPermitData,
   BatchPermitParams,
   IPermit2ArbitraryService,
-  Permit2Transaction,
+  IPermit2Service,
   PermitData,
   SinglePermitParams,
 } from './types';
-import { calculateNonce } from './utils/calculate-nonce';
-import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_ADDRESS } from './utils/config';
-import { PERMIT2_TRANSFER_FROM_TYPES, PERMIT2_BATCH_TRANSFER_FROM_TYPES } from './utils/eip712-types';
+import { PERMIT2_ADAPTER_ADDRESS } from './utils/config';
+import { TransactionResponse } from '@types';
 
 export class Permit2ArbitraryService implements IPermit2ArbitraryService {
   readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
 
-  constructor(private readonly multicallService: IMulticallService) {}
+  constructor(private readonly permit2Service: IPermit2Service) {}
 
-  async preparePermitData({ appId, chainId, token, amount, signerAddress, signatureValidFor }: SinglePermitParams): Promise<PermitData> {
-    const nonce = await calculateNonce({ chainId, wordSeed: appId, user: signerAddress, multicall: this.multicallService }).then((nonce) =>
-      nonce.toString()
-    );
-    const deadline = calculateDeadline(signatureValidFor).toString();
-    return {
-      dataToSign: {
-        types: PERMIT2_TRANSFER_FROM_TYPES,
-        domain: {
-          name: 'Permit2',
-          chainId,
-          verifyingContract: PERMIT2_ADDRESS,
-        },
-        message: {
-          permitted: { token, amount: amount.toString() },
-          spender: PERMIT2_ADAPTER_ADDRESS,
-          nonce,
-          deadline,
-        },
-        primaryType: 'PermitTransferFrom',
-      },
-      permitData: {
-        token,
-        amount: amount.toString(),
-        nonce,
-        deadline,
-      },
-    };
+  preparePermitData(args: SinglePermitParams): Promise<PermitData> {
+    return this.permit2Service.preparePermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS });
   }
 
-  async prepareBatchPermitData({ appId, chainId, tokens, signerAddress, signatureValidFor }: BatchPermitParams): Promise<BatchPermitData> {
-    const nonce = await calculateNonce({ chainId, wordSeed: appId, user: signerAddress, multicall: this.multicallService }).then((nonce) =>
-      nonce.toString()
-    );
-    const deadline = calculateDeadline(signatureValidFor).toString();
-    return {
-      dataToSign: {
-        types: PERMIT2_BATCH_TRANSFER_FROM_TYPES,
-        domain: {
-          name: 'Permit2',
-          chainId,
-          verifyingContract: PERMIT2_ADDRESS,
-        },
-        message: {
-          permitted: Object.entries(tokens).map(([token, amount]) => ({ token, amount: amount.toString() })),
-          spender: PERMIT2_ADAPTER_ADDRESS,
-          nonce,
-          deadline,
-        },
-        primaryType: 'PermitBatchTransferFrom',
-      },
-      permitData: {
-        nonce,
-        deadline,
-        tokens: Object.entries(tokens).map(([token, amount]) => ({ token, amount: amount.toString() })),
-      },
-    };
+  prepareBatchPermitData(args: BatchPermitParams): Promise<BatchPermitData> {
+    return this.permit2Service.prepareBatchPermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS });
   }
 
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams) {
@@ -91,17 +36,16 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     });
   }
 
-  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): Permit2Transaction {
+  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): TransactionResponse {
     return this.buildArbitraryCallInternal({
       ...params,
       functionName: 'executeWithBatchPermit',
     });
   }
 
-  buildArbitraryCallWithNative(params: ArbitraryCallWithNativeParams): Permit2Transaction {
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): TransactionResponse {
     const permitData = {
-      token: Addresses.ZERO_ADDRESS,
-      amount: params.amountOfNative,
+      tokens: [],
       nonce: 0,
       signature: '0x',
       deadline: calculateDeadline(params.txValidFor),
@@ -109,8 +53,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return this.buildArbitraryCallInternal({
       ...params,
       permitData,
-      value: params.amountOfNative,
-      functionName: 'executeWithPermit',
+      functionName: 'executeWithBatchPermit',
     });
   }
 
@@ -120,8 +63,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     allowanceTargets,
     distribution,
     functionName,
-    value,
-  }: BaseArbitraryCallParams & { functionName: string; value?: BigIntish }) {
+  }: BaseArbitraryCallParams & { functionName: string }) {
     if (calls.length === 0) throw new Error('Must submit at least one call');
     const repeatedToken = findRepeatedKey(distribution ?? {});
     if (repeatedToken) throw new Error(`Found token '${repeatedToken}' more than once, with different casing`);
@@ -130,7 +72,8 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     const encodedCalls = calls.map((call) =>
       'data' in call
         ? {
-            ...call,
+            target: call.to,
+            data: call.data,
             value: call.value ?? 0,
           }
         : {
@@ -144,9 +87,10 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
           }
     );
     const transferOut = Object.entries(distribution ?? {}).map(([token, distribution]) => ({ token, distribution }));
+    const totalValue = calls.reduce((sum, { value }) => sum + BigInt(value ?? 0), 0n);
 
     const data = encodeFunctionData({
-      abi: parseAbi(PERMIT2_ADAPTER_ABI),
+      abi: permit2AdapterAbi as any, // We cast as any to avoid type checks
       functionName,
       args: [permitData, allowances, encodedCalls, transferOut, deadline],
     });
@@ -154,7 +98,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return {
       to: PERMIT2_ADAPTER_ADDRESS,
       data,
-      value: value?.toString(),
+      value: totalValue.toString(),
     };
   }
 }

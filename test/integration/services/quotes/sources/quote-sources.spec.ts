@@ -12,7 +12,7 @@ import { Addresses } from '@shared/constants';
 import { addPercentage, isSameAddress, substractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { IQuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
-import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
+import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
 import { Test, EXCEPTIONS, CONFIG } from '../quote-tests-config';
@@ -33,6 +33,9 @@ import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { ProviderService } from '@services/providers/provider-service';
 
+// Note: this test is quite flaky, since sources can sometimes fail or rate limit us. So the idea is to run this test
+// locally only for now, until we can come up with a solution. We will skip it until then
+
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
   source: 'open-ocean',
@@ -47,7 +50,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe('Quote Sources', () => {
+describe.skip('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
@@ -80,7 +83,7 @@ describe('Quote Sources', () => {
           tokens: [tokens.nativeToken, tokens.wToken, tokens.STABLE_ERC20, tokens.RANDOM_ERC20],
           addresses: [userSigner, recipientSigner],
         });
-        const gasPriceResult = await new OpenOceanGasPriceSource(FETCH_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
+        const gasPriceResult = await new RPCGasPriceSource(PROVIDER_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
 
         // Resolve all deferred
         user.resolve(userSigner);

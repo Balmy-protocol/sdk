@@ -3,7 +3,7 @@ import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { Chain } from '@types';
 import { GlobalQuoteSourceConfig } from '../types';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
@@ -25,7 +25,7 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
 };
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class ParaswapQuoteSource extends AlwaysValidConfigAndContexSource<ParaswapSupport> {
+export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<ParaswapSupport> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
     return PARASWAP_METADATA;
   }

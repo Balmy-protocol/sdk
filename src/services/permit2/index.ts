@@ -1,14 +1,15 @@
 export {
   IPermit2Service,
   IPermit2ArbitraryService,
+  IPermit2QuoteService,
   SinglePermitParams,
   BatchPermitParams,
   PermitData,
   BatchPermitData,
   ArbitraryCallWithPermitParams,
   ArbitraryCallWithBatchPermitParams,
-  ArbitraryCallWithNativeParams,
+  ArbitraryCallWithoutPermitParams,
   GenericContractCall,
   DistributionTarget,
-  Permit2Transaction,
+  EstimatedQuoteResponseWithTx,
 } from './types';

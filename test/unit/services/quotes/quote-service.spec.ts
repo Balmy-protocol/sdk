@@ -22,7 +22,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Something failed at list level', failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: 'Something failed at list level',
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but gas request fails', () => {
@@ -36,7 +40,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Failed to fetch gas data', failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: 'Failed to fetch gas data',
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but metadata request fails', () => {
@@ -50,7 +58,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: `Failed to fetch the quote's tokens`, failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: `Failed to fetch the quote's tokens`,
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but price request fails', () => {
@@ -123,7 +135,8 @@ const PRICE_SERVICE: IPriceService = {
   supportedChains: () => [1],
   supportedQueries: () => ({ [1]: { getCurrentPrices: true, getHistoricalPrices: true } }),
   getCurrentPrices: () => Promise.reject(new Error('Should not be called')),
-  getCurrentPricesForChain: ({ addresses }) => Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, i * 10]))),
+  getCurrentPricesForChain: ({ addresses }) =>
+    Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, { price: i * 10, timestamp: 0 }]))),
   getHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
   getHistoricalPricesForChain: () => Promise.reject(new Error('Should not be called')),
 };

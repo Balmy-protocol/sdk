@@ -49,6 +49,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x68f5c0a2de713a54991e01858fd27a3832401849',
     },
   },
+  [Chains.BASE.chainId]: {
+    STABLE_ERC20: {
+      address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+      whale: '0x6d3c5a4a7ac4b1428368310e4ec3bb1350d01455',
+    },
+    RANDOM_ERC20: {
+      address: '0x8544fe9d190fd7ec52860abbf45088e81ee24a8c',
+      whale: '0x5f0a153a64fd734c111b770da11de2c385ca8042',
+    },
+    wToken: {
+      address: '0x4200000000000000000000000000000000000006',
+      whale: '0x41d160033c222e6f3722ec97379867324567d883',
+    },
+  },
   [Chains.POLYGON.chainId]: {
     STABLE_ERC20: {
       address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',

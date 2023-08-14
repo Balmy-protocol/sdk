@@ -30,6 +30,11 @@ export type TransactionRequest = {
   gasLimit?: BigIntish;
   type?: number;
 };
+export type TransactionResponse = {
+  to: string;
+  data: string;
+  value?: AmountOfToken;
+};
 export type ContractCall = {
   address: Address;
   abi: { humanReadable: string[] } | { json: readonly any[] };

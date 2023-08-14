@@ -17,4 +17,5 @@ export {
   BigIntish,
   TransactionRequest,
   Timestamp,
+  TransactionResponse,
 } from './types';

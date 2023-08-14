@@ -2,18 +2,15 @@ import ms from 'ms';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { Chains } from '@chains';
-import { MulticallService } from '@services/multicall/multicall-service';
-import { ProviderService } from '@services/providers/provider-service';
 import { IPermit2ArbitraryService } from '@services/permit2/types';
 import { fork } from '@test-utils/evm';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { Permit2ArbitraryService } from '@services/permit2/permit2-arbitrary-service';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { TestToken, approve, balance, loadTokens, mint } from '@test-utils/erc20';
 import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
 import { Uint } from '@shared/constants';
 import { parseUnits } from 'viem';
+import { buildSDK } from '@builder';
 
 jest.retryTimes(3).setTimeout(ms('2m'));
 
@@ -35,7 +32,7 @@ describe('Permit2 Arbitrary Service', () => {
   let snapshot: SnapshotRestorer;
 
   beforeAll(async () => {
-    await fork({ chain: CHAIN, blockNumber: 107042557 });
+    await fork({ chain: CHAIN, blockNumber: 107705868 });
     [user] = await ethers.getSigners();
     ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(CHAIN));
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
@@ -45,7 +42,7 @@ describe('Permit2 Arbitrary Service', () => {
     await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS, for: wToken, from: user });
     chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     snapshot = await takeSnapshot();
-    arbitrary = new Permit2ArbitraryService(new MulticallService(new ProviderService(new PublicRPCsSource())));
+    arbitrary = buildSDK().permit2Service.arbitrary;
   });
 
   afterEach(async () => {
@@ -106,11 +103,11 @@ describe('Permit2 Arbitrary Service', () => {
     expect(vaultBalance).to.be.gt(0);
   });
 
-  it('buildArbitraryCallWithNative', async () => {
+  it('buildArbitraryCallWithoutPermit', async () => {
     const VAULT = '0xc4d4500326981eacd020e20a81b1c479c161c7ef';
 
     // Build tx
-    const tx = arbitrary.buildArbitraryCallWithNative({
+    const tx = arbitrary.buildArbitraryCallWithoutPermit({
       // Provide allowance for vault
       allowanceTargets: [{ token: wToken.address, target: VAULT }],
 
@@ -139,7 +136,6 @@ describe('Permit2 Arbitrary Service', () => {
       },
 
       // Set special config
-      amountOfNative: AMOUNT_TO_DEPOSIT_WETH,
       txValidFor: '2y',
     });
 
