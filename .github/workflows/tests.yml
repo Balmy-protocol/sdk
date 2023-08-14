@@ -51,5 +51,30 @@ jobs:
         timeout-minutes: 15
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
+
+  integration-quotes:
+    needs: ['integration']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out github repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Run integration tests
+        run: yarn test:integration:quotes
+        timeout-minutes: 15
+        env:
+          ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
           RANGO_API_KEY: ${{secrets.RANGO_API_KEY}}
           CI_CONTEXT: true

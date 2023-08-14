@@ -5,7 +5,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { Addresses } from '@shared/constants';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   name: 'Odos',
@@ -27,7 +27,7 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
 };
 type OdosConfig = { sourceBlacklist?: string[] };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
-export class OdosQuoteSource extends AlwaysValidConfigAndContexSource<OdosSupport, OdosConfig> {
+export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig> {
   getMetadata() {
     return ODOS_METADATA;
   }

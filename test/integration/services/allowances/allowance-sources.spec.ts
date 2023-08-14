@@ -10,6 +10,8 @@ import { CachedAllowanceSource } from '@services/allowances//allowance-sources/c
 import { Chains, getChainByKey } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import dotenv from 'dotenv';
+import { MagpieAllowanceSource } from '@services/allowances/allowance-sources/magpie-allowance-source';
+import { FetchService } from '@services/fetch/fetch-service';
 dotenv.config();
 
 const OWNER = '0x49c590F6a2dfB0f809E82B9e2BF788C0Dd1c31f9'; // DCAHubCompanion
@@ -35,6 +37,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 };
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!);
+const MAGPIE_ALLOWANCE_SOURCE = new MagpieAllowanceSource(new FetchService());
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {
@@ -51,6 +54,7 @@ describe('Allowance Sources', () => {
   allowanceSourceTest({ title: 'RPC Source', source: RPC_ALLOWANCE_SOURCE });
   allowanceSourceTest({ title: 'Cached RPC Source', source: CACHED_ALLOWANCE_SOURCE });
   allowanceSourceTest({ title: 'Alchemy RPC Source', source: ALCHEMY_ALLOWANCE_SOURCE });
+  allowanceSourceTest({ title: 'Magpie', source: MAGPIE_ALLOWANCE_SOURCE });
 
   function allowanceSourceTest({ title, source }: { title: string; source: IAllowanceSource }) {
     describe(title, () => {

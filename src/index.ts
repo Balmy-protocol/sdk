@@ -6,6 +6,7 @@ export {
   TimeString,
   Chain,
   ChainId,
+  ContractCall,
   Address,
   TokenAddress,
   SupportRecord,
@@ -16,4 +17,5 @@ export {
   BigIntish,
   TransactionRequest,
   Timestamp,
+  TransactionResponse,
 } from './types';

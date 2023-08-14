@@ -4,7 +4,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress, substractPercentage, timeToSeconds } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { encodeFunctionData, parseAbi } from 'viem';
 
 const ROUTER_ADDRESS: Record<ChainId, string> = {
@@ -27,7 +27,7 @@ const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
 };
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class UniswapQuoteSource extends AlwaysValidConfigAndContexSource<UniswapSupport> {
+export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<UniswapSupport> {
   getMetadata() {
     return UNISWAP_METADATA;
   }

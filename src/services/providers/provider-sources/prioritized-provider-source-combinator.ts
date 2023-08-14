@@ -1,6 +1,6 @@
 import { ChainId } from '@types';
-import { IProviderSource } from '../types';
-import { combineClientSupport, sourcesWithSupport } from './utils';
+import { IProviderSource, ProviderClientSupport } from '../types';
+import { sourcesWithSupport } from './utils';
 
 // This source will take a list of sources, sorted by priority, and use the first one possible
 // that supports the given chain
@@ -10,7 +10,11 @@ export class PrioritizedProviderSourceCombinator implements IProviderSource {
   }
 
   supportedClients() {
-    return combineClientSupport(this.sources);
+    let result: Record<ChainId, ProviderClientSupport> = {};
+    for (const source of this.sources) {
+      result = { ...source.supportedClients(), ...result };
+    }
+    return result;
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {

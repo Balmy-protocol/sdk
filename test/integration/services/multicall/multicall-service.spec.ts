@@ -15,19 +15,20 @@ const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 
 describe('Multicall Service', () => {
   describe('tryReadOnlyMulticall', () => {
-    tryReadOnlyMulticallTest();
+    tryReadOnlyMulticallTest('ethers');
+    tryReadOnlyMulticallTest('viem');
   });
-
   describe('readOnlyMulticall', () => {
-    readOnlyMulticallTest();
+    readOnlyMulticallTest('ethers');
+    readOnlyMulticallTest('viem');
   });
 
-  function readOnlyMulticallTest() {
+  function readOnlyMulticallTest(client: 'ethers' | 'viem') {
     let response: ReadonlyArray<bigint>[];
-    when(`trying a call`, () => {
+    when(`trying a call with ${client}`, () => {
       given(async () => {
         const calls = [{ address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] }];
-        response = await new MulticallService(PROVIDER_SERVICE).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+        response = await new MulticallService(PROVIDER_SERVICE, client).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(1);
@@ -36,15 +37,15 @@ describe('Multicall Service', () => {
     });
   }
 
-  function tryReadOnlyMulticallTest() {
+  function tryReadOnlyMulticallTest(client: 'ethers' | 'viem') {
     let response: CallResult[];
-    when(`trying a call that fails with another that works`, () => {
+    when(`trying a call that fails with another that works with ${client}`, () => {
       given(async () => {
         const calls = [
           { address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'transferFrom', args: [OWNER, OWNER, 100000000000] },
           { address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] },
         ];
-        response = await new MulticallService(PROVIDER_SERVICE).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
+        response = await new MulticallService(PROVIDER_SERVICE, client).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
         expect(response).to.have.lengthOf(2);
