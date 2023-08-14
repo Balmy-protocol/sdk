@@ -2,6 +2,8 @@ import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@type
 import { IFetchService } from '@services/fetch';
 import { OnlyTokensHeldBalanceSource } from './base/only-tokens-held-balance-source';
 import { buildMagpieBalanceManagerUrl, magpieSupportedChains } from '@shared/magpie';
+import { isSameAddress } from '@shared/utils';
+import { Addresses } from '@shared/constants';
 
 export class MagpieBalanceSource extends OnlyTokensHeldBalanceSource {
   constructor(private readonly fetchService: IFetchService) {
@@ -47,8 +49,10 @@ export class MagpieBalanceSource extends OnlyTokensHeldBalanceSource {
       timeout,
     });
     const balances: { tokenAddress: string; amount: string }[] = await response.json();
-    if (!balances || !balances.map) throw new Error(`${buildMagpieBalanceManagerUrl(chainId)}/balances?walletAddress=${account}`);
-    console.log(balances.length);
-    return Object.fromEntries(balances.map(({ tokenAddress, amount }) => [tokenAddress, amount]));
+    return Object.fromEntries(balances.map(({ tokenAddress, amount }) => [mapNativeToken(tokenAddress), amount]));
   }
+}
+
+function mapNativeToken(address: TokenAddress) {
+  return isSameAddress(address, Addresses.ZERO_ADDRESS) ? Addresses.NATIVE_TOKEN : address;
 }
