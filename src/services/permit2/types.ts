@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, SupportInChain, TimeString, TokenAddress, TransactionResponse } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, ContractCall, SupportInChain, TimeString, TokenAddress, BuiltTransaction } from '@types';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
 import {
   CompareQuotesBy,
@@ -26,9 +26,9 @@ export type IPermit2ArbitraryService = {
   contractAddress: Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
-  buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): TransactionResponse;
-  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): TransactionResponse;
-  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): TransactionResponse;
+  buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): BuiltTransaction;
+  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): BuiltTransaction;
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): BuiltTransaction;
 };
 
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };

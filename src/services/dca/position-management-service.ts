@@ -1,5 +1,5 @@
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
-import { Address, BigIntish, ChainId, TokenAddress, TransactionResponse } from '@types';
+import { Address, BigIntish, ChainId, TokenAddress, BuiltTransaction } from '@types';
 import companionAbi from '@shared/abis/companion';
 import dcaHubAbi from '@shared/abis/dca-hub';
 import { SinglePermitParams, PermitData, IPermit2Service } from '@services/permit2';
@@ -62,7 +62,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     owner,
     permissions,
     deposit,
-  }: CreateDCAPositionParams): Promise<TransactionResponse> {
+  }: CreateDCAPositionParams): Promise<BuiltTransaction> {
     let depositInfo: { token: Address; amount: bigint; value: bigint };
     if ('token' in deposit) {
       const amount = BigInt(deposit.amount);
@@ -146,7 +146,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     increase,
     amountOfSwaps,
     permissionPermit,
-  }: IncreaseDCAPositionParams): Promise<TransactionResponse> {
+  }: IncreaseDCAPositionParams): Promise<BuiltTransaction> {
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
     if (!increase) {
       increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
@@ -231,7 +231,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     reduce,
     recipient,
     permissionPermit,
-  }: ReduceDCAPositionParams): Promise<TransactionResponse> {
+  }: ReduceDCAPositionParams): Promise<BuiltTransaction> {
     const position = await this.getUserPosition(chainId, positionId);
     const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
 
@@ -292,7 +292,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     reduce,
     recipient,
     permissionPermit,
-  }: ReduceToBuyDCAPositionParams): Promise<TransactionResponse> {
+  }: ReduceToBuyDCAPositionParams): Promise<BuiltTransaction> {
     const calls: Call[] = [];
 
     const position = await this.getUserPosition(chainId, positionId);
@@ -361,7 +361,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     withdraw,
     recipient,
     permissionPermit,
-  }: WithdrawDCAPositionParams): Promise<TransactionResponse> {
+  }: WithdrawDCAPositionParams): Promise<BuiltTransaction> {
     const position = await this.getUserPosition(chainId, positionId);
     const shouldConvert = withdraw.convertTo && !isSameAddress(position.to, withdraw.convertTo);
 
@@ -421,7 +421,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     withdraw,
     recipient,
     permissionPermit,
-  }: TerminateDCAPositionParams): Promise<TransactionResponse> {
+  }: TerminateDCAPositionParams): Promise<BuiltTransaction> {
     const position = await this.getUserPosition(chainId, positionId);
     const shouldConvertUnswapped =
       position.remaining > 0 && !!withdraw.unswappedConvertTo && !isSameAddress(position.from, withdraw.unswappedConvertTo);

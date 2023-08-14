@@ -1,6 +1,6 @@
 import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, TransactionResponse } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -98,7 +98,7 @@ export type QuoteResponse = {
   tx: QuoteTransaction;
 };
 
-export type QuoteTransaction = TransactionResponse & {
+export type QuoteTransaction = BuiltTransaction & {
   from: Address;
   maxPriorityFeePerGas?: AmountOfToken;
   maxFeePerGas?: AmountOfToken;

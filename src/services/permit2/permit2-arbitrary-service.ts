@@ -14,7 +14,7 @@ import {
   SinglePermitParams,
 } from './types';
 import { PERMIT2_ADAPTER_ADDRESS } from './utils/config';
-import { TransactionResponse } from '@types';
+import { BuiltTransaction } from '@types';
 
 export class Permit2ArbitraryService implements IPermit2ArbitraryService {
   readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
@@ -36,14 +36,14 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     });
   }
 
-  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): TransactionResponse {
+  buildArbitraryCallWithBatchPermit(params: ArbitraryCallWithBatchPermitParams): BuiltTransaction {
     return this.buildArbitraryCallInternal({
       ...params,
       functionName: 'executeWithBatchPermit',
     });
   }
 
-  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): TransactionResponse {
+  buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): BuiltTransaction {
     const permitData = {
       tokens: [],
       nonce: 0,

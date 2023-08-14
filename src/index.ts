@@ -15,7 +15,7 @@ export {
   FieldsRequirements,
   AmountOfToken,
   BigIntish,
-  TransactionRequest,
   Timestamp,
-  TransactionResponse,
+  InputTransaction,
+  BuiltTransaction,
 } from './types';

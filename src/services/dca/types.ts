@@ -1,5 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { Address, BigIntish, ChainId, TimeString, TokenAddress, TransactionResponse } from '@types';
+import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction } from '@types';
 
 export type IDCAService = {
   management: IDCAPositionManagementService;
@@ -8,12 +8,12 @@ export type IDCAService = {
 export type IDCAPositionManagementService = {
   getAllowanceTarget(_: { chainId: ChainId; from: TokenAddress; depositWith: TokenAddress; usePermit2?: boolean }): Address;
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
-  buildCreatePositionTx(_: CreateDCAPositionParams): Promise<TransactionResponse>;
-  buildIncreasePositionTx(_: IncreaseDCAPositionParams): Promise<TransactionResponse>;
-  buildReducePositionTx(_: ReduceDCAPositionParams): Promise<TransactionResponse>;
-  buildReduceToBuyPositionTx(_: ReduceToBuyDCAPositionParams): Promise<TransactionResponse>;
-  buildWithdrawPositionTx(_: WithdrawDCAPositionParams): Promise<TransactionResponse>;
-  buildTerminatePositionTx(_: TerminateDCAPositionParams): Promise<TransactionResponse>;
+  buildCreatePositionTx(_: CreateDCAPositionParams): Promise<BuiltTransaction>;
+  buildIncreasePositionTx(_: IncreaseDCAPositionParams): Promise<BuiltTransaction>;
+  buildReducePositionTx(_: ReduceDCAPositionParams): Promise<BuiltTransaction>;
+  buildReduceToBuyPositionTx(_: ReduceToBuyDCAPositionParams): Promise<BuiltTransaction>;
+  buildWithdrawPositionTx(_: WithdrawDCAPositionParams): Promise<BuiltTransaction>;
+  buildTerminatePositionTx(_: TerminateDCAPositionParams): Promise<BuiltTransaction>;
 };
 
 export enum DCAPermission {

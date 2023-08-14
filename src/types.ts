@@ -18,7 +18,7 @@ export type Chain = Readonly<{
   explorer: string;
   testnet?: boolean;
 }>;
-export type TransactionRequest = {
+export type InputTransaction = {
   from: Address;
   to: Address;
   data?: string;
@@ -30,10 +30,16 @@ export type TransactionRequest = {
   gasLimit?: BigIntish;
   type?: number;
 };
-export type TransactionResponse = {
+export type BuiltTransaction = {
   to: string;
   data: string;
   value?: AmountOfToken;
+  nonce?: number;
+  maxPriorityFeePerGas?: BigIntish;
+  maxFeePerGas?: BigIntish;
+  gasPrice?: BigIntish;
+  gasLimit?: BigIntish;
+  type?: number;
 };
 export type ContractCall = {
   address: Address;
