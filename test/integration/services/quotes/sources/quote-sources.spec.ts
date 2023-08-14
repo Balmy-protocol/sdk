@@ -32,14 +32,16 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { ProviderService } from '@services/providers/provider-service';
+import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
+import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
 
 // Note: this test is quite flaky, since sources can sometimes fail or rate limit us. So the idea is to run this test
 // locally only for now, until we can come up with a solution. We will skip it until then
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'open-ocean',
-  chains: [Chains.KAVA],
+  source: 'odos',
+  chains: [Chains.BASE],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 const AVOID_DURING_CI: SourceId[] = [
@@ -83,7 +85,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           tokens: [tokens.nativeToken, tokens.wToken, tokens.STABLE_ERC20, tokens.RANDOM_ERC20],
           addresses: [userSigner, recipientSigner],
         });
-        const gasPriceResult = await new RPCGasPriceSource(PROVIDER_SERVICE).getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
+        const gasPriceResult = await GAS_PRICE_SOURCE.getGasPrice(chain).then((gasPrices) => gasPrices['standard']);
 
         // Resolve all deferred
         user.resolve(userSigner);
@@ -399,4 +401,7 @@ function getSources() {
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService();
+const OPEN_OCEAN_GAS_PRICE_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
+const RPC_GAS_PRICE_SOURCE = new RPCGasPriceSource(PROVIDER_SERVICE);
+const GAS_PRICE_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_GAS_PRICE_SOURCE, RPC_GAS_PRICE_SOURCE]);
 const SLIPPAGE_PERCENTAGE = 5; // We set a high slippage so that the tests don't fail as much

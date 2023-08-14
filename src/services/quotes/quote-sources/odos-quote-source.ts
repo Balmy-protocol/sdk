@@ -19,13 +19,15 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
       Chains.BNB_CHAIN.chainId,
       Chains.FANTOM.chainId,
       Chains.BASE_GOERLI.chainId,
+      Chains.BASE.chainId,
     ],
     swapAndTransfer: false,
     buyOrders: false,
   },
   logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
-type OdosConfig = { sourceBlacklist?: string[] };
+const MEAN_REFERRAL_CODE = 1533410238;
+type OdosConfig = { sourceBlacklist?: string[]; supportRFQs?: boolean; referralCode?: number };
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
 export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig> {
   getMetadata() {
@@ -46,7 +48,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
   }: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
     const checksummedSell = checksumAndMapIfNecessary(sellToken);
     const checksummedBuy = checksumAndMapIfNecessary(buyToken);
-    const body = {
+    const quoteBody = {
       chainId: chain.chainId,
       inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
       outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
@@ -55,29 +57,43 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       sourceBlacklist: config?.sourceBlacklist,
       simulate: false,
       pathViz: false,
+      disableRFQs: !config?.supportRFQs, // Disable by default
+      referralCode: config?.referralCode ?? MEAN_REFERRAL_CODE, // If not set, we will use Mean's code
     };
 
-    const response = await fetchService.fetch('https://api.odos.xyz/sor/swap', {
-      body: JSON.stringify(body),
+    const quoteResponse = await fetchService.fetch('https://api.odos.xyz/sor/quote/v2', {
+      body: JSON.stringify(quoteBody),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       timeout,
     });
-
-    if (!response.ok) {
-      failed(ODOS_METADATA, chain, sellToken, buyToken, await response.text());
+    if (!quoteResponse.ok) {
+      failed(ODOS_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
-
     const {
-      outputTokens: [{ amount: outputTokenAmount }],
-      transaction: { to, data, value, gas },
-    }: Response = await response.json();
+      pathId,
+      outAmounts: [outputTokenAmount],
+    }: QuoteResponse = await quoteResponse.json();
+
+    const assembleResponse = await fetchService.fetch('https://api.odos.xyz/sor/assemble', {
+      body: JSON.stringify({ userAddr: takeFrom, pathId }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      timeout,
+    });
+    if (!assembleResponse.ok) {
+      failed(ODOS_METADATA, chain, sellToken, buyToken, await assembleResponse.text());
+    }
+    const {
+      gasEstimate,
+      transaction: { data, to, value },
+    }: AssemblyResponse = await assembleResponse.json();
 
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigInt(outputTokenAmount),
       calldata: data,
-      estimatedGas: BigInt(gas),
+      estimatedGas: BigInt(gasEstimate),
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
         to,
@@ -98,12 +114,14 @@ function checksum(address: Address) {
   return getAddress(address);
 }
 
-type Response = {
-  outputTokens: {
-    amount: string;
-  }[];
+type QuoteResponse = {
+  pathId: string;
+  outAmounts: string[];
+};
+
+type AssemblyResponse = {
+  gasEstimate: number;
   transaction: {
-    gas: number;
     to: Address;
     data: string;
     value: number;
