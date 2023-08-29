@@ -51,6 +51,7 @@ export type IncreaseDCAPositionParams = {
   increase?: AddFunds;
   amountOfSwaps: number;
   permissionPermit?: DCAPermissionPermit;
+  dcaHub?: Address;
 };
 export type ReduceDCAPositionParams = {
   chainId: ChainId;
@@ -59,6 +60,7 @@ export type ReduceDCAPositionParams = {
   reduce: { amount: BigIntish; convertTo?: TokenAddress; swapConfig?: DCAActionSwapConfig };
   recipient: Address;
   permissionPermit?: DCAPermissionPermit;
+  dcaHub?: Address;
 };
 export type ReduceToBuyDCAPositionParams = {
   chainId: ChainId;
@@ -67,6 +69,7 @@ export type ReduceToBuyDCAPositionParams = {
   reduce: { amountToBuy: BigIntish; convertTo?: TokenAddress; swapConfig?: DCAActionSwapConfig };
   recipient: Address;
   permissionPermit?: DCAPermissionPermit;
+  dcaHub?: Address;
 };
 export type WithdrawDCAPositionParams = {
   chainId: ChainId;
@@ -74,6 +77,7 @@ export type WithdrawDCAPositionParams = {
   withdraw: { convertTo?: TokenAddress; swapConfig?: DCAActionSwapConfig };
   recipient: Address;
   permissionPermit?: DCAPermissionPermit;
+  dcaHub?: Address;
 };
 export type TerminateDCAPositionParams = {
   chainId: ChainId;
@@ -81,6 +85,7 @@ export type TerminateDCAPositionParams = {
   withdraw: { unswappedConvertTo?: TokenAddress; swappedConvertTo?: TokenAddress; swapConfig?: DCAActionSwapConfig };
   recipient: Address;
   permissionPermit?: DCAPermissionPermit;
+  dcaHub?: Address;
 };
 export type DCAActionSwapConfig = { slippagePercentage?: number; txValidFor?: TimeString };
 export type DCAPermissionPermit = {

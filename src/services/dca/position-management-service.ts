@@ -146,7 +146,9 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     increase,
     amountOfSwaps,
     permissionPermit,
+    dcaHub,
   }: IncreaseDCAPositionParams): Promise<BuiltTransaction> {
+    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
     if (!increase) {
       increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
@@ -162,7 +164,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       chainId,
       calls: [
         { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
-        { abi: { json: dcaHubAbi }, address: DCA_HUB_ADDRESS, functionName: 'userPosition', args: [bigIntPositionId] },
+        { abi: { json: dcaHubAbi }, address: hubAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
     });
 
@@ -172,7 +174,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     if (callHubDirectly) {
       // If don't need to use Permit2, then just call the hub
       return {
-        to: DCA_HUB_ADDRESS,
+        to: hubAddress,
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'increasePosition',
@@ -216,7 +218,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'increasePositionWithBalanceOnContract',
-        args: [DCA_HUB_ADDRESS, bigIntPositionId, amountOfSwaps],
+        args: [hubAddress as ViemAddress, bigIntPositionId, amountOfSwaps],
       })
     );
 
@@ -231,14 +233,16 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     reduce,
     recipient,
     permissionPermit,
+    dcaHub,
   }: ReduceDCAPositionParams): Promise<BuiltTransaction> {
-    const position = await this.getUserPosition(chainId, positionId);
+    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
 
     if (!shouldConvert) {
       // If don't need to convert anything, then just call the hub
       return {
-        to: DCA_HUB_ADDRESS,
+        to: hubAddress,
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'reducePosition',
@@ -260,7 +264,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'reducePosition',
-        args: [DCA_HUB_ADDRESS, BigInt(positionId), BigInt(reduce.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
+        args: [hubAddress as ViemAddress, BigInt(positionId), BigInt(reduce.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
       })
     );
 
@@ -292,10 +296,12 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     reduce,
     recipient,
     permissionPermit,
+    dcaHub,
   }: ReduceToBuyDCAPositionParams): Promise<BuiltTransaction> {
+    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
     const calls: Call[] = [];
 
-    const position = await this.getUserPosition(chainId, positionId);
+    const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
     if (amountOfSwaps === 0 || !shouldConvert) {
       // In these two scenarios, we can use the normal reduce
@@ -310,6 +316,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
         reduce: { amount, convertTo: reduce.convertTo, swapConfig: reduce.swapConfig },
         recipient,
         permissionPermit,
+        dcaHub,
       });
     }
 
@@ -341,7 +348,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'reducePosition',
-        args: [DCA_HUB_ADDRESS, BigInt(positionId), BigInt(buyQuote.maxSellAmount.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
+        args: [hubAddress as ViemAddress, BigInt(positionId), BigInt(buyQuote.maxSellAmount.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
       })
     );
 
@@ -361,14 +368,16 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     withdraw,
     recipient,
     permissionPermit,
+    dcaHub,
   }: WithdrawDCAPositionParams): Promise<BuiltTransaction> {
-    const position = await this.getUserPosition(chainId, positionId);
+    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvert = withdraw.convertTo && !isSameAddress(position.to, withdraw.convertTo);
 
     if (!shouldConvert) {
       // If don't need to convert anything, then just call the hub
       return {
-        to: DCA_HUB_ADDRESS,
+        to: hubAddress,
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'withdrawSwapped',
@@ -390,7 +399,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'withdrawSwapped',
-        args: [DCA_HUB_ADDRESS, BigInt(positionId), COMPANION_SWAPPER_ADDRESS],
+        args: [hubAddress as ViemAddress, BigInt(positionId), COMPANION_SWAPPER_ADDRESS],
       })
     );
 
@@ -421,8 +430,10 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     withdraw,
     recipient,
     permissionPermit,
+    dcaHub,
   }: TerminateDCAPositionParams): Promise<BuiltTransaction> {
-    const position = await this.getUserPosition(chainId, positionId);
+    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvertUnswapped =
       position.remaining > 0 && !!withdraw.unswappedConvertTo && !isSameAddress(position.from, withdraw.unswappedConvertTo);
     const shouldConvertSwapped = position.swapped > 0 && !!withdraw.swappedConvertTo && !isSameAddress(position.to, withdraw.swappedConvertTo);
@@ -430,7 +441,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
     if (!shouldConvertUnswapped && !shouldConvertSwapped) {
       // If don't need to convert anything, then just call the hub
       return {
-        to: DCA_HUB_ADDRESS,
+        to: hubAddress,
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'terminate',
@@ -453,7 +464,7 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
         abi: companionAbi,
         functionName: 'terminate',
         args: [
-          DCA_HUB_ADDRESS,
+          hubAddress as ViemAddress,
           BigInt(positionId),
           shouldConvertUnswapped ? COMPANION_SWAPPER_ADDRESS : (recipient as ViemAddress),
           shouldConvertSwapped ? COMPANION_SWAPPER_ADDRESS : (recipient as ViemAddress),
@@ -567,11 +578,12 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
 
   private async getUserPosition(
     chainId: ChainId,
+    hubAddress: Address,
     positionId: BigIntish
   ): Promise<{ from: TokenAddress; to: TokenAddress; remaining: bigint; swapped: bigint }> {
     const [position] = await this.multicallService.readOnlyMulticall({
       chainId,
-      calls: [{ abi: { json: dcaHubAbi }, address: DCA_HUB_ADDRESS, functionName: 'userPosition', args: [BigInt(positionId)] }],
+      calls: [{ abi: { json: dcaHubAbi }, address: hubAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
     });
     return { ...position, remaining: BigInt(position.remaining), swapped: BigInt(position.swapped) };
   }
