@@ -38,10 +38,10 @@ export class AutoUpdateCache<Value> {
         if (value !== undefined) {
           this.cache = { lastUpdated: Date.now(), value };
         }
-        setTimeout(this.update, ms(this.config.update.every));
+        setTimeout(() => this.update(), ms(this.config.update.every));
       })
       .catch(() => {
-        setTimeout(this.update, ms(this.config.update.ifFailsTryAgainIn ?? DEFAULT_RETRY_TIME));
+        setTimeout(() => this.update(), ms(this.config.update.ifFailsTryAgainIn ?? DEFAULT_RETRY_TIME));
       });
   }
 
