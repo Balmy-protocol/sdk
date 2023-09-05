@@ -1,6 +1,4 @@
-import { TimeString } from '@types';
 import ms, { StringValue } from 'ms';
-import { timeoutPromise } from './timeouts';
 type Timestamp = number;
 type CacheConstructorParams<Value> = {
   calculate: () => Promise<Value>;
@@ -8,40 +6,35 @@ type CacheConstructorParams<Value> = {
 };
 
 export type AutoUpdateCacheConfig = {
-  options: AutoUpdateConfigOptions;
-};
-
-export type AutoUpdateConfigOptions = {
   useCachedValue: 'always' | { ifUnder: StringValue };
-  nextUpdate: { ifSuccess: StringValue; ifFails: StringValue };
-  timeout?: TimeString;
+  update: { every: StringValue; ifFailsTryAgainIn?: StringValue };
 };
 
 export class AutoUpdateCache<Value> {
   private readonly calculate: () => Promise<Value>;
-  private readonly config: AutoUpdateConfigOptions;
+  private readonly config: AutoUpdateCacheConfig;
   private cache: { lastUpdated: Timestamp; value: Value | undefined };
 
   constructor({ calculate, config }: CacheConstructorParams<Value>) {
     this.calculate = calculate;
-    this.config = config.options;
+    this.config = config;
     this.cache = { lastUpdated: 0, value: undefined };
 
     this.update();
   }
 
-  async update() {
-    const calculated = timeoutPromise(this.calculate(), this.config.timeout);
+  private async update() {
+    const calculated = this.calculate();
     calculated
       .then((result) => {
         const value = result;
         if (value !== undefined) {
           this.cache = { lastUpdated: Date.now(), value };
         }
-        setTimeout(this.update, this.config.nextUpdate.ifSuccess);
+        setTimeout(this.update, this.config.update.every);
       })
       .catch(() => {
-        setTimeout(this.update, this.config.nextUpdate.ifFails);
+        setTimeout(this.update, this.config.update.ifFailsTryAgainIn);
       });
   }
 

@@ -12,3 +12,4 @@ export {
   filterRejectedResults,
   ruleOfThree,
 } from './utils';
+export { AutoUpdateCache, AutoUpdateCacheConfig } from './auto-update-cache';
