@@ -6,7 +6,7 @@ type CacheConstructorParams<Value> = {
 };
 
 export type AutoUpdateCacheConfig = {
-  useCachedValue: 'always' | { ifUnder: StringValue };
+  valid?: 'always' | { onlyFor: StringValue };
   update: { every: StringValue; ifFailsTryAgainIn?: StringValue };
 };
 
@@ -41,11 +41,9 @@ export class AutoUpdateCache<Value> {
   async getValue() {
     const now = Date.now();
 
-    const useCachedValue = ({ lastUpdated }: { lastUpdated: Timestamp }) =>
-      this.config.useCachedValue === 'always' || lastUpdated >= now - ms(this.config.useCachedValue.ifUnder);
+    const isValid = ({ lastUpdated }: { lastUpdated: Timestamp }) =>
+      this.config.valid === 'always' || lastUpdated >= now - ms(this.config.valid?.onlyFor);
 
-    if (!(this.cache && useCachedValue(this.cache))) await this.update();
-
-    return this.cache.value;
+    return this.cache && isValid(this.cache) ? this.cache.value : undefined;
   }
 }
