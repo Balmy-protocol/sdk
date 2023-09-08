@@ -17,6 +17,7 @@ const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
       Chains.ARBITRUM.chainId,
       Chains.OPTIMISM.chainId,
       Chains.CANTO.chainId,
+      Chains.BASE.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,

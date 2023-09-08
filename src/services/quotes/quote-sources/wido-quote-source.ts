@@ -13,6 +13,7 @@ const SUPPORTED_CHAINS = [
   Chains.ARBITRUM,
   Chains.OPTIMISM,
   Chains.FANTOM,
+  Chains.AURORA,
 ].map(({ chainId }) => chainId);
 
 const WIDO_METADATA: QuoteSourceMetadata<WidoSupport> = {
