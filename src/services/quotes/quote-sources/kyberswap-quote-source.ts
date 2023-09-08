@@ -19,6 +19,9 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.VELAS.chainId]: 'velas',
   [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.LINEA.chainId]: 'linea',
+  [Chains.BASE.chainId]: 'base',
+  [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
 };
 
 const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
@@ -49,41 +52,59 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
     config,
   }: QuoteParams<KyberswapSupport>): Promise<SourceQuoteResponse> {
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
-    let url =
-      `https://aggregator-api.kyberswap.com/${chainKey}/route/encode` +
+
+    const headers = config.referrer?.name ? { 'x-client-id': config.referrer?.name } : undefined;
+
+    const url =
+      `https://aggregator-api.kyberswap.com/${chainKey}/api/v1/routes` +
       `?tokenIn=${sellToken}` +
       `&tokenOut=${buyToken}` +
       `&amountIn=${order.sellAmount.toString()}` +
-      `&slippageTolerance=${slippagePercentage * 100}` +
-      `&to=${recipient ?? takeFrom}` +
-      `&gasInclude=1`;
+      `&saveGas=0` +
+      `&gasInclude=true`;
 
-    if (txValidFor) {
-      url += `&deadline=${calculateDeadline(txValidFor)}`;
+    const routeResponse = await fetchService.fetch(url, { timeout, headers });
+    if (!routeResponse.ok) {
+      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await routeResponse.text());
     }
+    const {
+      data: { routeSummary },
+    } = await routeResponse.json();
 
-    if (config.referrer?.name) {
-      url += `&clientData={"source": "${config.referrer.name}"}`;
+    const buildResponse = await fetchService.fetch(`https://aggregator-api.kyberswap.com/${chainKey}/api/v1/route/build`, {
+      timeout,
+      headers,
+      method: 'POST',
+      body: JSON.stringify({
+        routeSummary,
+        slippageTolerance: slippagePercentage * 100,
+        recipient: recipient ?? takeFrom,
+        deadline: txValidFor ? calculateDeadline(txValidFor) : undefined,
+        source: config.referrer?.name,
+        sender: takeFrom,
+        skipSimulateTransaction: true,
+      }),
+    });
+    if (!buildResponse.ok) {
+      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await buildResponse.text());
     }
+    const {
+      data: { amountOut, gas, data, routerAddress },
+    } = await buildResponse.json();
 
-    const response = await fetchService.fetch(url, { timeout, headers: { 'Accept-Version': 'Latest' } });
-    if (!response.ok) {
-      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await response.text());
-    }
-    const { outputAmount, totalGas, encodedSwapData, routerAddress } = await response.json();
-    if (!encodedSwapData) {
+    if (!data) {
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, 'Failed to calculate a quote');
     }
 
     const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n;
     const quote = {
       sellAmount: order.sellAmount,
-      buyAmount: BigInt(outputAmount),
-      estimatedGas: BigInt(totalGas),
+      buyAmount: BigInt(amountOut),
+      estimatedGas: BigInt(gas),
       allowanceTarget: calculateAllowanceTarget(sellToken, routerAddress),
       tx: {
         to: routerAddress,
-        calldata: encodedSwapData,
+        calldata: data,
         value,
       },
     };

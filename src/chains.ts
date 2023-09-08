@@ -356,6 +356,15 @@ export const Chains = {
     publicRPCs: ['https://evm.kava.io', 'https://evm2.kava.io'],
     explorer: 'https://explorer.kava.io/',
   },
+  LINEA: {
+    chainId: 59144,
+    name: 'Linea',
+    ids: ['linea'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f',
+    publicRPCs: ['https://rpc.linea.build', 'https://1rpc.io/linea', 'https://linea.blockpi.network/v1/rpc/public', 'https://linea.drpc.org'],
+    explorer: 'https://lineascan.build/',
+  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
