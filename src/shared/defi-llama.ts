@@ -162,6 +162,10 @@ function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddres
   };
 }
 
+export function toChainId(key: string): ChainId {
+  return KEY_TO_CHAIN_ID[key.toLowerCase()];
+}
+
 type FetchTokenResult = {
   decimals?: number;
   price: number;
