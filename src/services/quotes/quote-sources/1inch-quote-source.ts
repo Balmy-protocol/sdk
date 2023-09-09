@@ -1,8 +1,6 @@
 import { Chains } from '@chains';
-import { Chain } from '@types';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, IQuoteSource } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
@@ -18,6 +16,7 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
       Chains.FANTOM.chainId,
       Chains.KLAYTN.chainId,
       Chains.AURORA.chainId,
+      Chains.BASE.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
@@ -25,22 +24,19 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
 };
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
-type OneInchConfig = { customDomain?: string };
-export class OneInchQuoteSource extends AlwaysValidConfigAndContextSource<OneInchSupport, OneInchConfig> {
+type OneInchConfig = { customUrl: string; apiKey?: undefined } | { customUrl?: undefined; apiKey: string };
+export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchConfig> {
   getMetadata() {
     return ONE_INCH_METADATA;
   }
 
   async quote(params: QuoteParams<OneInchSupport, OneInchConfig>): Promise<SourceQuoteResponse> {
-    const [estimatedGas, { toTokenAmount, to, data, value, protocols }] = await Promise.all([
-      this.getGasEstimate(params),
-      this.getQuote(params),
-    ]);
+    const { toAmount, to, data, value, gas } = await this.getQuote(params);
 
     const quote = {
       sellAmount: params.request.order.sellAmount,
-      buyAmount: BigInt(toTokenAmount),
-      estimatedGas,
+      buyAmount: BigInt(toAmount),
+      estimatedGas: gas ? BigInt(gas) : undefined,
       allowanceTarget: calculateAllowanceTarget(params.request.sellToken, to),
       tx: {
         to,
@@ -49,8 +45,7 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContextSource<OneInc
       },
     };
 
-    const isWrapOrUnwrap = isNativeWrapOrUnwrap(params.request.chain, protocols);
-    return addQuoteSlippage(quote, params.request.order.type, isWrapOrUnwrap ? 0 : params.request.config.slippagePercentage);
+    return addQuoteSlippage(quote, params.request.order.type, params.request.config.slippagePercentage);
   }
 
   private async getQuote({
@@ -65,70 +60,48 @@ export class OneInchQuoteSource extends AlwaysValidConfigAndContextSource<OneInc
     },
     config,
   }: QuoteParams<OneInchSupport, OneInchConfig>) {
-    const domain = config?.customDomain ?? 'api.1inch.io';
     let url =
-      `https://${domain}/v5.0/${chain.chainId}/swap` +
-      `?fromTokenAddress=${sellToken}` +
-      `&toTokenAddress=${buyToken}` +
+      `${getUrl(config)}/${chain.chainId}/swap` +
+      `?src=${sellToken}` +
+      `&dst=${buyToken}` +
       `&amount=${order.sellAmount.toString()}` +
-      `&fromAddress=${takeFrom}` +
+      `&from=${takeFrom}` +
       `&slippage=${slippagePercentage}` +
       `&disableEstimate=true`;
 
     if (!!recipient && takeFrom !== recipient) {
-      url += `&destReceiver=${recipient}`;
+      url += `&receiver=${recipient}`;
     }
 
     if (config.referrer?.address) {
-      url += `&referrerAddress=${config.referrer.address}`;
+      url += `&referrer=${config.referrer.address}`;
     }
-    const response = await fetchService.fetch(url, { timeout });
+    const response = await fetchService.fetch(url, { timeout, headers: getHeaders(config) });
     if (!response.ok) {
       failed(ONE_INCH_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
-      toTokenAmount,
-      tx: { to, data, value },
-      protocols,
+      toAmount,
+      tx: { to, data, value, gas },
     } = await response.json();
-    return { toTokenAmount, to, data, value, protocols };
+    return { toAmount, to, data, value, gas };
   }
 
-  // We can't use the gas estimate on the /swap endpoint because we need to turn the estimates off
-  private async getGasEstimate({
-    components: { fetchService },
-    request: {
-      chain,
-      sellToken,
-      buyToken,
-      order,
-      config: { timeout },
-    },
-    config,
-  }: QuoteParams<OneInchSupport, OneInchConfig>) {
-    const domain = config?.customDomain ?? 'api.1inch.io';
-    const url =
-      `https://${domain}/v5.0/${chain.chainId}/quote` +
-      `?fromTokenAddress=${sellToken}` +
-      `&toTokenAddress=${buyToken}` +
-      `&amount=${order.sellAmount.toString()}`;
-    try {
-      const response = await fetchService.fetch(url, { timeout });
-      const { estimatedGas } = await response.json();
-      return BigInt(estimatedGas);
-    } catch {
-      return undefined;
-    }
+  isConfigAndContextValid(config: Partial<OneInchConfig> | undefined): config is OneInchConfig {
+    return !!config && (!!config.apiKey || !!config.customUrl);
   }
 }
 
-function isNativeWrapOrUnwrap(chain: Chain, protocols: any) {
-  const wTokenSymbol = `W${chain.nativeCurrency.symbol.toUpperCase()}`;
-  return (
-    protocols.length === 1 &&
-    protocols[0].length === 1 &&
-    protocols[0][0].length === 1 &&
-    protocols[0][0][0].name === wTokenSymbol &&
-    protocols[0][0][0].part === 100
-  );
+function getUrl(config: OneInchConfig) {
+  return config.customUrl ?? 'https://api.1inch.dev/swap/v5.2';
+}
+
+function getHeaders(config: OneInchConfig) {
+  const headers: Record<string, string> = {
+    accept: 'application/json',
+  };
+  if (config.apiKey) {
+    headers['Authorization'] = `Bearer ${config.apiKey}`;
+  }
+  return headers;
 }
