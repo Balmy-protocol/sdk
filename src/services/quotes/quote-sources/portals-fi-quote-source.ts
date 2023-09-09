@@ -1,7 +1,7 @@
 import { Addresses } from '@shared/constants';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { isSameAddress } from '@shared/utils';
-import { TokenAddress } from '@types';
+import { Chain, TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
@@ -33,35 +33,36 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
     },
     config,
   }: QuoteParams<PortalsFiSupport>): Promise<SourceQuoteResponse> {
-    const mappedSellToken = mapNativeToken(sellToken);
-    const mappedBuyToken = mapNativeToken(buyToken);
-    const chainKey = PORTALS_FI_CHAIN_ID_TO_KEY[chain.chainId];
+    const mappedSellToken = mapToken(chain, sellToken);
+    const mappedBuyToken = mapToken(chain, buyToken);
     let url =
-      `https://api.portals.fi/v1/portal/${chainKey}` +
-      `?takerAddress=${takeFrom}` +
-      `&sellToken=${mappedSellToken}` +
-      `&sellAmount=${order.sellAmount.toString()}` +
-      `&buyToken=${mappedBuyToken}` +
-      `&slippagePercentage=${slippagePercentage / 100}` +
+      `https://api.portals.fi/v2/portal` +
+      `?sender=${takeFrom}` +
+      `&inputToken=${mappedSellToken}` +
+      `&inputAmount=${order.sellAmount.toString()}` +
+      `&outputToken=${mappedBuyToken}` +
+      `&slippageTolerancePercentage=${slippagePercentage}` +
       `&validate=false`;
 
     if (config.referrer) {
+      url += `&feePercentage=0`;
       url += `&partner=${config.referrer.address}`;
     }
+    console.log(url);
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const {
-      context: { buyAmount, minBuyAmount, value },
+      context: { outputAmount, minOutputAmount, value },
       tx: { to, data, gasLimit },
     } = await response.json();
 
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
-      buyAmount: BigInt(buyAmount),
-      minBuyAmount: BigInt(minBuyAmount),
+      buyAmount: BigInt(outputAmount),
+      minBuyAmount: BigInt(minOutputAmount),
       type: 'sell',
       estimatedGas: gasLimit ? BigInt(gasLimit) : undefined, // Portals does not estimate gas when validate=false
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
@@ -74,6 +75,8 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
   }
 }
 
-function mapNativeToken(address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : address;
+function mapToken(chain: Chain, address: TokenAddress) {
+  const chainKey = PORTALS_FI_CHAIN_ID_TO_KEY[chain.chainId];
+  const mapped = isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : address;
+  return `${chainKey}:${mapped}`;
 }

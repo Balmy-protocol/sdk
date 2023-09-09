@@ -12,6 +12,7 @@ export const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.AVALANCHE.chainId]: 'avalanche',
   [Chains.BNB_CHAIN.chainId]: 'bsc',
+  [Chains.BASE.chainId]: 'base',
 };
 
 export const PORTALS_FI_KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
