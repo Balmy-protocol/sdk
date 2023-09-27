@@ -48,7 +48,6 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
       url += `&feePercentage=0`;
       url += `&partner=${config.referrer.address}`;
     }
-    console.log(url);
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
