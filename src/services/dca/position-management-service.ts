@@ -13,6 +13,7 @@ import {
   DCAPermissionPermit,
   IDCAPositionManagementService,
   IncreaseDCAPositionParams,
+  MigrateDCAPositionParams,
   ReduceDCAPositionParams,
   ReduceToBuyDCAPositionParams,
   TerminateDCAPositionParams,
@@ -515,6 +516,110 @@ export class DCAPositionManagementService implements IDCAPositionManagementServi
       swappedPromise = Promise.resolve();
     }
     await Promise.all([unswappedPromise, swappedPromise]);
+
+    // Build multicall and return tx
+    return buildCompanionMulticall({ calls });
+  }
+
+  async buildMigratePositionTx({
+    chainId,
+    sourceHub,
+    targetHub,
+    positionId,
+    migration,
+    permissionPermit,
+  }: MigrateDCAPositionParams): Promise<BuiltTransaction> {
+    const bigIntPositionId = BigInt(positionId);
+    const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
+      chainId,
+      calls: [
+        { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: { json: dcaHubAbi }, address: sourceHub, functionName: 'userPosition', args: [bigIntPositionId] },
+      ],
+    });
+
+    const newFrom = migration.newFrom?.variantId ?? position.from;
+    const shouldConvertUnswapped = migration.useFundsFrom !== 'swapped' && position.remaining > 0 && !isSameAddress(position.from, newFrom);
+    const shouldConvertSwapped = migration.useFundsFrom !== 'unswapped' && position.swapped > 0 && !isSameAddress(position.to, newFrom);
+    const calls: Call[] = [];
+
+    // Handle permission permit
+    if (permissionPermit) {
+      calls.push(buildPermissionPermit(permissionPermit));
+    }
+
+    // Handle terminate
+    calls.push(
+      encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'terminate',
+        args: [
+          sourceHub as ViemAddress,
+          bigIntPositionId,
+          shouldConvertUnswapped
+            ? COMPANION_SWAPPER_ADDRESS
+            : migration.useFundsFrom !== 'swapped'
+            ? COMPANION_ADDRESS
+            : (migration.sendUnusedFundsTo as ViemAddress),
+          shouldConvertSwapped
+            ? COMPANION_SWAPPER_ADDRESS
+            : migration.useFundsFrom !== 'unswapped'
+            ? COMPANION_ADDRESS
+            : (migration.sendUnusedFundsTo as ViemAddress),
+        ],
+      })
+    );
+
+    // Handle swaps
+    let unswappedPromise: Promise<any>, swappedPromise: Promise<any>;
+    if (shouldConvertUnswapped) {
+      unswappedPromise = this.getSwapData({
+        request: {
+          chainId,
+          sellToken: position.from,
+          buyToken: newFrom,
+          order: { type: 'sell', sellAmount: position.remaining },
+        },
+        leftoverRecipient: positionOwner,
+        swapConfig: migration?.swapConfig,
+      }).then(({ swapData }) => calls.push(swapData));
+    } else {
+      unswappedPromise = Promise.resolve();
+    }
+    if (shouldConvertSwapped) {
+      swappedPromise = this.getSwapData({
+        request: {
+          chainId,
+          sellToken: position.to,
+          buyToken: newFrom,
+          order: { type: 'sell', sellAmount: position.swapped },
+        },
+        leftoverRecipient: positionOwner,
+        swapConfig: migration?.swapConfig,
+      }).then(({ swapData }) => calls.push(swapData));
+    } else {
+      swappedPromise = Promise.resolve();
+    }
+
+    await Promise.all([unswappedPromise, swappedPromise]);
+
+    // Handle re-deposit
+    calls.push(
+      encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'depositWithBalanceOnContract',
+        args: [
+          targetHub as ViemAddress,
+          newFrom,
+          (migration.newTo?.variantId ?? position.to) as ViemAddress,
+          position.swapsLeft,
+          position.swapInterval,
+          positionOwner,
+          [],
+          '0x',
+        ],
+      })
+    );
 
     // Build multicall and return tx
     return buildCompanionMulticall({ calls });

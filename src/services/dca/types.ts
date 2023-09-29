@@ -14,6 +14,7 @@ export type IDCAPositionManagementService = {
   buildReduceToBuyPositionTx(_: ReduceToBuyDCAPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawDCAPositionParams): Promise<BuiltTransaction>;
   buildTerminatePositionTx(_: TerminateDCAPositionParams): Promise<BuiltTransaction>;
+  buildMigratePositionTx(_: MigrateDCAPositionParams): Promise<BuiltTransaction>;
 };
 
 export enum DCAPermission {
@@ -87,6 +88,19 @@ export type TerminateDCAPositionParams = {
   permissionPermit?: DCAPermissionPermit;
   dcaHub?: Address;
 };
+export type MigrateDCAPositionParams = {
+  chainId: ChainId;
+  sourceHub: Address;
+  targetHub: Address;
+  positionId: BigIntish;
+  permissionPermit?: DCAPermissionPermit;
+  migration: PositionMigration & { newFrom?: PositionToken; newTo?: PositionToken; swapConfig?: DCAActionSwapConfig };
+};
+
+type PositionMigration =
+  | { useFundsFrom: 'swapped' | 'unswapped'; sendUnusedFundsTo: Address }
+  | { useFundsFrom: 'both'; sendUnusedFundsTo?: undefined };
+
 export type DCAActionSwapConfig = { slippagePercentage?: number; txValidFor?: TimeString };
 export type DCAPermissionPermit = {
   permissions: DCAPermissionSet[];
