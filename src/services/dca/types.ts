@@ -1,5 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction } from '@types';
+import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction, Timestamp } from '@types';
 
 export type IDCAService = {
   getAllowanceTarget(_: { chainId: ChainId; from: TokenAddress; depositWith: TokenAddress; usePermit2?: boolean }): Address;
@@ -11,7 +11,37 @@ export type IDCAService = {
   buildWithdrawPositionTx(_: WithdrawDCAPositionParams): Promise<BuiltTransaction>;
   buildTerminatePositionTx(_: TerminateDCAPositionParams): Promise<BuiltTransaction>;
   buildMigratePositionTx(_: MigrateDCAPositionParams): Promise<BuiltTransaction>;
+
+  getSupportedPairs(_?: { chains?: ChainId[]; config?: { timeout: TimeString } }): Promise<Record<ChainId, SupportedPair[]>>;
 };
+
+export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
+export type SupportedPair = {
+  chainId: ChainId;
+  id: PairInChain;
+  tokenA: TokenInPair;
+  tokenB: TokenInPair;
+  swapIntervals: Record<string, SwapIntervalData>;
+};
+export type SwapIntervalData = {
+  seconds: number;
+  nextSwapAvailableAt: Record<TokenVariantPair, Timestamp>;
+  isStale: Record<TokenVariantPair, boolean>;
+};
+export type TokenVariantPair = `${TokenVariantId}-${TokenVariantId}`;
+export type TokenInPair = {
+  address: TokenAddress;
+  symbol: string;
+  decimals: number;
+  name: string;
+  variants: TokenVariant[];
+  price?: number;
+};
+export type TokenVariant = { id: TokenVariantId } & (TokenVariantOriginal | TokenVariantWrapper | TokenVariantYield);
+export type TokenVariantOriginal = { type: 'original' };
+export type TokenVariantWrapper = { type: 'wrapper' };
+export type TokenVariantYield = { type: 'yield'; apy: number; platform: string; tvl: number };
+export type TokenVariantId = string;
 
 export enum DCAPermission {
   INCREASE,

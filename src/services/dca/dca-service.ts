@@ -1,5 +1,6 @@
+import qs from 'qs';
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
-import { Address, BigIntish, ChainId, TokenAddress, BuiltTransaction } from '@types';
+import { Address, BigIntish, ChainId, TokenAddress, BuiltTransaction, TimeString, Timestamp } from '@types';
 import companionAbi from '@shared/abis/companion';
 import dcaHubAbi from '@shared/abis/dca-hub';
 import { SinglePermitParams, PermitData, IPermit2Service } from '@services/permit2';
@@ -11,23 +12,32 @@ import {
   CreateDCAPositionParams,
   DCAActionSwapConfig,
   DCAPermissionPermit,
+  DCASwapInterval,
   IDCAService,
   IncreaseDCAPositionParams,
   MigrateDCAPositionParams,
+  PairInChain,
   ReduceDCAPositionParams,
   ReduceToBuyDCAPositionParams,
+  SupportedPair,
+  SwapIntervalData,
   TerminateDCAPositionParams,
+  TokenVariant,
+  TokenVariantPair,
   WithdrawDCAPositionParams,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
-import { IMulticallService } from '..';
+import { IMulticallService } from '@services/multicall';
 import { ERC721_ABI } from '@shared/abis/erc721';
+import { IFetchService } from '@services/fetch';
 
 export class DCAService implements IDCAService {
   constructor(
+    private readonly apiUrl: string,
     private readonly multicallService: IMulticallService,
     private readonly permit2Service: IPermit2Service,
-    private readonly quoteService: IQuoteService
+    private readonly quoteService: IQuoteService,
+    private readonly fetchService: IFetchService
   ) {}
 
   getAllowanceTarget({
@@ -625,6 +635,19 @@ export class DCAService implements IDCAService {
     return buildCompanionMulticall({ calls });
   }
 
+  async getSupportedPairs(args?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, SupportedPair[]>> {
+    const params = qs.stringify({ chains: args?.chains }, { arrayFormat: 'comma', skipNulls: true });
+    const url = `${this.apiUrl}/v2/dca/pairs/supported?${params}`;
+    const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
+    const body: SupportedPairsResponse = await response.json();
+    const result: Record<ChainId, SupportedPair[]> = {};
+    for (const chainId in body.pairsByNetwork) {
+      const { pairs, tokens } = body.pairsByNetwork[chainId];
+      result[Number(chainId)] = pairs.map((pair) => buildPair(Number(chainId), pair, tokens));
+    }
+    return result;
+  }
+
   private async getSwapData({
     request,
     leftoverRecipient,
@@ -748,3 +771,78 @@ async function buildCompanionMulticall({ calls, value }: { calls: Call[]; value?
 }
 
 type Call = Hex;
+
+function buildPair(chainId: ChainId, pair: SupportedPairWithIntervals, tokens: Record<TokenAddress, TokenData>): SupportedPair {
+  const tokenA = tokens[pair.tokenA];
+  const tokenB = tokens[pair.tokenB];
+  return {
+    chainId: Number(chainId),
+    id: pair.id,
+    tokenA: {
+      address: pair.tokenA,
+      ...tokenA,
+    },
+    tokenB: {
+      address: pair.tokenB,
+      ...tokenB,
+    },
+    swapIntervals: buildSwapIntervals(pair.swapIntervals, tokenA, tokenB),
+  };
+}
+
+function buildSwapIntervals(
+  swapIntervals: Record<string, SwapIntervalDataResponse>,
+  tokenA: TokenData,
+  tokenB: TokenData
+): Record<string, SwapIntervalData> {
+  const tokenAVariantIds = tokenA.variants.map(({ id }) => id);
+  const tokenBVariantIds = tokenB.variants.map(({ id }) => id);
+  const variantCombinations = tokenAVariantIds.flatMap((tokenAVariantId) =>
+    tokenBVariantIds.map<TokenVariantPair>((tokenBVariantId) => `${tokenAVariantId}-${tokenBVariantId}`)
+  );
+
+  const result: Record<string, SwapIntervalData> = {};
+  const allIntervals = Object.keys(DCASwapInterval).slice(0, 8);
+  for (const seconds of allIntervals) {
+    const intervalName = DCASwapInterval[Number(seconds)];
+    const nextSwapAvailableAt: Record<TokenVariantPair, Timestamp> = {};
+    const isStale: Record<TokenVariantPair, boolean> = {};
+    for (const combination of variantCombinations) {
+      isStale[combination] = swapIntervals[intervalName]?.stale?.includes(combination) ?? false;
+      nextSwapAvailableAt[combination] = swapIntervals[intervalName]?.nextSwapBlockedUntil[combination] ?? 0;
+    }
+    result[intervalName] = { seconds: Number(seconds), nextSwapAvailableAt, isStale };
+  }
+
+  return result;
+}
+
+type SupportedPairsResponse = {
+  pairsByNetwork: Record<
+    string, // chainId as string
+    {
+      pairs: SupportedPairWithIntervals[];
+      tokens: Record<TokenAddress, TokenData>;
+    }
+  >;
+};
+type SupportedPairWithIntervals = {
+  id: PairInChain;
+  tokenA: TokenAddress;
+  tokenB: TokenAddress;
+  swapIntervals: Record<TokenVariantPair, SwapIntervalDataResponse>;
+};
+
+type SwapIntervalDataResponse = {
+  seconds: number;
+  nextSwapBlockedUntil: Record<TokenVariantPair, Timestamp>;
+  stale: TokenVariantPair[];
+};
+
+type TokenData = {
+  symbol: string;
+  decimals: number;
+  name: string;
+  variants: TokenVariant[];
+  price?: number;
+};
