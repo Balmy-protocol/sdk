@@ -16,7 +16,7 @@ export {
   PairInChain,
   SwapIntervalData,
   TokenVariantPair,
-  TokenInPair,
+  DCAToken,
   TokenVariant,
   TokenVariantOriginal,
   TokenVariantWrapper,

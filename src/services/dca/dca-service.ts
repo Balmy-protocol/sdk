@@ -13,6 +13,7 @@ import {
   DCAActionSwapConfig,
   DCAPermissionPermit,
   DCASwapInterval,
+  DCAToken,
   IDCAService,
   IncreaseDCAPositionParams,
   MigrateDCAPositionParams,
@@ -635,15 +636,18 @@ export class DCAService implements IDCAService {
     return buildCompanionMulticall({ calls });
   }
 
-  async getSupportedPairs(args?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, SupportedPair[]>> {
+  async getSupportedPairs(args?: { chains?: ChainId[]; config?: { timeout?: TimeString } }) {
     const params = qs.stringify({ chains: args?.chains }, { arrayFormat: 'comma', skipNulls: true });
     const url = `${this.apiUrl}/v2/dca/pairs/supported?${params}`;
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
     const body: SupportedPairsResponse = await response.json();
-    const result: Record<ChainId, SupportedPair[]> = {};
+    const result: Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, DCAToken> }> = {};
     for (const chainId in body.pairsByNetwork) {
       const { pairs, tokens } = body.pairsByNetwork[chainId];
-      result[Number(chainId)] = pairs.map((pair) => buildPair(Number(chainId), pair, tokens));
+      result[Number(chainId)] = {
+        pairs: pairs.map((pair) => buildPair(Number(chainId), pair, tokens)),
+        tokens,
+      };
     }
     return result;
   }
@@ -777,15 +781,7 @@ function buildPair(chainId: ChainId, pair: SupportedPairWithIntervals, tokens: R
   const tokenB = tokens[pair.tokenB];
   return {
     chainId: Number(chainId),
-    id: pair.id,
-    tokenA: {
-      address: pair.tokenA,
-      ...tokenA,
-    },
-    tokenB: {
-      address: pair.tokenB,
-      ...tokenB,
-    },
+    ...pair,
     swapIntervals: buildSwapIntervals(pair.swapIntervals, tokenA, tokenB),
   };
 }

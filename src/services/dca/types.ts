@@ -12,15 +12,18 @@ export type IDCAService = {
   buildTerminatePositionTx(_: TerminateDCAPositionParams): Promise<BuiltTransaction>;
   buildMigratePositionTx(_: MigrateDCAPositionParams): Promise<BuiltTransaction>;
 
-  getSupportedPairs(_?: { chains?: ChainId[]; config?: { timeout: TimeString } }): Promise<Record<ChainId, SupportedPair[]>>;
+  getSupportedPairs(_?: {
+    chains?: ChainId[];
+    config?: { timeout: TimeString };
+  }): Promise<Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, DCAToken> }>>;
 };
 
 export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
 export type SupportedPair = {
   chainId: ChainId;
   id: PairInChain;
-  tokenA: TokenInPair;
-  tokenB: TokenInPair;
+  tokenA: TokenAddress;
+  tokenB: TokenAddress;
   swapIntervals: Record<string, SwapIntervalData>;
 };
 export type SwapIntervalData = {
@@ -29,8 +32,7 @@ export type SwapIntervalData = {
   isStale: Record<TokenVariantPair, boolean>;
 };
 export type TokenVariantPair = `${TokenVariantId}-${TokenVariantId}`;
-export type TokenInPair = {
-  address: TokenAddress;
+export type DCAToken = {
   symbol: string;
   decimals: number;
   name: string;
