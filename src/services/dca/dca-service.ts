@@ -13,7 +13,7 @@ import {
   DCAActionSwapConfig,
   DCAPermissionPermit,
   DCASwapInterval,
-  DCAToken,
+  SupportedDCAToken,
   IDCAService,
   IncreaseDCAPositionParams,
   MigrateDCAPositionParams,
@@ -26,6 +26,10 @@ import {
   TokenVariant,
   TokenVariantPair,
   WithdrawDCAPositionParams,
+  PositionId,
+  PlatformMessage,
+  PositionSummary,
+  DCAPermission,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
 import { IMulticallService } from '@services/multicall';
@@ -98,7 +102,10 @@ export class DCAService implements IDCAService {
             amountOfSwaps,
             swapInterval,
             owner as ViemAddress,
-            permissions.map(({ operator, permissions }) => ({ operator: operator as ViemAddress, permissions })),
+            permissions.map(({ operator, permissions }) => ({
+              operator: operator as ViemAddress,
+              permissions: permissions.map(mapPermission),
+            })),
           ],
         }),
       };
@@ -142,7 +149,10 @@ export class DCAService implements IDCAService {
           amountOfSwaps,
           swapInterval,
           owner as ViemAddress,
-          permissions.map(({ operator, permissions }) => ({ operator: operator as ViemAddress, permissions })),
+          permissions.map(({ operator, permissions }) => ({
+            operator: operator as ViemAddress,
+            permissions: permissions.map(mapPermission),
+          })),
           '0x',
         ],
       })
@@ -641,13 +651,26 @@ export class DCAService implements IDCAService {
     const url = `${this.apiUrl}/v2/dca/pairs/supported?${params}`;
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
     const body: SupportedPairsResponse = await response.json();
-    const result: Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, DCAToken> }> = {};
+    const result: Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, SupportedDCAToken> }> = {};
     for (const chainId in body.pairsByNetwork) {
       const { pairs, tokens } = body.pairsByNetwork[chainId];
       result[Number(chainId)] = {
         pairs: pairs.map((pair) => buildPair(Number(chainId), pair, tokens)),
         tokens,
       };
+    }
+    return result;
+  }
+
+  async getPositionsByAccount({ accounts, chains, config }: { accounts: Address[]; chains?: ChainId[]; config?: { timeout?: TimeString } }) {
+    const params = qs.stringify({ users: accounts, chains }, { arrayFormat: 'comma', skipNulls: true });
+    const url = `${this.apiUrl}/v2/dca/positions?${params}`;
+    const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
+    const body: PositionsResponse = await response.json();
+    const result: Record<ChainId, PositionSummary[]> = {};
+    for (const chainId in body.positionsByNetwork) {
+      const { positions, tokens } = body.positionsByNetwork[chainId];
+      result[Number(chainId)] = positions.map((position) => buildPosition(position, tokens));
     }
     return result;
   }
@@ -747,7 +770,10 @@ function buildPermissionPermit(permit: DCAPermissionPermit): Hex {
     functionName: 'permissionPermit',
     args: [
       DCA_PERMISSION_MANAGER_ADDRESS,
-      permit.permissions.map(({ operator, permissions }) => ({ operator: operator as ViemAddress, permissions })),
+      permit.permissions.map(({ operator, permissions }) => ({
+        operator: operator as ViemAddress,
+        permissions: permissions.map(mapPermission),
+      })),
       BigInt(permit.tokenId),
       BigInt(permit.deadline),
       parseInt(permit.v.toString()),
@@ -755,6 +781,19 @@ function buildPermissionPermit(permit: DCAPermissionPermit): Hex {
       permit.s as Hex,
     ],
   });
+}
+
+function mapPermission(permission: DCAPermission) {
+  switch (permission) {
+    case DCAPermission.INCREASE:
+      return 0;
+    case DCAPermission.REDUCE:
+      return 1;
+    case DCAPermission.WITHDRAW:
+      return 2;
+    case DCAPermission.TERMINATE:
+      return 3;
+  }
 }
 
 function buildSendAllBalance(token: TokenAddress, recipient: Address): Hex {
@@ -813,6 +852,40 @@ function buildSwapIntervals(
   return result;
 }
 
+function buildPosition(position: PositionSummaryResponse, tokens: Record<TokenAddress, TokenData>): PositionSummary {
+  const { variants: fromVariants, ...fromToken } = tokens[position.from.address];
+  const { variants: toVariants, ...toToken } = tokens[position.to.address];
+  const fromVariant = fromVariants.find(({ id }) => id == position.from.variant.id) ?? position.from.variant;
+  const toVariant = toVariants.find(({ id }) => id === position.to.variant.id) ?? position.to.variant;
+  return {
+    ...position,
+    from: {
+      ...position.from,
+      ...fromToken,
+      variant: fromVariant,
+    },
+    to: {
+      ...position.to,
+      ...toToken,
+      variant: toVariant,
+    },
+    swapInterval: position.swapInterval.seconds,
+    rate: BigInt(position.rate),
+    funds: {
+      swapped: BigInt(position.funds.swapped),
+      remaining: BigInt(position.funds.remaining),
+      toWithdraw: BigInt(position.funds.toWithdraw),
+    },
+    yield: position.yield
+      ? {
+          swapped: position.yield.swapped ? BigInt(position.yield.swapped) : undefined,
+          remaining: position.yield.remaining ? BigInt(position.yield.remaining) : undefined,
+          toWithdraw: position.yield.toWithdraw ? BigInt(position.yield.toWithdraw) : undefined,
+        }
+      : undefined,
+  };
+}
+
 type SupportedPairsResponse = {
   pairsByNetwork: Record<
     string, // chainId as string
@@ -842,3 +915,34 @@ type TokenData = {
   variants: TokenVariant[];
   price?: number;
 };
+
+type PositionsResponse = {
+  positionsByNetwork: Record<string, { positions: PositionSummaryResponse[]; tokens: Record<TokenAddress, TokenData> }>;
+};
+type PositionSummaryResponse = {
+  id: PositionId;
+  from: PositionToken;
+  to: PositionToken;
+  swapInterval: { seconds: DCASwapInterval };
+  owner: Address;
+  remainingSwaps: number;
+  executedSwaps: number;
+  isStale: boolean;
+  status: 'ongoing' | 'empty' | 'closed';
+  nextSwapAvailableAt: Timestamp;
+  permissions: Permissions;
+  rate: BigIntish;
+  funds: PositionFunds;
+  yield?: Partial<PositionFunds>;
+  platformMessages: PlatformMessage[];
+};
+type PositionFunds = {
+  swapped: BigIntish;
+  remaining: BigIntish;
+  toWithdraw: BigIntish;
+};
+type PositionToken = {
+  address: TokenAddress;
+  variant: TokenVariant;
+};
+type Permissions = Record<Address, DCAPermission[]>;
