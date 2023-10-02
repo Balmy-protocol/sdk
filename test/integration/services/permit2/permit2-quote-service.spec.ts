@@ -12,7 +12,6 @@ import {
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReducedAsExpected,
   calculateBalancesFor,
-  chainsWithTestData,
   loadTokens,
   mint,
   TestToken,

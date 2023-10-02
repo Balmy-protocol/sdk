@@ -10,7 +10,7 @@ import { buildAllowanceService, BuildAllowanceParams } from './builders/allowanc
 import { ISDK } from './types';
 import { BuildPriceParams, buildPriceService } from './builders/price-builder';
 import { buildPermit2Service } from './builders/permit2-builder';
-import { buildDCAService } from './builders/dca-builder';
+import { BuildDCAParams, buildDCAService } from './builders/dca-builder';
 
 export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
@@ -26,7 +26,7 @@ export function buildSDK<Params extends BuildParams = {}>(
   const priceService = buildPriceService(params?.price, fetchService);
   const quoteService = buildQuoteService(params?.quotes, providerService, fetchService, gasService as any, metadataService as any, priceService);
   const permit2Service = buildPermit2Service(multicallService, quoteService, providerService, gasService as any);
-  const dcaService = buildDCAService(multicallService, permit2Service, quoteService);
+  const dcaService = buildDCAService(params?.dca, { multicallService, permit2Service, quoteService, fetchService });
 
   return {
     providerService,
@@ -50,6 +50,7 @@ export type BuildParams = {
   balances?: BuildBalancesParams;
   allowances?: BuildAllowanceParams;
   gas?: BuildGasParams;
+  dca?: BuildDCAParams;
   metadata?: BuildMetadataParams;
   price?: BuildPriceParams;
   quotes?: BuildQuoteParams;

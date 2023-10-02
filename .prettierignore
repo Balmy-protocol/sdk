@@ -11,6 +11,7 @@ CHANGELOG.md
 .env.example
 yarn-error.log
 **/LICENSE
+cache
 
 # JS
 node_modules
