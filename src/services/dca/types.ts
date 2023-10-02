@@ -15,10 +15,51 @@ export type IDCAService = {
   getSupportedPairs(_?: {
     chains?: ChainId[];
     config?: { timeout: TimeString };
-  }): Promise<Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, DCAToken> }>>;
+  }): Promise<Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, SupportedDCAToken> }>>;
+  getPositionsByAccount(_: {
+    accounts: Address[];
+    chains?: ChainId[];
+    config?: { timeout: TimeString };
+  }): Promise<Record<ChainId, PositionSummary[]>>;
 };
 
 export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
+export type PositionId = `${ChainId}-${Address}-${bigint}`;
+export type PositionSummary = {
+  id: PositionId;
+  from: DCAPositionToken;
+  to: DCAPositionToken;
+  swapInterval: DCASwapInterval;
+  owner: Address;
+  remainingSwaps: number;
+  executedSwaps: number;
+  isStale: boolean;
+  status: 'ongoing' | 'empty' | 'closed';
+  nextSwapAvailableAt: Timestamp;
+  permissions: Record<Address, DCAPermission[]>;
+  rate: bigint;
+  funds: PositionFunds;
+  yield?: Partial<PositionFunds>;
+  platformMessages: PlatformMessage[];
+};
+export type PositionFunds = {
+  swapped: bigint;
+  remaining: bigint;
+  toWithdraw: bigint;
+};
+export type DCAPositionToken = {
+  address: TokenAddress;
+  symbol: string;
+  name: string;
+  decimals: number;
+  price?: number;
+  variant: TokenVariant;
+};
+export type PlatformMessage = {
+  id: string;
+  generated: Timestamp;
+  message: string;
+};
 export type SupportedPair = {
   chainId: ChainId;
   id: PairInChain;
@@ -32,7 +73,7 @@ export type SwapIntervalData = {
   isStale: Record<TokenVariantPair, boolean>;
 };
 export type TokenVariantPair = `${TokenVariantId}-${TokenVariantId}`;
-export type DCAToken = {
+export type SupportedDCAToken = {
   symbol: string;
   decimals: number;
   name: string;
@@ -46,10 +87,10 @@ export type TokenVariantYield = { type: 'yield'; apy: number; platform: string; 
 export type TokenVariantId = string;
 
 export enum DCAPermission {
-  INCREASE,
-  REDUCE,
-  WITHDRAW,
-  TERMINATE,
+  INCREASE = 'INCREASE',
+  REDUCE = 'REDUCE',
+  WITHDRAW = 'WITHDRAW',
+  TERMINATE = 'TERMINATE',
 }
 
 export enum DCASwapInterval {
@@ -146,5 +187,5 @@ export type AddFunds = { swapConfig?: DCAActionSwapConfig } & (
 
 type PositionToken = {
   address: TokenAddress;
-  variantId: string;
+  variantId: TokenVariantId;
 };
