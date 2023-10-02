@@ -1,6 +1,5 @@
 export {
   IDCAService,
-  IDCAPositionManagementService,
   DCAPermission,
   DCASwapInterval,
   DCAPermissionSet,

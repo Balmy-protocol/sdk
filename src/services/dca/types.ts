@@ -2,10 +2,6 @@ import { PermitData, SinglePermitParams } from '@services/permit2';
 import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction } from '@types';
 
 export type IDCAService = {
-  management: IDCAPositionManagementService;
-};
-
-export type IDCAPositionManagementService = {
   getAllowanceTarget(_: { chainId: ChainId; from: TokenAddress; depositWith: TokenAddress; usePermit2?: boolean }): Address;
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
   buildCreatePositionTx(_: CreateDCAPositionParams): Promise<BuiltTransaction>;
