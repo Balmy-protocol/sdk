@@ -23,6 +23,11 @@ export type IDCAService = {
     includeHistory?: boolean;
     config?: { timeout: TimeString };
   }): Promise<Record<ChainId, PositionSummary[]>>;
+  getPositionsById(_: {
+    ids: ArrayOneOrMore<{ chainId: ChainId; hub: Address; positionId: number }>;
+    includeHistory?: boolean;
+    config?: { timeout: TimeString };
+  }): Promise<Record<ChainId, PositionSummary[]>>;
 };
 
 export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;

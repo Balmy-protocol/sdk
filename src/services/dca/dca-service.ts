@@ -677,8 +677,26 @@ export class DCAService implements IDCAService {
     config?: { timeout?: TimeString };
   }) {
     const params = qs.stringify({ users: accounts, chains, includeHistory }, { arrayFormat: 'comma', skipNulls: true });
+    return this.fetchPositions(params, config?.timeout);
+  }
+
+  async getPositionsById({
+    ids,
+    includeHistory,
+    config,
+  }: {
+    ids: { chainId: ChainId; hub: Address; positionId: number }[];
+    includeHistory?: boolean;
+    config?: { timeout: TimeString };
+  }): Promise<Record<ChainId, PositionSummary[]>> {
+    const encodedIds = ids.map(({ chainId, hub, positionId }) => `${chainId}-${hub}-${positionId}`);
+    const params = qs.stringify({ ids: encodedIds, includeHistory }, { arrayFormat: 'comma', skipNulls: true });
+    return this.fetchPositions(params, config?.timeout);
+  }
+
+  private async fetchPositions(params: string, timeout: TimeString | undefined) {
     const url = `${this.apiUrl}/v2/dca/positions?${params}`;
-    const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
+    const response = await this.fetchService.fetch(url, { timeout });
     const body: PositionsResponse = await response.json();
     const result: Record<ChainId, PositionSummary[]> = {};
     for (const chainId in body.positionsByNetwork) {
