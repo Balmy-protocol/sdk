@@ -50,7 +50,7 @@ function validateResponse<Values extends object, Requirements extends FieldsRequ
 ) {
   for (const chainId in request) {
     for (const token of request[chainId]) {
-      if (!doesResponseMeetRequirements(response[chainId][token], requirements)) {
+      if (!doesResponseMeetRequirements(response[chainId]?.[token], requirements)) {
         throw new Error('Failed to fetch metadata that meets the given requirements');
       }
     }

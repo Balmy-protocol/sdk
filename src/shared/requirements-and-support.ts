@@ -89,12 +89,12 @@ export function validateRequirements<Values extends object, Requirements extends
 }
 
 export function doesResponseMeetRequirements<Values extends object, Requirements extends FieldsRequirements<Values>>(
-  response: Values,
+  response: Values | undefined,
   requirements: Requirements | undefined
 ) {
   const fieldRequirements = calculateFieldRequirements<Values, Requirements>(undefined, requirements);
   for (const field in fieldRequirements) {
-    if (fieldRequirements[field] === 'required' && !(field in response)) {
+    if (fieldRequirements[field] === 'required' && !(field in (response ?? {}))) {
       return false;
     }
   }

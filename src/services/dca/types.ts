@@ -1,5 +1,6 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
 import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction, Timestamp } from '@types';
+import { ArrayOneOrMore } from '@utility-types';
 
 export type IDCAService = {
   getAllowanceTarget(_: { chainId: ChainId; from: TokenAddress; depositWith: TokenAddress; usePermit2?: boolean }): Address;
@@ -17,8 +18,9 @@ export type IDCAService = {
     config?: { timeout: TimeString };
   }): Promise<Record<ChainId, { pairs: SupportedPair[]; tokens: Record<TokenAddress, SupportedDCAToken> }>>;
   getPositionsByAccount(_: {
-    accounts: Address[];
+    accounts: ArrayOneOrMore<Address>;
     chains?: ChainId[];
+    includeHistory?: boolean;
     config?: { timeout: TimeString };
   }): Promise<Record<ChainId, PositionSummary[]>>;
 };
@@ -41,6 +43,77 @@ export type PositionSummary = {
   funds: PositionFunds;
   yield?: Partial<PositionFunds>;
   platformMessages: PlatformMessage[];
+  history: DCAPositionAction[];
+};
+export type DCAPositionAction = { tx: DCATransaction } & ActionType;
+export type ActionType =
+  | CreatedAction
+  | ModifiedAction
+  | WithdrawnAction
+  | TerminatedAction
+  | TransferredAction
+  | PermissionsModifiedAction
+  | SwappedAction;
+export type CreatedAction = {
+  action: 'created';
+  rate: bigint;
+  swaps: number;
+  owner: Address;
+  permissions: Record<Address, DCAPermission[]>;
+  fromPrice?: number;
+};
+export type ModifiedAction = {
+  action: 'modified';
+  rate: bigint;
+  remainingSwaps: number;
+  oldRate: bigint;
+  oldRemainingSwaps: number;
+  fromPrice?: number;
+};
+export type WithdrawnAction = {
+  action: 'withdrawn';
+  withdrawn: bigint;
+  yield?: { withdrawn: bigint };
+  toPrice?: number;
+};
+export type TerminatedAction = {
+  action: 'terminated';
+  withdrawnRemaining: bigint;
+  withdrawnSwapped: bigint;
+  yield?: {
+    withdrawnRemaining?: bigint;
+    withdrawnSwapped?: bigint;
+  };
+  fromPrice?: number;
+  toPrice?: number;
+};
+export type TransferredAction = {
+  action: 'transferred';
+  from: Address;
+  to: Address;
+};
+export type PermissionsModifiedAction = {
+  action: 'modified permissions';
+  permissions: Permissions;
+};
+export type SwappedAction = {
+  action: 'swapped';
+  rate: bigint;
+  swapped: bigint;
+  ratioAToB: bigint;
+  ratioBToA: bigint;
+  ratioAToBWithFee: bigint;
+  ratioBToAWithFee: bigint;
+  yield?: {
+    rate: bigint;
+  };
+};
+export type DCATransaction = {
+  hash: string;
+  timestamp: Timestamp;
+  gasPrice?: bigint;
+  l1GasPrice?: bigint;
+  overhead?: bigint;
 };
 export type PositionFunds = {
   swapped: bigint;

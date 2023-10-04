@@ -30,6 +30,9 @@ import {
   PlatformMessage,
   PositionSummary,
   DCAPermission,
+  TransferredAction,
+  PermissionsModifiedAction,
+  DCAPositionAction,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
 import { IMulticallService } from '@services/multicall';
@@ -662,8 +665,18 @@ export class DCAService implements IDCAService {
     return result;
   }
 
-  async getPositionsByAccount({ accounts, chains, config }: { accounts: Address[]; chains?: ChainId[]; config?: { timeout?: TimeString } }) {
-    const params = qs.stringify({ users: accounts, chains }, { arrayFormat: 'comma', skipNulls: true });
+  async getPositionsByAccount({
+    accounts,
+    chains,
+    includeHistory,
+    config,
+  }: {
+    accounts: Address[];
+    chains?: ChainId[];
+    includeHistory?: boolean;
+    config?: { timeout?: TimeString };
+  }) {
+    const params = qs.stringify({ users: accounts, chains, includeHistory }, { arrayFormat: 'comma', skipNulls: true });
     const url = `${this.apiUrl}/v2/dca/positions?${params}`;
     const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
     const body: PositionsResponse = await response.json();
@@ -870,19 +883,80 @@ function buildPosition(position: PositionSummaryResponse, tokens: Record<TokenAd
       variant: toVariant,
     },
     swapInterval: position.swapInterval.seconds,
-    rate: BigInt(position.rate),
+    rate: toBigInt(position.rate),
     funds: {
-      swapped: BigInt(position.funds.swapped),
-      remaining: BigInt(position.funds.remaining),
-      toWithdraw: BigInt(position.funds.toWithdraw),
+      swapped: toBigInt(position.funds.swapped),
+      remaining: toBigInt(position.funds.remaining),
+      toWithdraw: toBigInt(position.funds.toWithdraw),
     },
     yield: position.yield
       ? {
-          swapped: position.yield.swapped ? BigInt(position.yield.swapped) : undefined,
-          remaining: position.yield.remaining ? BigInt(position.yield.remaining) : undefined,
-          toWithdraw: position.yield.toWithdraw ? BigInt(position.yield.toWithdraw) : undefined,
+          swapped: toBigInt(position.yield.swapped),
+          remaining: toBigInt(position.yield.remaining),
+          toWithdraw: toBigInt(position.yield.toWithdraw),
         }
       : undefined,
+    history: position.history?.map(mapAction) ?? [],
+  };
+}
+
+function mapAction(action: DCAPositionActionResponse): DCAPositionAction {
+  switch (action.action) {
+    case 'created':
+      return {
+        ...action,
+        rate: toBigInt(action.rate),
+        tx: mapActionTx(action.tx),
+      };
+    case 'modified':
+      return {
+        ...action,
+        rate: toBigInt(action.rate),
+        oldRate: toBigInt(action.oldRate),
+        tx: mapActionTx(action.tx),
+      };
+    case 'withdrawn':
+      return {
+        ...action,
+        withdrawn: toBigInt(action.withdrawn),
+        yield: action.yield && { withdrawn: toBigInt(action.yield.withdrawn) },
+        tx: mapActionTx(action.tx),
+      };
+    case 'terminated':
+      return {
+        ...action,
+        withdrawnRemaining: toBigInt(action.withdrawnRemaining),
+        withdrawnSwapped: toBigInt(action.withdrawnSwapped),
+        yield: action.yield && {
+          withdrawnRemaining: toBigInt(action.yield.withdrawnRemaining),
+          withdrawnSwapped: toBigInt(action.yield.withdrawnSwapped),
+        },
+        tx: mapActionTx(action.tx),
+      };
+    case 'swapped':
+      return {
+        ...action,
+        rate: toBigInt(action.rate),
+        swapped: toBigInt(action.swapped),
+        ratioAToB: toBigInt(action.ratioAToB),
+        ratioBToA: toBigInt(action.ratioBToA),
+        ratioAToBWithFee: toBigInt(action.ratioAToBWithFee),
+        ratioBToAWithFee: toBigInt(action.ratioBToAWithFee),
+        yield: action.yield && { rate: toBigInt(action.yield.rate) },
+        tx: mapActionTx(action.tx),
+      };
+    case 'transferred':
+    case 'modified permissions':
+      return { ...action, tx: mapActionTx(action.tx) };
+  }
+}
+
+function mapActionTx(tx: DCAPositionActionResponse['tx']): DCAPositionAction['tx'] {
+  return {
+    ...tx,
+    gasPrice: toBigInt(tx.gasPrice),
+    l1GasPrice: toBigInt(tx.l1GasPrice),
+    overhead: toBigInt(tx.overhead),
   };
 }
 
@@ -930,11 +1004,12 @@ type PositionSummaryResponse = {
   isStale: boolean;
   status: 'ongoing' | 'empty' | 'closed';
   nextSwapAvailableAt: Timestamp;
-  permissions: Permissions;
+  permissions: Record<Address, DCAPermission[]>;
   rate: BigIntish;
   funds: PositionFunds;
   yield?: Partial<PositionFunds>;
   platformMessages: PlatformMessage[];
+  history?: DCAPositionActionResponse[];
 };
 type PositionFunds = {
   swapped: BigIntish;
@@ -945,4 +1020,68 @@ type PositionToken = {
   address: TokenAddress;
   variant: TokenVariant;
 };
-type Permissions = Record<Address, DCAPermission[]>;
+type DCAPositionActionResponse = { tx: DCATransaction } & ActionTypeResponse;
+type ActionTypeResponse =
+  | CreatedActionResponse
+  | ModifiedActionResponse
+  | WithdrawnActionResponse
+  | TerminatedActionResponse
+  | TransferredAction
+  | PermissionsModifiedAction
+  | SwappedActionResponse;
+type CreatedActionResponse = {
+  action: 'created';
+  rate: BigIntish;
+  swaps: number;
+  owner: Address;
+  permissions: Record<Address, DCAPermission[]>;
+  fromPrice?: number;
+};
+type ModifiedActionResponse = {
+  action: 'modified';
+  rate: BigIntish;
+  remainingSwaps: number;
+  oldRate: BigIntish;
+  oldRemainingSwaps: number;
+  fromPrice?: number;
+};
+type WithdrawnActionResponse = {
+  action: 'withdrawn';
+  withdrawn: BigIntish;
+  yield?: { withdrawn: BigIntish };
+  toPrice?: number;
+};
+type TerminatedActionResponse = {
+  action: 'terminated';
+  withdrawnRemaining: BigIntish;
+  withdrawnSwapped: BigIntish;
+  yield?: {
+    withdrawnRemaining?: BigIntish;
+    withdrawnSwapped?: BigIntish;
+  };
+  fromPrice?: number;
+  toPrice?: number;
+};
+type SwappedActionResponse = {
+  action: 'swapped';
+  rate: BigIntish;
+  swapped: BigIntish;
+  ratioAToB: BigIntish;
+  ratioBToA: BigIntish;
+  ratioAToBWithFee: BigIntish;
+  ratioBToAWithFee: BigIntish;
+  yield?: {
+    rate: BigIntish;
+  };
+};
+type DCATransaction = {
+  hash: string;
+  timestamp: Timestamp;
+  gasPrice?: BigIntish;
+  l1GasPrice?: BigIntish;
+  overhead?: BigIntish;
+};
+
+function toBigInt<T extends BigIntish | undefined>(text: T): T extends BigIntish ? bigint : undefined {
+  return (text === undefined ? undefined : BigInt(text)) as T extends BigIntish ? bigint : undefined;
+}
