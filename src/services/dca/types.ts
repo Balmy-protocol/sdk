@@ -118,6 +118,8 @@ export type SwappedAction = {
   yield?: {
     rate: bigint;
   };
+  tokenA: { address: TokenAddress; price?: number };
+  tokenB: { address: TokenAddress; price?: number };
 };
 export type DCATransaction = {
   hash: string;

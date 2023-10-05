@@ -39,6 +39,7 @@ import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERM
 import { IMulticallService } from '@services/multicall';
 import { ERC721_ABI } from '@shared/abis/erc721';
 import { IFetchService } from '@services/fetch';
+import { IPriceService, PriceResult } from '@services/prices';
 
 export class DCAService implements IDCAService {
   constructor(
@@ -46,7 +47,8 @@ export class DCAService implements IDCAService {
     private readonly multicallService: IMulticallService,
     private readonly permit2Service: IPermit2Service,
     private readonly quoteService: IQuoteService,
-    private readonly fetchService: IFetchService
+    private readonly fetchService: IFetchService,
+    private readonly priceService: IPriceService
   ) {}
 
   getAllowanceTarget({
@@ -727,10 +729,16 @@ export class DCAService implements IDCAService {
     const url = `${this.apiUrl}/v2/dca/positions?${params}`;
     const response = await this.fetchService.fetch(url, { timeout });
     const body: PositionsResponse = await response.json();
+    const tokensToFetch = calculateMissingPrices(body);
+    const prices =
+      tokensToFetch.length === 0
+        ? {}
+        : await this.priceService.getBulkHistoricalPrices({ addresses: tokensToFetch, config: { timeout: timeout } });
+
     const result: Record<ChainId, PositionSummary[]> = {};
     for (const chainId in body.positionsByNetwork) {
       const { positions, tokens } = body.positionsByNetwork[chainId];
-      result[Number(chainId)] = positions.map((position) => buildPosition(position, tokens));
+      result[Number(chainId)] = positions.map((position) => buildPosition(position, tokens, prices[Number(chainId)] ?? {}));
     }
     return result;
   }
@@ -912,7 +920,11 @@ function buildSwapIntervals(
   return result;
 }
 
-function buildPosition(position: PositionSummaryResponse, tokens: Record<TokenAddress, TokenData>): PositionSummary {
+function buildPosition(
+  position: PositionSummaryResponse,
+  tokens: Record<TokenAddress, TokenData>,
+  prices: Record<TokenAddress, Record<Timestamp, PriceResult>>
+): PositionSummary {
   const { variants: fromVariants, ...fromToken } = tokens[position.from.address];
   const { variants: toVariants, ...toToken } = tokens[position.to.address];
   const fromVariant = fromVariants.find(({ id }) => id == position.from.variant.id) ?? position.from.variant;
@@ -943,21 +955,27 @@ function buildPosition(position: PositionSummaryResponse, tokens: Record<TokenAd
           toWithdraw: toBigInt(position.yield.toWithdraw),
         }
       : undefined,
-    history: position.history?.map(mapAction) ?? [],
+    history: position.history?.map((action) => mapAction(action, position, prices)) ?? [],
   };
 }
 
-function mapAction(action: DCAPositionActionResponse): DCAPositionAction {
+function mapAction(
+  action: DCAPositionActionResponse,
+  position: PositionSummaryResponse,
+  prices: Record<TokenAddress, Record<Timestamp, PriceResult>>
+): DCAPositionAction {
   switch (action.action) {
     case 'created':
       return {
         ...action,
+        fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
         rate: toBigInt(action.rate),
         tx: mapActionTx(action.tx),
       };
     case 'modified':
       return {
         ...action,
+        fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
         rate: toBigInt(action.rate),
         oldRate: toBigInt(action.oldRate),
         tx: mapActionTx(action.tx),
@@ -965,6 +983,7 @@ function mapAction(action: DCAPositionActionResponse): DCAPositionAction {
     case 'withdrawn':
       return {
         ...action,
+        toPrice: action.toPrice ?? prices[position.to.address]?.[action.tx.timestamp]?.price,
         withdrawn: toBigInt(action.withdrawn),
         yield: action.yield && { withdrawn: toBigInt(action.yield.withdrawn) },
         tx: mapActionTx(action.tx),
@@ -972,6 +991,8 @@ function mapAction(action: DCAPositionActionResponse): DCAPositionAction {
     case 'terminated':
       return {
         ...action,
+        fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
+        toPrice: action.toPrice ?? prices[position.to.address]?.[action.tx.timestamp]?.price,
         withdrawnRemaining: toBigInt(action.withdrawnRemaining),
         withdrawnSwapped: toBigInt(action.withdrawnSwapped),
         yield: action.yield && {
@@ -983,6 +1004,14 @@ function mapAction(action: DCAPositionActionResponse): DCAPositionAction {
     case 'swapped':
       return {
         ...action,
+        tokenA: {
+          address: action.tokenA.address,
+          price: action.tokenA.price ?? prices[action.tokenA.address]?.[action.tx.timestamp]?.price,
+        },
+        tokenB: {
+          address: action.tokenB.address,
+          price: action.tokenB.price ?? prices[action.tokenB.address]?.[action.tx.timestamp]?.price,
+        },
         rate: toBigInt(action.rate),
         swapped: toBigInt(action.swapped),
         ratioAToB: toBigInt(action.ratioAToB),
@@ -1005,6 +1034,47 @@ function mapActionTx(tx: DCAPositionActionResponse['tx']): DCAPositionAction['tx
     l1GasPrice: toBigInt(tx.l1GasPrice),
     overhead: toBigInt(tx.overhead),
   };
+}
+
+function calculateMissingPrices(response: PositionsResponse) {
+  const toFetch: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[] = [];
+  for (const chainIdString in response.positionsByNetwork) {
+    const chainId = Number(chainIdString);
+    for (const position of response.positionsByNetwork[chainId].positions) {
+      for (const action of position.history ?? []) {
+        switch (action.action) {
+          case 'created':
+          case 'modified':
+            if (!action.fromPrice) {
+              toFetch.push({ chainId, token: position.from.address, timestamp: action.tx.timestamp });
+            }
+            break;
+          case 'withdrawn':
+            if (!action.toPrice) {
+              toFetch.push({ chainId, token: position.to.address, timestamp: action.tx.timestamp });
+            }
+            break;
+          case 'terminated':
+            if (!action.fromPrice) {
+              toFetch.push({ chainId, token: position.from.address, timestamp: action.tx.timestamp });
+            }
+            if (!action.toPrice) {
+              toFetch.push({ chainId, token: position.to.address, timestamp: action.tx.timestamp });
+            }
+            break;
+          case 'swapped': {
+            if (!action.tokenA.price) {
+              toFetch.push({ chainId, token: action.tokenA.address, timestamp: action.tx.timestamp });
+            }
+            if (!action.tokenB.price) {
+              toFetch.push({ chainId, token: action.tokenB.address, timestamp: action.tx.timestamp });
+            }
+          }
+        }
+      }
+    }
+  }
+  return toFetch;
 }
 
 type SupportedPairsResponse = {
@@ -1117,9 +1187,9 @@ type SwappedActionResponse = {
   ratioBToA: BigIntish;
   ratioAToBWithFee: BigIntish;
   ratioBToAWithFee: BigIntish;
-  yield?: {
-    rate: BigIntish;
-  };
+  yield?: { rate: BigIntish };
+  tokenA: { address: TokenAddress; price?: number };
+  tokenB: { address: TokenAddress; price?: number };
 };
 type DCATransaction = {
   hash: string;
