@@ -2,7 +2,8 @@ import { ChainId, TimeString, TokenAddress, Timestamp } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
-import { isSameAddress } from '@shared/utils';
+import { isSameAddress, splitInChunks } from '@shared/utils';
+import { PriceResult } from '@services/prices';
 
 const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
@@ -88,6 +89,46 @@ export class DefiLlamaClient {
     });
   }
 
+  async getBulkHistoricalTokenData({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }) {
+    const aggregatedByTokenId = aggregateTimestampsByTokenId(addresses);
+
+    const batches = splitCoinsIntoBatches(searchWidth, aggregatedByTokenId);
+
+    const coins: Record<TokenId, PriceResult[]> = {};
+    const promises = batches.map(async (batch) => {
+      const response = await this.fetch.fetch(batch, { timeout: config?.timeout });
+      const body: BatchHistoricalResult = await response.json();
+      for (const [tokenId, { prices }] of Object.entries(body.coins)) {
+        if (!(tokenId in coins)) coins[tokenId] = [];
+        coins[tokenId].push(...prices.map(({ timestamp, price }) => ({ price, closestTimestamp: timestamp })));
+      }
+    });
+    await Promise.allSettled(promises);
+
+    const result: Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>> = {};
+    for (const chainId in addresses) {
+      result[chainId] = {};
+      for (const { token, timestamp } of addresses[chainId]) {
+        if (!(token in result[chainId])) result[chainId][token] = {};
+        const tokenId = toTokenId(Number(chainId), token);
+        const allResults = coins[tokenId] ?? [];
+        const bestResult = findClosestToTimestamp(allResults, timestamp);
+        if (bestResult) {
+          result[chainId][token][timestamp] = bestResult;
+        }
+      }
+    }
+    return result;
+  }
+
   private async fetchAndMapTokens({
     baseUrl,
     addresses,
@@ -122,8 +163,7 @@ export class DefiLlamaClient {
   }
 
   private async fetchTokens(baseUrl: string, tokens: TokenId[], config?: { timeout?: TimeString }, extraParams: Record<string, string> = {}) {
-    const chunkSize = 30;
-    const chunks = [...Array(Math.ceil(tokens.length / chunkSize))].map((_) => tokens.splice(0, chunkSize));
+    const chunks = splitInChunks(tokens, 30);
     const extraParamsString =
       '?' +
       Object.entries(extraParams)
@@ -147,6 +187,64 @@ export class DefiLlamaClient {
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
 const MAPPINGS: Record<string, string> = {};
 
+function splitCoinsIntoBatches(searchWidth: string | undefined, aggregatedByTokenId: { tokenId: string; timestamps: number[] }[]) {
+  const searchWidthParam = searchWidth ? `&searchWidth=${searchWidth}` : '';
+  const toURL = (coins: Record<TokenId, Timestamp[]>) =>
+    `https://coins.llama.fi/batchHistorical?&coins=${encodeURIComponent(JSON.stringify(coins))}${searchWidthParam}`;
+
+  const batches: string[] = [];
+
+  let inBatch: Record<TokenId, Timestamp[]> = {};
+  for (const { tokenId, timestamps } of aggregatedByTokenId) {
+    const ifAddedToBatch = { ...inBatch, [tokenId]: timestamps };
+    const url = toURL(ifAddedToBatch);
+    if (url.length > 2048) {
+      if (Object.keys(inBatch).length > 0) {
+        // If was something on the batch already, then close the batch
+        batches.push(toURL(inBatch));
+        inBatch = {};
+      } else {
+        // If there was nothing already on the batch, then we have a token too big for a batch, we'll need to split it
+        const chunks = splitInChunks(timestamps, 140);
+        batches.push(...chunks.map((chunk) => toURL({ [tokenId]: chunk })));
+      }
+    } else {
+      inBatch = ifAddedToBatch;
+    }
+  }
+  if (Object.keys(inBatch).length > 0) {
+    // If there was anything left, add it
+    batches.push(toURL(inBatch));
+  }
+  return batches;
+}
+
+function aggregateTimestampsByTokenId(addresses: Record<number, { token: TokenAddress; timestamp: Timestamp }[]>) {
+  const aggregatedByTokenId: Record<TokenId, Timestamp[]> = {};
+  for (const chainId in addresses) {
+    for (const { token, timestamp } of addresses[chainId]) {
+      const tokenId = toTokenId(Number(chainId), token);
+      if (!(tokenId in aggregatedByTokenId)) aggregatedByTokenId[tokenId] = [];
+      aggregatedByTokenId[tokenId].push(timestamp);
+    }
+  }
+  return Object.entries(aggregatedByTokenId)
+    .map(([tokenId, timestamps]) => ({ tokenId, timestamps }))
+    .sort((a, b) => a.timestamps.length - b.timestamps.length);
+}
+
+function findClosestToTimestamp(allResults: PriceResult[], timestamp: Timestamp) {
+  if (allResults.length == 0) return undefined;
+
+  let min = allResults[0];
+  for (let i = 1; i < allResults.length; i++) {
+    if (Math.abs(allResults[i].closestTimestamp - timestamp) < Math.abs(min.closestTimestamp - timestamp)) {
+      min = allResults[i];
+    }
+  }
+  return min;
+}
+
 function toTokenId(chainId: ChainId, address: TokenAddress) {
   const key = CHAIN_ID_TO_KEY[chainId];
   const mappedNativeToken = isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address}`;
@@ -165,6 +263,8 @@ function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddres
 export function toChainId(key: string): ChainId {
   return KEY_TO_CHAIN_ID[key.toLowerCase()];
 }
+
+type BatchHistoricalResult = { coins: Record<TokenId, { prices: { timestamp: Timestamp; price: number }[] }> };
 
 type FetchTokenResult = {
   decimals?: number;

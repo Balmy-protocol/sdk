@@ -88,3 +88,11 @@ export function toTrimmedHex(value: BigIntish) {
   const trimmed = trim(toHex(value));
   return trimmed.startsWith('0x0') && trimmed !== '0x0' ? trimmed.replace('0x0', '0x') : trimmed;
 }
+
+export function splitInChunks<T>(list: T[], chunkSize: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < list.length; i += chunkSize) {
+    result.push(list.slice(i, i + chunkSize));
+  }
+  return result;
+}

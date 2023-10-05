@@ -59,31 +59,6 @@ export class DefiLlamaPriceSource implements IPriceSource {
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
-    const aggregatedByTimestamp: Record<Timestamp, Record<ChainId, TokenAddress[]>> = {};
-    for (const chainId in addresses) {
-      for (const { token, timestamp } of addresses[chainId]) {
-        if (!(timestamp in aggregatedByTimestamp)) aggregatedByTimestamp[timestamp] = {};
-        if (!(chainId in aggregatedByTimestamp[timestamp])) aggregatedByTimestamp[timestamp][chainId] = [];
-        aggregatedByTimestamp[timestamp][chainId].push(token);
-      }
-    }
-    const allPrices = await Promise.all(
-      Object.entries(aggregatedByTimestamp).map(async ([timestamp, addresses]) => ({
-        timestamp: Number(timestamp),
-        prices: await this.getHistoricalPrices({ timestamp: Number(timestamp), addresses, searchWidth, config }),
-      }))
-    );
-
-    const result: Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>> = {};
-    for (const { timestamp, prices } of allPrices) {
-      for (const chainId in prices) {
-        if (!(chainId in result)) result[chainId] = {};
-        for (const token in prices[chainId]) {
-          if (!(token in result[chainId])) result[chainId][token] = {};
-          result[chainId][token][timestamp] = prices[chainId][token];
-        }
-      }
-    }
-    return result;
+    return this.defiLlama.getBulkHistoricalTokenData({ addresses, searchWidth, config });
   }
 }
