@@ -15,17 +15,17 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
-    const collected = await collectAllResults(
-      this.sources,
-      addresses,
-      'getCurrentPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    const collected = await collectAllResults({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getCurrentPrices',
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
           addresses: filteredRequest,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
     return this.aggregate(collected, aggregatePrices);
   }
 
@@ -40,20 +40,44 @@ export class AggregatorPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const collected = await collectAllResults(
-      this.sources,
-      addresses,
-      'getHistoricalPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    const collected = await collectAllResults({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getHistoricalPrices',
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
           addresses: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
     return this.aggregate(collected, aggregatePrices);
+  }
+
+  async getBulkHistoricalPrices({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    const collected = await collectAllResults({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getBulkHistoricalPrices',
+      getResult: (source, filteredRequest, sourceTimeout) =>
+        source.getBulkHistoricalPrices({
+          addresses: filteredRequest,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      timeout: config?.timeout,
+    });
+    return this.aggregate(collected, aggregateBulkHistoricalPrices);
   }
 
   private aggregate<T>(collected: Record<ChainId, Record<TokenAddress, T[]>>, aggregate: (results: T[], method: PriceAggregationMethod) => T) {
@@ -68,17 +92,23 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 }
 
-async function collectAllResults<T>(
-  allSources: IPriceSource[],
-  fullRequest: Record<ChainId, TokenAddress[]>,
-  query: keyof PricesQueriesSupport,
+async function collectAllResults<Request, Result>({
+  allSources,
+  fullRequest,
+  query,
+  getResult,
+  timeout,
+}: {
+  allSources: IPriceSource[];
+  fullRequest: Record<ChainId, Request>;
+  query: keyof PricesQueriesSupport;
   getResult: (
     source: IPriceSource,
-    filteredRequest: Record<ChainId, TokenAddress[]>,
+    filteredRequest: Record<ChainId, Request>,
     sourceTimeout: TimeString | undefined
-  ) => Promise<Record<ChainId, Record<TokenAddress, T>>>,
-  timeout: TimeString | undefined
-): Promise<Record<ChainId, Record<TokenAddress, T[]>>> {
+  ) => Promise<Record<ChainId, Record<TokenAddress, Result>>>;
+  timeout: TimeString | undefined;
+}): Promise<Record<ChainId, Record<TokenAddress, Result[]>>> {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
   const reducedTimeout = reduceTimeout(timeout, '100');
   const promises = sourcesInChains.map((source) =>
@@ -119,23 +149,36 @@ function aggregatePrices(results: PriceResult[], method: PriceAggregationMethod)
         const middleHigh = sorted[sorted.length / 2];
         return {
           price: (middleLow.price + middleHigh.price) / 2,
-          timestamp: (middleLow.timestamp + middleHigh.timestamp) / 2,
+          closestTimestamp: (middleLow.closestTimestamp + middleHigh.closestTimestamp) / 2,
         };
       } else {
         return sorted[Math.floor(sorted.length / 2)];
       }
     case 'avg':
       const sumPrice = sumAll(results.map(({ price }) => price));
-      const sumTimestamp = sumAll(results.map(({ timestamp }) => timestamp));
+      const sumTimestamp = sumAll(results.map(({ closestTimestamp: timestamp }) => timestamp));
       return {
         price: sumPrice / results.length,
-        timestamp: sumTimestamp / results.length,
+        closestTimestamp: sumTimestamp / results.length,
       };
     case 'max':
       return sorted[sorted.length - 1];
     case 'min':
       return sorted[0];
   }
+}
+
+function aggregateBulkHistoricalPrices(
+  results: Record<Timestamp, PriceResult>[],
+  method: PriceAggregationMethod
+): Record<Timestamp, PriceResult> {
+  const allTimestamps: Timestamp[] = [...new Set(results.flatMap((result) => Object.keys(result)))].map(Number);
+  const collectedByTimestamp = allTimestamps.map((timestamp) => ({ timestamp, results: extractResultInTimestamp(timestamp, results) }));
+  return Object.fromEntries(collectedByTimestamp.map(({ timestamp, results }) => [timestamp, aggregatePrices(results, method)]));
+}
+
+function extractResultInTimestamp(timestamp: Timestamp, results: Record<Timestamp, PriceResult>[]): PriceResult[] {
+  return results.filter((result) => timestamp in result).map((result) => result[timestamp]);
 }
 
 function sumAll(array: number[]): number {

@@ -21,17 +21,18 @@ export class PrioritizedPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
-    return executePrioritized(
-      this.sources,
-      addresses,
-      'getCurrentPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    return executePrioritized({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getCurrentPrices',
+      addressesFromRequest: (request) => request,
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
           addresses: filteredRequest,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
   }
 
   getHistoricalPrices({
@@ -45,37 +46,73 @@ export class PrioritizedPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    return executePrioritized(
-      this.sources,
-      addresses,
-      'getHistoricalPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    return executePrioritized({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getHistoricalPrices',
+      addressesFromRequest: (request) => request,
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
           addresses: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
+  }
+
+  getBulkHistoricalPrices({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    return executePrioritized({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getBulkHistoricalPrices',
+      addressesFromRequest: (request) => request.map(({ token }) => token),
+      getResult: (source, filteredRequest, sourceTimeout) =>
+        source.getBulkHistoricalPrices({
+          addresses: filteredRequest,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      timeout: config?.timeout,
+    });
   }
 }
 
-async function executePrioritized<T>(
-  allSources: IPriceSource[],
-  fullRequest: Record<ChainId, TokenAddress[]>,
-  query: keyof PricesQueriesSupport,
+async function executePrioritized<Request, Result>({
+  allSources,
+  fullRequest,
+  query,
+  getResult,
+  addressesFromRequest,
+  timeout,
+}: {
+  allSources: IPriceSource[];
+  fullRequest: Record<ChainId, Request>;
+  query: keyof PricesQueriesSupport;
   getResult: (
     source: IPriceSource,
-    filteredRequest: Record<ChainId, TokenAddress[]>,
+    filteredRequest: Record<ChainId, Request>,
     sourceTimeout: TimeString | undefined
-  ) => Promise<Record<ChainId, Record<TokenAddress, T>>>,
-  timeout: TimeString | undefined
-) {
+  ) => Promise<Record<ChainId, Record<TokenAddress, Result>>>;
+  addressesFromRequest: (request: Request) => TokenAddress[];
+  timeout: TimeString | undefined;
+}) {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
+  const addressesPerChain: Record<ChainId, TokenAddress[]> = Object.fromEntries(
+    Object.entries(fullRequest).map(([chainId, request]) => [chainId, addressesFromRequest(request)])
+  );
   const reducedTimeout = reduceTimeout(timeout, '100');
-  return new Promise<Record<ChainId, Record<TokenAddress, T>>>(async (resolve) => {
-    const result: Record<ChainId, Record<TokenAddress, T>> = {};
+  return new Promise<Record<ChainId, Record<TokenAddress, Result>>>(async (resolve) => {
+    const result: Record<ChainId, Record<TokenAddress, Result>> = {};
     const fetchPromises = sourcesInChains.map(
       (source) =>
         timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout, {
@@ -84,7 +121,7 @@ async function executePrioritized<T>(
     );
 
     let i = 0;
-    while (!doesResponseFulfillRequest(result, fullRequest) && i < fetchPromises.length) {
+    while (!doesResponseFulfillRequest(result, addressesPerChain) && i < fetchPromises.length) {
       const response = await fetchPromises[i];
       fillResponseWithNewResult(result, response);
       i++;

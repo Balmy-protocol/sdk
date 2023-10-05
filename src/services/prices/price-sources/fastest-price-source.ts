@@ -21,17 +21,18 @@ export class FastestPriceSource implements IPriceSource {
   }
 
   getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
-    return executeFastest(
-      this.sources,
-      addresses,
-      'getCurrentPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    return executeFastest({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getCurrentPrices',
+      addressesFromRequest: (addresses) => addresses,
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
           addresses: filteredRequest,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
   }
 
   getHistoricalPrices({
@@ -45,48 +46,84 @@ export class FastestPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    return executeFastest(
-      this.sources,
-      addresses,
-      'getHistoricalPrices',
-      (source, filteredRequest, sourceTimeout) =>
+    return executeFastest({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getHistoricalPrices',
+      addressesFromRequest: (addresses) => addresses,
+      getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
           addresses: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
         }),
-      config?.timeout
-    );
+      timeout: config?.timeout,
+    });
+  }
+
+  getBulkHistoricalPrices({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    return executeFastest({
+      allSources: this.sources,
+      fullRequest: addresses,
+      query: 'getBulkHistoricalPrices',
+      addressesFromRequest: (request) => request.map(({ token }) => token),
+      getResult: (source, filteredRequest, sourceTimeout) =>
+        source.getBulkHistoricalPrices({
+          addresses: filteredRequest,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      timeout: config?.timeout,
+    });
   }
 }
 
-async function executeFastest<T>(
-  allSources: IPriceSource[],
-  fullRequest: Record<ChainId, TokenAddress[]>,
-  query: keyof PricesQueriesSupport,
+async function executeFastest<Request, Result>({
+  allSources,
+  fullRequest,
+  query,
+  getResult,
+  addressesFromRequest,
+  timeout,
+}: {
+  allSources: IPriceSource[];
+  fullRequest: Record<ChainId, Request>;
+  query: keyof PricesQueriesSupport;
   getResult: (
     source: IPriceSource,
-    filteredRequest: Record<ChainId, TokenAddress[]>,
+    filteredRequest: Record<ChainId, Request>,
     sourceTimeout: TimeString | undefined
-  ) => Promise<Record<ChainId, Record<TokenAddress, T>>>,
-  timeout: TimeString | undefined
-) {
+  ) => Promise<Record<ChainId, Record<TokenAddress, Result>>>;
+  addressesFromRequest: (request: Request) => TokenAddress[];
+  timeout: TimeString | undefined;
+}) {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
   const reducedTimeout = reduceTimeout(timeout, '100');
-  return new Promise<Record<ChainId, Record<TokenAddress, T>>>(async (resolve) => {
-    const result: Record<ChainId, Record<TokenAddress, T>> = {};
+  const addressesPerChain: Record<ChainId, TokenAddress[]> = Object.fromEntries(
+    Object.entries(fullRequest).map(([chainId, request]) => [chainId, addressesFromRequest(request)])
+  );
+  return new Promise<Record<ChainId, Record<TokenAddress, Result>>>(async (resolve) => {
+    const result: Record<ChainId, Record<TokenAddress, Result>> = {};
     const allPromises = sourcesInChains.map((source) =>
       timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout).then((response) => {
         fillResponseWithNewResult(result, response);
-        if (doesResponseFulfillRequest(result, fullRequest)) {
+        if (doesResponseFulfillRequest(result, addressesPerChain)) {
           resolve(result);
         }
       })
     );
 
     Promise.allSettled(allPromises).then(() => {
-      if (!doesResponseFulfillRequest(result, fullRequest)) {
+      if (!doesResponseFulfillRequest(result, addressesPerChain)) {
         // We couldn't fulfil the request, so we know we didn't resolve.
         // We will return whatever we could fetch
         resolve(result);

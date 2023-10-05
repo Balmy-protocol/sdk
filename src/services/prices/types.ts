@@ -27,25 +27,36 @@ export type IPriceService = {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
+  getBulkHistoricalPrices(_: {
+    addresses: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>>;
 };
 
 export type PricesQueriesSupport = {
+  getBulkHistoricalPrices: boolean;
   getHistoricalPrices: boolean;
   getCurrentPrices: true;
 };
 
-export type PriceResult = { price: TokenPrice; timestamp: Timestamp };
+export type PriceResult = { price: TokenPrice; closestTimestamp: Timestamp };
 
 export type IPriceSource = {
   supportedQueries(): Record<ChainId, PricesQueriesSupport>;
   getCurrentPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
-    searchWidth?: TimeString;
-    config?: { timeout?: TimeString };
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>>;
+  getBulkHistoricalPrices(_: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>>;
 };

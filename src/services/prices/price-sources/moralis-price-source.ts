@@ -13,7 +13,7 @@ export class MoralisPriceSource implements IPriceSource {
   constructor(private readonly fetchService: IFetchService, private readonly apiKey: string) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false, getBulkHistoricalPrices: false };
     const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
@@ -23,7 +23,7 @@ export class MoralisPriceSource implements IPriceSource {
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const result: Record<ChainId, Record<TokenAddress, PriceResult>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [Number(chainId), {}])
@@ -44,9 +44,17 @@ export class MoralisPriceSource implements IPriceSource {
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
-    searchWidth?: TimeString;
-    config?: { timeout?: TimeString };
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
+  getBulkHistoricalPrices(_: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 
@@ -57,7 +65,7 @@ export class MoralisPriceSource implements IPriceSource {
       `https://deep-index.moralis.io/api/v2/erc20/${addressToFetch.toLowerCase()}/price?chain=${chainIdToValidChain(chainId)}`,
       config?.timeout
     );
-    return { price: body.usdPrice, timestamp: nowInSeconds() };
+    return { price: body.usdPrice, closestTimestamp: nowInSeconds() };
   }
 
   private async fetch(url: string, timeout?: TimeString): Promise<any> {

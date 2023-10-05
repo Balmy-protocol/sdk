@@ -13,7 +13,7 @@ export class OdosPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false, getBulkHistoricalPrices: false };
     const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
@@ -23,7 +23,7 @@ export class OdosPriceSource implements IPriceSource {
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
     const promises = Object.entries(addresses).map(async ([chainId, addresses]) => [
@@ -36,9 +36,17 @@ export class OdosPriceSource implements IPriceSource {
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
-    searchWidth?: TimeString;
-    config?: { timeout?: TimeString };
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
+  getBulkHistoricalPrices(_: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 
@@ -49,7 +57,7 @@ export class OdosPriceSource implements IPriceSource {
     const body: Response = await response.json();
     const lowercased = toLowerCase(body.tokenPrices);
     return Object.fromEntries(
-      addresses.map((address) => [address, { price: lowercased[mapToken(address.toLowerCase())], timestamp: nowInSeconds() }])
+      addresses.map((address) => [address, { price: lowercased[mapToken(address.toLowerCase())], closestTimestamp: nowInSeconds() }])
     );
   }
 }

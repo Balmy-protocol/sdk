@@ -319,7 +319,7 @@ export class QuoteService implements IQuoteService {
         },
       })
       .catch(() => Promise.reject(new Error(`Failed to fetch the quote's tokens`)));
-    const emptyPriceResult = { price: 0, timestamp: 0 };
+    const emptyPriceResult = { price: 0, closestTimestamp: 0 };
     const prices = this.priceService
       .getCurrentPricesForChain({
         chainId: request.chainId,
