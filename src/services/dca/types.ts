@@ -28,6 +28,12 @@ export type IDCAService = {
     includeHistory?: boolean;
     config?: { timeout: TimeString };
   }): Promise<Record<ChainId, PositionSummary[]>>;
+  getPairSwaps(_: {
+    chainId: ChainId;
+    variantTokenA: TokenVariantId;
+    variantTokenB: TokenVariantId;
+    config?: { timeout: TimeString };
+  }): Promise<{ tokenA: TokenInPair; tokenB: TokenInPair; swaps: DCASwap[] }>;
 };
 
 export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
@@ -181,6 +187,22 @@ export enum DCASwapInterval {
   ONE_DAY = 86400,
   ONE_WEEK = 604800,
 }
+export type TokenInPair = {
+  address: TokenAddress;
+  symbol: string;
+  decimals: number;
+  name: string;
+  price?: number;
+  variant: TokenVariant;
+};
+export type DCASwap = {
+  executedAt: Timestamp;
+  ratioAToB: bigint;
+  ratioBToA: bigint;
+  ratioAToBWithFee: bigint;
+  ratioBToAWithFee: bigint;
+  intervalsInSwap: DCASwapInterval[];
+};
 
 export type DCAPermissionSet = { operator: string; permissions: DCAPermission[] };
 export type CreateDCAPositionParams = {

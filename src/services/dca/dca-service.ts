@@ -33,6 +33,7 @@ import {
   TransferredAction,
   PermissionsModifiedAction,
   DCAPositionAction,
+  TokenVariantId,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
 import { IMulticallService } from '@services/multicall';
@@ -694,6 +695,34 @@ export class DCAService implements IDCAService {
     return this.fetchPositions(params, config?.timeout);
   }
 
+  async getPairSwaps({
+    chainId,
+    variantTokenA,
+    variantTokenB,
+    config,
+  }: {
+    chainId: ChainId;
+    variantTokenA: TokenVariantId;
+    variantTokenB: TokenVariantId;
+    config?: { timeout: TimeString };
+  }) {
+    const url = `${this.apiUrl}/v2/dca/pairs/${chainId}-${variantTokenA}-${variantTokenB}/swaps`;
+    const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
+    const { tokenA, tokenB, swaps }: PairSwapsResponse = await response.json();
+    return {
+      tokenA,
+      tokenB,
+      swaps: swaps.map((swap) => ({
+        ...swap,
+        ratioAToB: toBigInt(swap.ratioAToB),
+        ratioBToA: toBigInt(swap.ratioBToA),
+        ratioAToBWithFee: toBigInt(swap.ratioAToBWithFee),
+        ratioBToAWithFee: toBigInt(swap.ratioBToAWithFee),
+        intervalsInSwap: swap.intervalsInSwap.map(({ seconds }) => seconds),
+      })),
+    };
+  }
+
   private async fetchPositions(params: string, timeout: TimeString | undefined) {
     const url = `${this.apiUrl}/v2/dca/positions?${params}`;
     const response = await this.fetchService.fetch(url, { timeout });
@@ -1098,6 +1127,27 @@ type DCATransaction = {
   gasPrice?: BigIntish;
   l1GasPrice?: BigIntish;
   overhead?: BigIntish;
+};
+
+type PairSwapsResponse = {
+  tokenA: TokenInPair;
+  tokenB: TokenInPair;
+  swaps: {
+    executedAt: Timestamp;
+    ratioAToB: string;
+    ratioBToA: string;
+    ratioAToBWithFee: string;
+    ratioBToAWithFee: string;
+    intervalsInSwap: { seconds: DCASwapInterval }[];
+  }[];
+};
+type TokenInPair = {
+  address: TokenAddress;
+  symbol: string;
+  decimals: number;
+  name: string;
+  price?: number;
+  variant: TokenVariant;
 };
 
 function toBigInt<T extends BigIntish | undefined>(text: T): T extends BigIntish ? bigint : undefined {

@@ -37,4 +37,6 @@ export {
   PermissionsModifiedAction,
   SwappedAction,
   DCATransaction,
+  TokenInPair,
+  DCASwap,
 } from './types';
