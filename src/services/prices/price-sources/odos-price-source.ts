@@ -57,7 +57,7 @@ export class OdosPriceSource implements IPriceSource {
     const body: Response = await response.json();
     const lowercased = toLowerCase(body.tokenPrices);
     return Object.fromEntries(
-      addresses.map((address) => [address, { price: lowercased[mapToken(address.toLowerCase())], timestamp: nowInSeconds() }])
+      addresses.map((address) => [address, { price: lowercased[mapToken(address.toLowerCase())], closestTimestamp: nowInSeconds() }])
     );
   }
 }
