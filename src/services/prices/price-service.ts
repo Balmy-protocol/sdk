@@ -61,6 +61,7 @@ export class PriceService implements IPriceService {
 
   getHistoricalPrices({
     config,
+    searchWidth,
     ...params
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
@@ -68,8 +69,27 @@ export class PriceService implements IPriceService {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }) {
-    return timeoutPromise(this.priceSource.getHistoricalPrices({ ...params, config }), config?.timeout, {
+    return timeoutPromise(this.priceSource.getHistoricalPrices({ ...params, searchWidth, config }), config?.timeout, {
       description: 'Timeouted while fetching historical prices',
+    });
+  }
+
+  getBulkHistoricalPrices({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    const collectedByChainId: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]> = {};
+    for (const { chainId, token, timestamp } of addresses) {
+      if (!(chainId in collectedByChainId)) collectedByChainId[chainId] = [];
+      collectedByChainId[chainId].push({ token, timestamp });
+    }
+    return timeoutPromise(this.priceSource.getBulkHistoricalPrices({ addresses: collectedByChainId, searchWidth, config }), config?.timeout, {
+      description: 'Timeouted while fetching bulk historical prices',
     });
   }
 }

@@ -30,7 +30,7 @@ describe('Aggregator Price Source', () => {
 
   when('there is only one source that works', () => {
     then('that result is returned', async () => {
-      const prices = { [TOKEN_A]: { price: 10, timestamp: 20 } };
+      const prices = { [TOKEN_A]: { price: 10, closestTimestamp: 20 } };
       const aggregator = new AggregatorPriceSource([buildSource(prices, 1), buildSourceThatFails(1)], 'median');
       const result = await aggregator.getCurrentPrices({ addresses: { [1]: [TOKEN_A] } });
       expect(result).to.deep.equal({ [1]: prices });
@@ -108,21 +108,26 @@ describe('Aggregator Price Source', () => {
 
   function buildSource(prices: Record<TokenAddress, PriceResult>, chainId: ChainId = 1): IPriceSource {
     return {
+      getBulkHistoricalPrices: () => Promise.reject('Not supported'),
       getHistoricalPrices: () => Promise.reject('Not supported'),
-      supportedQueries: () => ({ [chainId]: { getHistoricalPrices: false, getCurrentPrices: true } }),
+      supportedQueries: () => ({ [chainId]: { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false } }),
       getCurrentPrices: () => Promise.resolve({ [chainId]: prices }),
     };
   }
 
   function buildSourceThatFails(...onChain: ChainId[]): IPriceSource {
     return {
+      getBulkHistoricalPrices: () => Promise.reject('Not supported'),
       getHistoricalPrices: () => Promise.reject('Not supported'),
-      supportedQueries: () => Object.fromEntries(onChain.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true }])),
+      supportedQueries: () =>
+        Object.fromEntries(
+          onChain.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false }])
+        ),
       getCurrentPrices: () => Promise.reject(new Error('Something failed')),
     };
   }
 
   function addTimestamp(prices: Record<TokenAddress, TokenPrice>): Record<TokenAddress, PriceResult> {
-    return Object.fromEntries(Object.entries(prices).map(([token, price]) => [token, { price, timestamp: price }]));
+    return Object.fromEntries(Object.entries(prices).map(([token, price]) => [token, { price, closestTimestamp: price }]));
   }
 });

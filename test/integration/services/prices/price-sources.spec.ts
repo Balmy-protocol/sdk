@@ -71,7 +71,7 @@ describe('Token Price Sources', () => {
           }),
         validation: (price) => {
           expect(typeof price.price).to.equal('number');
-          expect(typeof price.timestamp).to.equal('number');
+          expect(typeof price.closestTimestamp).to.equal('number');
         },
       });
       queryTest({
@@ -82,8 +82,9 @@ describe('Token Price Sources', () => {
             addresses,
             timestamp: 1680220800, // Friday, 31 March 2023 0:00:00
             config: { timeout: '10s' },
+            searchWidth: undefined,
           }),
-        validation: ({ price, timestamp }) => {
+        validation: ({ price, closestTimestamp: timestamp }) => {
           expect(typeof price).to.equal('number');
           expect(typeof timestamp).to.equal('number');
         },

@@ -29,8 +29,8 @@ describe('Prioritized Price Source', () => {
     then('prioritized source waits for the first one', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result1 = { [1]: { [TOKEN_A]: { price: 10, timestamp: 0 } } };
-      const result2 = { [1]: { [TOKEN_A]: { price: 20, timestamp: 0 } } };
+      const result1 = { [1]: { [TOKEN_A]: { price: 10, closestTimestamp: 0 } } };
+      const result2 = { [1]: { [TOKEN_A]: { price: 20, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       await wait();
@@ -49,7 +49,7 @@ describe('Prioritized Price Source', () => {
     then('resolves without waiting for second one', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2 } = source({ chains: [1] });
-      const result1 = { [1]: { [TOKEN_A]: { price: 10, timestamp: 0 } } };
+      const result1 = { [1]: { [TOKEN_A]: { price: 10, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       await wait();
@@ -65,8 +65,8 @@ describe('Prioritized Price Source', () => {
     then('waits for the second one', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result1 = { [1]: { [TOKEN_A]: { price: 10, timestamp: 0 } } };
-      const result2 = { [1]: { [TOKEN_B]: { price: 20, timestamp: 0 } } };
+      const result1 = { [1]: { [TOKEN_A]: { price: 10, closestTimestamp: 0 } } };
+      const result2 = { [1]: { [TOKEN_B]: { price: 20, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A, TOKEN_B] }, sources: [source1, source2] });
       await wait();
@@ -77,7 +77,9 @@ describe('Prioritized Price Source', () => {
       source2Promise.resolve(result2);
       await wait();
       expect(promise.status).to.equal('resolved');
-      expect(await promise.result).to.deep.equal({ [1]: { [TOKEN_A]: { price: 10, timestamp: 0 }, [TOKEN_B]: { price: 20, timestamp: 0 } } });
+      expect(await promise.result).to.deep.equal({
+        [1]: { [TOKEN_A]: { price: 10, closestTimestamp: 0 }, [TOKEN_B]: { price: 20, closestTimestamp: 0 } },
+      });
     });
   });
 
@@ -85,8 +87,8 @@ describe('Prioritized Price Source', () => {
     then('result it is returned anyways', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result1 = { [1]: { [TOKEN_A]: { price: 10, timestamp: 0 } } };
-      const result2 = { [1]: { [TOKEN_A]: { price: 20, timestamp: 0 } } };
+      const result1 = { [1]: { [TOKEN_A]: { price: 10, closestTimestamp: 0 } } };
+      const result2 = { [1]: { [TOKEN_A]: { price: 20, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A, TOKEN_B] }, sources: [source1, source2] });
       await wait();
@@ -105,7 +107,7 @@ describe('Prioritized Price Source', () => {
     then('second one is returned', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result = { [1]: { [TOKEN_A]: { price: 20, timestamp: 0 } } };
+      const result = { [1]: { [TOKEN_A]: { price: 20, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       await wait();
@@ -124,7 +126,7 @@ describe('Prioritized Price Source', () => {
     then('second result is returned', async () => {
       const { source: source1 } = source({ chains: [2] });
       const { source: source2, promise: source2Promise } = source({ chains: [1] });
-      const result = { [1]: { [TOKEN_A]: { price: 20, timestamp: 0 } } };
+      const result = { [1]: { [TOKEN_A]: { price: 20, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A] }, sources: [source1, source2] });
       await wait();
@@ -140,8 +142,8 @@ describe('Prioritized Price Source', () => {
     then('results are combined', async () => {
       const { source: source1, promise: source1Promise } = source({ chains: [1] });
       const { source: source2, promise: source2Promise } = source({ chains: [2] });
-      const result1 = { [1]: { [TOKEN_A]: { price: 20, timestamp: 0 } } };
-      const result2 = { [2]: { [TOKEN_B]: { price: 10, timestamp: 0 } } };
+      const result1 = { [1]: { [TOKEN_A]: { price: 20, closestTimestamp: 0 } } };
+      const result2 = { [2]: { [TOKEN_B]: { price: 10, closestTimestamp: 0 } } };
 
       const promise = getPrices({ addresses: { [1]: [TOKEN_A], [2]: [TOKEN_B] }, sources: [source1, source2] });
       await wait();
@@ -200,7 +202,11 @@ function source({ chains }: { chains: ChainId[] }): {
   const source: IPriceSource = {
     getCurrentPrices: () => sourcePromise,
     getHistoricalPrices: () => Promise.reject('Not supported'),
-    supportedQueries: () => Object.fromEntries(chains.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true }])),
+    getBulkHistoricalPrices: () => Promise.reject('Not supported'),
+    supportedQueries: () =>
+      Object.fromEntries(
+        chains.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false }])
+      ),
   };
   return { source, promise: sourcePromise };
 }

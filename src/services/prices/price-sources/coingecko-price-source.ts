@@ -42,7 +42,7 @@ export class CoingeckoPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false, getBulkHistoricalPrices: false };
     const entries = Object.keys(COINGECKO_CHAIN_KEYS)
       .map(Number)
       .map((chainId) => [chainId, support]);
@@ -54,7 +54,7 @@ export class CoingeckoPriceSource implements IPriceSource {
     config,
   }: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
     const promises = Object.entries(addresses).map(async ([chainId, addresses]) => [
@@ -67,11 +67,19 @@ export class CoingeckoPriceSource implements IPriceSource {
   getHistoricalPrices(_: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
-    searchWidth?: TimeString;
-    config?: { timeout?: TimeString };
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     // TODO: Add support
-    throw new Error('Operation not supported');
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
+  getBulkHistoricalPrices(_: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    return Promise.reject(new Error('Operation not supported'));
   }
 
   private async getCurrentPricesInChain(chainId: ChainId, addresses: TokenAddress[], timeout?: TimeString) {
@@ -91,7 +99,7 @@ export class CoingeckoPriceSource implements IPriceSource {
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${nativeTokenKey}&vs_currencies=usd&include_last_updated_at=true`;
     const response = await this.fetch.fetch(url, { timeout, headers: { Accept: 'application/json' } });
     const body = await response.json();
-    return { price: body[nativeTokenKey].usd, timestamp: body[nativeTokenKey].last_updated_at };
+    return { price: body[nativeTokenKey].usd, closestTimestamp: body[nativeTokenKey].last_updated_at };
   }
 
   private async fetchERC20Prices(chainId: ChainId, addresses: TokenAddress[], timeout?: TimeString): Promise<Record<TokenAddress, PriceResult>> {

@@ -33,7 +33,11 @@ function doesSourceSupportQueryInAnyOfTheChains(source: IPriceSource, query: key
   return chains.some((chainId) => support[chainId]?.[query]);
 }
 
-export function filterRequestForSource(request: Record<ChainId, TokenAddress[]>, query: keyof PricesQueriesSupport, source: IPriceSource) {
+export function filterRequestForSource<T>(
+  request: Record<ChainId, T>,
+  query: keyof PricesQueriesSupport,
+  source: IPriceSource
+): Record<ChainId, T> {
   const support = source.supportedQueries();
   const entries = Object.entries(request).filter(([chainId]) => support[Number(chainId)]?.[query]);
   return Object.fromEntries(entries);
@@ -44,21 +48,18 @@ export function combineSupport(sources: IPriceSource[]): Record<ChainId, PricesQ
   for (const source of sources) {
     for (const [chainIdString, support] of Object.entries(source.supportedQueries())) {
       const chainId = Number(chainIdString);
-      const current = result[chainId] ?? { getCurrentPrices: false, getHistoricalPrices: false };
+      const current = result[chainId] ?? { getCurrentPrices: false, getHistoricalPrices: false, getBulkHistoricalPrices: false };
       result[chainId] = {
         getCurrentPrices: current.getCurrentPrices || support.getCurrentPrices,
         getHistoricalPrices: current.getHistoricalPrices || support.getHistoricalPrices,
+        getBulkHistoricalPrices: current.getBulkHistoricalPrices || support.getBulkHistoricalPrices,
       };
     }
   }
   return result;
 }
 
-export function getSourcesThatSupportRequestOrFail(
-  request: Record<ChainId, TokenAddress[]>,
-  sources: IPriceSource[],
-  query: keyof PricesQueriesSupport
-) {
+export function getSourcesThatSupportRequestOrFail<T>(request: Record<ChainId, T>, sources: IPriceSource[], query: keyof PricesQueriesSupport) {
   const chainsInRequest = Object.keys(request).map(Number);
   const sourcesInChain = sources.filter((source) => doesSourceSupportQueryInAnyOfTheChains(source, query, chainsInRequest));
   if (sourcesInChain.length === 0) throw new Error(`Current price sources can't support all the given chains`);

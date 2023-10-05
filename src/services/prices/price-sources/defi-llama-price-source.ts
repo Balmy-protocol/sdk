@@ -11,14 +11,14 @@ export class DefiLlamaPriceSource implements IPriceSource {
   }
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true };
     const entries = this.defiLlama.supportedChains().map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
 
   async getCurrentPrices(params: {
     addresses: Record<ChainId, TokenAddress[]>;
-    config?: { timeout?: TimeString };
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
     const data = await this.defiLlama.getCurrentTokenData(params);
@@ -26,7 +26,7 @@ export class DefiLlamaPriceSource implements IPriceSource {
       const chainId = Number(chainIdString);
       result[chainId] = {};
       for (const [address, token] of Object.entries(tokens)) {
-        result[chainId][address] = { price: token.price, timestamp: token.timestamp };
+        result[chainId][address] = { price: token.price, closestTimestamp: token.timestamp };
       }
     }
     return result;
@@ -35,8 +35,8 @@ export class DefiLlamaPriceSource implements IPriceSource {
   async getHistoricalPrices(params: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
-    searchWidth?: TimeString;
-    config?: { timeout?: TimeString };
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
     const data = await this.defiLlama.getHistoricalTokenData(params);
@@ -44,7 +44,44 @@ export class DefiLlamaPriceSource implements IPriceSource {
       const chainId = Number(chainIdString);
       result[chainId] = {};
       for (const [address, { price, timestamp }] of Object.entries(tokens)) {
-        result[chainId][address] = { price, timestamp };
+        result[chainId][address] = { price, closestTimestamp: timestamp };
+      }
+    }
+    return result;
+  }
+
+  async getBulkHistoricalPrices({
+    addresses,
+    searchWidth,
+    config,
+  }: {
+    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    const aggregatedByTimestamp: Record<Timestamp, Record<ChainId, TokenAddress[]>> = {};
+    for (const chainId in addresses) {
+      for (const { token, timestamp } of addresses[chainId]) {
+        if (!(timestamp in aggregatedByTimestamp)) aggregatedByTimestamp[timestamp] = {};
+        if (!(chainId in aggregatedByTimestamp[timestamp])) aggregatedByTimestamp[timestamp][chainId] = [];
+        aggregatedByTimestamp[timestamp][chainId].push(token);
+      }
+    }
+    const allPrices = await Promise.all(
+      Object.entries(aggregatedByTimestamp).map(async ([timestamp, addresses]) => ({
+        timestamp: Number(timestamp),
+        prices: await this.getHistoricalPrices({ timestamp: Number(timestamp), addresses, searchWidth, config }),
+      }))
+    );
+
+    const result: Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>> = {};
+    for (const { timestamp, prices } of allPrices) {
+      for (const chainId in prices) {
+        if (!(chainId in result)) result[chainId] = {};
+        for (const token in prices[chainId]) {
+          if (!(token in result[chainId])) result[chainId][token] = {};
+          result[chainId][token][timestamp] = prices[chainId][token];
+        }
       }
     }
     return result;
