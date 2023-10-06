@@ -65,7 +65,7 @@
     "chai": "4.3.7",
     "dotenv": "16.3.1",
     "ethers": "5.7.2",
-    "hardhat": "2.13.0",
+    "hardhat": "2.18.0",
     "husky": "8.0.3",
     "jest": "29.5.0",
     "lint-staged": "13.2.2",
