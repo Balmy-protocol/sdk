@@ -2,7 +2,7 @@ import { ChainId, TimeString, TokenAddress, Timestamp } from '@types';
 import { Addresses } from '@shared/constants';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
-import { isSameAddress, splitInChunks } from '@shared/utils';
+import { isSameAddress, splitInChunks, timeToSeconds } from '@shared/utils';
 import { PriceResult } from '@services/prices';
 
 const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
@@ -98,6 +98,7 @@ export class DefiLlamaClient {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }) {
+    searchWidth = searchWidth ?? '6h';
     const aggregatedByTokenId = aggregateTimestampsByTokenId(addresses);
 
     const batches = splitCoinsIntoBatches(searchWidth, aggregatedByTokenId);
@@ -121,7 +122,7 @@ export class DefiLlamaClient {
         const tokenId = toTokenId(Number(chainId), token);
         const allResults = coins[tokenId] ?? [];
         const bestResult = findClosestToTimestamp(allResults, timestamp);
-        if (bestResult) {
+        if (bestResult && Math.abs(bestResult.closestTimestamp - timestamp) <= timeToSeconds(searchWidth)) {
           result[chainId][token][timestamp] = bestResult;
         }
       }
