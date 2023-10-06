@@ -238,7 +238,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, hubAddress));
     }
 
     // Handle increase
@@ -284,7 +284,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, hubAddress));
     }
 
     // Handle reduce
@@ -350,7 +350,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, hubAddress));
     }
 
     // Calculate swap (we know we need to swap if we got to this point)
@@ -419,7 +419,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, hubAddress));
     }
 
     // Handle withdraw
@@ -483,7 +483,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, hubAddress));
     }
 
     // Handle terminate
@@ -572,7 +572,7 @@ export class DCAService implements IDCAService {
 
     // Handle permission permit
     if (permissionPermit) {
-      calls.push(buildPermissionPermit(permissionPermit));
+      calls.push(buildPermissionPermit(permissionPermit, sourceHub));
     }
 
     // Handle terminate
@@ -832,12 +832,13 @@ function buildTakeFromCaller(token: TokenAddress, amount: BigIntish, recipient: 
   });
 }
 
-function buildPermissionPermit(permit: DCAPermissionPermit): Hex {
+function buildPermissionPermit(permit: DCAPermissionPermit, hub: Address): Hex {
+  const permissionManager = PERMISSION_MANAGER_FOR_HUB[hub.toLowerCase() as Lowercase<Address>];
   return encodeFunctionData({
     abi: companionAbi,
     functionName: 'permissionPermit',
     args: [
-      DCA_PERMISSION_MANAGER_ADDRESS,
+      permissionManager as ViemAddress,
       permit.permissions.map(({ operator, permissions }) => ({
         operator: operator as ViemAddress,
         permissions: permissions.map(mapPermission),
@@ -1223,3 +1224,14 @@ type TokenInPair = {
 function toBigInt<T extends BigIntish | undefined>(text: T): T extends BigIntish ? bigint : undefined {
   return (text === undefined ? undefined : BigInt(text)) as T extends BigIntish ? bigint : undefined;
 }
+
+const PERMISSION_MANAGER_FOR_HUB: Record<Lowercase<Address>, Address> = {
+  // Yield
+  '0xa5adc5484f9997fbf7d405b9aa62a7d88883c345': '0x20bdAE1413659f47416f769a4B27044946bc9923',
+  // Stable
+  '0x059d306a25c4ce8d7437d25743a8b94520536bd5': '0x6f54391fe0386d506b51d69deeb8b04e0544e088',
+  // Vuln
+  '0x230c63702d1b5034461ab2ca889a30e343d81349': '0xb4edfb45446c6a207643ea846bfa42021ce5ae11',
+  // Beta
+  '0x24f85583faa9f8bd0b8aa7b1d1f4f53f0f450038': '0x09AdE44D2E60fCa2270fF32Af5a189f40D29837b',
+};
