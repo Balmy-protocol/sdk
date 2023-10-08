@@ -5,11 +5,15 @@ import { buildEthersProviderForWebSocketSource, buildViemTransportForWebSocketSo
 import { alchemySupportedChains, buildAlchemyUrl } from '@shared/alchemy-rpc';
 
 export class AlchemyProviderSource implements IProviderSource {
-  constructor(private readonly key: string, private readonly protocol: 'https' | 'wss') {}
+  private readonly supported: ChainId[];
+
+  constructor(private readonly key: string, private readonly protocol: 'https' | 'wss', onChains?: ChainId[]) {
+    this.supported = onChains ?? alchemySupportedChains();
+  }
 
   supportedClients() {
     const support = { ethers: true, viem: true };
-    return Object.fromEntries(alchemySupportedChains().map((chainId) => [chainId, support]));
+    return Object.fromEntries(this.supported.map((chainId) => [chainId, support]));
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {

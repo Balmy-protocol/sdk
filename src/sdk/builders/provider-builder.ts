@@ -21,9 +21,9 @@ export type ProviderSourceInput =
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }
-  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
-  | { type: 'infura'; key: string }
-  | { type: 'llama-nodes'; key?: string }
+  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss'; onChains?: ChainId[] }
+  | { type: 'infura'; key: string; onChains?: ChainId[] }
+  | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
@@ -52,11 +52,11 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'public-rpcs':
       return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
     case 'alchemy':
-      return new AlchemyProviderSource(source.key, source.protocol ?? 'https');
+      return new AlchemyProviderSource(source.key, source.protocol ?? 'https', source.onChains);
     case 'llama-nodes':
-      return new LlamaNodesProviderSource(source.key);
+      return new LlamaNodesProviderSource(source.key, source.onChains);
     case 'infura':
-      return new InfuraProviderSource(source.key);
+      return new InfuraProviderSource(source.key, source.onChains);
     case 'http':
       return new HttpProviderSource(source.url, source.supportedChains);
     case 'web-socket':

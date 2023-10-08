@@ -16,12 +16,15 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 };
 
 export class InfuraProviderSource extends BaseHttpProvider {
-  constructor(private readonly key: string) {
+  private readonly supported: ChainId[];
+
+  constructor(private readonly key: string, onChains?: ChainId[]) {
     super();
+    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
   }
 
   supportedChains(): ChainId[] {
-    return Object.keys(SUPPORTED_CHAINS).map(Number);
+    return this.supported;
   }
 
   protected calculateUrl(chainId: number): string {
