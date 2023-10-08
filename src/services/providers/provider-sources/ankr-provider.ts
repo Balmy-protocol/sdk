@@ -1,0 +1,44 @@
+import { Chains } from '@chains';
+import { ChainId } from '@types';
+import { BaseHttpProvider } from './base/base-http-provider';
+
+const SUPPORTED_CHAINS: Record<ChainId, string> = {
+  [Chains.POLYGON.chainId]: 'https://rpc.ankr.com/polygon',
+  [Chains.AVALANCHE.chainId]: 'https://rpc.ankr.com/avalanche',
+  [Chains.ETHEREUM.chainId]: 'https://rpc.ankr.com/eth',
+  [Chains.ETHEREUM_GOERLI.chainId]: 'https://rpc.ankr.com/eth_goerli',
+  [Chains.ETHEREUM_SEPOLIA.chainId]: 'https://rpc.ankr.com/eth_sepolia',
+  [Chains.BNB_CHAIN.chainId]: 'https://rpc.ankr.com/bsc',
+  [Chains.FANTOM.chainId]: 'https://rpc.ankr.com/fantom',
+  [Chains.ARBITRUM.chainId]: 'https://rpc.ankr.com/arbitrum',
+  [Chains.OPTIMISM.chainId]: 'https://rpc.ankr.com/optimism',
+  [Chains.CELO.chainId]: 'https://rpc.ankr.com/celo',
+  [Chains.GNOSIS.chainId]: 'https://rpc.ankr.com/gnosis',
+  [Chains.POLYGON_ZKEVM.chainId]: 'https://rpc.ankr.com/polygon_zkevm',
+  [Chains.HARMONY_SHARD_0.chainId]: 'https://rpc.ankr.com/harmony',
+  [Chains.MOONBEAM.chainId]: 'https://rpc.ankr.com/moonbeam',
+  [Chains.BIT_TORRENT.chainId]: 'https://rpc.ankr.com/bttc',
+  [Chains.BASE.chainId]: 'https://rpc.ankr.com/base',
+  [Chains.KLAYTN.chainId]: 'https://rpc.ankr.com/klaytn',
+};
+
+export class AnkrProviderSource extends BaseHttpProvider {
+  private readonly supported: ChainId[];
+
+  constructor(private readonly key?: string, onChains?: ChainId[]) {
+    super();
+    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
+  }
+
+  supportedChains(): ChainId[] {
+    return this.supported;
+  }
+
+  protected calculateUrl(chainId: ChainId): string {
+    let url = SUPPORTED_CHAINS[chainId];
+    if (this.key) {
+      url += `/${this.key}`;
+    }
+    return url;
+  }
+}
