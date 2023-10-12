@@ -27,7 +27,8 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
 const MEAN_REFERRAL_CODE = 1533410238;
-type OdosConfig = { sourceBlacklist?: string[]; supportRFQs?: boolean; referralCode?: number };
+type SourcesConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
+type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
 type OdosSupport = { buyOrders: false; swapAndTransfer: false };
 export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig> {
   getMetadata() {
@@ -54,7 +55,8 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
       userAddr: checksum(takeFrom),
       slippageLimitPercent: slippagePercentage,
-      sourceBlacklist: config?.sourceBlacklist,
+      sourceWhitelist: config?.sourceAllowlist,
+      sourceBlacklist: config?.sourceDenylist,
       simulate: false,
       pathViz: false,
       disableRFQs: !config?.supportRFQs, // Disable by default
