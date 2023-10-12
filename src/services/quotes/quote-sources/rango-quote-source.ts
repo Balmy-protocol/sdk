@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
@@ -61,20 +62,19 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
   }: QuoteParams<RangoSupport, RangoConfig>): Promise<SourceQuoteResponse> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
-    let url =
-      `https://api.rango.exchange/basic/swap` +
-      `?apiKey=${config.apiKey}` +
-      `&from=${mapToChainId(chainKey, sellToken, sellTokenDataResult)}` +
-      `&to=${mapToChainId(chainKey, buyToken, buyTokenDataResult)}` +
-      `&amount=${order.sellAmount.toString()}` +
-      `&fromAddress=${takeFrom}` +
-      `&toAddress=${recipient ?? takeFrom}` +
-      `&disableEstimate=true` +
-      `&slippage=${slippagePercentage}`;
-
-    if (config.referrer?.address) {
-      url += `&referrerAddress=${config.referrer?.address}`;
-    }
+    const queryParams = {
+      apiKey: config.apiKey,
+      from: mapToChainId(chainKey, sellToken, sellTokenDataResult),
+      to: mapToChainId(chainKey, buyToken, buyTokenDataResult),
+      amount: order.sellAmount.toString(),
+      fromAddress: takeFrom,
+      toAddress: recipient ?? takeFrom,
+      disableEstimate: config.disableValidation,
+      slippage: slippagePercentage,
+      referrerAddress: config.referrer?.address,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://api.rango.exchange/basic/swap?${queryString}`;
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {

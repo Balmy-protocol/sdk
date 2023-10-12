@@ -4,9 +4,10 @@ import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '@services/quote
 export const CONFIG: SourceConfig = {
   global: {
     referrer: { address: '0x0000000000000000000000000000000000000001', name: 'IntegrationTest' },
+    disableValidation: true,
   },
   custom: {
-    odos: { sourceBlacklist: ['Hashflow'] },
+    odos: { sourceDenylist: ['Hashflow'] },
   },
 };
 if (process.env.RANGO_API_KEY) {

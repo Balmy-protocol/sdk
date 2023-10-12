@@ -11,6 +11,7 @@ export type GlobalQuoteSourceConfig = {
     address: Address;
     name: string;
   };
+  disableValidation?: boolean;
 };
 
 export type SourceId = string;

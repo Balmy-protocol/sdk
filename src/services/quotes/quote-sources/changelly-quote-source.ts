@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
@@ -34,19 +35,18 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
     },
     config,
   }: QuoteParams<ChangellySupport, ChangellyConfig>): Promise<SourceQuoteResponse> {
-    let url =
-      `https://dex-api.changelly.com/v1/${chain.chainId}/quote` +
-      `?fromTokenAddress=${sellToken}` +
-      `&toTokenAddress=${buyToken}` +
-      `&amount=${order.sellAmount.toString()}` +
-      `&slippage=${slippagePercentage * 10}` +
-      `&skipValidation=true`;
-    // We are disabling RFQ because it fails often when validation is turned off. But we can't turn it on or the simulation quote would fail
-    // `&takerAddress=${takeFrom}`
-
-    if (recipient && !isSameAddress(recipient, takeFrom)) {
-      url += `&recipientAddress=${recipient}`;
-    }
+    const queryParams = {
+      fromTokenAddress: sellToken,
+      toTokenAddress: buyToken,
+      amount: order.sellAmount.toString(),
+      slippage: slippagePercentage * 10,
+      recipientAddress: recipient && !isSameAddress(recipient, takeFrom) ? recipient : undefined,
+      skipValidation: config.disableValidation,
+      // We disable RFQ when validation is turned off, because it fails quite often
+      takerAddress: config.disableValidation ? undefined : takeFrom,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://dex-api.changelly.com/v1/${chain.chainId}/quote?${queryString}`;
 
     const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });

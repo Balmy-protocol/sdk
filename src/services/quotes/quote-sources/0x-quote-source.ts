@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
@@ -47,24 +48,19 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig> {
     config,
   }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse> {
     const api = ZRX_API[chain.chainId];
-    let url =
-      `${api}/swap/v1/quote` +
-      `?sellToken=${sellToken}` +
-      `&buyToken=${buyToken}` +
-      `&takerAddress=${takeFrom}` +
-      `&skipValidation=true` +
-      `&slippagePercentage=${slippagePercentage / 100}` +
-      `&enableSlippageProtection=false`;
-
-    if (config.referrer?.address) {
-      url += `&affiliateAddress=${config.referrer?.address}`;
-    }
-
-    if (order.type === 'sell') {
-      url += `&sellAmount=${order.sellAmount.toString()}`;
-    } else {
-      url += `&buyAmount=${order.buyAmount.toString()}`;
-    }
+    const queryParams = {
+      sellToken,
+      buyToken,
+      takerAddress: takeFrom,
+      skipValidation: config.disableValidation,
+      slippagePercentage: slippagePercentage / 100,
+      enableSlippageProtection: false,
+      affiliateAddress: config.referrer?.address,
+      sellAmount: order.type === 'sell' ? order.sellAmount.toString() : undefined,
+      buyAmount: order.type === 'buy' ? order.buyAmount.toString() : undefined,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `${api}/swap/v1/quote?${queryString}`;
 
     const headers: HeadersInit = {
       ['0x-api-key']: config.apiKey,

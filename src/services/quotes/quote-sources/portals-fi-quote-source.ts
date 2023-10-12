@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Addresses } from '@shared/constants';
 import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { isSameAddress } from '@shared/utils';
@@ -35,19 +36,18 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
   }: QuoteParams<PortalsFiSupport>): Promise<SourceQuoteResponse> {
     const mappedSellToken = mapToken(chain, sellToken);
     const mappedBuyToken = mapToken(chain, buyToken);
-    let url =
-      `https://api.portals.fi/v2/portal` +
-      `?sender=${takeFrom}` +
-      `&inputToken=${mappedSellToken}` +
-      `&inputAmount=${order.sellAmount.toString()}` +
-      `&outputToken=${mappedBuyToken}` +
-      `&slippageTolerancePercentage=${slippagePercentage}` +
-      `&validate=false`;
-
-    if (config.referrer) {
-      url += `&feePercentage=0`;
-      url += `&partner=${config.referrer.address}`;
-    }
+    const queryParams = {
+      sender: takeFrom,
+      inputToken: mappedSellToken,
+      inputAmount: order.sellAmount.toString(),
+      outputToken: mappedBuyToken,
+      slippageTolerancePercentage: slippagePercentage,
+      validate: !config.disableValidation,
+      partner: config.referrer?.address,
+      feePercentage: config.referrer ? 0 : undefined,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://api.portals.fi/v2/portal?${queryString}`;
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
