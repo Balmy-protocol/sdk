@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
@@ -27,13 +28,14 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
 };
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<ParaswapSupport> {
+type ParaswapConfig = { sourceAllowlist?: string[] };
+export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<ParaswapSupport, ParaswapConfig> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
     return PARASWAP_METADATA;
   }
 
-  async quote({ components: { fetchService }, request, config }: QuoteParams<ParaswapSupport>): Promise<SourceQuoteResponse> {
-    const route = await this.getPrice(fetchService, request);
+  async quote({ components: { fetchService }, request, config }: QuoteParams<ParaswapSupport, ParaswapConfig>): Promise<SourceQuoteResponse> {
+    const route = await this.getPrice(fetchService, request, config);
     const isWrapOrUnwrap = this.isWrapingOrUnwrapingWithWToken(request.chain, route);
     const { data, value } = await this.getQuote(fetchService, { ...request, route, isWrapOrUnwrap }, config);
     const quote = {
@@ -61,25 +63,25 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       accounts: { takeFrom, recipient },
       config: { timeout },
       external: { tokenData },
-    }: SourceQuoteRequest<ParaswapSupport>
+    }: SourceQuoteRequest<ParaswapSupport>,
+    config: ParaswapConfig & GlobalQuoteSourceConfig
   ) {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
-    let url =
-      'https://apiv5.paraswap.io/prices' +
-      `?network=${chain.chainId}` +
-      `&srcToken=${sellToken}` +
-      `&destToken=${buyToken}` +
-      `&amount=${amount}` +
-      `&side=${order.type.toUpperCase()}` +
-      `&srcDecimals=${sellTokenDataResult.decimals}` +
-      `&destDecimals=${buyTokenDataResult.decimals}`;
-
-    if (!!recipient && takeFrom !== recipient) {
+    const queryParams = {
+      network: chain.chainId,
+      srcToken: sellToken,
+      destToken: buyToken,
+      amount: amount,
+      side: order.type.toUpperCase(),
+      srcDecimals: sellTokenDataResult.decimals,
+      destDecimals: buyTokenDataResult.decimals,
+      includeDEXS: config.sourceAllowlist,
       // If is swap and transfer, then I need to whitelist methods
-      url += '&includeContractMethods=simpleSwap,multiSwap,megaSwap';
-    }
-
+      includeContractMethods: !!recipient && !isSameAddress(takeFrom, recipient) ? ['simpleSwap', 'multiSwap', 'megaSwap'] : undefined,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://apiv5.paraswap.io/prices?${queryString}`;
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
@@ -101,7 +103,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       isWrapOrUnwrap,
       external: { tokenData },
     }: SourceQuoteRequest<ParaswapSupport> & { route: any; isWrapOrUnwrap: boolean },
-    config: GlobalQuoteSourceConfig
+    config: ParaswapConfig & GlobalQuoteSourceConfig
   ) {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true`;
