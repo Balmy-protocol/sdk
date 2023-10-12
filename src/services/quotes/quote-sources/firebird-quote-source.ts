@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
@@ -24,7 +25,7 @@ const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
   },
   logoURI: 'ipfs://QmXJ92XHRWGzRFyUYYt5THiBVTiLwB1KAV35H5UyA3a8Yf',
 };
-type FirebirdConfig = { apiKey: string };
+type FirebirdConfig = { apiKey: string; sourceAllowlist?: string[] };
 type FirebirdSupport = { buyOrders: false; swapAndTransfer: true };
 export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, FirebirdConfig> {
   getMetadata() {
@@ -44,25 +45,22 @@ export class FirebirdQuoteSource implements IQuoteSource<FirebirdSupport, Firebi
     config,
   }: QuoteParams<FirebirdSupport, FirebirdConfig>): Promise<SourceQuoteResponse> {
     const headers = { 'API-KEY': config.apiKey };
-    let url =
-      `https://router.firebird.finance/aggregator/v2/quote` +
-      `?chainId=${chain.chainId}` +
-      `&from=${sellToken}` +
-      `&to=${buyToken}` +
-      `&amount=${order.sellAmount.toString()}` +
-      `&slippage=${slippagePercentage / 100}` +
-      `&receiver=${recipient ?? takeFrom}` +
-      `&saveGas=0` +
-      `&gasInclude=1`;
-
-    if (config.referrer) {
-      url += `&source=${config.referrer.name}`;
-      url += `&ref=${config.referrer.address}`;
-    }
-    if (txValidFor) {
-      url += `&deadline=${calculateDeadline(txValidFor)}`;
-    }
-
+    const queryParams = {
+      chainId: chain.chainId,
+      from: sellToken,
+      to: buyToken,
+      amount: order.sellAmount.toString(),
+      slippage: slippagePercentage / 100,
+      receiver: recipient ?? takeFrom,
+      saveGas: 0,
+      gasInclude: 1,
+      dexes: config.sourceAllowlist,
+      source: config.referrer?.name,
+      ref: config.referrer?.address,
+      deadline: txValidFor && calculateDeadline(txValidFor),
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://router.firebird.finance/aggregator/v2/quote?${queryString}`;
     const quoteResponse = await fetchService.fetch(url, { timeout, headers });
     if (!quoteResponse.ok) {
       failed(FIREBIRD_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
