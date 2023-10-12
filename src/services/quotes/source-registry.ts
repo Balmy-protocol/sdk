@@ -15,8 +15,10 @@ import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
 import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
 import { WidoQuoteSource } from './quote-sources/wido-quote-source';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
+import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
 
 export const QUOTE_SOURCES = {
+  bebop: new BebopQuoteSource(),
   paraswap: new ParaswapQuoteSource(),
   '0x': new ZRXQuoteSource(),
   '1inch': new OneInchQuoteSource(),

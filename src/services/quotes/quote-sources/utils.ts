@@ -1,3 +1,4 @@
+import { getAddress } from 'viem';
 import { addPercentage, isSameAddress, substractPercentage } from '@shared/utils';
 import { Address, Chain, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './types';
@@ -28,4 +29,8 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
 
 export function calculateAllowanceTarget(sellToken: TokenAddress, allowanceTarget: Address) {
   return isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : allowanceTarget;
+}
+
+export function checksum(address: Address) {
+  return getAddress(address);
 }
