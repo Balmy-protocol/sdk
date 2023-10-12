@@ -69,7 +69,7 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
       amount: order.sellAmount.toString(),
       from: takeFrom,
       slippage: slippagePercentage,
-      disableEstimate: true,
+      disableEstimate: config.disableValidation,
       receiver: !!recipient && !isSameAddress(takeFrom, recipient) ? recipient : undefined,
       referrer: config.referrer?.address,
       protocols: config.sourceAllowlist,

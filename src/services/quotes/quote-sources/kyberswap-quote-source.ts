@@ -82,7 +82,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
         deadline: txValidFor ? calculateDeadline(txValidFor) : undefined,
         source: config.referrer?.name,
         sender: takeFrom,
-        skipSimulateTransaction: true,
+        skipSimulateTransaction: config.disableValidation,
       }),
     });
     if (!buildResponse.ok) {

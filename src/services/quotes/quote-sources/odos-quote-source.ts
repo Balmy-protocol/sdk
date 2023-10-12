@@ -57,7 +57,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       slippageLimitPercent: slippagePercentage,
       sourceWhitelist: config?.sourceAllowlist,
       sourceBlacklist: config?.sourceDenylist,
-      simulate: false,
+      simulate: !config.disableValidation,
       pathViz: false,
       disableRFQs: !config?.supportRFQs, // Disable by default
       referralCode: config?.referralCode ?? MEAN_REFERRAL_CODE, // If not set, we will use Mean's code

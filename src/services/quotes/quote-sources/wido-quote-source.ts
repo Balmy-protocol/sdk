@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
@@ -43,23 +44,20 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContextSource<WidoSuppo
     },
     config,
   }: QuoteParams<WidoSupport>): Promise<SourceQuoteResponse> {
-    let quoteUrl =
-      `https://api.joinwido.com/quote_v2` +
-      `?from_chain_id=${chain.chainId}` +
-      `&from_token=${sellToken}` +
-      `&to_chain_id=${chain.chainId}` +
-      `&to_token=${buyToken}` +
-      `&slippage_percentage=${slippagePercentage / 100}` +
-      `&amount=${order.sellAmount}` +
-      `&user=${takeFrom}` +
-      `&validate=false`;
-
-    if (config.referrer?.address) {
-      quoteUrl += `&partner=${config.referrer.address}`;
-    }
-    if (recipient) {
-      quoteUrl += `&recipient=${recipient}`;
-    }
+    const queryParams = {
+      from_chain_id: chain.chainId,
+      from_token: sellToken,
+      to_chain_id: chain.chainId,
+      to_token: buyToken,
+      slippage_percentage: slippagePercentage / 100,
+      amount: order.sellAmount.toString(),
+      user: takeFrom,
+      validate: !config.disableValidation,
+      partner: config.referrer?.address,
+      recipient,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const quoteUrl = `https://api.joinwido.com/quote_v2?${queryString}`;
 
     const allowanceUrl =
       `https://api.joinwido.com/contract_address` +
