@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { formatUnits } from 'viem';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
@@ -40,7 +41,8 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport> {
+type OpenOceanConfig = { sourceAllowlist?: string[] };
+export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig> {
   getMetadata() {
     return OPEN_OCEAN_METADATA;
   }
@@ -57,24 +59,24 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
       external,
     },
     config,
-  }: QuoteParams<OpenOceanSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<OpenOceanSupport, OpenOceanConfig>): Promise<SourceQuoteResponse> {
     const [{ sellToken: sellTokenDataResult }, gasPriceResult] = await Promise.all([external.tokenData.request(), external.gasPrice.request()]);
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
     const amount = formatUnits(order.sellAmount, sellTokenDataResult.decimals);
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
-    let url =
-      `https://open-api.openocean.finance/v3/${chainKey}/swap_quote` +
-      `?inTokenAddress=${sellToken}` +
-      `&outTokenAddress=${buyToken}` +
-      `&amount=${amount}` +
-      `&slippage=${slippagePercentage}` +
-      `&gasPrice=${gasPrice}` +
-      `&account=${recipient ?? takeFrom}`;
-
-    if (config.referrer?.address) {
-      url += `&referrer=${config.referrer?.address}`;
-    }
+    const queryParams = {
+      inTokenAddress: sellToken,
+      outTokenAddress: buyToken,
+      amount: amount,
+      slippage: slippagePercentage,
+      gasPrice: gasPrice,
+      account: recipient ?? takeFrom,
+      referrer: config.referrer?.address,
+      enabledDexIds: config.sourceAllowlist,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://open-api.openocean.finance/v3/${chainKey}/swap_quote?${queryString}`;
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(OPEN_OCEAN_METADATA, chain, sellToken, buyToken, await response.text());
