@@ -50,7 +50,7 @@ export class WidoQuoteSource extends AlwaysValidConfigAndContextSource<WidoSuppo
       to_chain_id: chain.chainId,
       to_token: buyToken,
       slippage_percentage: slippagePercentage / 100,
-      amount: order.sellAmount,
+      amount: order.sellAmount.toString(),
       user: takeFrom,
       validate: !config.disableValidation,
       partner: config.referrer?.address,
