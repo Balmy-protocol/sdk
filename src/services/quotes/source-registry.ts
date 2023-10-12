@@ -16,10 +16,12 @@ import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-sourc
 import { WidoQuoteSource } from './quote-sources/wido-quote-source';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
+import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
   paraswap: new ParaswapQuoteSource(),
+  'xy-finance': new XYFinanceQuoteSource(),
   '0x': new ZRXQuoteSource(),
   '1inch': new OneInchQuoteSource(),
   uniswap: new UniswapQuoteSource(),
