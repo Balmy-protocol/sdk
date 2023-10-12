@@ -1,6 +1,8 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, IQuoteSource } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
+import { isSameAddress } from '@shared/utils';
 
 export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
@@ -24,7 +26,8 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   logoURI: 'ipfs://QmNr5MnyZKUv7rMhMyZPbxPbtc1A1yAVAqEEgVbep1hdBx',
 };
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
-type OneInchConfig = { customUrl: string; apiKey?: undefined } | { customUrl?: undefined; apiKey: string };
+type CustomOrAPIKeyConfig = { customUrl: string; apiKey?: undefined } | { customUrl?: undefined; apiKey: string };
+type OneInchConfig = { sourceAllowlist?: string[] } & CustomOrAPIKeyConfig;
 export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchConfig> {
   getMetadata() {
     return ONE_INCH_METADATA;
@@ -60,25 +63,22 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
     },
     config,
   }: QuoteParams<OneInchSupport, OneInchConfig>) {
-    let url =
-      `${getUrl(config)}/${chain.chainId}/swap` +
-      `?src=${sellToken}` +
-      `&dst=${buyToken}` +
-      `&amount=${order.sellAmount.toString()}` +
-      `&from=${takeFrom}` +
-      `&slippage=${slippagePercentage}` +
-      `&disableEstimate=true`;
-
-    if (!!recipient && takeFrom !== recipient) {
-      url += `&receiver=${recipient}`;
-    }
-
-    if (config.referrer?.address) {
-      url += `&referrer=${config.referrer.address}`;
-    }
+    const queryParams = {
+      src: sellToken,
+      dst: buyToken,
+      amount: order.sellAmount.toString(),
+      from: takeFrom,
+      slippage: slippagePercentage,
+      disableEstimate: true,
+      receiver: !!recipient && !isSameAddress(takeFrom, recipient) ? recipient : undefined,
+      referrer: config.referrer?.address,
+      protocols: config.sourceAllowlist,
+    };
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `${getUrl(config)}/${chain.chainId}/swap?${queryString}`;
     const response = await fetchService.fetch(url, { timeout, headers: getHeaders(config) });
     if (!response.ok) {
-      failed(ONE_INCH_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(ONE_INCH_METADATA, chain, sellToken, buyToken, (await response.text()) || `Failed with status ${response.status}`);
     }
     const {
       toAmount,
