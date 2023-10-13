@@ -53,6 +53,7 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
       slippage: slippagePercentage / 100,
       userWalletAddress: takeFrom,
       referrerAddress: config.referrer?.address,
+      feePercent: config.referrer?.address ? 0 : undefined,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const path = `/api/v5/dex/aggregator/swap?${queryString}`;
