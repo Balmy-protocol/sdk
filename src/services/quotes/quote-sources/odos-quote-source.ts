@@ -3,7 +3,7 @@ import { Address } from '@types';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { Addresses } from '@shared/constants';
-import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
@@ -110,10 +110,6 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
 
 function checksumAndMapIfNecessary(address: Address) {
   return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : checksum(address);
-}
-
-function checksum(address: Address) {
-  return getAddress(address);
 }
 
 type QuoteResponse = {
