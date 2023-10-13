@@ -61,7 +61,7 @@
     "@nomiclabs/hardhat-ethers": "2.2.3",
     "@types/crypto-js": "4.1.2",
     "@types/jest": "29.5.1",
-    "@types/node": "18.16.3",
+    "@types/node": "20.8.5",
     "@types/qs": "^6.9.8",
     "@types/ws": "^8.5.5",
     "chai": "4.3.7",
