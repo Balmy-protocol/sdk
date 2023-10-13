@@ -1,7 +1,7 @@
 import qs from 'qs';
 import { Chains } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import CryptoJS from 'crypto-js';
 
 const SUPPORTED_CHAINS = [
@@ -60,7 +60,7 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
     const timestamp = new Date().toISOString();
     const toHash = timestamp + 'GET' + path;
     const signed = CryptoJS.HmacSHA256(toHash, config.secretKey);
-    const base64 = CryptoJS.enc.Base64.stringify(signed);
+    const base64 = signed.toString(CryptoJS.enc.Base64);
 
     const headers: HeadersInit = {
       ['OK-ACCESS-KEY']: config.apiKey,
@@ -74,15 +74,23 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
     if (!response.ok) {
       failed(OKX_DEX_METADATA, chain, sellToken, buyToken, await response.text());
     }
-    const { toTokenAmount, minReceiveAmount, estimateGasFee, router, to, value, data } = await response.json();
+    const result = await response.json();
+    const {
+      data: [
+        {
+          routerResult: { toTokenAmount },
+          tx: { minReceiveAmount, to, value, data, gas },
+        },
+      ],
+    } = result;
 
     return {
       sellAmount: order.sellAmount,
       maxSellAmount: order.sellAmount,
       buyAmount: BigInt(toTokenAmount),
       minBuyAmount: BigInt(minReceiveAmount),
-      estimatedGas: BigInt(estimateGasFee),
-      allowanceTarget: router,
+      estimatedGas: BigInt(gas),
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
       type: 'sell',
       tx: {
         calldata: data,
