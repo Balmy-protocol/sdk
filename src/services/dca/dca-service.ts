@@ -934,6 +934,10 @@ function buildPosition(
   return {
     chainId: Number(chainId),
     hub,
+    pair: {
+      pairId: toPairId(position.from.address, position.to.address),
+      variantPairId: toPairId(position.from.variant.id, position.to.variant.id),
+    },
     tokenId: BigInt(tokenId),
     ...position,
     from: {
@@ -962,6 +966,13 @@ function buildPosition(
       : undefined,
     history: position.history?.map((action) => mapAction(action, position, prices)) ?? [],
   };
+}
+
+function toPairId(address1: string, address2: string): `${Address}-${Address}` {
+  const lower1 = address1.toLowerCase();
+  const lower2 = address2.toLowerCase();
+  const [tokenA, tokenB] = lower1 < lower2 ? [lower1, lower2] : [lower2, lower1];
+  return `${tokenA}-${tokenB}`;
 }
 
 function mapAction(
@@ -1122,6 +1133,7 @@ type PositionSummaryResponse = {
   swapInterval: { seconds: DCASwapInterval };
   owner: Address;
   remainingSwaps: number;
+  totalSwaps: number;
   executedSwaps: number;
   isStale: boolean;
   status: 'ongoing' | 'empty' | 'closed';

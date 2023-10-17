@@ -43,11 +43,16 @@ export type PositionSummary = {
   chainId: ChainId;
   hub: Address;
   tokenId: bigint;
+  pair: {
+    pairId: string;
+    variantPairId: TokenVariantPair;
+  };
   from: DCAPositionToken;
   to: DCAPositionToken;
   swapInterval: DCASwapInterval;
   owner: Address;
   remainingSwaps: number;
+  totalSwaps: number;
   executedSwaps: number;
   isStale: boolean;
   status: 'ongoing' | 'empty' | 'closed';
