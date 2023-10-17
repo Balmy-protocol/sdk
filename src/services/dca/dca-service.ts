@@ -1137,7 +1137,7 @@ type PositionSummaryResponse = {
   totalSwaps: number;
   executedSwaps: number;
   isStale: boolean;
-  status: 'ongoing' | 'empty' | 'closed';
+  status: 'ongoing' | 'empty' | 'terminated';
   nextSwapAvailableAt: Timestamp;
   permissions: Record<Address, DCAPermission[]>;
   rate: BigIntish;
