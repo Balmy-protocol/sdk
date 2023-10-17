@@ -930,7 +930,11 @@ function buildPosition(
   const { variants: toVariants, ...toToken } = tokens[position.to.address];
   const fromVariant = fromVariants.find(({ id }) => id == position.from.variant.id) ?? position.from.variant;
   const toVariant = toVariants.find(({ id }) => id === position.to.variant.id) ?? position.to.variant;
+  const [chainId, hub, tokenId] = position.id.split('-');
   return {
+    chainId: Number(chainId),
+    hub,
+    tokenId: BigInt(tokenId),
     ...position,
     from: {
       ...position.from,

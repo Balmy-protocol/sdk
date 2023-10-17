@@ -40,6 +40,9 @@ export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
 export type PositionId = `${ChainId}-${Address}-${bigint}`;
 export type PositionSummary = {
   id: PositionId;
+  chainId: ChainId;
+  hub: Address;
+  tokenId: bigint;
   from: DCAPositionToken;
   to: DCAPositionToken;
   swapInterval: DCASwapInterval;
