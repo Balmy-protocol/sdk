@@ -46,7 +46,7 @@ export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSup
       buy_amounts: order.type === 'buy' ? [order.buyAmount.toString()] : undefined,
       taker_address: takeFrom,
       receiver_address: recipient && !isSameAddress(recipient, takeFrom) ? recipient : undefined,
-      source: config.referrer?.address,
+      source: config.referrer?.name,
       skip_validation: config.disableValidation,
       gasless: false,
     };
