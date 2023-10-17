@@ -1128,6 +1128,7 @@ type PositionsResponse = {
 };
 type PositionSummaryResponse = {
   id: PositionId;
+  createdAt: Timestamp;
   from: PositionToken;
   to: PositionToken;
   swapInterval: { seconds: DCASwapInterval };

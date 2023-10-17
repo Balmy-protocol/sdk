@@ -40,6 +40,7 @@ export type PairInChain = `${ChainId}-${TokenAddress}-${TokenAddress}`;
 export type PositionId = `${ChainId}-${Address}-${bigint}`;
 export type PositionSummary = {
   id: PositionId;
+  createdAt: Timestamp;
   chainId: ChainId;
   hub: Address;
   tokenId: bigint;
