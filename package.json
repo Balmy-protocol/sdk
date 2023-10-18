@@ -1,6 +1,6 @@
 {
   "name": "@mean-finance/sdk",
-  "version": "0.0.155",
+  "version": "0.0.156",
   "contributors": [
     {
       "name": "Nicolás Chamo",
@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "17.7.1",
-    "@commitlint/config-conventional": "17.6.7",
+    "@commitlint/config-conventional": "17.8.0",
     "@ethersproject/abi": "5.7.0",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",
