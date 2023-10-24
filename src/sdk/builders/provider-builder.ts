@@ -27,7 +27,7 @@ export type ProviderSourceInput =
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss'; onChains?: ChainId[] }
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
-  | { type: 'get-block'; key: string; onChains?: ChainId[] }
+  | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
   | { type: 'ankr'; key?: string; onChains?: ChainId[] }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
@@ -68,7 +68,7 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'node-real':
       return new NodeRealProviderSource(source.key, source.onChains);
     case 'get-block':
-      return new GetBlockProviderSource(source.key, source.onChains);
+      return new GetBlockProviderSource(source.accessTokens);
     case 'http':
       return new HttpProviderSource(source.url, source.supportedChains);
     case 'web-socket':
