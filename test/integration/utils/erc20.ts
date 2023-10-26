@@ -163,18 +163,18 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   },
   [Chains.ROOTSTOCK.chainId]: {
     STABLE_ERC20: {
-      // XUSD
-      address: '0xb5999795be0ebb5bab23144aa5fd6a02d080299f',
-      whale: '0x100aE71cBE5D2F678F9ae938909a8d8Dc004AA41',
+      // DLLR
+      address: '0xc1411567d2670e24d9c4daaa7cda95686e1250aa',
+      whale: '0x1440d19436beeaf8517896bffb957a88ec95a00f',
     },
     RANDOM_ERC20: {
       // SOV
       address: '0xefc78fc7d48b64958315949279ba181c2114abbd',
-      whale: '0x7f02eC1dF0238fEB228E1062BD2c5279A712d6aF',
+      whale: '0x5684a06cab22db16d901fee2a5c081b4c91ea40e',
     },
     wToken: {
       address: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
-      whale: '0xA9c3D9681215eF7623dc28eA6b75bF87fDf285D9',
+      whale: '0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7',
     },
   },
   [Chains.AURORA.chainId]: {

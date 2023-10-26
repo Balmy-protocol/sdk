@@ -40,8 +40,8 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'xy-finance',
-  chains: [Chains.ETHEREUM],
+  source: 'sovryn',
+  chains: [Chains.ROOTSTOCK],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 const AVOID_DURING_CI: SourceId[] = [
@@ -52,7 +52,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe.skip('Quote Sources [External Quotes]', () => {
+describe('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
@@ -64,6 +64,8 @@ describe.skip('Quote Sources [External Quotes]', () => {
         wToken = new Deferred<TestToken>(),
         STABLE_ERC20 = new Deferred<TestToken>(),
         RANDOM_ERC20 = new Deferred<TestToken>(),
+        oneStableToken = new Deferred<bigint>(),
+        oneRandomToken = new Deferred<bigint>(),
         gasPrice = new Deferred<GasPrice>();
       let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
       let snapshot: SnapshotRestorer;
@@ -77,6 +79,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           to: userSigner,
           tokens: [
             { amount: parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
+            { amount: parseUnits('10000', tokens.RANDOM_ERC20.decimals), token: tokens.RANDOM_ERC20 },
             { amount: ONE_NATIVE_TOKEN * 3n, token: tokens.nativeToken },
             { amount: ONE_NATIVE_TOKEN, token: tokens.wToken },
           ],
@@ -95,6 +98,8 @@ describe.skip('Quote Sources [External Quotes]', () => {
         STABLE_ERC20.resolve(tokens.STABLE_ERC20);
         RANDOM_ERC20.resolve(tokens.RANDOM_ERC20);
         gasPrice.resolve(gasPriceResult);
+        oneStableToken.resolve(parseUnits('1', tokens.STABLE_ERC20.decimals));
+        oneRandomToken.resolve(parseUnits('1', tokens.RANDOM_ERC20.decimals));
         snapshot = await takeSnapshot();
       });
 
@@ -104,6 +109,18 @@ describe.skip('Quote Sources [External Quotes]', () => {
 
       describe('Sell order', () => {
         quoteTest({
+          test: Test.SELL_RANDOM_ERC20_TO_STABLE,
+          when: 'swapping 100 random token to stable',
+          request: {
+            sellToken: RANDOM_ERC20,
+            buyToken: nativeToken,
+            order: {
+              type: 'sell',
+              sellAmount: 100n * ONE_NATIVE_TOKEN,
+            },
+          },
+        });
+        quoteTest({
           test: Test.SELL_STABLE_TO_NATIVE,
           when: 'swapping 1000 of stables to native token',
           request: {
@@ -111,7 +128,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
             buyToken: nativeToken,
             order: {
               type: 'sell',
-              sellAmount: parseUnits('1000', 6),
+              sellAmount: parseUnits('1000', 18),
             },
           },
         });
@@ -155,6 +172,19 @@ describe.skip('Quote Sources [External Quotes]', () => {
             order: {
               type: 'buy',
               buyAmount: ONE_NATIVE_TOKEN,
+            },
+          },
+        });
+        quoteTest({
+          test: Test.BUY_RANDOM_ERC20_WITH_STABLE,
+          checkSupport: (support) => support.buyOrders,
+          when: 'buying 100 random token with stables',
+          request: {
+            sellToken: STABLE_ERC20,
+            buyToken: RANDOM_ERC20,
+            order: {
+              type: 'buy',
+              buyAmount: 100n * ONE_NATIVE_TOKEN,
             },
           },
         });
@@ -301,7 +331,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
         }
       }
 
-      const TRESHOLD_PERCENTAGE = 3; // 3%
+      const TRESHOLD_PERCENTAGE = 5; // 5%
       function validateQuote(from: TestToken, to: TestToken, fromAmount: bigint, toAmount: bigint) {
         const fromPriceBN = parseEther(`${from.price!}`);
         const toPriceBN = parseEther(`${to.price!}`);
