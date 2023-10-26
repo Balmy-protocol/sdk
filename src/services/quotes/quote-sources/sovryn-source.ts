@@ -39,19 +39,27 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
     // Create smart router
     // FIX: Enable routes ZeroRedemption, MoC and Mynt once they enable it's use without permit.
     const smartRouter = new SmartRouter(provider, Object.values([smartRoutes.ammSwapRoute]));
+    // Map buy and sell token since on Rootstock native token = address(0)
+    const mappedSellToken = mapNativeToken(sellToken);
+    const mappedBuyToken = mapNativeToken(buyToken);
     // Find best quote
     try {
-      const result = await smartRouter.getBestQuote(mapNativeToken(sellToken), mapNativeToken(buyToken), order.sellAmount);
+      const result = await smartRouter.getBestQuote(mappedSellToken, mappedBuyToken, order.sellAmount);
       // Get swap tx data
-      const swapTxData = await result.route.swap(mapNativeToken(sellToken), mapNativeToken(buyToken), order.sellAmount, takeFrom, {
+      const swapTxData = await result.route.swap(mappedSellToken, mappedBuyToken, order.sellAmount, takeFrom, {
         slippage: slippagePercentage * 100,
       });
+
+      if (!swapTxData || !swapTxData.to) {
+        throw new Error('Failed to calculate a quote');
+      }
+
       // Build quote
       const quote = {
         sellAmount: order.sellAmount,
         buyAmount: BigInt(result.quote.toString()),
         // FIX: Once the SDK starts exposing the allowance target, use that
-        allowanceTarget: calculateAllowanceTarget(sellToken, swapTxData?.to || Addresses.ZERO_ADDRESS),
+        allowanceTarget: calculateAllowanceTarget(sellToken, swapTxData.to),
         tx: {
           to: swapTxData.to!,
           calldata: swapTxData.data!.toString(),
