@@ -11,6 +11,7 @@ const ALCHEMY_NETWORKS: Record<ChainId, Network> = {
   [Chains.ARBITRUM.chainId]: Network.ARB_MAINNET,
   [Chains.ASTAR.chainId]: Network.ASTAR_MAINNET,
   [Chains.POLYGON_ZKEVM.chainId]: Network.POLYGONZKEVM_MAINNET,
+  [Chains.BASE.chainId]: 'base-mainnet' as Network,
 };
 
 export function alchemySupportedChains(): ChainId[] {
