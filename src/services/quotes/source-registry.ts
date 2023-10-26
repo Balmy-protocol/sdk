@@ -18,6 +18,7 @@ import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
 import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
+import { SovrynQuoteSource } from './quote-sources/sovryn-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -37,6 +38,7 @@ export const QUOTE_SOURCES = {
   wido: new WidoQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
   'okx-dex': new OKXDexQuoteSource(),
+  sovryn: new SovrynQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(

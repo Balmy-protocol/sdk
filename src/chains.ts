@@ -333,10 +333,10 @@ export const Chains = {
     chainId: 30,
     name: 'Rootstock',
     ids: ['rsk'],
-    nativeCurrency: { symbol: 'RBTC', name: 'Rootstock RSK' },
+    nativeCurrency: { symbol: 'RBTC', name: 'Smart Bitcoin' },
     wToken: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
-    publicRPCs: ['https://mycrypto.rsk.co', 'https://public-node.rsk.co'],
-    explorer: 'https://explorer.rsk.co/',
+    publicRPCs: ['https://public-node.rsk.co', 'https://mycrypto.rsk.co'],
+    explorer: 'https://rootstock.blockscout.com/',
   },
   POLYGON_ZKEVM: {
     chainId: 1101,
