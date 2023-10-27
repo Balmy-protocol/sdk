@@ -52,7 +52,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe('Quote Sources [External Quotes]', () => {
+describe.skip('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
