@@ -6,14 +6,12 @@ import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-a
 import { AllowanceService } from '@services/allowances/allowance-service';
 import { CachedAllowanceSource } from '@services/allowances/allowance-sources/cached-allowance-source';
 import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/alchemy-allowance-source';
-import { MagpieAllowanceSource } from '@services/allowances/allowance-sources/magpie-allowance-source';
 
 export type AllowanceSourceInput =
   | { type: 'rpc-multicall' }
   | { type: 'cached'; underlyingSource: AllowanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IAllowanceSource }
-  | { type: 'alchemy'; key: string }
-  | { type: 'magpie' };
+  | { type: 'alchemy'; key: string };
 export type BuildAllowanceParams = { source: AllowanceSourceInput };
 
 export function buildAllowanceService(
@@ -40,7 +38,5 @@ function buildSource(
       return source.instance;
     case 'alchemy':
       return new AlchemyAllowanceSource(source.key);
-    case 'magpie':
-      return new MagpieAllowanceSource(fetchService);
   }
 }
