@@ -11,7 +11,7 @@ import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
 import { addPercentage, isSameAddress, substractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
-import { IQuoteSource, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
+import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
@@ -110,10 +110,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: RANDOM_ERC20,
             buyToken: nativeToken,
-            order: {
-              type: 'sell',
-              sellAmount: parseUnits('100', 18),
-            },
+            unitsToSell: 100,
           },
         });
         quoteTest({
@@ -122,10 +119,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: STABLE_ERC20,
             buyToken: nativeToken,
-            order: {
-              type: 'sell',
-              sellAmount: parseUnits('1000', 6),
-            },
+            unitsToSell: 1000,
           },
         });
         quoteTest({
@@ -134,10 +128,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: nativeToken,
             buyToken: RANDOM_ERC20,
-            order: {
-              type: 'sell',
-              sellAmount: ONE_NATIVE_TOKEN,
-            },
+            unitsToSell: 1,
           },
         });
       });
@@ -149,10 +140,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: nativeToken,
             buyToken: STABLE_ERC20,
-            order: {
-              type: 'sell',
-              sellAmount: ONE_NATIVE_TOKEN,
-            },
+            unitsToSell: 1,
             recipient,
           },
         });
@@ -165,10 +153,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: STABLE_ERC20,
             buyToken: nativeToken,
-            order: {
-              type: 'buy',
-              buyAmount: ONE_NATIVE_TOKEN,
-            },
+            unitsToBuy: 1,
           },
         });
         quoteTest({
@@ -178,10 +163,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: STABLE_ERC20,
             buyToken: RANDOM_ERC20,
-            order: {
-              type: 'buy',
-              buyAmount: parseUnits('100', 18),
-            },
+            unitsToBuy: 100,
           },
         });
       });
@@ -192,10 +174,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: nativeToken,
             buyToken: wToken,
-            order: {
-              type: 'sell',
-              sellAmount: ONE_NATIVE_TOKEN,
-            },
+            unitsToSell: 1,
           },
         });
         quoteTest({
@@ -204,10 +183,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           request: {
             sellToken: wToken,
             buyToken: nativeToken,
-            order: {
-              type: 'sell',
-              sellAmount: ONE_NATIVE_TOKEN,
-            },
+            unitsToSell: 1,
           },
         });
       });
@@ -258,10 +234,11 @@ describe.skip('Quote Sources [External Quotes]', () => {
                     recipient: recipient ?? takeFrom,
                     initialBalances,
                   });
+                  const { sellToken: _, buyToken: __, ...rest } = request;
                   assertQuoteIsConsistent(quote, {
                     sellToken,
                     buyToken,
-                    ...request.order,
+                    ...rest,
                     sourceId,
                   });
                 });
@@ -275,20 +252,21 @@ describe.skip('Quote Sources [External Quotes]', () => {
         quote: SourceQuoteResponse,
         {
           sellToken,
-          sellAmount,
+          unitsToBuy,
           buyToken,
-          buyAmount,
-          type,
+          unitsToSell,
           sourceId,
         }: {
           sellToken: TestToken;
           buyToken: TestToken;
-          type: 'sell' | 'buy';
           sourceId: SourceId;
-          sellAmount?: bigint;
-          buyAmount?: bigint;
+          unitsToSell?: number;
+          unitsToBuy?: number;
         }
       ) {
+        const type = unitsToSell ? 'sell' : 'buy';
+        const sellAmount = unitsToSell ? parseUnits(`${unitsToSell}`, sellToken.decimals) : undefined;
+        const buyAmount = unitsToBuy ? parseUnits(`${unitsToBuy}`, buyToken.decimals) : undefined;
         expect(quote.type).to.equal(type);
         if (type === 'sell') {
           expect(quote.sellAmount).to.equal(sellAmount);
@@ -340,7 +318,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
         expect(toAmount).to.be.gte(lowerThreshold);
       }
 
-      type Quote = Pick<SourceQuoteRequest<{ swapAndTransfer: boolean; buyOrders: true }>, 'order'> & {
+      type Quote = ({ unitsToSell: number } | { unitsToBuy: number }) & {
         recipient?: Promise<SignerWithAddress>;
         sellToken: Promise<TestToken>;
         buyToken: Promise<TestToken>;
@@ -350,10 +328,15 @@ describe.skip('Quote Sources [External Quotes]', () => {
         // If we execute all requests at the same time, then we'll probably get rate-limited. So the idea is to wait a little for each test so requests are not executed concurrently
         const millisToWait = ms('0.5s') * test;
         await wait(millisToWait);
+        const order: SellOrder | BuyOrder =
+          'unitsToSell' in quote
+            ? { type: 'sell', sellAmount: parseUnits(`${quote.unitsToSell}`, sellToken.decimals) }
+            : { type: 'buy', buyAmount: parseUnits(`${quote.unitsToBuy}`, sellToken.decimals) };
         return source.quote({
           components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
           request: {
             ...quote,
+            order,
             sellToken: sellToken.address,
             buyToken: buyToken.address,
             chain,
