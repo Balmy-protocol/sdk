@@ -406,6 +406,13 @@ export function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | un
 function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
   return {
     ...request,
+    sourceConfig: {
+      ...request.sourceConfig,
+      global: {
+        ...request.sourceConfig?.global,
+        disableValidation: true,
+      },
+    },
     takerAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', // We set a random taker address so that txs can be built at the source level
   };
 }
