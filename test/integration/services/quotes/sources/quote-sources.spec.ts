@@ -109,7 +109,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           when: 'swapping 100 random token to stable',
           request: {
             sellToken: RANDOM_ERC20,
-            buyToken: nativeToken,
+            buyToken: STABLE_ERC20,
             unitsToSell: 100,
           },
         });

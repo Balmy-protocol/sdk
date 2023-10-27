@@ -38,7 +38,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
     const provider = providerService.getEthersProvider({ chainId: Chains.ROOTSTOCK.chainId });
     // Create smart router
     // FIX: Enable routes ZeroRedemption, MoC and Mynt once they enable it's use without permit.
-    const smartRouter = new SmartRouter(provider, Object.values([smartRoutes.ammSwapRoute]));
+    const smartRouter = new SmartRouter(provider, Object.values([smartRoutes.ammSwapRoute, smartRoutes.myntBassetRoute]));
     // Map buy and sell token since on Rootstock native token = address(0)
     const mappedSellToken = mapNativeToken(sellToken);
     const mappedBuyToken = mapNativeToken(buyToken);
