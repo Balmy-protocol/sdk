@@ -252,9 +252,9 @@ describe.skip('Quote Sources [External Quotes]', () => {
         quote: SourceQuoteResponse,
         {
           sellToken,
-          unitsToBuy,
           buyToken,
           unitsToSell,
+          unitsToBuy,
           sourceId,
         }: {
           sellToken: TestToken;
@@ -331,7 +331,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
         const order: SellOrder | BuyOrder =
           'unitsToSell' in quote
             ? { type: 'sell', sellAmount: parseUnits(`${quote.unitsToSell}`, sellToken.decimals) }
-            : { type: 'buy', buyAmount: parseUnits(`${quote.unitsToBuy}`, sellToken.decimals) };
+            : { type: 'buy', buyAmount: parseUnits(`${quote.unitsToBuy}`, buyToken.decimals) };
         return source.quote({
           components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
           request: {
