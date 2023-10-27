@@ -64,8 +64,6 @@ describe('Quote Sources [External Quotes]', () => {
         wToken = new Deferred<TestToken>(),
         STABLE_ERC20 = new Deferred<TestToken>(),
         RANDOM_ERC20 = new Deferred<TestToken>(),
-        oneStableToken = new Deferred<bigint>(),
-        oneRandomToken = new Deferred<bigint>(),
         gasPrice = new Deferred<GasPrice>();
       let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
       let snapshot: SnapshotRestorer;
@@ -98,8 +96,6 @@ describe('Quote Sources [External Quotes]', () => {
         STABLE_ERC20.resolve(tokens.STABLE_ERC20);
         RANDOM_ERC20.resolve(tokens.RANDOM_ERC20);
         gasPrice.resolve(gasPriceResult);
-        oneStableToken.resolve(parseUnits('1', tokens.STABLE_ERC20.decimals));
-        oneRandomToken.resolve(parseUnits('1', tokens.RANDOM_ERC20.decimals));
         snapshot = await takeSnapshot();
       });
 
@@ -116,7 +112,7 @@ describe('Quote Sources [External Quotes]', () => {
             buyToken: nativeToken,
             order: {
               type: 'sell',
-              sellAmount: 100n * ONE_NATIVE_TOKEN,
+              sellAmount: parseUnits('100', 18),
             },
           },
         });
@@ -128,7 +124,7 @@ describe('Quote Sources [External Quotes]', () => {
             buyToken: nativeToken,
             order: {
               type: 'sell',
-              sellAmount: parseUnits('1000', 18),
+              sellAmount: parseUnits('1000', 6),
             },
           },
         });
@@ -184,7 +180,7 @@ describe('Quote Sources [External Quotes]', () => {
             buyToken: RANDOM_ERC20,
             order: {
               type: 'buy',
-              buyAmount: 100n * ONE_NATIVE_TOKEN,
+              buyAmount: parseUnits('100', 18),
             },
           },
         });
