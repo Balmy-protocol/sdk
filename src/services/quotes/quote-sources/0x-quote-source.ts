@@ -5,6 +5,7 @@ import { isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
+// Supported Networks: https://0x.org/docs/0x-swap-api/introduction#supported-networks
 const ZRX_API: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'https://api.0x.org',
   [Chains.OPTIMISM.chainId]: 'https://optimism.api.0x.org',

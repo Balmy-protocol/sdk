@@ -6,6 +6,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
+// Supported Networks: https://docs.bebop.xyz/bebop/bebop-api/api-introduction#smart-contract
 const NETWORK_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.POLYGON.chainId]: 'polygon',

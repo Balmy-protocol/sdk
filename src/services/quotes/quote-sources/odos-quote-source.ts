@@ -7,6 +7,7 @@ import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './
 import { isSameAddress } from '@shared/utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
+// Supported Networks: https://docs.odos.xyz/#future-oriented-and-scalable
 const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   name: 'Odos',
   supports: {

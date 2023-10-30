@@ -5,6 +5,7 @@ import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
+// Supported Networks: https://docs.firebird.finance/aggregator/active-chains-1
 const FIREBIRD_METADATA: QuoteSourceMetadata<FirebirdSupport> = {
   name: 'Firebird',
   supports: {

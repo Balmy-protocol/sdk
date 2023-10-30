@@ -4,6 +4,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, IQuoteSource } f
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 
+// Supported networks: https://docs.1inch.io/docs/aggregation-protocol/introduction/#supported-networkschains
 export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   name: '1inch',
   supports: {

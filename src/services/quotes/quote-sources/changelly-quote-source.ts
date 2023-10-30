@@ -5,11 +5,12 @@ import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
+// Supported Networks:
 export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
   name: 'Changelly DEX',
   supports: {
     chains: [Chains.ETHEREUM, Chains.OPTIMISM, Chains.ARBITRUM, Chains.BNB_CHAIN, Chains.POLYGON, Chains.FANTOM, Chains.AVALANCHE].map(
-      ({ chainId }) => chainId
+      ({ chainId }) => chainId,
     ),
     swapAndTransfer: true,
     buyOrders: false,
