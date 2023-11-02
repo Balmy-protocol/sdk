@@ -15,7 +15,7 @@ export class NodeRealProviderSource extends BaseHttpProvider {
 
   constructor(private readonly key: string, onChains?: ChainId[]) {
     super();
-    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
+    this.supported = onChains ?? nodeRealSupportedChains();
   }
 
   supportedChains(): ChainId[] {
@@ -29,4 +29,7 @@ export class NodeRealProviderSource extends BaseHttpProvider {
 
 export function buildNodeRealRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey: string }) {
   return SUPPORTED_CHAINS[chainId] + apiKey;
+}
+export function nodeRealSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }

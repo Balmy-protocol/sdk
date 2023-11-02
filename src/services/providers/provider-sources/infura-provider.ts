@@ -20,7 +20,7 @@ export class InfuraProviderSource extends BaseHttpProvider {
 
   constructor(private readonly key: string, onChains?: ChainId[]) {
     super();
-    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
+    this.supported = onChains ?? infuraSupportedChains();
   }
 
   supportedChains(): ChainId[] {
@@ -34,4 +34,8 @@ export class InfuraProviderSource extends BaseHttpProvider {
 
 export function buildInfuraRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey: string }) {
   return SUPPORTED_CHAINS[chainId] + apiKey;
+}
+
+export function infuraSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }

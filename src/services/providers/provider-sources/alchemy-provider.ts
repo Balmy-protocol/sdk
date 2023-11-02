@@ -4,6 +4,8 @@ import { buildEthersProviderForHttpSource, buildViemTransportForHttpSource } fro
 import { buildEthersProviderForWebSocketSource, buildViemTransportForWebSocketSource } from './base/base-web-socket-provider';
 import { alchemySupportedChains, buildAlchemyRPCUrl } from '@shared/alchemy-rpc';
 
+export { buildAlchemyRPCUrl, alchemySupportedChains };
+
 export class AlchemyProviderSource implements IProviderSource {
   private readonly supported: ChainId[];
 

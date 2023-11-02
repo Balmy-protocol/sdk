@@ -27,7 +27,7 @@ export class AnkrProviderSource extends BaseHttpProvider {
 
   constructor(private readonly key?: string, onChains?: ChainId[]) {
     super();
-    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
+    this.supported = onChains ?? ankrSupportedChains();
   }
 
   supportedChains(): ChainId[] {
@@ -45,4 +45,8 @@ export function buildAnkrRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey?
     url += `/${apiKey}`;
   }
   return url;
+}
+
+export function ankrSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }

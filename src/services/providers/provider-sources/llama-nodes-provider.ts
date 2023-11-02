@@ -16,7 +16,7 @@ export class LlamaNodesProviderSource extends BaseHttpProvider {
 
   constructor(private readonly key?: string, onChains?: ChainId[]) {
     super();
-    this.supported = onChains ?? Object.keys(SUPPORTED_CHAINS).map(Number);
+    this.supported = onChains ?? llamaNodesSupportedChains();
   }
 
   supportedChains(): ChainId[] {
@@ -34,4 +34,8 @@ export function buildLlamaNodesRPCUrl({ chainId, apiKey }: { chainId: ChainId; a
     url += `/rpc/${apiKey}`;
   }
   return url;
+}
+
+export function llamaNodesSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }
