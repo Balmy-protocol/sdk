@@ -114,7 +114,7 @@ export type TransferredAction = {
 };
 export type PermissionsModifiedAction = {
   action: 'modified permissions';
-  permissions: Permissions;
+  permissions: Record<Address, DCAPermission[]>;
 };
 export type SwappedAction = {
   action: 'swapped';

@@ -23,6 +23,10 @@ export class NodeRealProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: number): string {
-    return SUPPORTED_CHAINS[chainId] + this.key;
+    return buildNodeRealRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildNodeRealRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey: string }) {
+  return SUPPORTED_CHAINS[chainId] + apiKey;
 }

@@ -2,7 +2,7 @@ import { ChainId } from '@types';
 import { IProviderSource } from '../types';
 import { buildEthersProviderForHttpSource, buildViemTransportForHttpSource } from './base/base-http-provider';
 import { buildEthersProviderForWebSocketSource, buildViemTransportForWebSocketSource } from './base/base-web-socket-provider';
-import { alchemySupportedChains, buildAlchemyUrl } from '@shared/alchemy-rpc';
+import { alchemySupportedChains, buildAlchemyRPCUrl } from '@shared/alchemy-rpc';
 
 export class AlchemyProviderSource implements IProviderSource {
   private readonly supported: ChainId[];
@@ -17,12 +17,12 @@ export class AlchemyProviderSource implements IProviderSource {
   }
 
   getEthersProvider({ chainId }: { chainId: ChainId }) {
-    const url = buildAlchemyUrl(this.key, this.protocol, chainId);
+    const url = buildAlchemyRPCUrl({ apiKey: this.key, protocol: this.protocol, chainId });
     return this.protocol === 'https' ? buildEthersProviderForHttpSource(url, chainId) : buildEthersProviderForWebSocketSource(url, chainId);
   }
 
   getViemTransport({ chainId }: { chainId: ChainId }) {
-    const url = buildAlchemyUrl(this.key, this.protocol, chainId);
+    const url = buildAlchemyRPCUrl({ apiKey: this.key, protocol: this.protocol, chainId });
     return this.protocol === 'https' ? buildViemTransportForHttpSource(url, chainId) : buildViemTransportForWebSocketSource(url, chainId);
   }
 }

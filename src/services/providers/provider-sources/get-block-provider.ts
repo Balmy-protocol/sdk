@@ -14,6 +14,10 @@ export class GetBlockProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: ChainId): string {
-    return `https://go.getblock.io/${this.accessTokens[chainId]}/`;
+    return buildGetBlockRPCUrl({ accessToken: this.accessTokens[chainId] });
   }
+}
+
+export function buildGetBlockRPCUrl({ accessToken }: { accessToken: string }) {
+  return `https://go.getblock.io/${accessToken}/`;
 }

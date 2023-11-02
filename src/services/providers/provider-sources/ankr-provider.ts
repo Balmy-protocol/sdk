@@ -35,10 +35,14 @@ export class AnkrProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: ChainId): string {
-    let url = SUPPORTED_CHAINS[chainId];
-    if (this.key) {
-      url += `/${this.key}`;
-    }
-    return url;
+    return buildAnkrRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildAnkrRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey?: string }) {
+  let url = SUPPORTED_CHAINS[chainId];
+  if (apiKey) {
+    url += `/${apiKey}`;
+  }
+  return url;
 }

@@ -15,4 +15,5 @@ export {
 } from './utils';
 export { AutoUpdateCache, AutoUpdateCacheConfig } from './auto-update-cache';
 export { toChainId as defiLlamaToChainId } from './defi-llama';
+export { buildAlchemyRPCUrl } from './alchemy-rpc';
 export { Addresses, Uint } from './constants';

@@ -8,6 +8,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BNB_CHAIN.chainId]: 'https://binance.llamarpc.com',
   [Chains.ARBITRUM.chainId]: 'https://arbitrum.llamarpc.com',
   [Chains.OPTIMISM.chainId]: 'https://optimism.llamarpc.com',
+  [Chains.BASE.chainId]: 'https://base.llamarpc.com',
 };
 
 export class LlamaNodesProviderSource extends BaseHttpProvider {
@@ -23,10 +24,14 @@ export class LlamaNodesProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: number): string {
-    let url = SUPPORTED_CHAINS[chainId];
-    if (this.key) {
-      url += `/rpc/${this.key}`;
-    }
-    return url;
+    return buildLlamaNodesRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildLlamaNodesRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey?: string }) {
+  let url = SUPPORTED_CHAINS[chainId];
+  if (apiKey) {
+    url += `/rpc/${apiKey}`;
+  }
+  return url;
 }

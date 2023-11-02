@@ -25,7 +25,7 @@ export function buildAlchemyClient(alchemyKey: string, chainId: ChainId) {
   });
 }
 
-export function buildAlchemyUrl(alchemyKey: string, protocol: 'https' | 'wss', chainId: ChainId) {
+export function buildAlchemyRPCUrl({ chainId, apiKey, protocol }: { chainId: ChainId; apiKey: string; protocol: 'https' | 'wss' }) {
   const alchemyNetwork: Network = ALCHEMY_NETWORKS[chainId];
-  return `${protocol}://${alchemyNetwork}.g.alchemy.com/v2/${alchemyKey}`;
+  return `${protocol}://${alchemyNetwork}.g.alchemy.com/v2/${apiKey}`;
 }

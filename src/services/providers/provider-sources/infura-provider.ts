@@ -28,6 +28,10 @@ export class InfuraProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: number): string {
-    return SUPPORTED_CHAINS[chainId] + this.key;
+    return buildInfuraRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildInfuraRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey: string }) {
+  return SUPPORTED_CHAINS[chainId] + apiKey;
 }
