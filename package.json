@@ -65,7 +65,7 @@
     "@types/jest": "29.5.6",
     "@types/node": "18.16.3",
     "@types/qs": "^6.9.8",
-    "@types/ws": "^8.5.5",
+    "@types/ws": "^8.5.9",
     "chai": "4.3.7",
     "dotenv": "16.3.1",
     "ethers": "5.7.2",
