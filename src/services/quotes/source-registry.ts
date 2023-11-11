@@ -19,6 +19,7 @@ import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
 import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
 import { SovrynQuoteSource } from './quote-sources/sovryn-source';
+import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -35,6 +36,7 @@ export const QUOTE_SOURCES = {
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
+  magpie: new MagpieQuoteSource(),
   wido: new WidoQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
   'okx-dex': new OKXDexQuoteSource(),

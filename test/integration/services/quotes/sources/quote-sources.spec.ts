@@ -40,8 +40,8 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'sovryn',
-  chains: [Chains.ROOTSTOCK],
+  source: 'magpie',
+  chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
 const AVOID_DURING_CI: SourceId[] = [
@@ -106,11 +106,11 @@ describe.skip('Quote Sources [External Quotes]', () => {
       describe('Sell order', () => {
         quoteTest({
           test: Test.SELL_RANDOM_ERC20_TO_STABLE,
-          when: 'swapping 100 random token to stable',
+          when: 'swapping 1 random token to stable',
           request: {
             sellToken: RANDOM_ERC20,
             buyToken: STABLE_ERC20,
-            unitsToSell: 100,
+            unitsToSell: 1,
           },
         });
         quoteTest({
