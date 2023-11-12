@@ -77,10 +77,12 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     }
     const { to, value, data, gasLimit } = await transactionResponse.json();
 
+    const gasLimitBI = gasLimit ? BigInt(gasLimit) : 0n;
+
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amountOut),
-      estimatedGas: BigInt(gasLimit),
+      estimatedGas: gasLimitBI > 0n ? gasLimitBI : undefined,
       allowanceTarget: calculateAllowanceTarget(sellToken, magpieAggregatorAddress),
       tx: { to, calldata: data, value: BigInt(value) },
     };
