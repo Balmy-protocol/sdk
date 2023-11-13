@@ -23,7 +23,7 @@ const SQUID_METADATA: QuoteSourceMetadata<SquidSupport> = {
     swapAndTransfer: true,
     buyOrders: false,
   },
-  logoURI: 'ipfs://QmeSMmaVxJXK6b5afqH7xKNhP1hShoVeuDPHmXFkEe9hzN',
+  logoURI: 'ipfs://QmeFkbb7iVCLCaLSYp7LUo1a5TA8LHrsrphnZV8PjUCTYA',
 };
 type SquidConfig = { integratorId: string };
 type SquidSupport = { buyOrders: false; swapAndTransfer: true };

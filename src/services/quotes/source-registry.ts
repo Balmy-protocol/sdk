@@ -18,7 +18,7 @@ import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
 import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
-import { SovrynQuoteSource } from './quote-sources/sovryn-source';
+import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
 import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
 import { SquidQuoteSource } from './quote-sources/squid-quote-source';
 
