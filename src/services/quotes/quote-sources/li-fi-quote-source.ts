@@ -35,8 +35,9 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   },
   logoURI: 'ipfs://QmUgcnaNxsgQdjBjytxvXfeSfsDryh9bF4mNaz1Bp5QwJ4',
 };
+type LiFiConfig = { apiKey?: string };
 type LiFiSupport = { buyOrders: false; swapAndTransfer: true };
-export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSupport> {
+export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSupport, LiFiConfig> {
   getMetadata() {
     return LI_FI_METADATA;
   }
@@ -52,7 +53,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<LiFiSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<LiFiSupport, LiFiConfig>): Promise<SourceQuoteResponse> {
     const mappedSellToken = mapNativeToken(sellToken);
     const mappedBuyToken = mapNativeToken(buyToken);
     let url =
@@ -70,7 +71,11 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
       url += `&integrator=${config.referrer.name}`;
       url += `&referrer=${config.referrer.address}`;
     }
-    const response = await fetchService.fetch(url, { timeout });
+    const headers: Record<string, string> = {};
+    if (config.apiKey) {
+      headers['x-lifi-api-key'] = config.apiKey;
+    }
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(LI_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
