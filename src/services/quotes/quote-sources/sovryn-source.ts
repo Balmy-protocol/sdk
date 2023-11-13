@@ -1,10 +1,10 @@
 import { Chains } from '@chains';
-import { Chain, Address } from '@types';
+import { Address } from '@types';
 import { Addresses } from '@shared/constants';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, QuoteSourceSupport, SourceQuoteRequest, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
-import { DEFAULT_SWAP_ROUTES, SmartRouter, smartRoutes } from '@sovryn/sdk';
+import { SmartRouter, smartRoutes } from '@sovryn/sdk';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 export const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
