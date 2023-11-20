@@ -4529,10 +4529,10 @@ loupe@^2.3.1:
   dependencies:
     get-func-name "^2.0.0"
 
-lru-cache@9.0.3:
-  version "9.0.3"
-  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-9.0.3.tgz#8a04f282df5320227bb7215c55df2660d3e4e25b"
-  integrity sha512-cyjNRew29d4kbgnz1sjDqxg7qg8NW4s+HQzCGjeon7DV5T2yDije16W9HaUFV1dhVEMh+SjrOcK0TomBmf3Egg==
+lru-cache@10.0.3:
+  version "10.0.3"
+  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-10.0.3.tgz#b40014d7d2d16d94130b87297a04a1f24874ae7c"
+  integrity sha512-B7gr+F6MkqB3uzINHXNctGieGsRTMwIBgxkp0yq/5BwcuDzD4A8wQpHQW6vDAm1uKSLQghmRdD9sKqf2vJ1cEg==
 
 lru-cache@^5.1.1:
   version "5.1.1"
