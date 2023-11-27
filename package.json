@@ -50,7 +50,7 @@
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
     "qs": "6.11.2",
-    "viem": "1.2.0"
+    "viem": "1.19.9"
   },
   "devDependencies": {
     "@commitlint/cli": "17.8.0",
