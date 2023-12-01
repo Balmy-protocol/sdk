@@ -13,7 +13,6 @@ import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird-quo
 import { RangoQuoteSource } from './quote-sources/rango-quote-source';
 import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
 import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
-import { WidoQuoteSource } from './quote-sources/wido-quote-source';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
@@ -38,7 +37,6 @@ export const QUOTE_SOURCES = {
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
   magpie: new MagpieQuoteSource(),
-  wido: new WidoQuoteSource(),
   squid: new SquidQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
   'okx-dex': new OKXDexQuoteSource(),
