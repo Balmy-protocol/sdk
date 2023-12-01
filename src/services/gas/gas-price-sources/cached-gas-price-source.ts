@@ -1,6 +1,6 @@
 import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString } from '@types';
 import { SupportedGasValues, IGasPriceSource, GasPriceResult } from '../types';
-import { ConcurrentLRUCache, ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
+import { ConcurrentLRUCacheWithContext, ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
@@ -13,13 +13,13 @@ type ConstructorParameters<GasValues extends SupportedGasValues> = {
 };
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedGasPriceSource<GasValues extends SupportedGasValues> implements IGasPriceSource<GasValues> {
-  private readonly cache: ConcurrentLRUCache<CacheContext, string, GasPriceResult<GasValues>>;
+  private readonly cache: ConcurrentLRUCacheWithContext<CacheContext, string, GasPriceResult<GasValues>>;
   private readonly underlying: IGasPriceSource<GasValues>;
   private readonly expirationOverrides: Record<ChainId, ExpirationConfigOptions>;
 
   constructor({ underlying, expiration, maxSize }: ConstructorParameters<GasValues>) {
     this.underlying = underlying;
-    this.cache = new ConcurrentLRUCache<CacheContext, string, GasPriceResult<GasValues>>({
+    this.cache = new ConcurrentLRUCacheWithContext<CacheContext, string, GasPriceResult<GasValues>>({
       calculate: (config, [cacheId]) => this.fromCacheKey(cacheId, config), // We know that we will only ask for one chain at a time
       config: {
         expiration: expiration.default,

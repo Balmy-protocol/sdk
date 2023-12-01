@@ -1,14 +1,14 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
+import { CacheConfig, ConcurrentLRUCacheWithContext } from '@shared/concurrent-lru-cache';
 import { PriceResult, IPriceSource } from '../types';
 import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
 export class CachedPriceSource implements IPriceSource {
-  private readonly cache: ConcurrentLRUCache<CacheContext, TokenInChain, PriceResult>;
+  private readonly cache: ConcurrentLRUCacheWithContext<CacheContext, TokenInChain, PriceResult>;
 
   constructor(private readonly source: IPriceSource, config: CacheConfig) {
-    this.cache = new ConcurrentLRUCache<CacheContext, TokenInChain, PriceResult>({
+    this.cache = new ConcurrentLRUCacheWithContext<CacheContext, TokenInChain, PriceResult>({
       calculate: (context, tokensInChain) => this.fetchTokens(tokensInChain, context),
       config,
     });
