@@ -80,7 +80,7 @@ describe('Token Price Sources', () => {
         getResult: (source, addresses) =>
           source.getHistoricalPrices({
             addresses,
-            timestamp: 1680220800, // Friday, 31 March 2023 0:00:00
+            timestamp: 1701000000, // Sunday, 26 November 2023 12:00:00
             config: { timeout: '10s' },
             searchWidth: undefined,
           }),
