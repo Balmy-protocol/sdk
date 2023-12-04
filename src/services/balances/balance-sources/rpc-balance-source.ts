@@ -7,8 +7,15 @@ import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 import { ERC20_ABI } from '@shared/abis/erc20';
 
+export type RPCBalanceSourceConfig = {
+  batching?: { maxSizeInBytes: number };
+};
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(private readonly providerService: IProviderService, private readonly multicallService: IMulticallService) {
+  constructor(
+    private readonly providerService: IProviderService,
+    private readonly multicallService: IMulticallService,
+    private readonly config: RPCBalanceSourceConfig | undefined
+  ) {
     super();
   }
 
@@ -38,7 +45,11 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       functionName: 'balanceOf',
       args: [account],
     }));
-    const multicallResults = await this.multicallService.tryReadOnlyMulticall({ chainId, calls });
+    const multicallResults = await this.multicallService.tryReadOnlyMulticall({
+      chainId,
+      calls,
+      ...this.config,
+    });
     const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const multicallResult = multicallResults[i];

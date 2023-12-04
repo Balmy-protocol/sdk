@@ -1,7 +1,7 @@
 import { IMulticallService } from '@services/multicall/types';
 import { IBalanceService, IBalanceSource } from '@services/balances/types';
 import { CacheConfig } from '@shared/concurrent-lru-cache';
-import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
+import { RPCBalanceSource, RPCBalanceSourceConfig } from '@services/balances/balance-sources/rpc-balance-source';
 import { IProviderService } from '@services/providers';
 import { BalanceService } from '@services/balances/balance-service';
 import { IFetchService } from '@services/fetch';
@@ -13,7 +13,7 @@ import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-b
 import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 
 export type BalanceSourceInput =
-  | { type: 'rpc-multicall' }
+  | { type: 'rpc-multicall'; config?: RPCBalanceSourceConfig }
   | { type: 'cached'; underlyingSource: BalanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: 'alchemy'; key: string }
@@ -44,7 +44,7 @@ function buildSource(
   switch (source?.type) {
     case undefined:
     case 'rpc-multicall':
-      return new RPCBalanceSource(providerService, multicallService);
+      return new RPCBalanceSource(providerService, multicallService, source?.config);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, providerService, multicallService });
       return new CachedBalanceSource(underlying, source.config);
