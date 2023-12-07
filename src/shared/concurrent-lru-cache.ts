@@ -66,6 +66,10 @@ export class ConcurrentLRUCache<Key extends ValidKey, Value> {
   holdsValidValues(keys: Key[], expirationConfig?: ExpirationConfigOptions): Record<Key, boolean> {
     return this.cache.holdsValidValues(keys, expirationConfig);
   }
+
+  invalidate(keys: Key[]) {
+    return this.cache.invalidate(keys);
+  }
 }
 
 export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value> {
