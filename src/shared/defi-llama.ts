@@ -5,7 +5,7 @@ import { IFetchService } from '@services/fetch/types';
 import { isSameAddress, splitInChunks, timeToSeconds } from '@shared/utils';
 import { PriceResult } from '@services/prices';
 
-const CHAIN_ID_TO_KEY: Record<ChainId, string> = {
+const CHAIN_ID_TO_KEY: Record<ChainId, Lowercase<string>> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.BNB_CHAIN.chainId]: 'bsc',
   [Chains.POLYGON.chainId]: 'polygon',
@@ -149,15 +149,13 @@ export class DefiLlamaClient {
     const result: Record<ChainId, Record<TokenAddress, Required<FetchTokenResult>>> = Object.fromEntries(
       Object.keys(addresses).map((chainId) => [chainId, {}])
     );
-    for (const [tokenId, token] of Object.entries(coins)) {
-      const { chainId, address } = fromTokenId(tokenId);
-      if (!isSameAddress(address, Addresses.NATIVE_TOKEN)) {
-        result[chainId][address] = { decimals: 18, ...token };
-      } else {
-        // Since we converted the native token address to 0x000...000 and back, we lost casing. So we need to check for the original casing
-        const nativeTokens = addresses[chainId].filter((address) => isSameAddress(address, Addresses.NATIVE_TOKEN));
-        for (const nativeToken of nativeTokens) {
-          result[chainId][nativeToken] = { decimals: 18, ...token };
+    for (const chainIdString in addresses) {
+      const chainId = Number(chainIdString);
+      for (const token of addresses[chainId]) {
+        const tokenId = toTokenId(chainId, token);
+        const coin = coins[tokenId];
+        if (coin) {
+          result[chainId][token] = { decimals: 18, ...coin };
         }
       }
     }
@@ -187,7 +185,11 @@ export class DefiLlamaClient {
 }
 
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
-const MAPPINGS: Record<string, string> = {};
+const MAPPINGS: Record<Lowercase<TokenId>, Lowercase<TokenId>> = {
+  'polygon:0x2791bca1f2de4661ed88a30c99a7a9449aa84174': 'polygon:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', // Bridged USDC (USDC.e): Native USDC
+  'arbitrum:0xff970a61a04b1ca14834a43f5de4533ebddb5cc8': 'arbitrum:0xaf88d065e77c8cc2239327c5edb3a432268e5831', // Bridged USDC (USDC.e): Native USDC
+  'optimism:0x7f5c764cbc14f9669b88837ca1490cca17c31607': 'optimism:0x0b2c639c533813f4aa9d7837caf62653d097ff85', // Bridged USDC (USDC.e): Native USDC
+};
 
 function splitCoinsIntoBatches(searchWidth: string | undefined, aggregatedByTokenId: { tokenId: string; timestamps: number[] }[]) {
   const searchWidthParam = searchWidth ? `&searchWidth=${searchWidth}` : '';
@@ -249,17 +251,10 @@ function findClosestToTimestamp(allResults: PriceResult[], timestamp: Timestamp)
 
 function toTokenId(chainId: ChainId, address: TokenAddress) {
   const key = CHAIN_ID_TO_KEY[chainId];
-  const mappedNativeToken = isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address}`;
-  return MAPPINGS[mappedNativeToken] ?? mappedNativeToken;
-}
-
-function fromTokenId(tokenId: TokenId): { chainId: ChainId; address: TokenAddress } {
-  const mappedTokenId = MAPPINGS[tokenId] ?? tokenId;
-  const [key, address] = mappedTokenId.split(':');
-  return {
-    chainId: KEY_TO_CHAIN_ID[key],
-    address: address.replaceAll(DEFI_LLAMA_NATIVE_TOKEN, Addresses.NATIVE_TOKEN),
-  };
+  const toMap = (
+    isSameAddress(address, Addresses.NATIVE_TOKEN) ? `${key}:${DEFI_LLAMA_NATIVE_TOKEN}` : `${key}:${address.toLowerCase()}`
+  ) as Lowercase<TokenId>;
+  return MAPPINGS[toMap] ?? toMap;
 }
 
 export function toChainId(key: string): ChainId {
