@@ -49,6 +49,11 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
+    if (isSellTokenNativeToken && order.type === 'buy') {
+      // We do this because it's very hard and expensive to wrap native to wToken, spend only
+      // some of it and then return the extra native token to the caller
+      throw new Error(`Uniswap does not support buy orders with native token`);
+    }
     const router = ROUTER_ADDRESS[chain.chainId];
     recipient = recipient ?? takeFrom;
     const url =
