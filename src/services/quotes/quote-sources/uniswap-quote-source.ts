@@ -78,8 +78,9 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
       methodParameters: { calldata },
       gasUseEstimate,
     } = await response.json();
-    const value = isSellTokenNativeToken && order.type === 'sell' ? order.sellAmount : undefined;
+    const sellAmount = order.type === 'sell' ? order.sellAmount : BigInt(quoteAmount);
     const buyAmount = order.type === 'sell' ? BigInt(quoteAmount) : order.buyAmount;
+    const value = isSellTokenNativeToken ? sellAmount : undefined;
 
     if (isBuyTokenNativeToken) {
       // Use multicall to unwrap wToken
@@ -101,7 +102,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
     }
 
     const quote = {
-      sellAmount: order.type === 'sell' ? order.sellAmount : BigInt(quoteAmount),
+      sellAmount,
       buyAmount,
       estimatedGas: BigInt(gasUseEstimate),
       allowanceTarget: calculateAllowanceTarget(sellToken, router),
