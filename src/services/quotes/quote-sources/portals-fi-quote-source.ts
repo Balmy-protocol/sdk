@@ -4,8 +4,7 @@ import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared
 import { isSameAddress } from '@shared/utils';
 import { Chain, TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 
 export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
   name: 'Portals.fi',
@@ -16,8 +15,9 @@ export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
   },
   logoURI: 'ipfs://QmYJiiZAxFHSJb37y25unRUyWioTH6odKWmEZ1psD1DyuL',
 };
+type PortalsFiConfig = { apiKey: string };
 type PortalsFiSupport = { buyOrders: false; swapAndTransfer: false };
-export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<PortalsFiSupport> {
+export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, PortalsFiConfig> {
   getMetadata() {
     return PORTALS_FI_METADATA;
   }
@@ -33,7 +33,7 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<PortalsFiSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<PortalsFiSupport, PortalsFiConfig>): Promise<SourceQuoteResponse> {
     const mappedSellToken = mapToken(chain, sellToken);
     const mappedBuyToken = mapToken(chain, buyToken);
     const queryParams = {
@@ -48,7 +48,11 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.portals.fi/v2/portal?${queryString}`;
-    const response = await fetchService.fetch(url, { timeout });
+    const key = config.apiKey.startsWith('Bearer ') ? config.apiKey : `Bearer ${config.apiKey}`;
+    const response = await fetchService.fetch(url, {
+      timeout,
+      headers: { Authorization: key },
+    });
     if (!response.ok) {
       failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
     }
@@ -71,6 +75,10 @@ export class PortalsFiQuoteSource extends AlwaysValidConfigAndContextSource<Port
         value: BigInt(value ?? 0),
       },
     };
+  }
+
+  isConfigAndContextValid(config: Partial<PortalsFiConfig> | undefined): config is PortalsFiConfig {
+    return !!config?.apiKey;
   }
 }
 

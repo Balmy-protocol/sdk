@@ -25,6 +25,9 @@ if (process.env.ZRX_API_KEY) {
 if (process.env.ONE_INCH_KEY) {
   CONFIG.custom!['1inch'] = { apiKey: process.env.ONE_INCH_KEY };
 }
+if (process.env.PORTALS_FI_API_KEY) {
+  CONFIG.custom!['portals-fi'] = { apiKey: process.env.PORTALS_FI_API_KEY };
+}
 
 export function supportedChains() {
   const sources = QUOTE_SOURCES;
