@@ -13,6 +13,7 @@ export const MEAN_FINANCE_SUPPORTED_CHAINS = [
   Chains.GNOSIS,
   Chains.BASE,
   Chains.BASE_GOERLI,
+  Chains.MOONBEAM,
   // Chains.ROOTSTOCK,
 ].map(({ chainId }) => chainId);
 
