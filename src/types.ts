@@ -13,7 +13,7 @@ export type Chain = Readonly<{
   name: string;
   ids: ArrayOneOrMoreReadonly<string>;
   nativeCurrency: { symbol: string; name: string };
-  wToken: string;
+  wToken: Lowercase<Address>;
   publicRPCs: Readonly<string[]>;
   explorer: string;
   testnet?: boolean;
