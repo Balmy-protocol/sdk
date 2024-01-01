@@ -252,7 +252,7 @@ export class QuoteService implements IQuoteService {
           ...calculateGasDetails(
             getChainByKeyOrFail(request.chainId).nativeCurrency.symbol,
             gasCostNativeToken,
-            prices[Addresses.NATIVE_TOKEN].price
+            prices[Addresses.NATIVE_TOKEN]?.price
           ),
         };
       }
