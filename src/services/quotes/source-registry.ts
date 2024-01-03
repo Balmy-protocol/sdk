@@ -20,6 +20,7 @@ import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
 import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
 import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
 import { SquidQuoteSource } from './quote-sources/squid-quote-source';
+import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -41,6 +42,7 @@ export const QUOTE_SOURCES = {
   'portals-fi': new PortalsFiQuoteSource(),
   'okx-dex': new OKXDexQuoteSource(),
   sovryn: new SovrynQuoteSource(),
+  conveyor: new ConveyorQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(

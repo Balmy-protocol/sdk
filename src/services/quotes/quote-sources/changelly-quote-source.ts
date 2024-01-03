@@ -5,7 +5,6 @@ import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
-// Supported Networks:
 export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
   name: 'Changelly DEX',
   supports: {
