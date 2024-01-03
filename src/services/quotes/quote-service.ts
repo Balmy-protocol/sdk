@@ -240,6 +240,8 @@ export class QuoteService implements IQuoteService {
         promises.prices,
         promises.gasCalculator,
       ]);
+      if (!tokens) throw new Error(`Failed to fetch the quote's tokens`);
+      if (!gasCalculator) throw new Error(`Failed to fetch gas data`);
       const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken]?.price };
       const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken]?.price };
       let gas: QuoteResponse['gas'];
@@ -252,7 +254,7 @@ export class QuoteService implements IQuoteService {
           ...calculateGasDetails(
             getChainByKeyOrFail(request.chainId).nativeCurrency.symbol,
             gasCostNativeToken,
-            prices[Addresses.NATIVE_TOKEN]?.price
+            prices?.[Addresses.NATIVE_TOKEN]?.price
           ),
         };
       }
@@ -318,19 +320,14 @@ export class QuoteService implements IQuoteService {
           fields: REQUIREMENTS,
         },
       })
-      .catch(() => Promise.reject(new Error(`Failed to fetch the quote's tokens`)));
-    const emptyPriceResult = { price: 0, closestTimestamp: 0 };
+      .catch(() => undefined);
     const prices = this.priceService
       .getCurrentPricesForChain({
         chainId: request.chainId,
         addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
         config: { timeout: reducedTimeout },
       })
-      .catch(() => ({
-        [request.sellToken]: emptyPriceResult,
-        [request.buyToken]: emptyPriceResult,
-        [Addresses.NATIVE_TOKEN]: emptyPriceResult,
-      }));
+      .catch(() => undefined);
     const gasCalculator = this.gasService
       .getQuickGasCalculator({
         chainId: request.chainId,
@@ -345,16 +342,21 @@ export class QuoteService implements IQuoteService {
           },
         },
       })
-      .catch(() => Promise.reject(new Error(`Failed to fetch gas data`)));
+      .catch(() => undefined);
 
     return {
       promises: { tokens, prices, gasCalculator },
       external: {
         tokenData: new TriggerablePromise(() =>
-          tokens.then((tokens) => ({ sellToken: tokens[request.sellToken], buyToken: tokens[request.buyToken] }))
+          tokens.then((tokens) => {
+            return tokens
+              ? { sellToken: tokens[request.sellToken], buyToken: tokens[request.buyToken] }
+              : Promise.reject(new Error(`Failed to fetch the quote's tokens`));
+          })
         ),
         gasPrice: new TriggerablePromise(() =>
           gasCalculator.then((calculator) => {
+            if (!calculator) return Promise.reject(new Error(`Failed to fetch gas data`));
             const gasPrice = calculator.getGasPrice();
             return gasPrice[selectedGasSpeed] ?? gasPrice['standard']!;
           })
@@ -432,7 +434,7 @@ export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: 
 }
 
 type Promises = {
-  tokens: Promise<Record<TokenAddress, BaseTokenMetadata>>;
-  prices: Promise<Record<TokenAddress, PriceResult>>;
-  gasCalculator: Promise<IQuickGasCostCalculator<DefaultGasValues>>;
+  tokens: Promise<Record<TokenAddress, BaseTokenMetadata> | undefined>;
+  prices: Promise<Record<TokenAddress, PriceResult> | undefined>;
+  gasCalculator: Promise<IQuickGasCostCalculator<DefaultGasValues> | undefined>;
 };

@@ -72,7 +72,7 @@ export class LocalSourceList implements IQuoteSourceList {
   }
 }
 
-async function mapSourceResponseToResponse({
+function mapSourceResponseToResponse({
   source,
   request,
   response,
@@ -80,7 +80,7 @@ async function mapSourceResponseToResponse({
   source: IQuoteSource<QuoteSourceSupport>;
   request: SourceListRequest;
   response: SourceQuoteResponse;
-}): Promise<SourceListResponse> {
+}): SourceListResponse {
   const tx: QuoteTransaction = {
     to: response.tx.to,
     value: response.tx.value?.toString(),
