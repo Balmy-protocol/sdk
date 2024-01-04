@@ -66,7 +66,12 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
     if (!response.ok) {
       failed(XY_FINANCE_METADATA, chain, sellToken, buyToken, await response.text());
     }
-    const result = await response.json();
+    const { success, ...result } = await response.json();
+    if (!success) {
+      const { errorCode, errorMsg } = result;
+      failed(XY_FINANCE_METADATA, chain, sellToken, buyToken, `Failed with code ${errorCode} and message '${errorMsg}'`);
+    }
+
     const {
       route: { dstQuoteTokenAmount, minReceiveAmount, contractAddress, estimatedGas },
       tx: { to, data, value },
