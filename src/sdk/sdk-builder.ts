@@ -11,6 +11,7 @@ import { ISDK } from './types';
 import { BuildPriceParams, buildPriceService } from './builders/price-builder';
 import { buildPermit2Service } from './builders/permit2-builder';
 import { BuildDCAParams, buildDCAService } from './builders/dca-builder';
+import { BuildBlocksParams, buildBlocksService } from './builders/block-builder';
 
 export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
@@ -19,6 +20,7 @@ export function buildSDK<Params extends BuildParams = {}>(
   const fetchService = buildFetchService(params?.fetch);
   const providerService = buildProviderService(params?.provider);
   const multicallService = buildMulticallService(providerService);
+  const blocksService = buildBlocksService(params?.blocks, fetchService);
   const balanceService = buildBalanceService(params?.balances, fetchService, providerService);
   const allowanceService = buildAllowanceService(params?.allowances, fetchService, multicallService);
   const gasService = buildGasService<Params['gas']>(params?.gas, logsService, fetchService, providerService, multicallService);
@@ -41,6 +43,7 @@ export function buildSDK<Params extends BuildParams = {}>(
     logsService,
     permit2Service,
     dcaService,
+    blocksService,
   };
 }
 
@@ -55,4 +58,5 @@ export type BuildParams = {
   price?: BuildPriceParams;
   quotes?: BuildQuoteParams;
   logs?: BuildLogsParams;
+  blocks?: BuildBlocksParams;
 };

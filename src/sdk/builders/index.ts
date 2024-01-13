@@ -7,3 +7,4 @@ export { BuildBalancesParams, BalanceSourceInput } from './balance-builder';
 export { BuildPriceParams, PriceSourceInput } from './price-builder';
 export { BuildAllowanceParams, AllowanceSourceInput } from './allowance-builder';
 export { BuildLogsParams } from './logs-builder';
+export { BuildBlocksParams, BlocksSourceInput } from './block-builder';

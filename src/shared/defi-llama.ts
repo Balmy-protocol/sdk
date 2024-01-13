@@ -131,6 +131,14 @@ export class DefiLlamaClient {
     return result;
   }
 
+  async getClosestBlock(chainId: ChainId, timestamp: Timestamp) {
+    const chainKey = CHAIN_ID_TO_KEY[chainId];
+    if (!chainKey) throw new Error(`Chain with id ${chainId} not supported`);
+    const result = await this.fetch.fetch(`https://coins.llama.fi/block/${chainKey}/${timestamp}`);
+    const { height, timestamp: blockTimestamp } = await result.json();
+    return { block: BigInt(height), timestamp: blockTimestamp };
+  }
+
   private async fetchAndMapTokens({
     baseUrl,
     addresses,
