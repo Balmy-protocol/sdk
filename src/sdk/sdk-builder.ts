@@ -11,7 +11,7 @@ import { ISDK } from './types';
 import { BuildPriceParams, buildPriceService } from './builders/price-builder';
 import { buildPermit2Service } from './builders/permit2-builder';
 import { BuildDCAParams, buildDCAService } from './builders/dca-builder';
-import { BuildBlocksParams, buildBlocksService } from './builders/block-builder';
+import { BuildBlocksParams, buildBlocksService } from './builders/blocks-builder';
 
 export function buildSDK<Params extends BuildParams = {}>(
   params?: Params
