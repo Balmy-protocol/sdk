@@ -36,6 +36,7 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
     config?: { fields?: Requirements; timeout?: TimeString };
   }) {
     const chains = Object.keys(addresses).map(Number);
+    if (chains.length === 0) return {};
     validateRequirements(this.supportedProperties(), chains, config?.fields);
     const response = await timeoutPromise(this.metadataSource.getMetadata({ addresses, config }), config?.timeout);
     validateResponse(addresses, response, config?.fields);
