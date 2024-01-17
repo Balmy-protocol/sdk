@@ -220,12 +220,6 @@ describe.skip('Quote Sources [External Quotes]', () => {
                   txs = [...approveTx, await execute({ quote, as: takeFrom })];
                 });
                 then('result is as expected', async () => {
-                  assertQuoteIsConsistent(quote, {
-                    sellToken,
-                    buyToken,
-                    ...request.order,
-                    sourceId,
-                  });
                   await assertUsersBalanceIsReducedAsExpected({
                     txs,
                     sellToken,

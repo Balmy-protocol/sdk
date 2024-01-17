@@ -1,9 +1,8 @@
+import qs from 'qs';
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, failed } from './utils';
-import { AlwaysValidConfigAndContexSource } from './base/always-valid-source';
-
-const API = 'https://api.enso.finance';
+import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
+import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   name: 'Enso',
@@ -15,7 +14,7 @@ const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   logoURI: 'ipfs://QmWc9U7emJ7YvoLsxCvvJMxnEfMncJXrkqFpGoCP2LxZRJ',
 };
 type EnsoSupport = { buyOrders: false; swapAndTransfer: false };
-export class EnsoQuoteSource extends AlwaysValidConfigAndContexSource<EnsoSupport> {
+export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSupport> {
   getMetadata() {
     return ENSO_METADATA;
   }
@@ -31,13 +30,25 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContexSource<EnsoSuppor
       accounts: { takeFrom },
     },
   }: QuoteParams<EnsoSupport>): Promise<SourceQuoteResponse> {
-    const url =
-      `${API}/api/v1/shortcuts/route/${chain.chainId}/transaction` +
-      `?tokenIn=${sellToken}` +
-      `&tokenOut=${buyToken}` +
-      `&amount=${order.sellAmount.toString()}` +
-      `&slippage=${Math.floor(slippagePercentage * 100)}` +
-      `&fromAddress=${takeFrom}`;
+    const takeFromChecksummed = checksum(takeFrom);
+
+    const queryParams = {
+      fromAddress: takeFromChecksummed,
+      spender: takeFromChecksummed,
+      receiver: takeFromChecksummed,
+      tokenIn: sellToken,
+      amountIn: order.sellAmount.toString(),
+      tokenOut: buyToken,
+      routingStrategy: 'router',
+      priceImpact: false,
+      chain: chain.chainId,
+      slippage: Math.floor(slippagePercentage * 100),
+      tokenInAmountToApprove: order.sellAmount.toString(),
+      tokenInAmountToTransfer: order.sellAmount.toString(),
+    };
+
+    const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const url = `https://api.enso.finance/api/v1/shortcuts/route?${queryString}`;
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
@@ -45,13 +56,15 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContexSource<EnsoSuppor
     }
     const {
       amountOut,
+      gas,
       tx: { data, to, value },
     } = await response.json();
 
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amountOut),
-      allowanceTarget: to,
+      allowanceTarget: calculateAllowanceTarget(sellToken, to),
+      estimatedGas: BigInt(gas),
       tx: {
         calldata: data,
         to,

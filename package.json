@@ -32,10 +32,10 @@
     "lint:check": "prettier --check .",
     "lint:fix": "sort-package-json && prettier --write .",
     "prepare": "husky install",
-    "test": "jest --forceExit --detectOpenHandles --coverage --verbose",
-    "test:integration": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/integration -t \"^(?!.*\\[External Quotes\\]).*$\"",
-    "test:integration:quotes": "jest --forceExit --detectOpenHandles --coverage --verbose -t \".*\\[External Quotes\\].*\"",
-    "test:unit": "jest --forceExit --detectOpenHandles --coverage --verbose --testPathPattern=test/unit"
+    "test": "jest --forceExit --detectOpenHandles --verbose",
+    "test:integration": "jest --forceExit --detectOpenHandles --verbose --testPathPattern=test/integration -t \"^(?!.*\\[External Quotes\\]).*$\"",
+    "test:integration:quotes": "jest --forceExit --detectOpenHandles --verbose -t \".*\\[External Quotes\\].*\"",
+    "test:unit": "jest --forceExit --detectOpenHandles --verbose --testPathPattern=test/unit"
   },
   "lint-staged": {
     "*.{js,css,md,ts,sol}": "prettier --write",
