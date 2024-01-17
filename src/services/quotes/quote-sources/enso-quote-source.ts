@@ -7,7 +7,16 @@ import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   name: 'Enso',
   supports: {
-    chains: [Chains.ETHEREUM.chainId],
+    chains: [
+      Chains.ETHEREUM.chainId,
+      Chains.OPTIMISM.chainId,
+      Chains.BNB_CHAIN.chainId,
+      Chains.GNOSIS.chainId,
+      Chains.POLYGON.chainId,
+      Chains.BASE.chainId,
+      Chains.ARBITRUM.chainId,
+      Chains.AVALANCHE.chainId,
+    ],
     swapAndTransfer: false,
     buyOrders: false,
   },
