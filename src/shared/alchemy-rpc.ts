@@ -10,7 +10,8 @@ const ALCHEMY_NETWORKS: Record<ChainId, Network> = {
   [Chains.OPTIMISM.chainId]: Network.OPT_MAINNET,
   [Chains.ARBITRUM.chainId]: Network.ARB_MAINNET,
   [Chains.ASTAR.chainId]: Network.ASTAR_MAINNET,
-  // [Chains.POLYGON_ZKEVM.chainId]: Network.POLYGONZKEVM_MAINNET, TODO: Add support
+  [Chains.POLYGON_ZKEVM.chainId]: Network.POLYGONZKEVM_MAINNET,
+  [Chains.BASE.chainId]: 'base-mainnet' as Network,
 };
 
 export function alchemySupportedChains(): ChainId[] {
@@ -24,7 +25,7 @@ export function buildAlchemyClient(alchemyKey: string, chainId: ChainId) {
   });
 }
 
-export function buildAlchemyUrl(alchemyKey: string, protocol: 'https' | 'wss', chainId: ChainId) {
+export function buildAlchemyRPCUrl({ chainId, apiKey, protocol }: { chainId: ChainId; apiKey: string; protocol: 'https' | 'wss' }) {
   const alchemyNetwork: Network = ALCHEMY_NETWORKS[chainId];
-  return `${protocol}://${alchemyNetwork}.g.alchemy.com/v2/${alchemyKey}`;
+  return `${protocol}://${alchemyNetwork}.g.alchemy.com/v2/${apiKey}`;
 }

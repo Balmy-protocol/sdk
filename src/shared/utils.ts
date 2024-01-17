@@ -29,7 +29,10 @@ export function mulDivByNumber(amount: BigIntish, mul: number, div: number, roun
   return numerator % denominator !== 0n && rounding === 'up' ? result + 1n : result;
 }
 
-export function calculateDeadline(txValidFor?: TimeString) {
+export function calculateDeadline(txValidFor: TimeString): number;
+export function calculateDeadline(txValidFor: undefined): undefined;
+export function calculateDeadline(txValidFor: TimeString | undefined): number | undefined;
+export function calculateDeadline(txValidFor: TimeString | undefined): number | undefined {
   return txValidFor ? Math.floor((Date.now() + ms(txValidFor)) / 1000) : undefined;
 }
 
@@ -84,4 +87,12 @@ export function fromTokenInChain(tokenInChain: TokenAddress): { chainId: ChainId
 export function toTrimmedHex(value: BigIntish) {
   const trimmed = trim(toHex(value));
   return trimmed.startsWith('0x0') && trimmed !== '0x0' ? trimmed.replace('0x0', '0x') : trimmed;
+}
+
+export function splitInChunks<T>(list: T[], chunkSize: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < list.length; i += chunkSize) {
+    result.push(list.slice(i, i + chunkSize));
+  }
+  return result;
 }

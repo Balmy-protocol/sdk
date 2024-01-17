@@ -1,12 +1,12 @@
 import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
-import { CacheConfig, ContextlessConcurrentLRUCache } from '@shared/concurrent-lru-cache';
+import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 
 export class CachedAllowanceSource implements IAllowanceSource {
-  private readonly cache: ContextlessConcurrentLRUCache<Key, AmountOfToken>;
+  private readonly cache: ConcurrentLRUCache<Key, AmountOfToken>;
 
   constructor(private readonly source: IAllowanceSource, config: CacheConfig) {
-    this.cache = new ContextlessConcurrentLRUCache<Key, AmountOfToken>({
+    this.cache = new ConcurrentLRUCache<Key, AmountOfToken>({
       calculate: (ownerSpendersInChain) => this.fetchTokens(ownerSpendersInChain),
       config,
     });

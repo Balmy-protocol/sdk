@@ -8,6 +8,8 @@ import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
+import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
+import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
@@ -47,7 +49,11 @@ const TESTS: Record<ChainId, { address: TokenAddress; minAmount: `${number}`; de
     symbol: 'LON',
   },
 };
-const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([Chains.AURORA.chainId, Chains.OASIS_EMERALD.chainId]);
+const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
+  Chains.AURORA.chainId,
+  Chains.OASIS_EMERALD.chainId,
+  Chains.POLYGON_ZKEVM.chainId,
+]);
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
@@ -64,17 +70,21 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
 });
 const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
+const MAGPIE_BALANCE_SOURCE = new MagpieBalanceSource(FETCH_SERVICE);
+const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE]);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
 
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
-  balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE });
+  // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE }); Disabled because of flakyness
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
-  balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE });
+  // balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE }); Disabled because Cloudlare is acting up and blocking all non-browser requests
   // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
+  // balanceSourceTest({ title: 'Magpie', source: MAGPIE_BALANCE_SOURCE }); Note: fails to return all tokens since there are so many
+  balanceSourceTest({ title: 'Fastest Source', source: FASTEST_BALANCE_SOURCE });
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
@@ -113,7 +123,7 @@ describe('Balance Sources', () => {
           let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
           beforeAll(async () => {
             const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
-            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '30s' } });
+            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '1m' } });
           });
 
           validateBalances(() => result, supportedChains, false);

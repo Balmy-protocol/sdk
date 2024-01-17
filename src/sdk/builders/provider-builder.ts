@@ -13,6 +13,9 @@ import { UpdatableProviderSource } from '@services/providers/provider-sources/up
 import { WebSocketProviderSource } from '@services/providers/provider-sources/web-sockets-provider';
 import { ProviderService } from '@services/providers/provider-service';
 import { EthersProviderSource } from '@services/providers/provider-sources/ethers-provider';
+import { NodeRealProviderSource } from '@services/providers/provider-sources/node-real-provider';
+import { GetBlockProviderSource } from '@services/providers/provider-sources/get-block-provider';
+import { AnkrProviderSource } from '@services/providers/provider-sources/ankr-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -21,9 +24,12 @@ export type ProviderSourceInput =
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }
-  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss' }
-  | { type: 'infura'; key: string }
-  | { type: 'llama-nodes'; key?: string }
+  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss'; onChains?: ChainId[] }
+  | { type: 'infura'; key: string; onChains?: ChainId[] }
+  | { type: 'node-real'; key: string; onChains?: ChainId[] }
+  | { type: 'get-block'; accessTokens: Record<ChainId, string> }
+  | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
+  | { type: 'ankr'; key?: string; onChains?: ChainId[] }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
@@ -52,11 +58,17 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'public-rpcs':
       return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
     case 'alchemy':
-      return new AlchemyProviderSource(source.key, source.protocol ?? 'https');
+      return new AlchemyProviderSource(source.key, source.protocol ?? 'https', source.onChains);
     case 'llama-nodes':
-      return new LlamaNodesProviderSource(source.key);
+      return new LlamaNodesProviderSource(source.key, source.onChains);
+    case 'ankr':
+      return new AnkrProviderSource(source.key, source.onChains);
     case 'infura':
-      return new InfuraProviderSource(source.key);
+      return new InfuraProviderSource(source.key, source.onChains);
+    case 'node-real':
+      return new NodeRealProviderSource(source.key, source.onChains);
+    case 'get-block':
+      return new GetBlockProviderSource(source.accessTokens);
     case 'http':
       return new HttpProviderSource(source.url, source.supportedChains);
     case 'web-socket':

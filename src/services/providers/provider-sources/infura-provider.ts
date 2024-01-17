@@ -16,15 +16,26 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 };
 
 export class InfuraProviderSource extends BaseHttpProvider {
-  constructor(private readonly key: string) {
+  private readonly supported: ChainId[];
+
+  constructor(private readonly key: string, onChains?: ChainId[]) {
     super();
+    this.supported = onChains ?? infuraSupportedChains();
   }
 
   supportedChains(): ChainId[] {
-    return Object.keys(SUPPORTED_CHAINS).map(Number);
+    return this.supported;
   }
 
   protected calculateUrl(chainId: number): string {
-    return SUPPORTED_CHAINS[chainId] + this.key;
+    return buildInfuraRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildInfuraRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey: string }) {
+  return SUPPORTED_CHAINS[chainId] + apiKey;
+}
+
+export function infuraSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }

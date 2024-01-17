@@ -5,22 +5,37 @@ import { BaseHttpProvider } from './base/base-http-provider';
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'https://eth.llamarpc.com',
   [Chains.POLYGON.chainId]: 'https://polygon.llamarpc.com',
+  [Chains.BNB_CHAIN.chainId]: 'https://binance.llamarpc.com',
+  [Chains.ARBITRUM.chainId]: 'https://arbitrum.llamarpc.com',
+  [Chains.OPTIMISM.chainId]: 'https://optimism.llamarpc.com',
+  [Chains.BASE.chainId]: 'https://base.llamarpc.com',
 };
 
 export class LlamaNodesProviderSource extends BaseHttpProvider {
-  constructor(private readonly key?: string) {
+  private readonly supported: ChainId[];
+
+  constructor(private readonly key?: string, onChains?: ChainId[]) {
     super();
+    this.supported = onChains ?? llamaNodesSupportedChains();
   }
 
   supportedChains(): ChainId[] {
-    return Object.keys(SUPPORTED_CHAINS).map(Number);
+    return this.supported;
   }
 
   protected calculateUrl(chainId: number): string {
-    let url = SUPPORTED_CHAINS[chainId];
-    if (this.key) {
-      url += `/rpc/${this.key}`;
-    }
-    return url;
+    return buildLlamaNodesRPCUrl({ chainId, apiKey: this.key });
   }
+}
+
+export function buildLlamaNodesRPCUrl({ chainId, apiKey }: { chainId: ChainId; apiKey?: string }) {
+  let url = SUPPORTED_CHAINS[chainId];
+  if (apiKey) {
+    url += `/rpc/${apiKey}`;
+  }
+  return url;
+}
+
+export function llamaNodesSupportedChains(): ChainId[] {
+  return Object.keys(SUPPORTED_CHAINS).map(Number);
 }

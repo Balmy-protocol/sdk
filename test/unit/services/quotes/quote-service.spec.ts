@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { then, when } from '@test-utils/bdd';
 import { GasSpeed, IGasService, IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
-import { BigIntish, ChainId, TokenAddress, TransactionRequest } from '@types';
+import { BigIntish, ChainId, TokenAddress, InputTransaction } from '@types';
 import { QuoteService } from '@services/quotes/quote-service';
 import { IQuoteSourceList, QuoteRequest } from '@services/quotes';
 import { IPriceService } from '@services/prices';
 import { IMetadataService } from '@services/metadata';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly-quote-source';
 import { SourceListResponse } from '@services/quotes/source-lists/types';
 
 describe('Quote Service', () => {
@@ -22,7 +22,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Something failed at list level', failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: 'Something failed at list level',
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but gas request fails', () => {
@@ -36,7 +40,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: 'Failed to fetch gas data', failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: 'Failed to fetch gas data',
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but metadata request fails', () => {
@@ -50,7 +58,11 @@ describe('Quote Service', () => {
       });
       const quotes = sourceList.getQuotes(REQUEST);
       expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.contain({ error: `Failed to fetch the quote's tokens`, failed: true, name: CHANGELLY_METADATA.name });
+      expect(await quotes[0]).to.eql({
+        error: `Failed to fetch the quote's tokens`,
+        failed: true,
+        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
+      });
     });
   });
   when('request works but price request fails', () => {
@@ -121,11 +133,13 @@ const FAILING_METADATA_SERVICE: IMetadataService<BaseTokenMetadata> = {
 
 const PRICE_SERVICE: IPriceService = {
   supportedChains: () => [1],
-  supportedQueries: () => ({ [1]: { getCurrentPrices: true, getHistoricalPrices: true } }),
+  supportedQueries: () => ({ [1]: { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: false } }),
   getCurrentPrices: () => Promise.reject(new Error('Should not be called')),
-  getCurrentPricesForChain: ({ addresses }) => Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, i * 10]))),
+  getCurrentPricesForChain: ({ addresses }) =>
+    Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, { price: i * 10, closestTimestamp: 0 }]))),
   getHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
   getHistoricalPricesForChain: () => Promise.reject(new Error('Should not be called')),
+  getBulkHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
 };
 const FAILING_PRICE_SERVICE: IPriceService = {
   ...PRICE_SERVICE,
@@ -134,16 +148,16 @@ const FAILING_PRICE_SERVICE: IPriceService = {
 
 const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {
   supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' } as any),
-  calculateGasCost: (_: { gasEstimation: BigIntish; tx?: TransactionRequest }) =>
+  calculateGasCost: (_: { gasEstimation: BigIntish; tx?: InputTransaction }) =>
     ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10', gasCostNativeToken: '10' } } as any),
   getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } } as any),
 };
 const GAS_SERVICE: IGasService<DefaultGasValues> = {
   supportedSpeeds: () => ({}),
   supportedChains: () => [1],
-  estimateGas: (_: { chainId: ChainId; tx: TransactionRequest }) => Promise.reject(new Error('Should not be called')),
+  estimateGas: (_: { chainId: ChainId; tx: InputTransaction }) => Promise.reject(new Error('Should not be called')),
   getGasPrice: (_: { chainId: ChainId; options?: { speed?: GasSpeed } }) => Promise.reject(new Error('Should not be called')),
-  calculateGasCost: (_: { chainId: ChainId; gasEstimation: BigIntish; tx?: TransactionRequest; options?: { speed?: GasSpeed } }) =>
+  calculateGasCost: (_: { chainId: ChainId; gasEstimation: BigIntish; tx?: InputTransaction; options?: { speed?: GasSpeed } }) =>
     Promise.reject(new Error('Should not be called')),
   getQuickGasCalculator: (_: { chainId: ChainId }) => Promise.resolve(GAS_CALCULATOR) as any,
 };

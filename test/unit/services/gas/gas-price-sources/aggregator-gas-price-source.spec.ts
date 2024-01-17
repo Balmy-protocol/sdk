@@ -5,7 +5,10 @@ import { given, then, when } from '@test-utils/bdd';
 import { GasPriceResult, IGasPriceSource } from '@services/gas/types';
 import chaiAsPromised from 'chai-as-promised';
 import { Chains } from '@chains';
+import { LogsService } from '@services/logs/logs-service';
 chai.use(chaiAsPromised);
+
+const LOGS_SERVICE = new LogsService('OFF');
 
 describe('Aggregator Gas Price Source', () => {
   const CHAIN_ID = Chains.ETHEREUM.chainId;
@@ -14,21 +17,21 @@ describe('Aggregator Gas Price Source', () => {
 
   when('trying to create without sources', () => {
     then('an error is thrown', () => {
-      expect(() => new AggregatorGasPriceSource([], 'median')).to.throw('No sources were specified');
+      expect(() => new AggregatorGasPriceSource(LOGS_SERVICE, [], 'median')).to.throw('No sources were specified');
     });
   });
 
   when('there are no sources for chain', () => {
     then('error is thrown', async () => {
       const price = { standard: LEGACY(100) };
-      const source = new AggregatorGasPriceSource([buildSource(price, CHAIN_ID)], 'median');
+      const source = new AggregatorGasPriceSource(LOGS_SERVICE, [buildSource(price, CHAIN_ID)], 'median');
       await expect(source.getGasPrice({ chainId: 2 })).to.eventually.be.rejectedWith(`Chain with id 2 cannot support the given requirements`);
     });
   });
 
   when('all sources fail', () => {
     then('error is thrown', async () => {
-      const source = new AggregatorGasPriceSource([buildSourceThatFails(CHAIN_ID)], 'median');
+      const source = new AggregatorGasPriceSource(LOGS_SERVICE, [buildSourceThatFails(CHAIN_ID)], 'median');
       await expect(source.getGasPrice({ chainId: CHAIN_ID })).to.eventually.be.rejectedWith('Failed to calculate gas on all sources');
     });
   });
@@ -36,7 +39,11 @@ describe('Aggregator Gas Price Source', () => {
   when('one source works, but it doesnt meet the requirements', () => {
     then('error is thrown', async () => {
       const price = { standard: LEGACY(100) };
-      const source = new AggregatorGasPriceSource([buildSource(price, CHAIN_ID, { standard: 'present', fast: 'optional' })], 'median');
+      const source = new AggregatorGasPriceSource(
+        LOGS_SERVICE,
+        [buildSource(price, CHAIN_ID, { standard: 'present', fast: 'optional' })],
+        'median'
+      );
       await expect(
         source.getGasPrice({ chainId: CHAIN_ID, config: { fields: { requirements: { fast: 'required' } } } })
       ).to.eventually.be.rejectedWith('Could not fetch gas prices that met the given requirements');
@@ -46,7 +53,7 @@ describe('Aggregator Gas Price Source', () => {
   when('there is only one source that works', () => {
     then('that result is returned', async () => {
       const price = { standard: LEGACY(100) };
-      const source = new AggregatorGasPriceSource([buildSource(price), buildSourceThatFails(CHAIN_ID)], 'median');
+      const source = new AggregatorGasPriceSource(LOGS_SERVICE, [buildSource(price), buildSourceThatFails(CHAIN_ID)], 'median');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(price);
     });
   });
@@ -55,7 +62,7 @@ describe('Aggregator Gas Price Source', () => {
     then('legacy gas prices are ignored', async () => {
       const legacyPrice = { standard: LEGACY(100) };
       const eip1559Price = { standard: EIP(10, 20) };
-      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'median');
+      const source = new AggregatorGasPriceSource(LOGS_SERVICE, [buildSource(legacyPrice), buildSource(eip1559Price)], 'median');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(eip1559Price);
     });
   });
@@ -64,7 +71,7 @@ describe('Aggregator Gas Price Source', () => {
     then('1559 gas prices are ignored', async () => {
       const legacyPrice = { standard: LEGACY(100), fast: LEGACY(200) };
       const eip1559Price = { standard: EIP(10, 20) };
-      const source = new AggregatorGasPriceSource([buildSource(legacyPrice), buildSource(eip1559Price)], 'median');
+      const source = new AggregatorGasPriceSource(LOGS_SERVICE, [buildSource(legacyPrice), buildSource(eip1559Price)], 'median');
       expect(await source.getGasPrice({ chainId: CHAIN_ID })).to.deep.equal(legacyPrice);
     });
   });
@@ -144,7 +151,7 @@ describe('Aggregator Gas Price Source', () => {
       let result: GasPriceResult<any>;
       given(async () => {
         const sources = prices.map((price) => buildSource(price, 1));
-        const aggSource = new AggregatorGasPriceSource(sources, method);
+        const aggSource = new AggregatorGasPriceSource(LOGS_SERVICE, sources, method);
         result = await aggSource.getGasPrice({ chainId: 1 });
       });
 

@@ -1,6 +1,6 @@
 export * from './deferred';
 export * from './triggerable-promise';
-export { ExpirationConfigOptions, ConcurrentLRUCache, ContextlessConcurrentLRUCache } from './concurrent-lru-cache';
+export { ExpirationConfigOptions, ConcurrentLRUCacheWithContext, ConcurrentLRUCache } from './concurrent-lru-cache';
 export { timeoutPromise, reduceTimeout, TimeoutError } from './timeouts';
 export {
   wait,
@@ -11,4 +11,8 @@ export {
   calculateDeadline,
   filterRejectedResults,
   ruleOfThree,
+  splitInChunks,
 } from './utils';
+export { AutoUpdateCache, AutoUpdateCacheConfig } from './auto-update-cache';
+export { toChainId as defiLlamaToChainId } from './defi-llama';
+export { Addresses, Uint } from './constants';

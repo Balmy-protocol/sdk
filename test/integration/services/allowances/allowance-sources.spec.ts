@@ -10,6 +10,7 @@ import { CachedAllowanceSource } from '@services/allowances//allowance-sources/c
 import { Chains, getChainByKey } from '@chains';
 import { AmountOfToken, ChainId, TokenAddress } from '@types';
 import dotenv from 'dotenv';
+import { FetchService } from '@services/fetch/fetch-service';
 dotenv.config();
 
 const OWNER = '0x49c590F6a2dfB0f809E82B9e2BF788C0Dd1c31f9'; // DCAHubCompanion

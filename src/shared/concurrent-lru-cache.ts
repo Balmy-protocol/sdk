@@ -20,8 +20,8 @@ type CacheConstructorParams<Context, Key extends ValidKey, Value> = {
   config: CacheConfig;
 };
 
-export class ContextlessConcurrentLRUCache<Key extends ValidKey, Value> {
-  private readonly cache: ConcurrentLRUCache<undefined, Key, Value>;
+export class ConcurrentLRUCache<Key extends ValidKey, Value> {
+  private readonly cache: ConcurrentLRUCacheWithContext<undefined, Key, Value>;
 
   constructor({
     calculate,
@@ -29,7 +29,7 @@ export class ContextlessConcurrentLRUCache<Key extends ValidKey, Value> {
   }: {
     calculate: (keys: Key[]) => Promise<Record<Key, Value>>;
   } & { config: CacheConfig }) {
-    this.cache = new ConcurrentLRUCache({
+    this.cache = new ConcurrentLRUCacheWithContext({
       calculate: (_, keys) => calculate(keys),
       config,
     });
@@ -66,9 +66,13 @@ export class ContextlessConcurrentLRUCache<Key extends ValidKey, Value> {
   holdsValidValues(keys: Key[], expirationConfig?: ExpirationConfigOptions): Record<Key, boolean> {
     return this.cache.holdsValidValues(keys, expirationConfig);
   }
+
+  invalidate(keys: Key[]) {
+    return this.cache.invalidate(keys);
+  }
 }
 
-export class ConcurrentLRUCache<Context, Key extends ValidKey, Value> {
+export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value> {
   private readonly calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
   private readonly storableKeyMapper: ToStorableKey<Key>;
   private readonly expirationConfig: ExpirationConfigOptions;
@@ -200,6 +204,10 @@ export class ConcurrentLRUCache<Context, Key extends ValidKey, Value> {
       return [key, holdsValidValue];
     });
     return Object.fromEntries(entries);
+  }
+
+  invalidate(keys: Key[]) {
+    keys.forEach((key) => this.cache.delete(this.storableKeyMapper(key)));
   }
 
   populate(values: Record<Key, Value>) {

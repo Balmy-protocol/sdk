@@ -28,7 +28,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
     RANDOM_ERC20: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-      whale: '0x218b95be3ed99141b0144dba6ce88807c4ad7c09',
+      whale: '0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656',
     },
     wToken: {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
@@ -47,6 +47,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     wToken: {
       address: '0x4200000000000000000000000000000000000006',
       whale: '0x68f5c0a2de713a54991e01858fd27a3832401849',
+    },
+  },
+  [Chains.BASE.chainId]: {
+    STABLE_ERC20: {
+      address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+      whale: '0x6d3c5a4a7ac4b1428368310e4ec3bb1350d01455',
+    },
+    RANDOM_ERC20: {
+      address: '0x8544fe9d190fd7ec52860abbf45088e81ee24a8c',
+      whale: '0x5f0a153a64fd734c111b770da11de2c385ca8042',
+    },
+    wToken: {
+      address: '0x4200000000000000000000000000000000000006',
+      whale: '0x41d160033c222e6f3722ec97379867324567d883',
     },
   },
   [Chains.POLYGON.chainId]: {
@@ -149,18 +163,18 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   },
   [Chains.ROOTSTOCK.chainId]: {
     STABLE_ERC20: {
-      // XUSD
-      address: '0xb5999795be0ebb5bab23144aa5fd6a02d080299f',
-      whale: '0x100aE71cBE5D2F678F9ae938909a8d8Dc004AA41',
+      // DLLR
+      address: '0xc1411567d2670e24d9c4daaa7cda95686e1250aa',
+      whale: '0x1440d19436beeaf8517896bffb957a88ec95a00f',
     },
     RANDOM_ERC20: {
       // SOV
       address: '0xefc78fc7d48b64958315949279ba181c2114abbd',
-      whale: '0x7f02eC1dF0238fEB228E1062BD2c5279A712d6aF',
+      whale: '0x5684a06cab22db16d901fee2a5c081b4c91ea40e',
     },
     wToken: {
       address: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
-      whale: '0xA9c3D9681215eF7623dc28eA6b75bF87fDf285D9',
+      whale: '0x5a0d867e0d70fcc6ade25c3f1b89d618b5b4eaa7',
     },
   },
   [Chains.AURORA.chainId]: {
@@ -177,6 +191,50 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0x63da4db6ef4e7c62168ab03982399f9588fcd198',
     },
   },
+  [Chains.POLYGON_ZKEVM.chainId]: {
+    STABLE_ERC20: {
+      address: '0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035',
+      whale: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+    },
+    RANDOM_ERC20: {
+      address: '0xea034fb02eb1808c2cc3adbc15f447b93cbe08e1',
+      whale: '0x99b31498b0a1dae01fc3433e3cb60f095340935c',
+    },
+    wToken: {
+      address: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+      whale: '0x89715e5b0deb3dcf82ca6485ad2a496ca502223d',
+    },
+  },
+  [Chains.KAVA.chainId]: {
+    STABLE_ERC20: {
+      address: '0xdb0e1e86b01c4ad25241b1843e407efc4d615248',
+      whale: '0xcc35FD8B11e66aB413dc520c920F396c2c1096Eb',
+    },
+    RANDOM_ERC20: {
+      address: '0xe1da44c0da55b075ae8e2e4b6986adc76ac77d73',
+      whale: '0x3a724E0082b0E833670cF762Ea6bd711bcBdFf37',
+    },
+    wToken: {
+      address: '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b',
+      whale: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+    },
+  },
+  // Note: hardhat + Celo throws `Errors: Invalid value undefined supplied to : RpcBlockWithTransactions | null/sha3Uncles: HASH, Invalid value undefined supplied to : RpcBlockWithTransactions | null/difficulty` error.
+  // Ref.: https://github.com/NomicFoundation/hardhat/issues/3590
+  // [Chains.CELO.chainId]: {
+  //   STABLE_ERC20: {
+  //     address: '0x765de816845861e75a25fca122bb6898b8b1282a',
+  //     whale: '0x246f4599eFD3fA67AC44335Ed5e749E518Ffd8bB',
+  //   },
+  //   RANDOM_ERC20: {
+  //     address: '0xc668583dcbdc9ae6fa3ce46462758188adfdfc24',
+  //     whale: '0x08baFb4400A102Dddc5e5d584abf0aA38E174c57',
+  //   },
+  //   wToken: {
+  //     address: '0x149d5bf28fbace2950b52d4aca1c79bfd9bbb6fc',
+  //     whale: '0xA5c453BC33FD9C5C798Ac24F666fa2B49E0a87fe',
+  //   },
+  // },
   // Note: we are disabling EVMOS because tests fail to load quite often on that network
   // [Chains.EVMOS.chainId]: {
   //   STABLE_ERC20: {

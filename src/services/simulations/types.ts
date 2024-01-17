@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, InputTransaction } from '@types';
 
 type SimulationSupport = 'none' | 'gas-only' | 'state-changes';
 export type SimulationQueriesSupport = {
@@ -8,12 +8,8 @@ export type SimulationQueriesSupport = {
 
 export type ISimulationSource = {
   supportedQueries(): Record<ChainId, SimulationQueriesSupport>;
-  simulateTransaction(_: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<SimulationResult>;
-  simulateTransactionBundle(_: {
-    chainId: ChainId;
-    bundle: TransactionRequest[];
-    config?: { timeout?: TimeString };
-  }): Promise<SimulationResult[]>;
+  simulateTransaction(_: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<SimulationResult>;
+  simulateTransactionBundle(_: { chainId: ChainId; bundle: InputTransaction[]; config?: { timeout?: TimeString } }): Promise<SimulationResult[]>;
 };
 export type SuccessfulSimulation = {
   successful: true;

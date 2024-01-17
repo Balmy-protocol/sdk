@@ -13,12 +13,12 @@ export type Chain = Readonly<{
   name: string;
   ids: ArrayOneOrMoreReadonly<string>;
   nativeCurrency: { symbol: string; name: string };
-  wToken: string;
+  wToken: Lowercase<Address>;
   publicRPCs: Readonly<string[]>;
   explorer: string;
   testnet?: boolean;
 }>;
-export type TransactionRequest = {
+export type InputTransaction = {
   from: Address;
   to: Address;
   data?: string;
@@ -29,6 +29,23 @@ export type TransactionRequest = {
   gasPrice?: BigIntish;
   gasLimit?: BigIntish;
   type?: number;
+};
+export type BuiltTransaction = {
+  to: string;
+  data: string;
+  value?: AmountOfToken;
+  nonce?: number;
+  maxPriorityFeePerGas?: BigIntish;
+  maxFeePerGas?: BigIntish;
+  gasPrice?: BigIntish;
+  gasLimit?: BigIntish;
+  type?: number;
+};
+export type ContractCall = {
+  address: Address;
+  abi: { humanReadable: string[] } | { json: readonly any[] };
+  functionName: string;
+  args?: any[];
 };
 
 export type SupportRecord<Values extends object> = { [K in keyof Values]-?: undefined extends Values[K] ? 'optional' : 'present' };

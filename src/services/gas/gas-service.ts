@@ -1,9 +1,9 @@
-import { AmountOfToken, BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, TransactionRequest } from '@types';
+import { AmountOfToken, BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, InputTransaction } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculator, SupportedGasValues, IGasPriceSource, GasEstimation, GasPrice } from './types';
 import { timeoutPromise } from '@shared/timeouts';
-import { validateRequirements } from '@shared/requirements-and-support';
+import { doesResponseMeetRequirements, validateRequirements } from '@shared/requirements-and-support';
 import { mapTxToViemTx } from '@shared/viem';
 
 type ConstructorParameters<GasValues extends SupportedGasValues> = {
@@ -30,7 +30,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return Object.fromEntries(entries);
   }
 
-  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: TransactionRequest; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
     const promise = this.estimateGasInternal(chainId, tx);
     return timeoutPromise(promise, config?.timeout);
   }
@@ -45,6 +45,9 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     validateRequirements(this.supportedSpeeds(), [chainId], config?.fields);
     const support = this.supportedSpeeds()[chainId];
     const gasPriceData = await timeoutPromise(this.gasPriceSource.getGasPrice({ chainId, config }), config?.timeout);
+    if (!doesResponseMeetRequirements(gasPriceData, config?.fields)) {
+      throw new Error('Failed to fetch gas prices that meet the given requirements');
+    }
     return {
       supportedSpeeds: () => support,
       getGasPrice: () => gasPriceData,
@@ -79,21 +82,27 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   }: {
     chainId: ChainId;
     gasEstimation: BigIntish;
-    tx?: TransactionRequest;
+    tx?: InputTransaction;
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {
     const gasCalculator = await this.getQuickGasCalculator({ chainId, config });
     return gasCalculator.calculateGasCost({ gasEstimation, tx });
   }
 
-  private estimateGasInternal(chainId: ChainId, tx: TransactionRequest): Promise<AmountOfToken> {
+  private estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<AmountOfToken> {
     const viemTx = mapTxToViemTx(tx);
-    return this.providerService
-      .getViemPublicClient({ chainId })
-      .estimateGas({
-        ...viemTx,
-        account: viemTx.from,
-      })
-      .then((estimate) => estimate.toString());
+    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
+    return viemSupported
+      ? this.providerService
+          .getViemPublicClient({ chainId })
+          .estimateGas({
+            ...viemTx,
+            account: viemTx.from,
+          })
+          .then((estimate) => estimate.toString())
+      : this.providerService
+          .getEthersProvider({ chainId })
+          .estimateGas(tx)
+          .then((estimate) => estimate.toString());
   }
 }

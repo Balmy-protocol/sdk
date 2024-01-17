@@ -1,6 +1,6 @@
 import { ChainId, DefaultRequirements, FieldsRequirements, SupportInChain, SupportRecord, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch';
-import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly';
+import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly-quote-source';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 
 type ChangellyMetadata = BaseTokenMetadata & { name: string };

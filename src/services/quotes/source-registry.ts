@@ -1,24 +1,31 @@
 import { GlobalQuoteSourceConfig, SourceId, SourceMetadata } from './types';
 import { Without } from '@utility-types';
 import { IQuoteSource, QuoteSourceSupport } from './quote-sources/types';
-import { OdosQuoteSource } from './quote-sources/odos';
-import { ParaswapQuoteSource } from './quote-sources/paraswap';
-import { ZRXQuoteSource } from './quote-sources/0x';
-import { OneInchQuoteSource } from './quote-sources/1inch';
-import { UniswapQuoteSource } from './quote-sources/uniswap';
-import { OpenOceanQuoteSource } from './quote-sources/open-ocean';
-import { LiFiQuoteSource } from './quote-sources/li-fi';
-import { KyberswapQuoteSource } from './quote-sources/kyberswap';
-import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird';
-import { RangoQuoteSource } from './quote-sources/rango';
-import { ChangellyQuoteSource } from './quote-sources/changelly';
-import { MeanFinanceQuoteSource } from './quote-sources/mean-finance';
-import { WidoQuoteSource } from './quote-sources/wido';
-import { PortalsFiQuoteSource } from './quote-sources/portals-fi';
+import { OdosQuoteSource } from './quote-sources/odos-quote-source';
+import { ParaswapQuoteSource } from './quote-sources/paraswap-quote-source';
+import { ZRXQuoteSource } from './quote-sources/0x-quote-source';
+import { OneInchQuoteSource } from './quote-sources/1inch-quote-source';
+import { UniswapQuoteSource } from './quote-sources/uniswap-quote-source';
+import { OpenOceanQuoteSource } from './quote-sources/open-ocean-quote-source';
+import { LiFiQuoteSource } from './quote-sources/li-fi-quote-source';
+import { KyberswapQuoteSource } from './quote-sources/kyberswap-quote-source';
+import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird-quote-source';
+import { RangoQuoteSource } from './quote-sources/rango-quote-source';
+import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
+import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
+import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
+import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
+import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
+import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
+import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
+import { SquidQuoteSource } from './quote-sources/squid-quote-source';
+import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
 
 export const QUOTE_SOURCES = {
+  bebop: new BebopQuoteSource(),
   paraswap: new ParaswapQuoteSource(),
+  'xy-finance': new XYFinanceQuoteSource(),
   '0x': new ZRXQuoteSource(),
   '1inch': new OneInchQuoteSource(),
   uniswap: new UniswapQuoteSource(),
@@ -30,9 +37,12 @@ export const QUOTE_SOURCES = {
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
-  wido: new WidoQuoteSource(),
+  magpie: new MagpieQuoteSource(),
+  squid: new SquidQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
   enso: new EnsoQuoteSource(),
+  'okx-dex': new OKXDexQuoteSource(),
+  conveyor: new ConveyorQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(

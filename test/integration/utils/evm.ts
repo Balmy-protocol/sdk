@@ -2,11 +2,12 @@ import { Chains } from '@chains';
 import { Chain } from '@types';
 import { network } from 'hardhat';
 
-export const fork = async (chain: Chain) => {
+export const fork = async ({ chain, blockNumber }: { chain: Chain; blockNumber?: number }) => {
   const params = [
     {
       forking: {
         jsonRpcUrl: getUrl(chain),
+        blockNumber,
       },
     },
   ];

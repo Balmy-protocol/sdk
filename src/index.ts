@@ -6,6 +6,7 @@ export {
   TimeString,
   Chain,
   ChainId,
+  ContractCall,
   Address,
   TokenAddress,
   SupportRecord,
@@ -14,6 +15,7 @@ export {
   FieldsRequirements,
   AmountOfToken,
   BigIntish,
-  TransactionRequest,
   Timestamp,
+  InputTransaction,
+  BuiltTransaction,
 } from './types';

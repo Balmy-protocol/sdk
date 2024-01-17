@@ -1,6 +1,6 @@
 import { alchemySupportedChains, buildAlchemyClient } from '@shared/alchemy-rpc';
 import { timeoutPromise } from '@shared/timeouts';
-import { Address, AmountOfToken, ChainId, TimeString, TransactionRequest } from '@types';
+import { Address, AmountOfToken, ChainId, TimeString, InputTransaction } from '@types';
 import { toTrimmedHex } from '@shared/utils';
 import { ISimulationSource, SimulationResult, SimulationQueriesSupport, StateChange } from '../types';
 
@@ -21,7 +21,7 @@ export class AlchemySimulationSource implements ISimulationSource {
     config,
   }: {
     chainId: ChainId;
-    tx: TransactionRequest;
+    tx: InputTransaction;
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult> {
     try {
@@ -65,7 +65,7 @@ export class AlchemySimulationSource implements ISimulationSource {
 
   async simulateTransactionBundle(_: {
     chainId: ChainId;
-    bundle: TransactionRequest[];
+    bundle: InputTransaction[];
     config?: { timeout?: TimeString };
   }): Promise<SimulationResult[]> {
     // const response = await this.callRPC<Result>(chainId, 'alchemy_simulateExecutionBundle', [bundle.map(fixTransaction)], config?.timeout)
@@ -77,7 +77,7 @@ export class AlchemySimulationSource implements ISimulationSource {
   }
 }
 
-function fixTransaction(tx: TransactionRequest) {
+function fixTransaction(tx: InputTransaction) {
   // Alchemy doesn't support zeroed data yet, so we make it undefied
   const valueBN = BigInt(tx.value ?? 0);
   const dataBN = BigInt(tx.data ?? 0);

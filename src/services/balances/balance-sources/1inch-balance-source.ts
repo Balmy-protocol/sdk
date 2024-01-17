@@ -1,7 +1,7 @@
 import { Address, AmountOfToken, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch';
 import { OnlyTokensHeldBalanceSource } from './base/only-tokens-held-balance-source';
-import { ONE_INCH_METADATA } from '@services/quotes/quote-sources/1inch';
+import { ONE_INCH_METADATA } from '@services/quotes/quote-sources/1inch-quote-source';
 
 export class OneInchBalanceSource extends OnlyTokensHeldBalanceSource {
   constructor(private readonly fetchService: IFetchService) {

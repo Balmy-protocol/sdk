@@ -1,6 +1,6 @@
 import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -11,6 +11,7 @@ export type GlobalQuoteSourceConfig = {
     address: Address;
     name: string;
   };
+  disableValidation?: boolean;
 };
 
 export type SourceId = string;
@@ -48,6 +49,16 @@ export type IQuoteService = {
       timeout?: TimeString;
     };
   }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+  getBestQuote(_: {
+    request: QuoteRequest;
+    config?: {
+      choose?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+      timeout?: TimeString;
+    };
+  }): Promise<QuoteResponse>;
 };
 
 export type QuoteRequest = {
@@ -80,6 +91,7 @@ export type QuoteResponse = {
     estimatedCostInUnits: string;
     gasTokenSymbol: string;
     estimatedCostInUSD?: string;
+    gasTokenPrice?: number;
   };
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
@@ -87,12 +99,8 @@ export type QuoteResponse = {
   tx: QuoteTransaction;
 };
 
-export type QuoteTransaction = {
+export type QuoteTransaction = BuiltTransaction & {
   from: Address;
-  to: Address;
-  data: string;
-  value?: AmountOfToken;
-  nonce?: number;
   maxPriorityFeePerGas?: AmountOfToken;
   maxFeePerGas?: AmountOfToken;
   gasPrice?: AmountOfToken;
@@ -122,4 +130,4 @@ export type IgnoreFailedQuotes<
   Response extends QuoteResponse | EstimatedQuoteResponse
 > = IgnoredFailed extends true ? Response : Response | FailedQuote;
 
-export type FailedQuote = { failed: true; name: string; logoURI: string; error: any };
+export type FailedQuote = { failed: true; source: { id: string; name: string; logoURI: string }; error: any };

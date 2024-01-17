@@ -10,7 +10,7 @@ export class PolygonGasStationGasPriceSource implements IGasPriceSource<GasValue
 
   supportedSpeeds() {
     const support: SupportRecord<GasValues> = { standard: 'present', fast: 'present', instant: 'present' };
-    return { [Chains.ETHEREUM.chainId]: support };
+    return { [Chains.POLYGON.chainId]: support };
   }
 
   async getGasPrice<Requirements extends FieldsRequirements<GasValues>>({
