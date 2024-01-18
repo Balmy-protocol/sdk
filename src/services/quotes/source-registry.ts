@@ -21,7 +21,7 @@ import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
 import { SquidQuoteSource } from './quote-sources/squid-quote-source';
 import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
-import { BrainDexQuoteSource } from './quote-sources/brain-dex-quote-source';
+import { BrainDexQuoteSource } from './quote-sources/braindex-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
