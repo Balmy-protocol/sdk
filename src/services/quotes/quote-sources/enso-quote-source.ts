@@ -23,7 +23,8 @@ const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   logoURI: 'ipfs://QmWc9U7emJ7YvoLsxCvvJMxnEfMncJXrkqFpGoCP2LxZRJ',
 };
 type EnsoSupport = { buyOrders: false; swapAndTransfer: false };
-export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSupport> {
+type EnsoConfig = { apiKey?: string };
+export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSupport, EnsoConfig> {
   getMetadata() {
     return ENSO_METADATA;
   }
@@ -38,7 +39,8 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSuppo
       config: { slippagePercentage, timeout },
       accounts: { takeFrom },
     },
-  }: QuoteParams<EnsoSupport>): Promise<SourceQuoteResponse> {
+    config,
+  }: QuoteParams<EnsoSupport, EnsoConfig>): Promise<SourceQuoteResponse> {
     const takeFromChecksummed = checksum(takeFrom);
 
     const queryParams = {
@@ -58,8 +60,12 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSuppo
 
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.enso.finance/api/v1/shortcuts/route?${queryString}`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (config.apiKey) {
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
+    }
 
-    const response = await fetchService.fetch(url, { timeout });
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(ENSO_METADATA, chain, sellToken, buyToken, await response.text());
     }
