@@ -15,7 +15,7 @@ const ROUTER_ADDRESS: Record<ChainId, Address> = {
 const BRAINDEX_METADATA: QuoteSourceMetadata<BrainDexSupport> = {
   name: 'BrainDex',
   supports: {
-    chains: [],
+    chains: Object.keys(ROUTER_ADDRESS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },
