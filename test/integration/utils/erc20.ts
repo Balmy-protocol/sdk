@@ -219,7 +219,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
     },
   },
-  // Note: hardhat + Celo throws `Errors: Invalid value undefined supplied to : RpcBlockWithTransactions | null/sha3Uncles: HASH, Invalid value undefined supplied to : RpcBlockWithTransactions | null/difficulty` error.
+  // Note: hardhat + Celo + Moonbeam throws `Errors: Invalid value undefined supplied to : RpcBlockWithTransactions | null/sha3Uncles: HASH, Invalid value undefined supplied to : RpcBlockWithTransactions | null/difficulty` error.
   // Ref.: https://github.com/NomicFoundation/hardhat/issues/3590
   // [Chains.CELO.chainId]: {
   //   STABLE_ERC20: {
@@ -248,6 +248,20 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   //   wToken: {
   //     address: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517',
   //     whale: '0xfcd2ce20ef8ed3d43ab4f8c2da13bbf1c6d9512f',
+  //   },
+  // },
+  // [Chains.MOONBEAM.chainId]: {
+  //   STABLE_ERC20: {
+  //     address: '0x931715FEE2d06333043d11F658C8CE934aC61D0c',
+  //     whale: '0x744b1756e7651c6D57f5311767EAFE5E931D615b',
+  //   },
+  //   RANDOM_ERC20: {
+  //     address: '0xFfFFfFff1FcaCBd218EDc0EbA20Fc2308C778080',
+  //     whale: '0xD22Da948c0aB3A27f5570b604f3ADef5F68211C3',
+  //   },
+  //   wToken: {
+  //     address: '0xAcc15dC74880C9944775448304B263D191c6077F',
+  //     whale: '0x343e4f06BF240d22FbdFd4a2Fe5858BC66e79F12',
   //   },
   // },
   // Note: we are disabling Canto because tests fail to load quite often on that network
