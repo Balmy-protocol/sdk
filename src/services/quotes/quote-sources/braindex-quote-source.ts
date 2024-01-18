@@ -8,8 +8,7 @@ import { calculateAllowanceTarget, checksum, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const ROUTER_ADDRESS: Record<ChainId, Address> = {
-  [Chains.MOONBEAM.chainId]: '0xe2eA8cb03481B83402e6159cf95A63A934255C6b',
-  [Chains.MOONRIVER.chainId]: '0x67828d250f5f1Ab8Be8a3444bc86B789c15E4984',
+  [Chains.MOONBEAM.chainId]: '0x415f895a14d47f951f33adc1d2fc1db0191481be',
 };
 
 const BRAINDEX_METADATA: QuoteSourceMetadata<BrainDexSupport> = {
@@ -48,13 +47,13 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       amount_in: toHex(order.sellAmount),
       token_in: mappedSellToken,
       token_out: mappedBuyToken,
-      // These values were copied from the example provided by BrainDex
+      // These values were copied from BrainDex's UI
       max_hops: 3,
       min_splits: 0,
-      max_splits: 3,
+      max_splits: 2,
       count: 5,
     };
-    const response = await fetchService.fetch('https://api-beta.braindex.io/api/split_route/multi', {
+    const response = await fetchService.fetch('https://api.braindex.io/api/split_route/multi', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +82,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       calldata = encodeFunctionData({
         abi: ROUTER_ABI,
         functionName: 'multiSwapTokensForEth',
-        args: [mappedBuyToken, (recipient ?? takeFrom) as ViemAddress, order.sellAmount, minBuyAmount, deadline, swap_paths],
+        args: [mappedSellToken, (recipient ?? takeFrom) as ViemAddress, order.sellAmount, minBuyAmount, deadline, swap_paths],
       });
     } else {
       calldata = encodeFunctionData({
