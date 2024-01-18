@@ -21,6 +21,8 @@ import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
 import { SquidQuoteSource } from './quote-sources/squid-quote-source';
 import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { OkuQuoteSource } from './quote-sources/oku-quote-source';
+import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
+import { BrainDexQuoteSource } from './quote-sources/braindex-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -34,6 +36,7 @@ export const QUOTE_SOURCES = {
   kyberswap: new KyberswapQuoteSource(),
   odos: new OdosQuoteSource(),
   firebird: new FirebirdQuoteSource(),
+  braindex: new BrainDexQuoteSource(),
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
@@ -41,6 +44,7 @@ export const QUOTE_SOURCES = {
   magpie: new MagpieQuoteSource(),
   squid: new SquidQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
+  enso: new EnsoQuoteSource(),
   'okx-dex': new OKXDexQuoteSource(),
   conveyor: new ConveyorQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
