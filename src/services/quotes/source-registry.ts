@@ -22,6 +22,7 @@ import { SquidQuoteSource } from './quote-sources/squid-quote-source';
 import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
 import { BrainDexQuoteSource } from './quote-sources/braindex-quote-source';
+import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -36,6 +37,7 @@ export const QUOTE_SOURCES = {
   odos: new OdosQuoteSource(),
   firebird: new FirebirdQuoteSource(),
   braindex: new BrainDexQuoteSource(),
+  sovryn: new SovrynQuoteSource(),
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),
