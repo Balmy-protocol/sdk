@@ -6,7 +6,6 @@ import { PriceService } from '@services/prices/price-service';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
-import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
 import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
@@ -17,7 +16,6 @@ export type PriceSourceInput =
   | { type: 'defi-llama' }
   | { type: 'odos' }
   | { type: 'coingecko' }
-  | { type: 'portals-fi' }
   | { type: 'mean-finance' }
   | { type: 'moralis'; key: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
@@ -35,18 +33,14 @@ export function buildPriceService(params: BuildPriceParams | undefined, fetchSer
 function buildSource(source: PriceSourceInput | undefined, { fetchService }: { fetchService: IFetchService }): IPriceSource {
   const coingecko = new CoingeckoPriceSource(fetchService);
   const defiLlama = new DefiLlamaPriceSource(fetchService);
-  const portalsFi = new PortalsFiPriceSource(fetchService);
   switch (source?.type) {
     case undefined:
-      // Defi Llama and Portals.Fi are basically Coingecko with some token mappings. Defi Llama has a 5 min cache, and Portals.Fi has a
-      // 1 min cache, so the priority will be Coingecko => PortalsFi => DefiLlama
-      return new PrioritizedPriceSource([coingecko, portalsFi, defiLlama]);
+      // Defi Llama is basically Coingecko with some token mappings. Defi Llama has a 5 min cache, so the priority will be Coingecko => DefiLlama
+      return new PrioritizedPriceSource([coingecko, defiLlama]);
     case 'defi-llama':
       return defiLlama;
     case 'odos':
       return new OdosPriceSource(fetchService);
-    case 'portals-fi':
-      return portalsFi;
     case 'mean-finance':
       return new MeanFinancePriceSource(fetchService);
     case 'moralis':

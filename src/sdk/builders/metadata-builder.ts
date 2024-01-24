@@ -7,13 +7,11 @@ import { MetadataService } from '@services/metadata/metadata-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
-import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
 import { ChangellyMetadataSource } from '@services/metadata/metadata-sources/changelly-metadata-source';
 
 export type MetadataSourceInput =
   | { type: 'defi-llama' }
   | { type: 'rpc-multicall' }
-  | { type: 'portals-fi' }
   | { type: 'changelly'; apiKey: string }
   | { type: 'cached'; underlyingSource: Exclude<MetadataSourceInput, { type: 'cached' }>; config: CacheConfig }
   | { type: 'custom'; instance: IMetadataSource<object> }
@@ -29,11 +27,9 @@ type CalculateSourceFromParams<T extends BuildMetadataParams | undefined> = T ex
   : CalculateSourceFromInput<undefined>;
 
 type CalculateSourceFromInput<Input extends MetadataSourceInput | undefined> = undefined extends Input
-  ? FallbackMetadataSource<[DefiLlamaMetadataSource, PortalsFiMetadataSource, RPCMetadataSource]>
+  ? FallbackMetadataSource<[DefiLlamaMetadataSource, RPCMetadataSource]>
   : Input extends { type: 'defi-llama' }
   ? DefiLlamaMetadataSource
-  : Input extends { type: 'portals-fi' }
-  ? PortalsFiMetadataSource
   : Input extends { type: 'changelly' }
   ? ChangellyMetadataSource
   : Input extends { type: 'cached' }
@@ -66,13 +62,10 @@ function buildSource<T extends MetadataSourceInput>(
   switch (source?.type) {
     case undefined:
       const defiLlama = new DefiLlamaMetadataSource(fetchService);
-      const portalsFi = new PortalsFiMetadataSource(fetchService);
       const rpc = new RPCMetadataSource(multicallService);
-      return new FallbackMetadataSource([defiLlama, portalsFi, rpc]);
+      return new FallbackMetadataSource([defiLlama, rpc]);
     case 'defi-llama':
       return new DefiLlamaMetadataSource(fetchService);
-    case 'portals-fi':
-      return new PortalsFiMetadataSource(fetchService);
     case 'changelly':
       return new ChangellyMetadataSource(fetchService, source.apiKey);
     case 'cached':

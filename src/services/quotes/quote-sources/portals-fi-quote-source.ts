@@ -1,15 +1,26 @@
 import qs from 'qs';
 import { Addresses } from '@shared/constants';
-import { PORTALS_FI_CHAIN_ID_TO_KEY, PORTALS_FI_SUPPORTED_CHAINS } from '@shared/portals-fi';
 import { isSameAddress } from '@shared/utils';
-import { Chain, TokenAddress } from '@types';
+import { Chain, ChainId, TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { Chains } from '@chains';
+
+const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
+  [Chains.ETHEREUM.chainId]: 'ethereum',
+  [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.FANTOM.chainId]: 'fantom',
+  [Chains.ARBITRUM.chainId]: 'arbitrum',
+  [Chains.POLYGON.chainId]: 'polygon',
+  [Chains.AVALANCHE.chainId]: 'avalanche',
+  [Chains.BNB_CHAIN.chainId]: 'bsc',
+  [Chains.BASE.chainId]: 'base',
+};
 
 export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
   name: 'Portals.fi',
   supports: {
-    chains: PORTALS_FI_SUPPORTED_CHAINS,
+    chains: Object.keys(PORTALS_FI_CHAIN_ID_TO_KEY).map(Number),
     swapAndTransfer: false,
     buyOrders: false,
   },
