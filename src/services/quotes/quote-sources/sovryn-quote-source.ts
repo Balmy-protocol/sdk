@@ -64,7 +64,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       maxSellAmount: BigInt(maxSellAmount),
       buyAmount: BigInt(buyAmount),
       minBuyAmount: BigInt(minBuyAmount),
-      estimatedGas: BigInt(estimatedGas),
+      estimatedGas: estimatedGas ? BigInt(estimatedGas) : undefined,
       allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
       tx: {

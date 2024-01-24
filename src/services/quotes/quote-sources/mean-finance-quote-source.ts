@@ -86,7 +86,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<Me
       maxSellAmount: BigInt(maxSellAmount),
       buyAmount: BigInt(buyAmount),
       minBuyAmount: BigInt(minBuyAmount),
-      estimatedGas: BigInt(estimatedGas),
+      estimatedGas: estimatedGas ? BigInt(estimatedGas) : undefined,
       allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
       tx: {
