@@ -2,7 +2,6 @@ import ms from 'ms';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
-import { PortalsFiPriceSource } from '@services/prices/price-sources/portals-fi-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
 import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
@@ -28,7 +27,6 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 
 const FETCH_SERVICE = new FetchService();
 const DEFI_LLAMA_PRICE_SOURCE = new DefiLlamaPriceSource(FETCH_SERVICE);
-const PORTALS_FI_PRICE_SOURCE = new PortalsFiPriceSource(FETCH_SERVICE);
 const ODOS_PRICE_SOURCE = new OdosPriceSource(FETCH_SERVICE);
 const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   expiration: {
@@ -37,8 +35,8 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   },
   maxSize: 100,
 });
-const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
-const FASTEST_PRICE_SOURCE = new FastestPriceSource([PORTALS_FI_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
+const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
+const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
 const MEAN_PRICE_SOURCE = new MeanFinancePriceSource(FETCH_SERVICE);
 const MORALIS_PRICE_SOURCE = new MoralisPriceSource(FETCH_SERVICE, 'API_KEY');
@@ -49,7 +47,6 @@ jest.setTimeout(ms('1m'));
 
 describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Defi Llama Source', source: DEFI_LLAMA_PRICE_SOURCE });
-  priceSourceTest({ title: 'Portals Fi Source', source: PORTALS_FI_PRICE_SOURCE });
   priceSourceTest({ title: 'Odos Source', source: ODOS_PRICE_SOURCE });
   priceSourceTest({ title: 'Cached Price Source', source: CACHED_PRICE_SOURCE });
   priceSourceTest({ title: 'Prioritized Source', source: PRIORITIZED_PRICE_SOURCE });
