@@ -9,6 +9,7 @@ import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const ROUTER_ADDRESS: Record<ChainId, Address> = {
   [Chains.MOONBEAM.chainId]: '0x415f895a14d47f951f33adc1d2fc1db0191481be',
+  [Chains.MOONRIVER.chainId]: '0xf1a3969e1606dff178e99eaab4e90f2b41495b58',
 };
 
 const BRAINDEX_METADATA: QuoteSourceMetadata<BrainDexSupport> = {
