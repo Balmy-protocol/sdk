@@ -14,7 +14,7 @@ export const MEAN_FINANCE_SUPPORTED_CHAINS = [
   Chains.BASE,
   Chains.BASE_GOERLI,
   Chains.MOONBEAM,
-  // Chains.ROOTSTOCK,
+  Chains.ROOTSTOCK,
 ].map(({ chainId }) => chainId);
 
 const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
