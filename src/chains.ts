@@ -227,7 +227,15 @@ export const Chains = {
     ids: ['moonbeam'],
     nativeCurrency: { symbol: 'GLMR', name: 'Moonbeam' },
     wToken: '0xacc15dc74880c9944775448304b263d191c6077f',
-    publicRPCs: ['https://rpc.api.moonbeam.network'],
+    publicRPCs: [
+      'https://rpc.api.moonbeam.network',
+      'https://rpc.ankr.com/moonbeam',
+      'https://moonbeam.public.blastapi.io',
+      'https://moonbeam-rpc.dwellir.com',
+      'https://endpoints.omniatech.io/v1/moonbeam/mainnet/public',
+      'https://1rpc.io/glmr',
+      'https://moonbeam.publicnode.com',
+    ],
     explorer: 'https://moonscan.io/',
   },
   FUSE: {
