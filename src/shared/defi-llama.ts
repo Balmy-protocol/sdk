@@ -253,27 +253,6 @@ export class DefiLlamaClient {
     const responses = await Promise.all(requests);
     return responses.reduce((accum, curr) => ({ ...accum, ...curr }), {});
   }
-
-  private async fetchPrices(baseUrl: string, tokens: TokenId[], config?: { timeout?: TimeString }, extraParams: Record<string, string> = {}) {
-    const chunks = splitInChunks(tokens, 30);
-    const extraParamsString =
-      '?' +
-      Object.entries(extraParams)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&=');
-    const requests = chunks.map(async (chunk) => {
-      const url = baseUrl + chunk.join(',') + extraParamsString;
-      try {
-        const response = await this.fetch.fetch(url, { timeout: config?.timeout });
-        const { coins }: { coins: Record<TokenId, FetchPricesResult> } = await response.json();
-        return coins;
-      } catch {
-        throw new Error('Request to Defi Llama API failed');
-      }
-    });
-    const responses = await Promise.all(requests);
-    return responses.reduce((accum, curr) => ({ ...accum, ...curr }), {});
-  }
 }
 
 const DEFI_LLAMA_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';

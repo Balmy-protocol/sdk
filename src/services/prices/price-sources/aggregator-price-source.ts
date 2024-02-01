@@ -95,28 +95,9 @@ export class AggregatorPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
-    const collected = await collectAllResults({
-      allSources: this.sources,
-      fullRequest: tokens,
-      query: 'getChart',
-      getResult: (source, filteredRequest, sourceTimeout) =>
-        source.getChart({
-          tokens: filteredRequest,
-          span,
-          period,
-          bound,
-          searchWidth,
-          config: { timeout: sourceTimeout },
-        }),
-      timeout: config?.timeout,
-    });
     // TODO: Support more than one source
-    return Object.fromEntries(
-      Object.entries(collected).map(([chain, tokens]) => [
-        parseInt(chain),
-        Object.fromEntries(Object.entries(tokens).map(([token, prices]) => [token, prices[0]])),
-      ])
-    );
+    const sourcesInChains = getSourcesThatSupportRequestOrFail(tokens, this.sources, 'getChart');
+    return sourcesInChains[0].getChart({ tokens, span, period, bound, searchWidth, config }) ?? {};
   }
 
   private aggregate<T>(collected: Record<ChainId, Record<TokenAddress, T[]>>, aggregate: (results: T[], method: PriceAggregationMethod) => T) {
