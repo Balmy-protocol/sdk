@@ -36,12 +36,23 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
     return ODOS_METADATA;
   }
 
-  async quote(params: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
+  quote(params: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
     // Note: Odos supports simple and advanced quotes. Simple quotes may offer worse prices, but it resolves faster. Since the advanced quote
     //       might timeout, we will make two quotes (one simple and one advanced) and we'll return the simple one if the other one timeouts
     const simple = getQuote({ ...params, simple: true });
     const advanced = timeoutPromise(getQuote({ ...params, simple: false }), params.request.config.timeout, { reduceBy: '100ms' });
-    return await advanced.catch(() => simple);
+    return new Promise((resolve, reject) => {
+      advanced
+        .then((value) => {
+          // Use advanced value and handle simple rejection
+          resolve(value);
+          simple.catch(() => null);
+        })
+        .catch(() => {
+          // Use simple quote
+          simple.then(resolve).catch(reject);
+        });
+    });
   }
 }
 
