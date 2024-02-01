@@ -85,6 +85,39 @@ export class FastestPriceSource implements IPriceSource {
       timeout: config?.timeout,
     });
   }
+
+  async getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    return executeFastest({
+      allSources: this.sources,
+      fullRequest: tokens,
+      query: 'getChart',
+      addressesFromRequest: (tokens) => tokens,
+      getResult: (source, filteredRequest, sourceTimeout) =>
+        source.getChart({
+          tokens: filteredRequest,
+          span,
+          period,
+          bound,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      timeout: config?.timeout,
+    });
+  }
 }
 
 async function executeFastest<Request, Result>({

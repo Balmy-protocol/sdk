@@ -10,7 +10,7 @@ export class MeanFinancePriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true, getChart: false };
     const entries = MEAN_FINANCE_SUPPORTED_CHAINS.filter((chainId) => chainId !== Chains.BASE_GOERLI.chainId) // Mean's price source does not support Base goerli
       .map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
@@ -85,6 +85,17 @@ export class MeanFinancePriceSource implements IPriceSource {
     });
     const body = await response.json();
     return body.tokens;
+  }
+
+  async getChart(_: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    return Promise.reject(new Error('Operation not supported'));
   }
 }
 

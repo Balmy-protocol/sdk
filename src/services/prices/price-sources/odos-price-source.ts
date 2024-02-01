@@ -13,7 +13,12 @@ export class OdosPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false, getBulkHistoricalPrices: false };
+    const support: PricesQueriesSupport = {
+      getCurrentPrices: true,
+      getHistoricalPrices: false,
+      getBulkHistoricalPrices: false,
+      getChart: false,
+    };
     const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
@@ -47,6 +52,17 @@ export class OdosPriceSource implements IPriceSource {
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
+  async getChart(_: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 

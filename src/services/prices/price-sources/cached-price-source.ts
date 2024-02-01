@@ -58,6 +58,32 @@ export class CachedPriceSource implements IPriceSource {
     return this.source.getBulkHistoricalPrices({ addresses, searchWidth, config });
   }
 
+  async getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    // TODO: Support caching, but make it configurable
+    return this.source.getChart({
+      tokens,
+      span,
+      period,
+      bound,
+      searchWidth,
+      config,
+    });
+  }
+
   private async fetchTokens(tokensInChain: TokenInChain[], context?: CacheContext): Promise<Record<TokenInChain, PriceResult>> {
     const addresses = tokensInChainToAddresses(tokensInChain);
     const tokens = await this.source.getCurrentPrices({ addresses, config: { timeout: context?.timeout } });
