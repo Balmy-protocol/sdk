@@ -86,6 +86,28 @@ describe('Token Price Sources', () => {
           expect(typeof timestamp).to.equal('number');
         },
       });
+      const from = 1680220800; // Friday, 31 March 2023 0:00:00
+      const span = 10;
+      const period = '1d';
+      queryTest({
+        source,
+        query: 'getChart',
+        getResult: (source, tokens) =>
+          source.getChart({
+            tokens,
+            span,
+            period,
+            bound: { from },
+            config: { timeout: '10s' },
+          }),
+        validation: (prices) => {
+          expect(prices).to.length(span);
+          prices.forEach((price) => {
+            expect(typeof price.price).to.equal('number');
+            expect(typeof price.closestTimestamp).to.equal('number');
+          });
+        },
+      });
     });
   }
 

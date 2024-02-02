@@ -48,11 +48,17 @@ export function combineSupport(sources: IPriceSource[]): Record<ChainId, PricesQ
   for (const source of sources) {
     for (const [chainIdString, support] of Object.entries(source.supportedQueries())) {
       const chainId = Number(chainIdString);
-      const current = result[chainId] ?? { getCurrentPrices: false, getHistoricalPrices: false, getBulkHistoricalPrices: false };
+      const current = result[chainId] ?? {
+        getCurrentPrices: false,
+        getHistoricalPrices: false,
+        getBulkHistoricalPrices: false,
+        getChart: false,
+      };
       result[chainId] = {
         getCurrentPrices: current.getCurrentPrices || support.getCurrentPrices,
         getHistoricalPrices: current.getHistoricalPrices || support.getHistoricalPrices,
         getBulkHistoricalPrices: current.getBulkHistoricalPrices || support.getBulkHistoricalPrices,
+        getChart: current.getChart || support.getChart,
       };
     }
   }

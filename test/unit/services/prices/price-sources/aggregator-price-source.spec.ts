@@ -110,8 +110,11 @@ describe('Aggregator Price Source', () => {
     return {
       getBulkHistoricalPrices: () => Promise.reject('Not supported'),
       getHistoricalPrices: () => Promise.reject('Not supported'),
-      supportedQueries: () => ({ [chainId]: { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false } }),
+      supportedQueries: () => ({
+        [chainId]: { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false, getChart: true },
+      }),
       getCurrentPrices: () => Promise.resolve({ [chainId]: prices }),
+      getChart: () => Promise.resolve({ prices }),
     };
   }
 
@@ -121,9 +124,13 @@ describe('Aggregator Price Source', () => {
       getHistoricalPrices: () => Promise.reject('Not supported'),
       supportedQueries: () =>
         Object.fromEntries(
-          onChain.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false }])
+          onChain.map((chainId) => [
+            chainId,
+            { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false, getChart: false },
+          ])
         ),
       getCurrentPrices: () => Promise.reject(new Error('Something failed')),
+      getChart: () => Promise.reject(new Error('Something failed')),
     };
   }
 
