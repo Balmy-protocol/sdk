@@ -185,6 +185,15 @@ export const Chains = {
     publicRPCs: ['https://rpc.ankr.com/celo', 'https://celo-mainnet-archive.allthatnode.com', 'https://celo-mainnet-rpc.allthatnode.com'],
     explorer: 'https://celoscan.io/',
   },
+  METIS_ANDROMEDA: {
+    chainId: 1088,
+    name: 'Metis Andromeda',
+    ids: ['metis'],
+    nativeCurrency: { symbol: 'METIS', name: 'Metis' },
+    wToken: '0x75cb093e4d61d2a2e65d8e0bbb01de8d89b53481',
+    publicRPCs: ['https://metis-pokt.nodies.app', 'https://metis-mainnet.public.blastapi.io'],
+    explorer: 'https://explorer.metis.io/',
+  },
   AVALANCHE: {
     chainId: 43114,
     name: 'Avalanche',

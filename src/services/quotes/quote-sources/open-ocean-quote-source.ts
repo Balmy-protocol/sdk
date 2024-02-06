@@ -25,6 +25,7 @@ const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Addres
   [Chains.CRONOS.chainId]: { chainKey: 'cronos' },
   [Chains.HARMONY_SHARD_0.chainId]: { chainKey: 'harmony' },
   [Chains.KAVA.chainId]: { chainKey: 'kava' },
+  [Chains.METIS_ANDROMEDA.chainId]: { chainKey: 'metis', nativeAsset: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000' },
   [Chains.CELO.chainId]: { chainKey: 'celo', nativeAsset: '0x471ece3750da237f93b8e339c536989b8978a438' },
   [Chains.POLYGON_ZKEVM.chainId]: { chainKey: 'polygon_zkevm' },
   [Chains.ONTOLOGY.chainId]: { chainKey: 'ontvm' },
