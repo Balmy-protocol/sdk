@@ -359,6 +359,15 @@ export const Chains = {
     publicRPCs: ['https://emerald.oasis.dev'],
     explorer: 'https://explorer.emerald.oasis.dev/',
   },
+  opBNB: {
+    chainId: 204,
+    name: 'opBNB',
+    ids: ['opbnb'],
+    nativeCurrency: { symbol: 'BNB', name: 'BNB' },
+    wToken: '0x4200000000000000000000000000000000000006',
+    publicRPCs: ['https://1rpc.io/opbnb', 'https://opbnb-mainnet-rpc.bnbchain.org', 'https://opbnb.publicnode.com'],
+    explorer: 'https://opbnb.bscscan.com/',
+  },
   CANTO: {
     chainId: 7700,
     name: 'Canto',
