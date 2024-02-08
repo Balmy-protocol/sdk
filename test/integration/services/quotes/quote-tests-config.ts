@@ -8,6 +8,7 @@ export const CONFIG: SourceConfig = {
   },
   custom: {
     odos: { sourceDenylist: ['Hashflow'] },
+    barter: { sourceDenylist: ['Hashflow'] },
   },
 };
 if (process.env.RANGO_API_KEY) {
