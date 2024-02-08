@@ -14,8 +14,7 @@ const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
     swapAndTransfer: true,
     buyOrders: false,
   },
-  // TODO: Update
-  logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
+  logoURI: 'ipfs://QmYhY34jBV93MwZ9xYVrXbcUjg1wL9btspWVoRTQCzxNUx',
 };
 type BarterSupport = { buyOrders: false; swapAndTransfer: true };
 type BarterConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
