@@ -81,7 +81,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       failed(CONVEYOR_METADATA, chain, sellToken, buyToken, JSON.stringify(result.errorStatus));
     }
     const {
-      tx: { to, data, quoteData, value },
+      tx: { to, data, simulation, value },
       info: { amountOut, amountOutMin, conveyorGas },
     } = result;
     return {
@@ -93,7 +93,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       type: 'sell',
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
       tx: {
-        calldata: isHex(data) ? data : quoteData,
+        calldata: isHex(data) ? data : simulation.data,
         to,
         value: BigInt(value ?? 0),
       },
