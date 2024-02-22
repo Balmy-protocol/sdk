@@ -36,6 +36,12 @@ const OKU_METADATA: QuoteSourceMetadata<OkuSupport> = {
   logoURI: 'ipfs://QmS2Kf7sZz7DrcwWU9nNG8eGt2126G2p2c9PTDFT774sW7',
 };
 type OkuSupport = { buyOrders: true; swapAndTransfer: false };
+// Note: Oku is actually an API that finds routes in Uniswap. The thing is that they have integrated with
+// the Universal Router, which required Permit2 to work. Our quote sources can't work directly with Permit2
+// so we've built a new contract called SwapProxy, that can be used to provide ERC20 approval features to
+// a contract. The way it works, the SwapProxy will take funds from the caller and send them to the
+// Permit2Adapter, which will execute the swap. Take into consideration that we are using this contract because
+// it allows arbitrary calls, not because we actually use anything related to Permit2.
 export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport> {
   getMetadata() {
     return OKU_METADATA;
