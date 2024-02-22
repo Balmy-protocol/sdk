@@ -1,24 +1,27 @@
-import { formatUnits, parseUnits } from 'viem';
-import { ChainId, TokenAddress } from '@types';
+import { Address as ViemAddress, encodeFunctionData, formatUnits, parseUnits } from 'viem';
+import { Address, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { GasPrice } from '@services/gas';
-import { isSameAddress } from '@shared/utils';
+import { addPercentage, calculateDeadline, isSameAddress, substractPercentage } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
+const SWAP_PROXY_ADDRESS = '0xaE382fb775c05130fED953DA2Ee00600470170Dc';
+const PERMIT2_ADAPTER_ADDRESS = '0xED306e38BB930ec9646FF3D917B2e513a97530b1';
+
 const CHAINS: Record<ChainId, string> = {
-  [Chains.ARBITRUM.chainId]: 'arbitrum',
-  [Chains.BASE.chainId]: 'base',
-  [Chains.BOBA.chainId]: 'boba',
-  [Chains.BNB_CHAIN.chainId]: 'bsc',
-  [Chains.ETHEREUM.chainId]: 'ethereum',
-  [Chains.MOONBEAM.chainId]: 'moonbeam',
-  [Chains.OPTIMISM.chainId]: 'optimism',
+  // [Chains.ARBITRUM.chainId]: 'arbitrum',
+  // [Chains.BASE.chainId]: 'base',
+  // [Chains.BOBA.chainId]: 'boba',
+  // [Chains.BNB_CHAIN.chainId]: 'bsc',
+  // [Chains.ETHEREUM.chainId]: 'ethereum',
+  // [Chains.MOONBEAM.chainId]: 'moonbeam',
+  // [Chains.OPTIMISM.chainId]: 'optimism',
   [Chains.POLYGON.chainId]: 'polygon',
-  [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
-  [Chains.ROOTSTOCK.chainId]: 'rootstock',
+  // [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
+  // [Chains.ROOTSTOCK.chainId]: 'rootstock',
   // [Chains.ZKSYNC.chainId]: "zksync",
   // [Chains.SCROLL.chainId]: "scroll",
 };
@@ -45,11 +48,16 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       sellToken,
       buyToken,
       order,
-      config: { slippagePercentage, timeout },
+      config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom },
       external,
     },
   }: QuoteParams<OkuSupport>): Promise<SourceQuoteResponse> {
+    if (isSameAddress(chain.wToken, sellToken) && isSameAddress(Addresses.NATIVE_TOKEN, buyToken))
+      throw new Error(`Native token unwrap not supported by this source`);
+    if (isSameAddress(Addresses.NATIVE_TOKEN, sellToken) && isSameAddress(chain.wToken, buyToken))
+      throw new Error(`Native token wrap not supported by this source`);
+
     const [gasPrice, tokenData] = await Promise.all([external.gasPrice.request(), external.tokenData.request()]);
     const body = {
       chain: CHAINS[chain.chainId],
@@ -72,10 +80,23 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     if (!quoteResponse.ok) {
       failed(OKU_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
-    const { coupon, inAmount, outAmount, ...rest1 } = await quoteResponse.json();
+    const { coupon, inAmount, outAmount, signingRequest } = await quoteResponse.json();
     const executionResponse = await fetchService.fetch('https://oku-canoe.fly.dev/market/usor/execution_information', {
       method: 'POST',
-      body: JSON.stringify({ coupon }),
+      body: JSON.stringify({
+        coupon,
+        signingRequest: signingRequest
+          ? {
+              ...signingRequest,
+              permitSignature: [
+                {
+                  ...signingRequest.permitSignature[0],
+                  signature: '0x0000000000000000000000000000000000000000000000000000000000000001',
+                },
+              ],
+            }
+          : undefined,
+      }),
       headers: { ['Content-Type']: 'application/json' },
       timeout,
     });
@@ -84,25 +105,59 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     }
     const {
       trade: { data, to, value },
-      ...rest2
+      approvals,
     } = await executionResponse.json();
 
-    const quote = {
-      sellAmount: parseUnits(inAmount, tokenData.sellToken.decimals),
-      buyAmount: parseUnits(outAmount, tokenData.buyToken.decimals),
-      allowanceTarget: calculateAllowanceTarget(sellToken, coupon.universalRouter),
+    const sellAmount = parseUnits(inAmount, tokenData.sellToken.decimals);
+    const buyAmount = parseUnits(outAmount, tokenData.buyToken.decimals);
+    const [maxSellAmount, minBuyAmount] =
+      order.type === 'sell'
+        ? [order.sellAmount, substractPercentage(buyAmount, slippagePercentage, 'up')]
+        : [addPercentage(sellAmount, slippagePercentage, 'up'), order.buyAmount];
+
+    const deadline = BigInt(calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
+    const tokenOut =
+      order.type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_ADDRESS)
+        ? []
+        : [{ token: mapToken(sellToken), distribution: [{ recipient: takeFrom as ViemAddress, shareBps: 0n }] }];
+    const adapterData = encodeFunctionData({
+      abi: PERMIT2_ADAPTER_ABI,
+      functionName: 'executeWithBatchPermit',
+      args: [
+        { tokens: [], nonce: 0n, signature: '0x' }, // There is nothing to take from the caller, since the swap proxy will already send it to the contract
+        approvals?.map((approval: { address: Address; approvee: Address }) => ({
+          token: approval.address,
+          allowanceTarget: approval.approvee,
+        })) ?? [],
+        [{ target: to, data, value: BigInt(value ?? 0) }],
+        tokenOut,
+        deadline,
+      ],
+    });
+    const swapProxyData = encodeFunctionData({
+      abi: SWAP_PROXY_ABI,
+      functionName: 'swap',
+      args: [mapToken(sellToken), maxSellAmount, adapterData],
+    });
+
+    return {
+      sellAmount,
+      maxSellAmount,
+      buyAmount,
+      minBuyAmount,
+      type: order.type,
+      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_ADDRESS),
       tx: {
-        to: to,
-        calldata: data,
+        to: SWAP_PROXY_ADDRESS,
+        calldata: swapProxyData,
         value: BigInt(value ?? 0),
       },
     };
-    return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 }
 
 function mapToken(address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : address;
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : (address as ViemAddress);
 }
 
 function eip1159ToLegacy(gasPrice: GasPrice): bigint {
@@ -111,3 +166,86 @@ function eip1159ToLegacy(gasPrice: GasPrice): bigint {
   }
   return BigInt(gasPrice.maxFeePerGas);
 }
+
+const SWAP_PROXY_ABI = [
+  {
+    inputs: [
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'bytes', name: 'data', type: 'bytes' },
+    ],
+    name: 'swap',
+    outputs: [{ internalType: 'bytes', name: '', type: 'bytes' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+] as const;
+
+const PERMIT2_ADAPTER_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              { internalType: 'address', name: 'token', type: 'address' },
+              { internalType: 'uint256', name: 'amount', type: 'uint256' },
+            ],
+            internalType: 'struct IPermit2.TokenPermissions[]',
+            name: 'tokens',
+            type: 'tuple[]',
+          },
+          { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.BatchPermit',
+        name: '_batchPermit',
+        type: 'tuple',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'address', name: 'allowanceTarget', type: 'address' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.AllowanceTarget[]',
+        name: '_allowanceTargets',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'target', type: 'address' },
+          { internalType: 'bytes', name: 'data', type: 'bytes' },
+          { internalType: 'uint256', name: 'value', type: 'uint256' },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.ContractCall[]',
+        name: '_contractCalls',
+        type: 'tuple[]',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'token', type: 'address' },
+          {
+            components: [
+              { internalType: 'address', name: 'recipient', type: 'address' },
+              { internalType: 'uint256', name: 'shareBps', type: 'uint256' },
+            ],
+            internalType: 'struct Token.DistributionTarget[]',
+            name: 'distribution',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct IArbitraryExecutionPermit2Adapter.TransferOut[]',
+        name: '_transferOut',
+        type: 'tuple[]',
+      },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+    ],
+    name: 'executeWithBatchPermit',
+    outputs: [
+      { internalType: 'bytes[]', name: '_executionResults', type: 'bytes[]' },
+      { internalType: 'uint256[]', name: '_tokenBalances', type: 'uint256[]' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+] as const;

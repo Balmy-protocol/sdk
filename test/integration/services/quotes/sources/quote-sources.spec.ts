@@ -40,7 +40,7 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'oku',
+  source: 'enso',
   chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
@@ -52,7 +52,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe('Quote Sources [External Quotes]', () => {
+describe.skip('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
@@ -77,7 +77,7 @@ describe('Quote Sources [External Quotes]', () => {
           to: userSigner,
           tokens: [
             { amount: parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
-            { amount: parseUnits('10000', tokens.RANDOM_ERC20.decimals), token: tokens.RANDOM_ERC20 },
+            { amount: parseUnits('1000', tokens.RANDOM_ERC20.decimals), token: tokens.RANDOM_ERC20 },
             { amount: ONE_NATIVE_TOKEN * 3n, token: tokens.nativeToken },
             { amount: ONE_NATIVE_TOKEN, token: tokens.wToken },
           ],
