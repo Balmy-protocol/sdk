@@ -85,6 +85,39 @@ export class PrioritizedPriceSource implements IPriceSource {
       timeout: config?.timeout,
     });
   }
+
+  async getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    return executePrioritized({
+      allSources: this.sources,
+      fullRequest: tokens,
+      query: 'getChart',
+      addressesFromRequest: (request) => request,
+      getResult: (source, filteredRequest, sourceTimeout) =>
+        source.getChart({
+          tokens: filteredRequest,
+          span,
+          period,
+          bound,
+          searchWidth,
+          config: { timeout: sourceTimeout },
+        }),
+      timeout: config?.timeout,
+    });
+  }
 }
 
 async function executePrioritized<Request, Result>({

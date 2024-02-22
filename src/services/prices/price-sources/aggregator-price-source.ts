@@ -80,6 +80,26 @@ export class AggregatorPriceSource implements IPriceSource {
     return this.aggregate(collected, aggregateBulkHistoricalPrices);
   }
 
+  async getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    // TODO: Support more than one source
+    const sourcesInChains = getSourcesThatSupportRequestOrFail(tokens, this.sources, 'getChart');
+    return sourcesInChains[0].getChart({ tokens, span, period, bound, searchWidth, config }) ?? {};
+  }
+
   private aggregate<T>(collected: Record<ChainId, Record<TokenAddress, T[]>>, aggregate: (results: T[], method: PriceAggregationMethod) => T) {
     const result: Record<ChainId, Record<TokenAddress, T>> = {};
     for (const chainId in collected) {

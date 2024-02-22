@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
-import { PortalsFiMetadataSource } from '@services/metadata/metadata-sources/portals-fi-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
@@ -27,7 +26,6 @@ const FETCH_SERVICE = new FetchService();
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(PROVIDER_SERVICE));
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
-const PORTALS_FI_METADATA_SOURCE = new PortalsFiMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
 const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOURCE, {
   expiration: {
@@ -45,11 +43,6 @@ describe('Metadata Sources', () => {
   metadataSourceTest({
     title: 'RPC Source',
     source: RPC_METADATA_SOURCE,
-    fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
-  });
-  metadataSourceTest({
-    title: 'Portals Fi Source',
-    source: PORTALS_FI_METADATA_SOURCE,
     fields: [{ fields: ['decimals', 'symbol', 'name'], on: 'all chains' }],
   });
   metadataSourceTest({

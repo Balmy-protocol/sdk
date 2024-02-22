@@ -203,9 +203,13 @@ function source({ chains }: { chains: ChainId[] }): {
     getCurrentPrices: () => sourcePromise,
     getHistoricalPrices: () => Promise.reject('Not supported'),
     getBulkHistoricalPrices: () => Promise.reject('Not supported'),
+    getChart: () => Promise.reject('Not supported'),
     supportedQueries: () =>
       Object.fromEntries(
-        chains.map((chainId) => [chainId, { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false }])
+        chains.map((chainId) => [
+          chainId,
+          { getHistoricalPrices: false, getCurrentPrices: true, getBulkHistoricalPrices: false, getChart: false },
+        ])
       ),
   };
   return { source, promise: sourcePromise };

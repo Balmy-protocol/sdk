@@ -1,40 +1,21 @@
 import { Chains } from '@chains';
-import { Address } from '@types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
-export const MEAN_FINANCE_SUPPORTED_CHAINS = [
-  Chains.ETHEREUM,
-  Chains.OPTIMISM,
-  Chains.POLYGON,
-  Chains.BNB_CHAIN,
-  Chains.ARBITRUM,
-  Chains.GNOSIS,
-  Chains.BASE,
-  Chains.BASE_GOERLI,
-  Chains.MOONBEAM,
-  Chains.ROOTSTOCK,
-].map(({ chainId }) => chainId);
-
-const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
-  name: 'Mean Finance',
+const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
+  name: 'Sovryn',
   supports: {
-    chains: MEAN_FINANCE_SUPPORTED_CHAINS,
-    buyOrders: true,
-    swapAndTransfer: true,
+    chains: [Chains.ROOTSTOCK.chainId],
+    buyOrders: false,
+    swapAndTransfer: false,
   },
-  logoURI: 'ipfs://QmUUbaZvrD8Ymr2nV6db4Cbtd1aMCiSP7MoyvBv9LTnrmP',
+  logoURI: 'ipfs://QmUpdb1zxtB2kUSjR1Qs1QMFPsSeZNkL21fMzGUfdjkXQA',
 };
-type MeanFinanceConfig = {
-  alwaysUseTransformers?: boolean;
-  swapperContract?: Address;
-  leftoverRecipient?: Address;
-};
-type MeanFinanceSupport = { buyOrders: true; swapAndTransfer: true };
-export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<MeanFinanceSupport, MeanFinanceConfig> {
+type SovrynSupport = { buyOrders: false; swapAndTransfer: false };
+export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynSupport> {
   getMetadata() {
-    return MEAN_METADATA;
+    return SOVRYN_METADATA;
   }
 
   async quote({
@@ -42,22 +23,19 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<Me
     request: {
       chain,
       config: { slippagePercentage, timeout, txValidFor },
-      accounts: { takeFrom, recipient },
+      accounts: { takeFrom },
       order,
       external,
       ...request
     },
     config,
-  }: QuoteParams<MeanFinanceSupport, MeanFinanceConfig>): Promise<SourceQuoteResponse> {
-    const url = `https://api.mean.finance/v1/swap/networks/${chain.chainId}/quotes/mean-finance`;
-    const stringOrder =
-      order.type === 'sell' ? { type: 'sell', sellAmount: order.sellAmount.toString() } : { type: 'buy', buyAmount: order.buyAmount.toString() };
+  }: QuoteParams<SovrynSupport>): Promise<SourceQuoteResponse> {
+    const url = `https://api.mean.finance/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
     const body = {
       ...request,
-      order: stringOrder,
+      order: { type: 'sell', sellAmount: order.sellAmount.toString() },
       slippagePercentage,
       takerAddress: takeFrom,
-      recipient,
       txValidFor,
       quoteTimeout: timeout,
       sourceConfig: config,
@@ -69,7 +47,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<Me
       timeout,
     });
     if (!response.ok) {
-      failed(MEAN_METADATA, chain, request.sellToken, request.buyToken, await response.text());
+      failed(SOVRYN_METADATA, chain, request.sellToken, request.buyToken, await response.text());
     }
     const {
       sellAmount,

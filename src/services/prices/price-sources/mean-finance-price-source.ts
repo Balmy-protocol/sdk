@@ -10,7 +10,7 @@ export class MeanFinancePriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
-    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: false, getBulkHistoricalPrices: false };
+    const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true, getChart: false };
     const entries = MEAN_FINANCE_SUPPORTED_CHAINS.filter((chainId) => chainId !== Chains.BASE_GOERLI.chainId) // Mean's price source does not support Base goerli
       .map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
@@ -41,20 +41,60 @@ export class MeanFinancePriceSource implements IPriceSource {
     return result;
   }
 
-  getHistoricalPrices(_: {
+  async getHistoricalPrices({
+    addresses,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
     addresses: Record<ChainId, TokenAddress[]>;
     timestamp: Timestamp;
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    return Promise.reject(new Error('Operation not supported'));
+    const entries = Object.fromEntries(
+      Object.entries(addresses).map<[ChainId, { token: TokenAddress; timestamp: Timestamp }[]]>(([chainId, tokens]) => [
+        Number(chainId),
+        tokens.map((token) => ({ token, timestamp })),
+      ])
+    );
+    const prices = await this.getBulkHistoricalPrices({ addresses: entries, searchWidth, config });
+    return Object.fromEntries(
+      Object.entries(prices).map(([chainId, tokens]) => [
+        chainId,
+        Object.fromEntries(Object.entries(tokens).map(([token, price]) => [token, price[timestamp]])),
+      ])
+    );
   }
 
-  getBulkHistoricalPrices(_: {
+  async getBulkHistoricalPrices({
+    addresses,
+    config,
+  }: {
     addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    const tokens = Object.entries(addresses).flatMap(([chainId, tokens]) =>
+      tokens.map(({ token, timestamp }) => ({ chain: chainId, token, timestamp }))
+    );
+    const response = await this.fetch.fetch('https://api.mean.finance/v1/historical-prices', {
+      body: JSON.stringify({ tokens }),
+      method: 'POST',
+      timeout: config?.timeout,
+    });
+    const body = await response.json();
+    return body.tokens;
+  }
+
+  async getChart(_: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
     return Promise.reject(new Error('Operation not supported'));
   }
 }

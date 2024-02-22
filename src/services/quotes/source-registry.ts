@@ -23,6 +23,8 @@ import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { OkuQuoteSource } from './quote-sources/oku-quote-source';
 import { EnsoQuoteSource } from './quote-sources/enso-quote-source';
 import { BrainDexQuoteSource } from './quote-sources/braindex-quote-source';
+import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
+import { BarterQuoteSource } from './quote-sources/barter-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -37,6 +39,8 @@ export const QUOTE_SOURCES = {
   odos: new OdosQuoteSource(),
   firebird: new FirebirdQuoteSource(),
   braindex: new BrainDexQuoteSource(),
+  barter: new BarterQuoteSource(),
+  sovryn: new SovrynQuoteSource(),
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
   'mean-finance': new MeanFinanceQuoteSource(),

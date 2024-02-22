@@ -90,6 +90,37 @@ export class DefiLlamaClient {
     });
   }
 
+  getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    const extraParams: Record<string, string> = {
+      span: span.toString(),
+      period: period.toString(),
+      ...('from' in bound && { start: bound.from.toString() }),
+      ...('upTo' in bound && { end: bound.upTo === 'now' ? Date.now().toString() : bound.upTo.toString() }),
+      ...(searchWidth && { searchWidth }),
+    };
+
+    return this.fetchAndMapPrices({
+      baseUrl: `https://coins.llama.fi/chart/`,
+      addresses: tokens,
+      extraParams,
+      config,
+    });
+  }
+
   async getBulkHistoricalTokenData({
     addresses,
     searchWidth,
@@ -139,6 +170,38 @@ export class DefiLlamaClient {
     return { block: BigInt(height), timestamp: blockTimestamp };
   }
 
+  private async fetchAndMapPrices({
+    baseUrl,
+    addresses,
+    extraParams,
+    config,
+  }: {
+    baseUrl: string;
+    addresses: Record<ChainId, TokenAddress[]>;
+    extraParams?: Record<string, string>;
+    config?: { timeout?: TimeString };
+  }) {
+    const tokenIds = Object.entries(addresses).flatMap(([chainId, addresses]) =>
+      addresses.map((address) => toTokenId(Number(chainId), address))
+    );
+    const tokensPrices = (await this.fetchTokens(baseUrl, tokenIds, config, extraParams)) as Record<string, FetchPricesResult>;
+    const result: Record<ChainId, Record<TokenAddress, PriceResult[]>> = Object.fromEntries(
+      Object.keys(addresses).map((chainId) => [chainId, {}])
+    );
+
+    for (const chainIdString in addresses) {
+      const chainId = Number(chainIdString);
+      for (const token of addresses[chainId]) {
+        const tokenId = toTokenId(chainId, token);
+        const tokenPrices = tokensPrices[tokenId];
+        if (tokenPrices) {
+          result[chainId][token] = tokenPrices.prices.map((price) => ({ price: price.price, closestTimestamp: price.timestamp }));
+        }
+      }
+    }
+    return result;
+  }
+
   private async fetchAndMapTokens({
     baseUrl,
     addresses,
@@ -176,7 +239,7 @@ export class DefiLlamaClient {
       '?' +
       Object.entries(extraParams)
         .map(([key, value]) => `${key}=${value}`)
-        .join('&=');
+        .join('&');
     const requests = chunks.map(async (chunk) => {
       const url = baseUrl + chunk.join(',') + extraParamsString;
       try {
@@ -277,5 +340,8 @@ type FetchTokenResult = {
   symbol: string;
   timestamp: number;
   confidence: number;
+};
+type FetchPricesResult = FetchTokenResult & {
+  prices: { price: number; timestamp: number }[];
 };
 type TokenId = string;

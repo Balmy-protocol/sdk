@@ -390,6 +390,7 @@ function getSources() {
     for (const [sourceId, source] of Object.entries(sources)) {
       if (AVOID_DURING_CI.includes(sourceId)) continue;
       const supportedChains = chainsWithTestData(source.getMetadata().supports.chains);
+      if (supportedChains.length === 0) continue;
       const chainId = supportedChains.includes(Chains.ETHEREUM.chainId)
         ? Chains.ETHEREUM.chainId
         : supportedChains[Math.floor(Math.random() * supportedChains.length)];

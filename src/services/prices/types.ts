@@ -32,12 +32,20 @@ export type IPriceService = {
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>>;
+  getChart(_: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>>;
 };
 
 export type PricesQueriesSupport = {
   getBulkHistoricalPrices: boolean;
   getHistoricalPrices: boolean;
   getCurrentPrices: true;
+  getChart: boolean;
 };
 
 export type PriceResult = { price: TokenPrice; closestTimestamp: Timestamp };
@@ -59,4 +67,12 @@ export type IPriceSource = {
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>>;
+  getChart(_: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>>;
 };

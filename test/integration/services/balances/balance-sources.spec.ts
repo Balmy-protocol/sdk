@@ -6,7 +6,6 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
-import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
@@ -68,7 +67,6 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   },
   maxSize: 100,
 });
-const PORTALS_FI_BALANCE_SOURCE = new PortalsFiBalanceSource(FETCH_SERVICE, 'API_KEY');
 const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
 const MAGPIE_BALANCE_SOURCE = new MagpieBalanceSource(FETCH_SERVICE);
 const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE]);
@@ -81,7 +79,6 @@ describe('Balance Sources', () => {
   // balanceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_BALANCE_SOURCE }); Disabled because of flakyness
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE }); Disabled because Cloudlare is acting up and blocking all non-browser requests
-  // balanceSourceTest({ title: 'PortalsFi Source', source: PORTALS_FI_BALANCE_SOURCE }); Disabled because it needs an API key
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
   // balanceSourceTest({ title: 'Magpie', source: MAGPIE_BALANCE_SOURCE }); Note: fails to return all tokens since there are so many
   balanceSourceTest({ title: 'Fastest Source', source: FASTEST_BALANCE_SOURCE });

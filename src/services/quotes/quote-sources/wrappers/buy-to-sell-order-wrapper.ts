@@ -1,5 +1,6 @@
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { SourceQuoteRequest, QuoteSourceSupport, IQuoteSource, SourceQuoteResponse } from '../types';
+import { mulDivByNumber } from '@shared/utils';
 
 type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 'swapAndTransfer'> & { buyOrders: true };
 export function buyToSellOrderWrapper<
@@ -48,10 +49,14 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
   2. With this new information, create a sell order close to the buy order
   */
 
+  // We know that in a sell order, we will get a certain amount of tokens. Based on the slippage, we will be guaranteed
+  // a smaller amount. So we calculate how much buy tokens we should get as `buyAmount`, so that the `minBuyAmount` is
+  // greater than (or equal) to what we need
+  const needed = mulDivByNumber(request.order.buyAmount, 100, 100 - request.config.slippagePercentage, 'up');
   // Try to sell the amount of tokens to 'buy', to get an estimate
   const sellOrder = {
     ...request,
-    order: { type: 'sell', sellAmount: request.order.buyAmount },
+    order: { type: 'sell', sellAmount: needed },
     sellToken: request.buyToken,
     buyToken: request.sellToken,
     external: {
@@ -63,7 +68,7 @@ async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
     },
   } as SourceQuoteRequest<Support>;
   const testSellQuote = await quote(sellOrder);
-  // Note: there is room for improvement here. We could take into account the potential slippage to try to guarantee the buy price, or
-  // we could execute a few sell quotes to see which one is closer to the buy amount. We are starting simple
+  // Note: there is room for improvement here. We could could execute a few sell quotes to see which one is closer to the buy
+  //       amount. We are starting simple
   return quote({ ...request, order: { type: 'sell', sellAmount: testSellQuote.buyAmount } });
 }

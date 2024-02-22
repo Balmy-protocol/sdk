@@ -92,4 +92,23 @@ export class PriceService implements IPriceService {
       description: 'Timeouted while fetching bulk historical prices',
     });
   }
+  getChart({
+    tokens,
+    span,
+    period,
+    bound,
+    searchWidth,
+    config,
+  }: {
+    tokens: Record<ChainId, TokenAddress[]>;
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    return timeoutPromise(this.priceSource.getChart({ tokens, span, period, bound, searchWidth, config }), config?.timeout, {
+      description: 'Timeouted while fetching chart prices',
+    });
+  }
 }

@@ -16,6 +16,7 @@ import { EthersProviderSource } from '@services/providers/provider-sources/ether
 import { NodeRealProviderSource } from '@services/providers/provider-sources/node-real-provider';
 import { GetBlockProviderSource } from '@services/providers/provider-sources/get-block-provider';
 import { AnkrProviderSource } from '@services/providers/provider-sources/ankr-provider';
+import { TenderlyProviderSource } from '@services/providers/provider-sources/tenderly-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -30,6 +31,7 @@ export type ProviderSourceInput =
   | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
   | { type: 'ankr'; key?: string; onChains?: ChainId[] }
+  | { type: 'tenderly'; key?: string; onChains?: ChainId[] }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
@@ -63,6 +65,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new LlamaNodesProviderSource(source.key, source.onChains);
     case 'ankr':
       return new AnkrProviderSource(source.key, source.onChains);
+    case 'tenderly':
+      return new TenderlyProviderSource(source.key, source.onChains);
     case 'infura':
       return new InfuraProviderSource(source.key, source.onChains);
     case 'node-real':

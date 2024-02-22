@@ -4,31 +4,35 @@ import { formatUnits } from 'viem';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { GasPrice } from '@services/gas/types';
-import { ChainId } from '@types';
+import { Address, ChainId } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
+import { Addresses } from '@shared/constants';
+import { isSameAddress } from '@shared/utils';
 
-const SUPPORTED_CHAINS: Record<ChainId, string> = {
-  [Chains.ETHEREUM.chainId]: 'eth',
-  [Chains.BNB_CHAIN.chainId]: 'bsc',
-  [Chains.POLYGON.chainId]: 'polygon',
-  [Chains.FANTOM.chainId]: 'fantom',
-  [Chains.AVALANCHE.chainId]: 'avax',
-  [Chains.HECO.chainId]: 'heco',
-  [Chains.OKC.chainId]: 'okc',
-  [Chains.GNOSIS.chainId]: 'xdai',
-  [Chains.ARBITRUM.chainId]: 'arbitrum',
-  [Chains.OPTIMISM.chainId]: 'optimism',
-  [Chains.CRONOS.chainId]: 'cronos',
-  [Chains.MOONRIVER.chainId]: 'moonriver',
-  [Chains.BOBA.chainId]: 'boba',
-  [Chains.ONTOLOGY.chainId]: 'ont',
-  [Chains.AURORA.chainId]: 'aurora',
-  [Chains.HARMONY_SHARD_0.chainId]: 'harmony',
-  [Chains.POLYGON_ZKEVM.chainId]: 'polygon_zkevm',
-  [Chains.KAVA.chainId]: 'kava',
-  [Chains.CELO.chainId]: 'celo',
-  [Chains.LINEA.chainId]: 'linea',
-  [Chains.BASE.chainId]: 'base',
+const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Address }> = {
+  [Chains.ETHEREUM.chainId]: { chainKey: 'eth' },
+  [Chains.BNB_CHAIN.chainId]: { chainKey: 'bsc' },
+  [Chains.POLYGON.chainId]: { chainKey: 'polygon' },
+  [Chains.BASE.chainId]: { chainKey: 'base' },
+  [Chains.LINEA.chainId]: { chainKey: 'linea' },
+  [Chains.FANTOM.chainId]: { chainKey: 'fantom' },
+  [Chains.BOBA.chainId]: { chainKey: 'boba' },
+  [Chains.AVALANCHE.chainId]: { chainKey: 'avax' },
+  [Chains.ARBITRUM.chainId]: { chainKey: 'arbitrum' },
+  [Chains.OPTIMISM.chainId]: { chainKey: 'optimism' },
+  [Chains.MOONRIVER.chainId]: { chainKey: 'moonriver' },
+  [Chains.AURORA.chainId]: { chainKey: 'aurora' },
+  [Chains.CRONOS.chainId]: { chainKey: 'cronos' },
+  [Chains.HARMONY_SHARD_0.chainId]: { chainKey: 'harmony' },
+  [Chains.KAVA.chainId]: { chainKey: 'kava' },
+  [Chains.METIS_ANDROMEDA.chainId]: { chainKey: 'metis', nativeAsset: '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000' },
+  [Chains.CELO.chainId]: { chainKey: 'celo', nativeAsset: '0x471ece3750da237f93b8e339c536989b8978a438' },
+  [Chains.POLYGON_ZKEVM.chainId]: { chainKey: 'polygon_zkevm' },
+  [Chains.ONTOLOGY.chainId]: { chainKey: 'ontvm' },
+  [Chains.OKC.chainId]: { chainKey: 'okex' },
+  [Chains.HECO.chainId]: { chainKey: 'heco' },
+  [Chains.GNOSIS.chainId]: { chainKey: 'xdai' },
+  [Chains.opBNB.chainId]: { chainKey: 'opbnb' },
 };
 
 const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
@@ -64,10 +68,11 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
     const amount = formatUnits(order.sellAmount, sellTokenDataResult.decimals);
-    const chainKey = SUPPORTED_CHAINS[chain.chainId];
+    const { chainKey, nativeAsset } = SUPPORTED_CHAINS[chain.chainId];
+    const native = nativeAsset ?? Addresses.NATIVE_TOKEN;
     const queryParams = {
-      inTokenAddress: sellToken,
-      outTokenAddress: buyToken,
+      inTokenAddress: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? native : sellToken,
+      outTokenAddress: isSameAddress(buyToken, Addresses.NATIVE_TOKEN) ? native : buyToken,
       amount: amount,
       slippage: slippagePercentage,
       gasPrice: gasPrice,

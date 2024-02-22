@@ -5,3 +5,4 @@ export { buildGetBlockRPCUrl } from './get-block-provider';
 export { buildInfuraRPCUrl, infuraSupportedChains } from './infura-provider';
 export { buildLlamaNodesRPCUrl, llamaNodesSupportedChains } from './llama-nodes-provider';
 export { buildNodeRealRPCUrl, nodeRealSupportedChains } from './node-real-provider';
+export { buildTenderlyRPCUrl, tenderlySupportedChains } from './tenderly-provider';

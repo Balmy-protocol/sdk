@@ -8,7 +8,6 @@ import { IFetchService } from '@services/fetch';
 import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { MoralisBalanceSource } from '@services/balances/balance-sources/moralis-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
-import { PortalsFiBalanceSource } from '@services/balances/balance-sources/portals-fi-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
@@ -22,7 +21,6 @@ export type BalanceSourceInput =
   | { type: 'alchemy'; key: string }
   | { type: '1inch' }
   | { type: 'magpie' }
-  | { type: 'portals-fi'; key: string }
   | { type: 'moralis'; key: string }
   | { type: 'fastest'; sources: BalanceSourceInput[] };
 export type BuildBalancesParams = { source: BalanceSourceInput };
@@ -53,8 +51,6 @@ function buildSource(
       return source.instance;
     case 'alchemy':
       return new AlchemyBalanceSource(source.key);
-    case 'portals-fi':
-      return new PortalsFiBalanceSource(fetchService, source.key);
     case '1inch':
       return new OneInchBalanceSource(fetchService);
     case 'magpie':
