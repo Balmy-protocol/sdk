@@ -9,7 +9,6 @@ import { UniswapQuoteSource } from './quote-sources/uniswap-quote-source';
 import { OpenOceanQuoteSource } from './quote-sources/open-ocean-quote-source';
 import { LiFiQuoteSource } from './quote-sources/li-fi-quote-source';
 import { KyberswapQuoteSource } from './quote-sources/kyberswap-quote-source';
-import { FirebirdQuoteSource } from '@services/quotes/quote-sources/firebird-quote-source';
 import { RangoQuoteSource } from './quote-sources/rango-quote-source';
 import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
 import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
@@ -36,7 +35,6 @@ export const QUOTE_SOURCES = {
   'li-fi': new LiFiQuoteSource(),
   kyberswap: new KyberswapQuoteSource(),
   odos: new OdosQuoteSource(),
-  firebird: new FirebirdQuoteSource(),
   braindex: new BrainDexQuoteSource(),
   barter: new BarterQuoteSource(),
   sovryn: new SovrynQuoteSource(),
