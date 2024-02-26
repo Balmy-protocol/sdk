@@ -14,9 +14,6 @@ export const CONFIG: SourceConfig = {
 if (process.env.RANGO_API_KEY) {
   CONFIG.custom!.rango = { apiKey: process.env.RANGO_API_KEY };
 }
-if (process.env.FIREBIRD_API_KEY) {
-  CONFIG.custom!.firebird = { apiKey: process.env.FIREBIRD_API_KEY };
-}
 if (process.env.CHANGELLY_API_KEY) {
   CONFIG.custom!.changelly = { apiKey: process.env.CHANGELLY_API_KEY };
 }
