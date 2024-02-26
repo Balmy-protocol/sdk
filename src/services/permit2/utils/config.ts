@@ -20,7 +20,6 @@ export const PERMIT2_SUPPORTED_CHAINS = [
   Chains.GNOSIS,
   Chains.KAVA,
   Chains.POLYGON_ZKEVM,
-  Chains.HECO,
   Chains.OKC,
   Chains.ROOTSTOCK,
 ].map(({ chainId }) => chainId);
