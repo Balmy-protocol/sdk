@@ -6,3 +6,5 @@ export { buildInfuraRPCUrl, infuraSupportedChains } from './infura-provider';
 export { buildLlamaNodesRPCUrl, llamaNodesSupportedChains } from './llama-nodes-provider';
 export { buildNodeRealRPCUrl, nodeRealSupportedChains } from './node-real-provider';
 export { buildTenderlyRPCUrl, tenderlySupportedChains } from './tenderly-provider';
+export { buildDRPCUrl, dRPCSupportedChains } from './drpc-provider';
+export { buildBlastRPCUrl, blastSupportedChains } from './blast-provider';

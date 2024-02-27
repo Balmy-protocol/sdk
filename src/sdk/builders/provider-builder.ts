@@ -17,6 +17,8 @@ import { NodeRealProviderSource } from '@services/providers/provider-sources/nod
 import { GetBlockProviderSource } from '@services/providers/provider-sources/get-block-provider';
 import { AnkrProviderSource } from '@services/providers/provider-sources/ankr-provider';
 import { TenderlyProviderSource } from '@services/providers/provider-sources/tenderly-provider';
+import { dRPCProviderSource } from '@services/providers/provider-sources/drpc-provider';
+import { BlastProviderSource } from '@services/providers/provider-sources/blast-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -28,6 +30,8 @@ export type ProviderSourceInput =
   | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss'; onChains?: ChainId[] }
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
+  | { type: 'dRPC'; key: string; onChains?: ChainId[] }
+  | { type: 'blast'; key?: string; onChains?: ChainId[] }
   | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
   | { type: 'ankr'; key?: string; onChains?: ChainId[] }
@@ -61,6 +65,10 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
     case 'alchemy':
       return new AlchemyProviderSource(source.key, source.protocol ?? 'https', source.onChains);
+    case 'dRPC':
+      return new dRPCProviderSource(source.key, source.onChains);
+    case 'blast':
+      return new BlastProviderSource(source.key, source.onChains);
     case 'llama-nodes':
       return new LlamaNodesProviderSource(source.key, source.onChains);
     case 'ankr':

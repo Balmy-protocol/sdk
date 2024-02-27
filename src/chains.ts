@@ -436,6 +436,15 @@ export const Chains = {
     publicRPCs: ['https://rpc.linea.build', 'https://1rpc.io/linea', 'https://linea.blockpi.network/v1/rpc/public', 'https://linea.drpc.org'],
     explorer: 'https://lineascan.build/',
   },
+  MODE: {
+    chainId: 34443,
+    name: 'Mode',
+    ids: ['mode'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x4200000000000000000000000000000000000006',
+    publicRPCs: ['https://mainnet.mode.network', 'https://1rpc.io/mode'],
+    explorer: 'https://explorer.mode.network/',
+  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
