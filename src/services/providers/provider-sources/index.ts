@@ -8,3 +8,4 @@ export { buildNodeRealRPCUrl, nodeRealSupportedChains } from './node-real-provid
 export { buildTenderlyRPCUrl, tenderlySupportedChains } from './tenderly-provider';
 export { buildDRPCUrl, dRPCSupportedChains } from './drpc-provider';
 export { buildBlastRPCUrl, blastSupportedChains } from './blast-provider';
+export { buildOnFinalityRPCUrl, onFinalitySupportedChains } from './on-finality-provider';

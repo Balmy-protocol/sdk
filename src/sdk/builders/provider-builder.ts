@@ -19,6 +19,7 @@ import { AnkrProviderSource } from '@services/providers/provider-sources/ankr-pr
 import { TenderlyProviderSource } from '@services/providers/provider-sources/tenderly-provider';
 import { dRPCProviderSource } from '@services/providers/provider-sources/drpc-provider';
 import { BlastProviderSource } from '@services/providers/provider-sources/blast-provider';
+import { OnFinalityProviderSource } from '@services/providers/provider-sources/on-finality-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -34,6 +35,7 @@ export type ProviderSourceInput =
   | { type: 'blast'; key?: string; onChains?: ChainId[] }
   | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
+  | { type: 'on-finality'; key?: string; onChains?: ChainId[] }
   | { type: 'ankr'; key?: string; onChains?: ChainId[] }
   | { type: 'tenderly'; key?: string; onChains?: ChainId[] }
   | { type: 'http'; url: string; supportedChains: ChainId[] }
@@ -73,6 +75,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new LlamaNodesProviderSource(source.key, source.onChains);
     case 'ankr':
       return new AnkrProviderSource(source.key, source.onChains);
+    case 'on-finality':
+      return new OnFinalityProviderSource(source.key, source.onChains);
     case 'tenderly':
       return new TenderlyProviderSource(source.key, source.onChains);
     case 'infura':
