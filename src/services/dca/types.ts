@@ -66,6 +66,15 @@ export type PositionSummary = {
   history: DCAPositionAction[];
 };
 export type DCAPositionAction = { tx: DCATransaction } & ActionType;
+export enum ActionTypeAction {
+  created = 'created',
+  modified = 'modified',
+  withdrawn = 'withdrawn',
+  terminated = 'terminated',
+  transferred = 'transferred',
+  modifiedPermissions = 'modifiedPermissions',
+  swapped = 'swapped',
+}
 export type ActionType =
   | CreatedAction
   | ModifiedAction
@@ -75,7 +84,7 @@ export type ActionType =
   | PermissionsModifiedAction
   | SwappedAction;
 export type CreatedAction = {
-  action: 'created';
+  action: ActionTypeAction.created;
   rate: bigint;
   swaps: number;
   owner: Address;
@@ -83,7 +92,7 @@ export type CreatedAction = {
   fromPrice?: number;
 };
 export type ModifiedAction = {
-  action: 'modified';
+  action: ActionTypeAction.modified;
   rate: bigint;
   remainingSwaps: number;
   oldRate: bigint;
@@ -91,13 +100,13 @@ export type ModifiedAction = {
   fromPrice?: number;
 };
 export type WithdrawnAction = {
-  action: 'withdrawn';
+  action: ActionTypeAction.withdrawn;
   withdrawn: bigint;
   yield?: { withdrawn: bigint };
   toPrice?: number;
 };
 export type TerminatedAction = {
-  action: 'terminated';
+  action: ActionTypeAction.terminated;
   withdrawnRemaining: bigint;
   withdrawnSwapped: bigint;
   yield?: {
@@ -108,16 +117,16 @@ export type TerminatedAction = {
   toPrice?: number;
 };
 export type TransferredAction = {
-  action: 'transferred';
+  action: ActionTypeAction.transferred;
   from: Address;
   to: Address;
 };
 export type PermissionsModifiedAction = {
-  action: 'modified permissions';
+  action: ActionTypeAction.modifiedPermissions;
   permissions: Record<Address, DCAPermission[]>;
 };
 export type SwappedAction = {
-  action: 'swapped';
+  action: ActionTypeAction.swapped;
   rate: bigint;
   swapped: bigint;
   ratioAToB: bigint;
