@@ -72,7 +72,7 @@ export enum ActionTypeAction {
   WITHDRAWN = 'withdrawn',
   TERMINATED = 'terminated',
   TRANSFERRED = 'transferred',
-  MODIFIED_PERMISSIONS = 'modifiedPermissions',
+  MODIFIED_PERMISSIONS = 'modified permissions',
   SWAPPED = 'swapped',
 }
 export type ActionType =
