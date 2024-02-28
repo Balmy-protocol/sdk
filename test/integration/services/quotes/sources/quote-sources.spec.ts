@@ -40,7 +40,7 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'enso',
+  source: 'dodo',
   chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
