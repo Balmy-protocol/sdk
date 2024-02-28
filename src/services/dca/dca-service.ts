@@ -34,6 +34,7 @@ import {
   PermissionsModifiedAction,
   DCAPositionAction,
   TokenVariantId,
+  ActionTypeAction,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
 import { IMulticallService } from '@services/multicall';
@@ -981,14 +982,14 @@ function mapAction(
   prices: Record<TokenAddress, Record<Timestamp, PriceResult>>
 ): DCAPositionAction {
   switch (action.action) {
-    case 'created':
+    case ActionTypeAction.CREATED:
       return {
         ...action,
         fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
         rate: toBigInt(action.rate),
         tx: mapActionTx(action.tx),
       };
-    case 'modified':
+    case ActionTypeAction.MODIFIED:
       return {
         ...action,
         fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
@@ -996,7 +997,7 @@ function mapAction(
         oldRate: toBigInt(action.oldRate),
         tx: mapActionTx(action.tx),
       };
-    case 'withdrawn':
+    case ActionTypeAction.WITHDRAWN:
       return {
         ...action,
         toPrice: action.toPrice ?? prices[position.to.address]?.[action.tx.timestamp]?.price,
@@ -1004,7 +1005,7 @@ function mapAction(
         yield: action.yield && { withdrawn: toBigInt(action.yield.withdrawn) },
         tx: mapActionTx(action.tx),
       };
-    case 'terminated':
+    case ActionTypeAction.TERMINATED:
       return {
         ...action,
         fromPrice: action.fromPrice ?? prices[position.from.address]?.[action.tx.timestamp]?.price,
@@ -1017,7 +1018,7 @@ function mapAction(
         },
         tx: mapActionTx(action.tx),
       };
-    case 'swapped':
+    case ActionTypeAction.SWAPPED:
       return {
         ...action,
         tokenA: {
@@ -1037,8 +1038,8 @@ function mapAction(
         yield: action.yield && { rate: toBigInt(action.yield.rate) },
         tx: mapActionTx(action.tx),
       };
-    case 'transferred':
-    case 'modified permissions':
+    case ActionTypeAction.TRANSFERRED:
+    case ActionTypeAction.MODIFIED_PERMISSIONS:
       return { ...action, tx: mapActionTx(action.tx) };
   }
 }
@@ -1059,18 +1060,18 @@ function calculateMissingPrices(response: PositionsResponse) {
     for (const position of response.positionsByNetwork[chainId].positions) {
       for (const action of position.history ?? []) {
         switch (action.action) {
-          case 'created':
-          case 'modified':
+          case ActionTypeAction.CREATED:
+          case ActionTypeAction.MODIFIED:
             if (!action.fromPrice) {
               toFetch.push({ chainId, token: position.from.address, timestamp: action.tx.timestamp });
             }
             break;
-          case 'withdrawn':
+          case ActionTypeAction.WITHDRAWN:
             if (!action.toPrice) {
               toFetch.push({ chainId, token: position.to.address, timestamp: action.tx.timestamp });
             }
             break;
-          case 'terminated':
+          case ActionTypeAction.TERMINATED:
             if (!action.fromPrice) {
               toFetch.push({ chainId, token: position.from.address, timestamp: action.tx.timestamp });
             }
@@ -1078,7 +1079,7 @@ function calculateMissingPrices(response: PositionsResponse) {
               toFetch.push({ chainId, token: position.to.address, timestamp: action.tx.timestamp });
             }
             break;
-          case 'swapped': {
+          case ActionTypeAction.SWAPPED: {
             if (!action.tokenA.price) {
               toFetch.push({ chainId, token: action.tokenA.address, timestamp: action.tx.timestamp });
             }
@@ -1165,7 +1166,7 @@ type ActionTypeResponse =
   | PermissionsModifiedAction
   | SwappedActionResponse;
 type CreatedActionResponse = {
-  action: 'created';
+  action: ActionTypeAction.CREATED;
   rate: BigIntish;
   swaps: number;
   owner: Address;
@@ -1173,7 +1174,7 @@ type CreatedActionResponse = {
   fromPrice?: number;
 };
 type ModifiedActionResponse = {
-  action: 'modified';
+  action: ActionTypeAction.MODIFIED;
   rate: BigIntish;
   remainingSwaps: number;
   oldRate: BigIntish;
@@ -1181,13 +1182,13 @@ type ModifiedActionResponse = {
   fromPrice?: number;
 };
 type WithdrawnActionResponse = {
-  action: 'withdrawn';
+  action: ActionTypeAction.WITHDRAWN;
   withdrawn: BigIntish;
   yield?: { withdrawn: BigIntish };
   toPrice?: number;
 };
 type TerminatedActionResponse = {
-  action: 'terminated';
+  action: ActionTypeAction.TERMINATED;
   withdrawnRemaining: BigIntish;
   withdrawnSwapped: BigIntish;
   yield?: {
@@ -1198,7 +1199,7 @@ type TerminatedActionResponse = {
   toPrice?: number;
 };
 type SwappedActionResponse = {
-  action: 'swapped';
+  action: ActionTypeAction.SWAPPED;
   rate: BigIntish;
   swapped: BigIntish;
   ratioAToB: BigIntish;

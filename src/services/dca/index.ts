@@ -24,6 +24,7 @@ export {
   TokenVariantId,
   PositionId,
   PositionSummary,
+  ActionTypeAction,
   PositionFunds,
   DCAPositionToken,
   PlatformMessage,
