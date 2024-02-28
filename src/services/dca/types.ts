@@ -67,13 +67,13 @@ export type PositionSummary = {
 };
 export type DCAPositionAction = { tx: DCATransaction } & ActionType;
 export enum ActionTypeAction {
-  created = 'created',
-  modified = 'modified',
-  withdrawn = 'withdrawn',
-  terminated = 'terminated',
-  transferred = 'transferred',
-  modifiedPermissions = 'modifiedPermissions',
-  swapped = 'swapped',
+  CREATED = 'created',
+  MODIFIED = 'modified',
+  WITHDRAWN = 'withdrawn',
+  TERMINATED = 'terminated',
+  TRANSFERRED = 'transferred',
+  MODIFIED_PERMISSIONS = 'modifiedPermissions',
+  SWAPPED = 'swapped',
 }
 export type ActionType =
   | CreatedAction
@@ -84,7 +84,7 @@ export type ActionType =
   | PermissionsModifiedAction
   | SwappedAction;
 export type CreatedAction = {
-  action: ActionTypeAction.created;
+  action: ActionTypeAction.CREATED;
   rate: bigint;
   swaps: number;
   owner: Address;
@@ -92,7 +92,7 @@ export type CreatedAction = {
   fromPrice?: number;
 };
 export type ModifiedAction = {
-  action: ActionTypeAction.modified;
+  action: ActionTypeAction.MODIFIED;
   rate: bigint;
   remainingSwaps: number;
   oldRate: bigint;
@@ -100,13 +100,13 @@ export type ModifiedAction = {
   fromPrice?: number;
 };
 export type WithdrawnAction = {
-  action: ActionTypeAction.withdrawn;
+  action: ActionTypeAction.WITHDRAWN;
   withdrawn: bigint;
   yield?: { withdrawn: bigint };
   toPrice?: number;
 };
 export type TerminatedAction = {
-  action: ActionTypeAction.terminated;
+  action: ActionTypeAction.TERMINATED;
   withdrawnRemaining: bigint;
   withdrawnSwapped: bigint;
   yield?: {
@@ -117,16 +117,16 @@ export type TerminatedAction = {
   toPrice?: number;
 };
 export type TransferredAction = {
-  action: ActionTypeAction.transferred;
+  action: ActionTypeAction.TRANSFERRED;
   from: Address;
   to: Address;
 };
 export type PermissionsModifiedAction = {
-  action: ActionTypeAction.modifiedPermissions;
+  action: ActionTypeAction.MODIFIED_PERMISSIONS;
   permissions: Record<Address, DCAPermission[]>;
 };
 export type SwappedAction = {
-  action: ActionTypeAction.swapped;
+  action: ActionTypeAction.SWAPPED;
   rate: bigint;
   swapped: bigint;
   ratioAToB: bigint;
