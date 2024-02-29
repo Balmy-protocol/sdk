@@ -102,14 +102,14 @@ export type ModifiedAction = {
 export type WithdrawnAction = {
   action: ActionTypeAction.WITHDRAWN;
   withdrawn: bigint;
-  yield?: { withdrawn: bigint };
+  generatedByYield?: { withdrawn: bigint };
   toPrice?: number;
 };
 export type TerminatedAction = {
   action: ActionTypeAction.TERMINATED;
   withdrawnRemaining: bigint;
   withdrawnSwapped: bigint;
-  yield?: {
+  generatedByYield?: {
     withdrawnRemaining?: bigint;
     withdrawnSwapped?: bigint;
   };
@@ -133,7 +133,7 @@ export type SwappedAction = {
   ratioBToA: bigint;
   ratioAToBWithFee: bigint;
   ratioBToAWithFee: bigint;
-  yield?: {
+  generatedByYield?: {
     rate: bigint;
   };
   tokenA: { address: TokenAddress; price?: number };

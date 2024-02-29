@@ -1002,7 +1002,7 @@ function mapAction(
         ...action,
         toPrice: action.toPrice ?? prices[position.to.address]?.[action.tx.timestamp]?.price,
         withdrawn: toBigInt(action.withdrawn),
-        yield: action.yield && { withdrawn: toBigInt(action.yield.withdrawn) },
+        generatedByYield: action.yield && { withdrawn: toBigInt(action.yield.withdrawn) },
         tx: mapActionTx(action.tx),
       };
     case ActionTypeAction.TERMINATED:
@@ -1012,7 +1012,7 @@ function mapAction(
         toPrice: action.toPrice ?? prices[position.to.address]?.[action.tx.timestamp]?.price,
         withdrawnRemaining: toBigInt(action.withdrawnRemaining),
         withdrawnSwapped: toBigInt(action.withdrawnSwapped),
-        yield: action.yield && {
+        generatedByYield: action.yield && {
           withdrawnRemaining: toBigInt(action.yield.withdrawnRemaining),
           withdrawnSwapped: toBigInt(action.yield.withdrawnSwapped),
         },
@@ -1035,7 +1035,7 @@ function mapAction(
         ratioBToA: toBigInt(action.ratioBToA),
         ratioAToBWithFee: toBigInt(action.ratioAToBWithFee),
         ratioBToAWithFee: toBigInt(action.ratioBToAWithFee),
-        yield: action.yield && { rate: toBigInt(action.yield.rate) },
+        generatedByYield: action.yield && { rate: toBigInt(action.yield.rate) },
         tx: mapActionTx(action.tx),
       };
     case ActionTypeAction.TRANSFERRED:
