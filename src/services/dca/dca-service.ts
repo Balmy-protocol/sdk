@@ -958,7 +958,7 @@ function buildPosition(
       remaining: toBigInt(position.funds.remaining),
       toWithdraw: toBigInt(position.funds.toWithdraw),
     },
-    yield: position.yield
+    generatedByYield: position.yield
       ? {
           swapped: toBigInt(position.yield.swapped),
           remaining: toBigInt(position.yield.remaining),

@@ -61,7 +61,7 @@ export type PositionSummary = {
   permissions: Record<Address, DCAPermission[]>;
   rate: bigint;
   funds: PositionFunds;
-  yield?: Partial<PositionFunds>;
+  generatedByYield?: Partial<PositionFunds>;
   platformMessages: PlatformMessage[];
   history: DCAPositionAction[];
 };
