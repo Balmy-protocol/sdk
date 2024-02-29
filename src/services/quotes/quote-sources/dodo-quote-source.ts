@@ -1,12 +1,12 @@
 import { Chains } from '@chains';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import qs from 'qs';
-import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
+import { addQuoteSlippage, failed } from './utils';
 import { parseUnits } from 'viem';
+import { Addresses } from '@shared/constants';
 
 const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
-  name: 'DODO Dex',
+  name: 'DODO',
   supports: {
     chains: [
       Chains.ETHEREUM.chainId,
@@ -31,7 +31,7 @@ const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
 };
 type DodoDexConfig = { apiKey: string };
 type DodoDexSupport = { buyOrders: false; swapAndTransfer: false };
-export class DodoDexQuoteSource extends AlwaysValidConfigAndContextSource<DodoDexSupport, DodoDexConfig> {
+export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexConfig> {
   getMetadata() {
     return DODO_DEX_METADATA;
   }
@@ -77,10 +77,10 @@ export class DodoDexQuoteSource extends AlwaysValidConfigAndContextSource<DodoDe
       sellAmount: order.sellAmount,
       buyAmount,
       estimatedGas: undefined,
-      allowanceTarget: targetApproveAddr ?? calculateAllowanceTarget(sellToken, to),
+      allowanceTarget: targetApproveAddr ?? Addresses.ZERO_ADDRESS,
       tx: {
         calldata: data,
-        to: to,
+        to,
         value: BigInt(value ?? 0),
       },
     };
