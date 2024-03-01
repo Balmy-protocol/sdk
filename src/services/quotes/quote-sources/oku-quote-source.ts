@@ -18,10 +18,10 @@ const CHAINS: Record<ChainId, string> = {
   // [Chains.BNB_CHAIN.chainId]: 'bsc',
   // [Chains.ETHEREUM.chainId]: 'ethereum',
   // [Chains.MOONBEAM.chainId]: 'moonbeam',
-  // [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.OPTIMISM.chainId]: 'optimism',
   [Chains.POLYGON.chainId]: 'polygon',
   // [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
-  // [Chains.ROOTSTOCK.chainId]: 'rootstock',
+  [Chains.ROOTSTOCK.chainId]: 'rootstock',
   // [Chains.ZKSYNC.chainId]: "zksync",
   // [Chains.SCROLL.chainId]: "scroll",
 };
