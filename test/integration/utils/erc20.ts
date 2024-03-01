@@ -70,7 +70,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
     },
     RANDOM_ERC20: {
       address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6',
-      whale: '0x5c2ed810328349100a66b82b78a1791b101c9d61',
+      whale: '0x078f358208685046a11C85e8ad32895DED33A249',
     },
     wToken: {
       address: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',

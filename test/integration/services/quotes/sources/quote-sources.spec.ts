@@ -77,7 +77,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           to: userSigner,
           tokens: [
             { amount: parseUnits('10000', tokens.STABLE_ERC20.decimals), token: tokens.STABLE_ERC20 },
-            { amount: parseUnits('10000', tokens.RANDOM_ERC20.decimals), token: tokens.RANDOM_ERC20 },
+            { amount: parseUnits('1000', tokens.RANDOM_ERC20.decimals), token: tokens.RANDOM_ERC20 },
             { amount: ONE_NATIVE_TOKEN * 3n, token: tokens.nativeToken },
             { amount: ONE_NATIVE_TOKEN, token: tokens.wToken },
           ],
