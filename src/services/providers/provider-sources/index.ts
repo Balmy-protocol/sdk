@@ -9,3 +9,4 @@ export { buildTenderlyRPCUrl, tenderlySupportedChains } from './tenderly-provide
 export { buildDRPCUrl, dRPCSupportedChains } from './drpc-provider';
 export { buildBlastRPCUrl, blastSupportedChains } from './blast-provider';
 export { buildOnFinalityRPCUrl, onFinalitySupportedChains } from './on-finality-provider';
+export { buildOneRPCUrl, oneRPCSupportedChains } from './one-rpc-provider';
