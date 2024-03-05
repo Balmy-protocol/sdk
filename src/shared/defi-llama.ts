@@ -33,6 +33,7 @@ const CHAIN_ID_TO_KEY: Record<ChainId, Lowercase<string>> = {
   [Chains.KAVA.chainId]: 'kava',
   [Chains.BASE.chainId]: 'base',
   [Chains.LINEA.chainId]: 'linea',
+  [Chains.MODE.chainId]: 'mode',
 
   // TODO: these chains are also supported by DefiLlama. We should add them
   // "kcc",

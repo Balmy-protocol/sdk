@@ -38,6 +38,7 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
   [Chains.KAVA.chainId]: { chainKey: 'kava', nativeTokenKey: 'kava' },
   [Chains.BASE.chainId]: { chainKey: 'base', nativeTokenKey: 'ethereum' },
   [Chains.LINEA.chainId]: { chainKey: 'linea', nativeTokenKey: 'ethereum' },
+  [Chains.MODE.chainId]: { chainKey: 'mode', nativeTokenKey: 'ethereum' },
 };
 export class CoingeckoPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
