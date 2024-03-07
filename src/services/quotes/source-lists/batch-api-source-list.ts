@@ -4,15 +4,15 @@ import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSource
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
 
-export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
-export type APISourcesListRequest = PartialOnly<MultipleSourceListRequest, 'external'>;
-export type URIGenerator = (request: APISourceListRequest) => string;
+export type BatchAPISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
+export type BatchAPIMultipleSourceListRequest = PartialOnly<MultipleSourceListRequest, 'external'>;
+export type URIGenerator = (request: BatchAPISourceListRequest | BatchAPIMultipleSourceListRequest) => string;
 type ConstructorParameters = {
   fetchService: IFetchService;
   baseUri: URIGenerator;
   sources: Record<SourceId, SourceMetadata>;
 };
-export class APISourceList implements IQuoteSourceList {
+export class BatchAPISourceList implements IQuoteSourceList {
   private readonly fetchService: IFetchService;
   private readonly baseUri: URIGenerator;
   private readonly sources: Record<SourceId, SourceMetadata>;
@@ -27,11 +27,7 @@ export class APISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  async getQuotes(request: APISourcesListRequest): Promise<SourceListResponse[]> {
-    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
-    return await Promise.all(quotePromises);
-  }
-  async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
+  async getQuotes(request: BatchAPIMultipleSourceListRequest): Promise<SourceListResponse[]> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);
@@ -44,5 +40,9 @@ export class APISourceList implements IQuoteSourceList {
       timeout: request.quoteTimeout,
     });
     return response.json();
+  }
+
+  async getQuote(request: BatchAPISourceListRequest): Promise<SourceListResponse> {
+    throw new Error('Not implemented');
   }
 }

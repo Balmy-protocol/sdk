@@ -7,6 +7,7 @@ import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig, QuoteT
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
   getQuote(request: SourceListRequest): Promise<SourceListResponse>;
+  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse[]>;
 };
 
 export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
@@ -20,6 +21,10 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   };
   sourceConfig?: GlobalQuoteSourceConfig;
   quoteTimeout?: TimeString;
+};
+
+export type MultipleSourceListRequest = Omit<SourceListRequest, 'sourceId'> & {
+  sources: SourceId[];
 };
 
 export type SourceListResponse = {

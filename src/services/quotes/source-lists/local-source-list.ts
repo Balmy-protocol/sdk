@@ -1,5 +1,5 @@
 import { QuoteTransaction, SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
 import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
 import { QUOTE_SOURCES } from '../source-registry';
@@ -27,6 +27,11 @@ export class LocalSourceList implements IQuoteSourceList {
   supportedSources() {
     const entries = Object.entries(this.sources).map(([sourceId, source]) => [sourceId, source.getMetadata()]);
     return Object.fromEntries(entries);
+  }
+
+  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse[]> {
+    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
+    return Promise.all(quotePromises);
   }
 
   async getQuote(request: SourceListRequest): Promise<SourceListResponse> {

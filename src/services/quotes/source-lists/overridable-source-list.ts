@@ -1,5 +1,5 @@
 import { SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
 
 type ConstructorParameters = {
   default: IQuoteSourceList;
@@ -28,6 +28,11 @@ export class OverridableSourceList implements IQuoteSourceList {
       sources[sourceId] = sourceList.supportedSources()[sourceId];
     }
     return sources;
+  }
+
+  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse[]> {
+    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
+    return Promise.all(quotePromises);
   }
 
   getQuote(request: SourceListRequest): Promise<SourceListResponse> {

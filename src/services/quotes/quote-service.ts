@@ -167,18 +167,8 @@ export class QuoteService implements IQuoteService {
   getQuotes({ request, config }: { request: QuoteRequest; config?: { timeout?: TimeString } }): Promise<QuoteResponse | FailedQuote>[] {
     const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
-    return sources
-      .map((sourceId) => ({
-        sourceId,
-        response: this.sourceList.getQuote({
-          ...request,
-          sourceId,
-          sourceConfig: this.calculateConfig(sourceId, request.sourceConfig),
-          external,
-          quoteTimeout: config?.timeout,
-        }),
-      }))
-      .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
+    const response = this.sourceList.getQuotes({ ...request, sources, external });
+    return sources.map((sourceId, index) => this.listResponseToQuoteResponse({ sourceId, request, response, promises, index }));
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>({
@@ -227,19 +217,22 @@ export class QuoteService implements IQuoteService {
     request,
     response: responsePromise,
     promises,
+    index,
   }: {
     sourceId: SourceId;
     request: QuoteRequest;
-    response: Promise<SourceListResponse>;
+    response: Promise<SourceListResponse[]>;
     promises: Promises;
+    index: number;
   }): Promise<QuoteResponse | FailedQuote> {
     try {
-      const [response, tokens, prices, gasCalculator] = await Promise.all([
+      const [responses, tokens, prices, gasCalculator] = await Promise.all([
         responsePromise,
         promises.tokens,
         promises.prices,
         promises.gasCalculator,
       ]);
+      const response = responses[index];
       if (!tokens) throw new Error(`Failed to fetch the quote's tokens`);
       if (!gasCalculator) throw new Error(`Failed to fetch gas data`);
       const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken]?.price };
