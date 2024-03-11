@@ -445,6 +445,22 @@ export const Chains = {
     publicRPCs: ['https://mainnet.mode.network', 'https://1rpc.io/mode'],
     explorer: 'https://explorer.mode.network/',
   },
+  BLAST: {
+    chainId: 81457,
+    name: 'Blast',
+    ids: ['blast'],
+    nativeCurrency: { symbol: 'ETH', name: 'Ethereum' },
+    wToken: '0x4300000000000000000000000000000000000004',
+    publicRPCs: [
+      'https://rpc.blast.io',
+      'https://rpc.blast.io',
+      'https://rpc.ankr.com/blast',
+      'https://blast.din.dev/rpc',
+      'https://blastl2-mainnet.public.blastapi.io',
+      'https://blast.blockpi.network/v1/rpc/public',
+    ],
+    explorer: 'https://blastscan.io/',
+  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
