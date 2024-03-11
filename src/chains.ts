@@ -453,7 +453,6 @@ export const Chains = {
     wToken: '0x4300000000000000000000000000000000000004',
     publicRPCs: [
       'https://rpc.blast.io',
-      'https://rpc.blast.io',
       'https://rpc.ankr.com/blast',
       'https://blast.din.dev/rpc',
       'https://blastl2-mainnet.public.blastapi.io',
