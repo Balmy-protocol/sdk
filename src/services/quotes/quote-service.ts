@@ -221,7 +221,7 @@ export class QuoteService implements IQuoteService {
   }: {
     sourceId: SourceId;
     request: QuoteRequest;
-    response: Promise<SourceListResponse[]>;
+    response: Promise<SourceListResponse>[];
     promises: Promises;
     index: number;
   }): Promise<QuoteResponse | FailedQuote> {
@@ -232,7 +232,7 @@ export class QuoteService implements IQuoteService {
         promises.prices,
         promises.gasCalculator,
       ]);
-      const response = responses[index];
+      const response = await responses[index];
       if (!tokens) throw new Error(`Failed to fetch the quote's tokens`);
       if (!gasCalculator) throw new Error(`Failed to fetch gas data`);
       const sellToken = { ...tokens[request.sellToken], price: prices?.[request.sellToken]?.price };

@@ -29,12 +29,11 @@ export class LocalSourceList implements IQuoteSourceList {
     return Object.fromEntries(entries);
   }
 
-  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse[]> {
-    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
-    return Promise.all(quotePromises);
+  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse>[] {
+    return request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
   }
 
-  async getQuote(request: SourceListRequest): Promise<SourceListResponse> {
+  private async getQuote(request: SourceListRequest): Promise<SourceListResponse> {
     if (!(request.sourceId in this.sources)) {
       throw new SourceNotFoundError(request.sourceId);
     }

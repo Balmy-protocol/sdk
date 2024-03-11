@@ -30,16 +30,25 @@ export class OverridableSourceList implements IQuoteSourceList {
     return sources;
   }
 
-  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse[]> {
-    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
-    return Promise.all(quotePromises);
-  }
-
-  getQuote(request: SourceListRequest): Promise<SourceListResponse> {
-    return this.getSourceListForId(request.sourceId).getQuote(request);
+  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse>[] {
+    const defaultSourcesId = [];
+    const result: Promise<SourceListResponse>[] = [];
+    for (const sourceId of request.sources) {
+      if (!this.hasOverrideSourceList(sourceId)) {
+        defaultSourcesId.push(sourceId);
+      } else {
+        result.push(...this.getSourceListForId(sourceId).getQuotes({ ...request, sources: [sourceId] }));
+      }
+    }
+    result.push(...this.defaultSourceList.getQuotes({ ...request, sources: defaultSourcesId }));
+    return result;
   }
 
   private getSourceListForId(sourceId: SourceId) {
     return this.overrides[sourceId] ?? this.defaultSourceList;
+  }
+
+  private hasOverrideSourceList(sourceId: SourceId): boolean {
+    return !!this.overrides[sourceId];
   }
 }

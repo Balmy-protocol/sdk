@@ -27,11 +27,11 @@ export class APISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  async getQuotes(request: APISourcesListRequest): Promise<SourceListResponse[]> {
+  getQuotes(request: APISourcesListRequest): Promise<SourceListResponse>[] {
     const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
-    return await Promise.all(quotePromises);
+    return quotePromises;
   }
-  async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
+  private async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);

@@ -27,11 +27,11 @@ export class BatchAPISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  async getQuotes(request: BatchAPIMultipleSourceListRequest): Promise<SourceListResponse[]> {
+  getQuotes(request: BatchAPIMultipleSourceListRequest): Promise<SourceListResponse>[] {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);
-    const response = await this.fetchService.fetch(uri, {
+    const response = this.fetchService.fetch(uri, {
       method: 'POST',
       body: JSON.stringify({
         ...request,
@@ -39,10 +39,10 @@ export class BatchAPISourceList implements IQuoteSourceList {
       }),
       timeout: request.quoteTimeout,
     });
-    return response.json();
-  }
-
-  async getQuote(request: BatchAPISourceListRequest): Promise<SourceListResponse> {
-    throw new Error('Not implemented');
+    return [
+      response.then((result) => {
+        return result.json() as unknown as SourceListResponse;
+      }),
+    ];
   }
 }
