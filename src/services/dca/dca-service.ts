@@ -5,7 +5,7 @@ import companionAbi from '@shared/abis/companion';
 import dcaHubAbi from '@shared/abis/dca-hub';
 import { SinglePermitParams, PermitData, IPermit2Service } from '@services/permit2';
 import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
-import { isSameAddress } from '@shared/utils';
+import { isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
 import {
@@ -952,17 +952,17 @@ function buildPosition(
       variant: toVariant,
     },
     swapInterval: position.swapInterval.seconds,
-    rate: toBigInt(position.rate),
+    rate: toAmountsOfToken({ ...fromToken, amount: position.rate }),
     funds: {
-      swapped: toBigInt(position.funds.swapped),
-      remaining: toBigInt(position.funds.remaining),
-      toWithdraw: toBigInt(position.funds.toWithdraw),
+      swapped: toAmountsOfToken({ ...toToken, amount: position.funds.swapped }),
+      remaining: toAmountsOfToken({ ...fromToken, amount: position.funds.remaining }),
+      toWithdraw: toAmountsOfToken({ ...toToken, amount: position.funds.toWithdraw }),
     },
     generatedByYield: position.yield
       ? {
-          swapped: toBigInt(position.yield.swapped),
-          remaining: toBigInt(position.yield.remaining),
-          toWithdraw: toBigInt(position.yield.toWithdraw),
+          swapped: position.yield.swapped === undefined ? undefined : toAmountsOfToken({ ...toToken, amount: position.yield.swapped }),
+          remaining: position.yield.remaining === undefined ? undefined : toAmountsOfToken({ ...fromToken, amount: position.yield.remaining }),
+          toWithdraw: position.yield.toWithdraw === undefined ? undefined : toAmountsOfToken({ ...toToken, amount: position.yield.toWithdraw }),
         }
       : undefined,
     history: position.history?.map((action) => mapAction(action, position, prices)) ?? [],

@@ -9,7 +9,6 @@ export {
   EstimatedQuoteResponse,
   FailedQuote,
   GlobalQuoteSourceConfig,
-  AmountsOfToken,
   QuoteTransaction,
 } from './types';
 export {

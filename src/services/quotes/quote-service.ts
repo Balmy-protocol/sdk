@@ -14,7 +14,7 @@ import {
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
 import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
-import { amountToUSD, isSameAddress } from '@shared/utils';
+import { amountToUSD, isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { IGasService, IMetadataService, IPriceService, PriceResult, TokenPrice } from '..';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
@@ -262,10 +262,10 @@ export class QuoteService implements IQuoteService {
         ...response,
         sellToken: { ...sellToken, address: request.sellToken },
         buyToken: { ...buyToken, address: request.buyToken },
-        sellAmount: toAmountOfToken(sellToken, sellToken.price, response.sellAmount),
-        buyAmount: toAmountOfToken(buyToken, buyToken.price, response.buyAmount),
-        maxSellAmount: toAmountOfToken(sellToken, sellToken.price, response.maxSellAmount),
-        minBuyAmount: toAmountOfToken(buyToken, buyToken.price, response.minBuyAmount),
+        sellAmount: toAmountsOfToken({ ...sellToken, amount: response.sellAmount }),
+        buyAmount: toAmountsOfToken({ ...buyToken, amount: response.buyAmount }),
+        maxSellAmount: toAmountsOfToken({ ...sellToken, amount: response.maxSellAmount }),
+        minBuyAmount: toAmountsOfToken({ ...buyToken, amount: response.minBuyAmount }),
         gas,
       };
     } catch (e) {
@@ -394,15 +394,6 @@ export function ifNotFailed<T1 extends FailedQuote | object, T2>(
   mapped: (_: T1) => T2
 ): T1 extends FailedQuote ? FailedQuote : T2 {
   return ('failed' in response ? response : mapped(response)) as T1 extends FailedQuote ? FailedQuote : T2;
-}
-
-export function toAmountOfToken(token: BaseTokenMetadata, price: TokenPrice | undefined, amount: BigIntish) {
-  const amountInUSD = amountToUSD(token.decimals, amount, price);
-  return {
-    amount: amount.toString(),
-    amountInUnits: formatUnits(BigInt(amount), token.decimals),
-    amountInUSD,
-  };
 }
 
 function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {

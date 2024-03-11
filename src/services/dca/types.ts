@@ -1,5 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction, Timestamp } from '@types';
+import { Address, BigIntish, ChainId, TimeString, TokenAddress, BuiltTransaction, Timestamp, AmountsOfToken } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
 
 export type IDCAService = {
@@ -59,7 +59,7 @@ export type PositionSummary = {
   status: 'ongoing' | 'empty' | 'terminated' | 'finished';
   nextSwapAvailableAt: Timestamp;
   permissions: Record<Address, DCAPermission[]>;
-  rate: bigint;
+  rate: AmountsOfToken;
   funds: PositionFunds;
   generatedByYield?: Partial<PositionFunds>;
   platformMessages: PlatformMessage[];
@@ -147,9 +147,9 @@ export type DCATransaction = {
   overhead?: bigint;
 };
 export type PositionFunds = {
-  swapped: bigint;
-  remaining: bigint;
-  toWithdraw: bigint;
+  swapped: AmountsOfToken;
+  remaining: AmountsOfToken;
+  toWithdraw: AmountsOfToken;
 };
 export type DCAPositionToken = {
   address: TokenAddress;

@@ -1,6 +1,6 @@
 import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction } from '@types';
+import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction, AmountsOfToken } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -118,12 +118,6 @@ export type IndividualQuoteRequest = Omit<
 
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
 export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
-
-export type AmountsOfToken = {
-  amount: AmountOfToken;
-  amountInUnits: string;
-  amountInUSD?: string;
-};
 
 export type IgnoreFailedQuotes<
   IgnoredFailed extends boolean,

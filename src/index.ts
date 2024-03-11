@@ -18,4 +18,5 @@ export {
   Timestamp,
   InputTransaction,
   BuiltTransaction,
+  AmountsOfToken,
 } from './types';

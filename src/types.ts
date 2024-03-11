@@ -30,6 +30,11 @@ export type InputTransaction = {
   gasLimit?: BigIntish;
   type?: number;
 };
+export type AmountsOfToken = {
+  amount: AmountOfToken;
+  amountInUnits: string;
+  amountInUSD?: string;
+};
 export type BuiltTransaction = {
   to: string;
   data: string;

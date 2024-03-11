@@ -96,3 +96,12 @@ export function splitInChunks<T>(list: T[], chunkSize: number): T[][] {
   }
   return result;
 }
+
+export function toAmountsOfToken({ price, decimals, amount }: { price?: number; decimals: number; amount: BigIntish }) {
+  const amountInUSD = amountToUSD(decimals, amount, price);
+  return {
+    amount: amount.toString(),
+    amountInUnits: formatUnits(BigInt(amount), decimals),
+    amountInUSD,
+  };
+}

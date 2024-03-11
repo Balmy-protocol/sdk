@@ -2,9 +2,9 @@ import { EstimatedQuoteResponseWithTx, IPermit2QuoteService, IPermit2Service, Pe
 import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CompareQuotesBy, CompareQuotesUsing, QuoteResponse, IQuoteService, sortQuotesBy } from '@services/quotes';
-import { calculateGasDetails, ifNotFailed, toAmountOfToken } from '@services/quotes/quote-service';
+import { calculateGasDetails, ifNotFailed } from '@services/quotes/quote-service';
 import { EstimatedQuoteRequest, FailedQuote, IgnoreFailedQuotes, SourceId, SourceMetadata } from '@services/quotes/types';
-import { calculateDeadline, isSameAddress } from '@shared/utils';
+import { calculateDeadline, isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { encodeFunctionData, decodeAbiParameters, parseAbiParameters, Hex, Address as ViemAddress } from 'viem';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import { Either } from '@utility-types';
@@ -141,8 +141,8 @@ export class Permit2QuoteService implements IPermit2QuoteService {
           error: `Failed with ${rawResult}`,
         };
       }
-      const sellAmount = toAmountOfToken(quote.sellToken, quote.sellToken.price, amountIn);
-      const buyAmount = toAmountOfToken(quote.buyToken, quote.buyToken.price, amountOut);
+      const sellAmount = toAmountsOfToken({ ...quote.sellToken, amount: amountIn });
+      const buyAmount = toAmountsOfToken({ ...quote.buyToken, amount: amountOut });
       const gasCost = gasCalculator.calculateGasCost({ gasEstimation: gasSpent });
       let gas: QuoteResponse['gas'] = undefined;
       if (quote.gas) {
