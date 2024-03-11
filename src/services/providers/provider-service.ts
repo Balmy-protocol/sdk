@@ -1,4 +1,4 @@
-import { PublicClient, createPublicClient } from 'viem';
+import { PublicClient, Transport, createPublicClient } from 'viem';
 import { ChainId } from '@types';
 import { IProviderService, IProviderSource } from './types';
 
@@ -25,10 +25,14 @@ export class ProviderService implements IProviderService {
 
   getViemPublicClient({ chainId }: { chainId: ChainId }): PublicClient {
     if (!this.viemPublicClients.has(chainId)) {
-      const transport = this.source.getViemTransport({ chainId });
+      const transport = this.getViemTransport({ chainId });
       const client = createPublicClient({ transport });
       this.viemPublicClients.set(chainId, client);
     }
     return this.viemPublicClients.get(chainId)!;
+  }
+
+  getViemTransport({ chainId }: { chainId: number }): Transport {
+    return this.source.getViemTransport({ chainId });
   }
 }

@@ -9,6 +9,7 @@ export type IProviderService = {
   supportedClients(): Record<ChainId, ProviderClientSupport>;
   getEthersProvider(_: { chainId: ChainId }): BaseProvider;
   getViemPublicClient(_: { chainId: ChainId }): PublicClient;
+  getViemTransport(_: { chainId: ChainId }): Transport;
 };
 
 export type IProviderSource = {
