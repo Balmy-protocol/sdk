@@ -168,7 +168,7 @@ export class QuoteService implements IQuoteService {
     const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
     const responses = this.sourceList.getQuotes({ ...request, sources, external });
-    return sources.map((sourceId, index) => this.listResponseToQuoteResponse({ sourceId, request, response: responses[index], promises }));
+    return sources.map((sourceId, _) => this.listResponseToQuoteResponse({ sourceId, request, response: responses[sourceId], promises }));
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>({

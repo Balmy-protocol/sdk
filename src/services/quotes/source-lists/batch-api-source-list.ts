@@ -1,12 +1,11 @@
 import { reduceTimeout } from '@shared/timeouts';
 import { SourceId, SourceMetadata } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
 
 export type BatchAPISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
-export type BatchAPIMultipleSourceListRequest = PartialOnly<MultipleSourceListRequest, 'external'>;
-export type URIGenerator = (request: BatchAPISourceListRequest | BatchAPIMultipleSourceListRequest) => string;
+export type URIGenerator = (request: BatchAPISourceListRequest) => string;
 type ConstructorParameters = {
   fetchService: IFetchService;
   baseUri: URIGenerator;
@@ -27,7 +26,7 @@ export class BatchAPISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  getQuotes(request: BatchAPIMultipleSourceListRequest): Promise<SourceListResponse>[] {
+  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);
@@ -39,10 +38,7 @@ export class BatchAPISourceList implements IQuoteSourceList {
       }),
       timeout: request.quoteTimeout,
     });
-    return [
-      response.then((result) => {
-        return result.json() as unknown as SourceListResponse;
-      }),
-    ];
+    const result: Promise<SourceListResponse[]> = response.then((result) => result.json());
+    return Object.fromEntries(request.sources.map((sourceId, index) => [sourceId, result.then((responses) => responses[index])]));
   }
 }

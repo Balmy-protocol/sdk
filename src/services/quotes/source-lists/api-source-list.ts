@@ -1,12 +1,12 @@
 import { reduceTimeout } from '@shared/timeouts';
 import { SourceId, SourceMetadata } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
 
 export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
-export type APISourcesListRequest = PartialOnly<MultipleSourceListRequest, 'external'>;
-export type URIGenerator = (request: APISourceListRequest) => string;
+type SingleSourceListRequest = PartialOnly<APISourceListRequest, 'sources'> & { sourceId: SourceId };
+export type URIGenerator = (request: SingleSourceListRequest) => string;
 type ConstructorParameters = {
   fetchService: IFetchService;
   baseUri: URIGenerator;
@@ -27,11 +27,11 @@ export class APISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  getQuotes(request: APISourcesListRequest): Promise<SourceListResponse>[] {
-    const quotePromises = request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
-    return quotePromises;
+  getQuotes(request: APISourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
+    const quotePromises = request.sources.map((sourceId) => [sourceId, this.getQuote({ ...request, sourceId })]);
+    return Object.fromEntries(quotePromises);
   }
-  private async getQuote(request: APISourceListRequest): Promise<SourceListResponse> {
+  private async getQuote(request: SingleSourceListRequest): Promise<SourceListResponse> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);

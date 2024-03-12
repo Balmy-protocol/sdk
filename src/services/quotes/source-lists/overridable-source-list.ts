@@ -1,5 +1,5 @@
 import { SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 
 type ConstructorParameters = {
   default: IQuoteSourceList;
@@ -30,25 +30,27 @@ export class OverridableSourceList implements IQuoteSourceList {
     return sources;
   }
 
-  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse>[] {
-    const defaultSourcesId = [];
-    const result: Promise<SourceListResponse>[] = [];
-    for (const sourceId of request.sources) {
-      if (!this.hasOverrideSourceList(sourceId)) {
-        defaultSourcesId.push(sourceId);
-      } else {
-        result.push(...this.getSourceListForId(sourceId).getQuotes({ ...request, sources: [sourceId] }));
+  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
+    const result: Record<SourceId, Promise<SourceListResponse>> = {};
+    const sourceListSourcesId: Map<IQuoteSourceList, SourceId[]> = new Map();
+
+    request.sources.forEach((sourceId) => {
+      const sourceList = this.getSourceListForId(sourceId);
+      if (!sourceListSourcesId.has(sourceList)) {
+        sourceListSourcesId.set(sourceList, []);
       }
-    }
-    result.push(...this.defaultSourceList.getQuotes({ ...request, sources: defaultSourcesId }));
+      sourceListSourcesId.get(sourceList)!.push(sourceId);
+    });
+
+    sourceListSourcesId.forEach((sourceIds, sourceList) => {
+      const responses = sourceList.getQuotes({ ...request, sources: sourceIds });
+      Object.entries(responses).forEach(([sourceId, response]) => (result[sourceId] = response));
+    });
+
     return result;
   }
 
   private getSourceListForId(sourceId: SourceId) {
     return this.overrides[sourceId] ?? this.defaultSourceList;
-  }
-
-  private hasOverrideSourceList(sourceId: SourceId): boolean {
-    return !!this.overrides[sourceId];
   }
 }

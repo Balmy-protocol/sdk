@@ -1,5 +1,5 @@
 import { QuoteTransaction, SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse, MultipleSourceListRequest } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
 import { QUOTE_SOURCES } from '../source-registry';
@@ -29,25 +29,25 @@ export class LocalSourceList implements IQuoteSourceList {
     return Object.fromEntries(entries);
   }
 
-  getQuotes(request: MultipleSourceListRequest): Promise<SourceListResponse>[] {
-    return request.sources.map((sourceId) => this.getQuote({ ...request, sourceId: sourceId }));
+  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
+    return Object.fromEntries(request.sources.map((sourceId) => [sourceId, this.getQuote(request, sourceId)]));
   }
 
-  private async getQuote(request: SourceListRequest): Promise<SourceListResponse> {
-    if (!(request.sourceId in this.sources)) {
-      throw new SourceNotFoundError(request.sourceId);
+  private async getQuote(request: SourceListRequest, sourceId: SourceId): Promise<SourceListResponse> {
+    if (!(sourceId in this.sources)) {
+      throw new SourceNotFoundError(sourceId);
     }
 
     // Map request to source request
     const sourceRequest = mapRequestToSourceRequest(request);
 
     // Find and wrap source
-    const source = this.getSourceForRequest(request);
+    const source = this.getSourceForRequest(request, sourceId);
 
     // Check config is valid
     const config = request.sourceConfig;
     if (!source.isConfigAndContextValid(config)) {
-      throw new SourceInvalidConfigOrContextError(request.sourceId);
+      throw new SourceInvalidConfigOrContextError(sourceId);
     }
 
     // Ask for quote
@@ -58,17 +58,17 @@ export class LocalSourceList implements IQuoteSourceList {
     });
 
     // Map to response
-    return mapSourceResponseToResponse({ request, source, response });
+    return mapSourceResponseToResponse({ request, source, response, sourceId });
   }
 
-  private getSourceForRequest(request: SourceListRequest) {
-    let source = this.sources[request.sourceId];
+  private getSourceForRequest(request: SourceListRequest, sourceId: SourceId) {
+    let source = this.sources[sourceId];
 
     if (request.order.type === 'buy' && !source.getMetadata().supports.buyOrders) {
       if (request.estimateBuyOrdersWithSellOnlySources) {
         source = buyToSellOrderWrapper(source);
       } else {
-        throw new SourceNoBuyOrdersError(request.sourceId);
+        throw new SourceNoBuyOrdersError(sourceId);
       }
     }
     // Cast so that even if the source doesn't support it, everything else types ok
@@ -80,10 +80,12 @@ function mapSourceResponseToResponse({
   source,
   request,
   response,
+  sourceId,
 }: {
   source: IQuoteSource<QuoteSourceSupport>;
   request: SourceListRequest;
   response: SourceQuoteResponse;
+  sourceId: SourceId;
 }): SourceListResponse {
   const tx: QuoteTransaction = {
     to: response.tx.to,
@@ -100,7 +102,7 @@ function mapSourceResponseToResponse({
     estimatedGas: response.estimatedGas?.toString(),
     recipient,
     source: {
-      id: request.sourceId,
+      id: sourceId,
       allowanceTarget: response.allowanceTarget,
       name: source.getMetadata().name,
       logoURI: source.getMetadata().logoURI,
