@@ -19,7 +19,6 @@ const SUPPORTED_CHAINS = [
   Chains.POLYGON_ZKEVM,
   Chains.LINEA,
   Chains.BASE,
-  Chains.BLAST,
 ];
 
 const XY_FINANCE_METADATA: QuoteSourceMetadata<XYFinanceSupport> = {
