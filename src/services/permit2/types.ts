@@ -23,7 +23,7 @@ export type IPermit2Service = {
 };
 
 export type IPermit2ArbitraryService = {
-  contractAddress: Address;
+  contractAddress: (chainId: ChainId) => Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): BuiltTransaction;
@@ -34,7 +34,7 @@ export type IPermit2ArbitraryService = {
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
 
 export type IPermit2QuoteService = {
-  contractAddress: Address;
+  contractAddress: (chainId: ChainId) => Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
@@ -165,6 +165,7 @@ export type BaseArbitraryCallParams = {
   allowanceTargets?: { token: TokenAddress; target: Address }[];
   calls: GenericContractCall[];
   distribution?: Record<TokenAddress, DistributionTarget[]>;
+  chainId: ChainId;
 };
 
 export type ArbitraryCallWithoutPermitParams = {
@@ -172,6 +173,7 @@ export type ArbitraryCallWithoutPermitParams = {
   txValidFor: TimeString;
   allowanceTargets?: { token: TokenAddress; target: Address }[];
   distribution?: Record<TokenAddress, DistributionTarget[]>;
+  chainId: ChainId;
 };
 
 export type GenericContractCall = (EncodedContractCall | ContractCall) & { value?: BigIntish };

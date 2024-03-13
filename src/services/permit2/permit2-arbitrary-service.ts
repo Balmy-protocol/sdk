@@ -22,11 +22,11 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
   constructor(private readonly permit2Service: IPermit2Service) {}
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
-    return this.permit2Service.preparePermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS });
+    return this.permit2Service.preparePermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS(args.chainId) });
   }
 
   prepareBatchPermitData(args: BatchPermitParams): Promise<BatchPermitData> {
-    return this.permit2Service.prepareBatchPermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS });
+    return this.permit2Service.prepareBatchPermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS(args.chainId) });
   }
 
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams) {
@@ -53,6 +53,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return this.buildArbitraryCallInternal({
       ...params,
       permitData,
+      chainId: params.chainId,
       functionName: 'executeWithBatchPermit',
     });
   }
@@ -62,6 +63,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     calls,
     allowanceTargets,
     distribution,
+    chainId,
     functionName,
   }: BaseArbitraryCallParams & { functionName: string }) {
     if (calls.length === 0) throw new Error('Must submit at least one call');
@@ -96,7 +98,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     });
 
     return {
-      to: PERMIT2_ADAPTER_ADDRESS,
+      to: PERMIT2_ADAPTER_ADDRESS(chainId),
       data,
       value: totalValue.toString(),
     };

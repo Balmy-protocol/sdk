@@ -783,6 +783,7 @@ export class DCAService implements IDCAService {
       calls: [{ to: bestQuote.tx.to, data: bestQuote.tx.data, value: bestQuote.tx.value ?? 0 }],
       distribution: { [tokenOutDistribution]: [{ recipient: COMPANION_ADDRESS, shareBps: 0 }] },
       txValidFor,
+      chainId: request.chainId,
     });
 
     const swapData = encodeFunctionData({
