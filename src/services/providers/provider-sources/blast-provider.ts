@@ -30,7 +30,7 @@ export class BlastProviderSource extends BaseHttpProvider {
 
   constructor(private readonly key?: string, onChains?: ChainId[]) {
     super();
-    this.supported = onChains ?? this.supportedChains();
+    this.supported = onChains ?? blastSupportedChains();
   }
 
   supportedChains(): ChainId[] {
