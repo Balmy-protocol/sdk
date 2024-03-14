@@ -23,7 +23,7 @@ export type IPermit2Service = {
 };
 
 export type IPermit2ArbitraryService = {
-  contractAddress: (chainId: ChainId) => Address;
+  contractAddress(chainId: ChainId): Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): BuiltTransaction;
@@ -34,7 +34,7 @@ export type IPermit2ArbitraryService = {
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
 
 export type IPermit2QuoteService = {
-  contractAddress: (chainId: ChainId) => Address;
+  contractAddress(chainId: ChainId): Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
