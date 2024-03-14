@@ -87,6 +87,8 @@ describe('Permit2 Arbitrary Service', () => {
         },
       ],
 
+      chainId,
+
       // Distribute vault token to user
       distribution: {
         [VAULT_USDC]: [{ recipient: user.address, shareBps: 10_000 }],
@@ -129,6 +131,8 @@ describe('Permit2 Arbitrary Service', () => {
           args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress],
         },
       ],
+
+      chainId,
 
       // Distribute vault token to user
       distribution: {
@@ -199,6 +203,8 @@ describe('Permit2 Arbitrary Service', () => {
           args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress],
         },
       ],
+
+      chainId,
 
       // Distribute vault token to user
       distribution: {

@@ -24,7 +24,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   ) {}
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
-    return this.permit2Service.preparePermitData({ ...args, spender: this.contractAddress });
+    return this.permit2Service.preparePermitData({ ...args, spender: this.contractAddress(args.chainId) });
   }
 
   supportedSources() {
@@ -53,7 +53,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   estimateQuotes({ request, config }: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }) {
     return this.quotesService
       .getQuotes({
-        request: { ...request, takerAddress: this.contractAddress },
+        request: { ...request, takerAddress: this.contractAddress(request.chainId) },
         config: config,
       })
       .map((promise) => promise.then((response) => ifNotFailed(response, mapToUnsigned)));
@@ -74,7 +74,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     };
   }) {
     const allQuotes = await this.quotesService.getAllQuotes({
-      request: { ...request, takerAddress: this.contractAddress },
+      request: { ...request, takerAddress: this.contractAddress(request.chainId) },
       config,
     });
     return allQuotes.map((response) => ifNotFailed(response, mapToUnsigned));
@@ -100,7 +100,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   } & Either<{ permitData?: PermitData['permitData'] & { signature: string } }, { txValidFor?: TimeString }>): Promise<
     IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]
   > {
-    const quotes = estimatedQuotes.map((estimatedQuote) => buildRealQuote(quoteData, estimatedQuote));
+    const quotes = estimatedQuotes.map((estimatedQuote) => buildRealQuote(quoteData, estimatedQuote, chainId));
     const responses = await this.verifyAndCorrect(chainId, quoteData.takerAddress, quotes);
 
     if (config?.sort) {
@@ -169,7 +169,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
     if (viemSupported) {
       const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
-        address: this.contractAddress,
+        address: this.contractAddress(chainId),
         abi: permit2AdapterAbi,
         functionName: 'simulate',
         args: [calls as Hex[]],
@@ -179,7 +179,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       return result;
     }
     const provider = this.providerService.getEthersProvider({ chainId });
-    const contract = new Contract(this.contractAddress, permit2AdapterAbi, provider);
+    const contract = new Contract(this.contractAddress(chainId), permit2AdapterAbi, provider);
     const result: { success: boolean; result: Hex; gasSpent: BigNumber }[] = await contract
       .connect(account)
       .callStatic.simulate(calls, { value: value ?? 0 });
@@ -205,7 +205,8 @@ function buildRealQuote(
     permitData?: PermitData['permitData'] & { signature: string }; // Not needed in case of native token
     txValidFor?: TimeString;
   },
-  { estimatedTx, ...quote }: EstimatedQuoteResponseWithTx
+  { estimatedTx, ...quote }: EstimatedQuoteResponseWithTx,
+  chainId: ChainId
 ): QuoteResponse {
   recipient = recipient ?? takerAddress;
   const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
@@ -256,7 +257,7 @@ function buildRealQuote(
     tx: {
       ...estimatedTx,
       from: takerAddress,
-      to: PERMIT2_ADAPTER_ADDRESS,
+      to: PERMIT2_ADAPTER_ADDRESS(chainId),
       data,
     },
   };
