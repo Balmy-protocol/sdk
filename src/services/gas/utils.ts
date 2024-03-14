@@ -21,6 +21,10 @@ type OnlyEIP1559<GasValues extends SupportedGasValues> = {
   [K in keyof GasValues]: GasValues[K] extends EIP1159GasPrice ? GasValues[K] : never;
 };
 
-export function isValidGasPriceResult(result: GasPriceResult<object>) {
-  return ('maxFeePerGas' in result && isBigIntish(result.maxFeePerGas)) || ('gasPrice' in result && isBigIntish(result.gasPrice));
+export function isValidGasPriceValue(value: any) {
+  return ('maxFeePerGas' in value && isBigIntish(value.maxFeePerGas)) || ('gasPrice' in value && isBigIntish(value.gasPrice));
+}
+
+export function filterOutInvalidSpeeds(result: GasPriceResult<object>) {
+  return Object.fromEntries(Object.entries(result).filter(([, value]) => isValidGasPriceValue(value)));
 }
