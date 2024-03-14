@@ -1,4 +1,3 @@
-import { PERMIT2_ADAPTER_ADDRESS } from '@services/permit2/utils/config';
 import { Address as ViemAddress } from 'viem';
 
 export const DCA_HUB_ADDRESS: ViemAddress = '0xA5AdC5484f9997fBF7D405b9AA62A7d88883C345';

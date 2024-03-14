@@ -33,4 +33,5 @@ export const PERMIT2_SUPPORTED_CHAINS = [
   Chains.OKC,
   Chains.LINEA,
   Chains.ROOTSTOCK,
+  Chains.BLAST,
 ].map(({ chainId }) => chainId);
