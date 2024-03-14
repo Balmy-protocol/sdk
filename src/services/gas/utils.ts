@@ -1,4 +1,5 @@
 import { DefaultRequirements, FieldsRequirements } from '@types';
+import { isBigIntish } from '@shared/utils';
 import { EIP1159GasPrice, GasPriceResult, SupportedGasValues } from './types';
 
 export function isEIP1159Compatible<
@@ -10,7 +11,7 @@ export function isEIP1159Compatible<
     throw new Error(`Found a gas price result with nothing on it. This shouldn't happen`);
   }
   const gasPrice = (gasPriceForSpeed as any)[keys[0]];
-  if ('maxFeePerGas' in gasPrice) {
+  if ('maxFeePerGas' in gasPrice && isBigIntish(gasPrice.maxFeePerGas)) {
     return true;
   }
   return false;
@@ -19,3 +20,7 @@ export function isEIP1159Compatible<
 type OnlyEIP1559<GasValues extends SupportedGasValues> = {
   [K in keyof GasValues]: GasValues[K] extends EIP1159GasPrice ? GasValues[K] : never;
 };
+
+export function isValidGasPriceResult(result: GasPriceResult<object>) {
+  return ('maxFeePerGas' in result && isBigIntish(result.maxFeePerGas)) || ('gasPrice' in result && isBigIntish(result.gasPrice));
+}

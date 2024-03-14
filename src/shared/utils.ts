@@ -105,3 +105,7 @@ export function toAmountsOfToken({ price, decimals, amount }: { price?: number; 
     amountInUSD,
   };
 }
+
+export function isBigIntish(value: any) {
+  return typeof value === 'bigint' || typeof value === 'string' || typeof value === 'number';
+}

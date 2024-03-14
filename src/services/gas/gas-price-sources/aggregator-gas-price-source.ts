@@ -1,9 +1,9 @@
 import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
-import { filterRejectedResults } from '@shared/utils';
+import { filterRejectedResults, isBigIntish } from '@shared/utils';
 import { AmountOfToken, ChainId, FieldsRequirements, TimeString } from '@types';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
-import { isEIP1159Compatible } from '../utils';
+import { isEIP1159Compatible, isValidGasPriceResult } from '../utils';
 import { ILogger, ILogsService } from '@services/logs';
 
 export type GasPriceAggregationMethod = 'median' | 'min' | 'max';
@@ -40,7 +40,7 @@ export class AggregatorGasPriceSource<Sources extends IGasPriceSource<object>[] 
       }
       throw new Error('Failed to calculate gas on all sources');
     }
-    const validResults = results.filter((response) => doesResponseMeetRequirements(response, config?.fields));
+    const validResults = results.filter((response) => doesResponseMeetRequirements(response, config?.fields)).filter(isValidGasPriceResult);
     if (validResults.length === 0) throw new Error('Could not fetch gas prices that met the given requirements');
     const resultsToAggregate = resultsWithMaxSpeed(validResults);
     const result = this.aggregate(resultsToAggregate);
