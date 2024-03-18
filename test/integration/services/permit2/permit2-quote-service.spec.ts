@@ -18,6 +18,7 @@ import {
 } from '@test-utils/erc20';
 import { buildSDK } from '@builder';
 import { parseEther } from 'viem';
+import { CONFIG } from '../quotes/quote-tests-config';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
@@ -25,7 +26,7 @@ jest.setTimeout(ms('5m'));
 
 const {
   permit2Service: { quotes: permit2QuoteService },
-} = buildSDK();
+} = buildSDK({ quotes: { defaultConfig: CONFIG, sourceList: { type: 'local' } } });
 
 // This test validates quotes, but the SDK can't connect to the local test network. So we need to use addresses that have enough
 // balance, because we can't simulate it on the real chain
