@@ -1,6 +1,6 @@
 import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
-import { filterRejectedResults, isBigIntish } from '@shared/utils';
+import { filterRejectedResults } from '@shared/utils';
 import { AmountOfToken, ChainId, FieldsRequirements, TimeString } from '@types';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
 import { filterOutInvalidSpeeds, isEIP1159Compatible } from '../utils';

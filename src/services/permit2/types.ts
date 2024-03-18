@@ -111,7 +111,7 @@ export type PermitData = {
   };
   permitData: {
     token: Address;
-    amount: string;
+    amount: AmountOfToken;
     nonce: string;
     deadline: string;
   };
@@ -133,7 +133,7 @@ export type BatchPermitData = {
     primaryType: 'PermitBatchTransferFrom';
   };
   permitData: {
-    tokens: { token: TokenAddress; amount: BigIntish }[];
+    tokens: { token: TokenAddress; amount: AmountOfToken }[];
     nonce: string;
     deadline: string;
   };
