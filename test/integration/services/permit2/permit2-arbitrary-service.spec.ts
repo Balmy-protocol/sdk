@@ -32,7 +32,7 @@ describe('Permit2 Arbitrary Service', () => {
   let snapshot: SnapshotRestorer;
 
   beforeAll(async () => {
-    await fork({ chain: CHAIN, blockNumber: 108558450 });
+    await fork({ chain: CHAIN, blockNumber: 116816944 });
     [user] = await ethers.getSigners();
     ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(CHAIN));
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
@@ -83,7 +83,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_USDC,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress],
+          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress(chainId)],
         },
       ],
 
@@ -128,7 +128,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress],
+          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress(chainId)],
         },
       ],
 
@@ -192,7 +192,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_USDC,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress],
+          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress(chainId)],
         },
 
         // Deposit into WETH vault
@@ -200,7 +200,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_WETH,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress],
+          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress(chainId)],
         },
       ],
 

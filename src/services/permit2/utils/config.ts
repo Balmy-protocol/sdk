@@ -4,7 +4,6 @@ import { ChainId } from '@types';
 export const PERMIT2_ADDRESS = '0x000000000022d473030f116ddee9f6b43ac78ba3';
 export function PERMIT2_ADAPTER_ADDRESS(chainId: ChainId) {
   switch (chainId) {
-    case Chains.ETHEREUM.chainId:
     case Chains.POLYGON_ZKEVM.chainId:
       return '0xA70C8401C058B6198e1cb085091DE13498CEc0dC';
     default:
