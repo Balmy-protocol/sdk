@@ -228,6 +228,7 @@ function buildRealQuote(
               tokenOut: mapIfNative(quote.buyToken.address),
               minAmountOut: BigInt(quote.minBuyAmount.amount),
               transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
+              misc: '0x',
             },
           ],
         })
@@ -248,6 +249,7 @@ function buildRealQuote(
               amountOut: BigInt(quote.minBuyAmount.amount),
               transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
               unspentTokenInRecipient: takerAddress as ViemAddress,
+              misc: '0x',
             },
           ],
         });
