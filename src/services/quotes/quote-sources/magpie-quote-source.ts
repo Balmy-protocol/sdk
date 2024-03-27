@@ -83,7 +83,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amountOut),
       estimatedGas: gasLimitBI > 0n ? gasLimitBI : undefined,
-      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress),
+      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress ?? to), // We default to "to" in case "targetAddress" is not set
       tx: { to, calldata: data, value: BigInt(value) },
     };
 
