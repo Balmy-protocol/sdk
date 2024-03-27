@@ -64,6 +64,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       chainId: chain.chainId,
       referrer,
       partner: config.referrer?.name,
+      forceCalldata: true,
     };
 
     const response = await fetchService.fetch('https://api.conveyor.finance', {
