@@ -30,7 +30,7 @@ const CONVEYOR_METADATA: QuoteSourceMetadata<ConveyorSupport> = {
   },
   logoURI: 'ipfs://QmcuftRVxMooC2pvyBAcePW7of9JzzGArMyWFGrY6EpwCT',
 };
-type ConveyorConfig = { forceCalldata?: boolean; referrerCodes?: Record<ChainId, number> | 'disable' };
+type ConveyorConfig = { referrerCodes?: Record<ChainId, number> | 'disable' };
 type ConveyorSupport = { buyOrders: false; swapAndTransfer: false };
 export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<ConveyorSupport, ConveyorConfig> {
   getMetadata() {
@@ -64,7 +64,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       chainId: chain.chainId,
       referrer,
       partner: config.referrer?.name,
-      forceCalldata: config?.forceCalldata,
+      forceCalldata: true,
     };
 
     const response = await fetchService.fetch('https://api.conveyor.finance', {
