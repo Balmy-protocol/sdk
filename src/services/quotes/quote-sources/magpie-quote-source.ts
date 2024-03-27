@@ -61,7 +61,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     if (!quoteResponse.ok) {
       failed(MAGPIE_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
-    const { id: quoteId, amountOut, magpieAggregatorAddress, fees } = await quoteResponse.json();
+    const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
 
     const transactionQueryParams = {
       quoteId,
@@ -83,7 +83,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amountOut),
       estimatedGas: gasLimitBI > 0n ? gasLimitBI : undefined,
-      allowanceTarget: calculateAllowanceTarget(sellToken, magpieAggregatorAddress),
+      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress),
       tx: { to, calldata: data, value: BigInt(value) },
     };
 
