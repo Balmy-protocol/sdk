@@ -101,11 +101,18 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]
   > {
     const quotes = estimatedQuotes.map((estimatedQuote) => buildRealQuote(quoteData, estimatedQuote, chainId));
-    const responses = await this.verifyAndCorrect(chainId, quoteData.takerAddress, quotes);
+    const encoded = quotes.filter((response): response is QuoteResponse => !('failed' in response));
+    const responses = await this.verifyAndCorrect(chainId, quoteData.takerAddress, encoded);
 
     if (config?.sort) {
       const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
-      const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedQuote => 'failed' in response) : [];
+      const failedQuotes =
+        config?.ignoredFailed === false
+          ? [
+              ...quotes.filter((response): response is FailedQuote => 'failed' in response),
+              ...responses.filter((response): response is FailedQuote => 'failed' in response),
+            ]
+          : [];
 
       const sortedQuotes = sortQuotesBy(successfulQuotes, config.sort.by, config.sort.using ?? 'sell/buy amounts');
       return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
@@ -207,62 +214,70 @@ function buildRealQuote(
   },
   { estimatedTx, ...quote }: EstimatedQuoteResponseWithTx,
   chainId: ChainId
-): QuoteResponse {
-  recipient = recipient ?? takerAddress;
-  const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
-  const data =
-    quote.type === 'sell'
-      ? encodeFunctionData({
-          abi: permit2AdapterAbi,
-          functionName: 'sellOrderSwap',
-          args: [
-            {
-              deadline,
-              tokenIn: mapIfNative(quote.sellToken.address),
-              amountIn: BigInt(quote.maxSellAmount.amount),
-              nonce: permitData ? BigInt(permitData.nonce) : 0n,
-              signature: (permitData?.signature as Hex) ?? '0x',
-              allowanceTarget: quote.source.allowanceTarget as ViemAddress,
-              swapper: estimatedTx.to as ViemAddress,
-              swapData: estimatedTx.data as Hex,
-              tokenOut: mapIfNative(quote.buyToken.address),
-              minAmountOut: BigInt(quote.minBuyAmount.amount),
-              transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
-              misc: '0x',
-            },
-          ],
-        })
-      : encodeFunctionData({
-          abi: permit2AdapterAbi,
-          functionName: 'buyOrderSwap',
-          args: [
-            {
-              deadline,
-              tokenIn: mapIfNative(quote.sellToken.address),
-              maxAmountIn: BigInt(quote.maxSellAmount.amount),
-              nonce: permitData ? BigInt(permitData.nonce) : 0n,
-              signature: (permitData?.signature as Hex) ?? '0x',
-              allowanceTarget: quote.source.allowanceTarget as ViemAddress,
-              swapper: estimatedTx.to as ViemAddress,
-              swapData: estimatedTx.data as Hex,
-              tokenOut: mapIfNative(quote.buyToken.address),
-              amountOut: BigInt(quote.minBuyAmount.amount),
-              transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
-              unspentTokenInRecipient: takerAddress as ViemAddress,
-              misc: '0x',
-            },
-          ],
-        });
-  return {
-    ...quote,
-    recipient,
-    tx: {
-      ...estimatedTx,
-      from: takerAddress,
-      to: PERMIT2_ADAPTER_ADDRESS(chainId),
-      data,
-    },
-  };
+): QuoteResponse | FailedQuote {
+  try {
+    recipient = recipient ?? takerAddress;
+    const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
+    const data =
+      quote.type === 'sell'
+        ? encodeFunctionData({
+            abi: permit2AdapterAbi,
+            functionName: 'sellOrderSwap',
+            args: [
+              {
+                deadline,
+                tokenIn: mapIfNative(quote.sellToken.address),
+                amountIn: BigInt(quote.maxSellAmount.amount),
+                nonce: permitData ? BigInt(permitData.nonce) : 0n,
+                signature: (permitData?.signature as Hex) ?? '0x',
+                allowanceTarget: quote.source.allowanceTarget as ViemAddress,
+                swapper: estimatedTx.to as ViemAddress,
+                swapData: estimatedTx.data as Hex,
+                tokenOut: mapIfNative(quote.buyToken.address),
+                minAmountOut: BigInt(quote.minBuyAmount.amount),
+                transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
+                misc: '0x',
+              },
+            ],
+          })
+        : encodeFunctionData({
+            abi: permit2AdapterAbi,
+            functionName: 'buyOrderSwap',
+            args: [
+              {
+                deadline,
+                tokenIn: mapIfNative(quote.sellToken.address),
+                maxAmountIn: BigInt(quote.maxSellAmount.amount),
+                nonce: permitData ? BigInt(permitData.nonce) : 0n,
+                signature: (permitData?.signature as Hex) ?? '0x',
+                allowanceTarget: quote.source.allowanceTarget as ViemAddress,
+                swapper: estimatedTx.to as ViemAddress,
+                swapData: estimatedTx.data as Hex,
+                tokenOut: mapIfNative(quote.buyToken.address),
+                amountOut: BigInt(quote.minBuyAmount.amount),
+                transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
+                unspentTokenInRecipient: takerAddress as ViemAddress,
+                misc: '0x',
+              },
+            ],
+          });
+    return {
+      ...quote,
+      recipient,
+      tx: {
+        ...estimatedTx,
+        from: takerAddress,
+        to: PERMIT2_ADAPTER_ADDRESS(chainId),
+        data,
+      },
+    };
+  } catch (e: any) {
+    return {
+      failed: true,
+      source: quote.source,
+      error: `Failed to encode params: ${e.message}`,
+    };
+  }
 }
 
 function mapToUnsigned({ recipient, tx, ...quote }: QuoteResponse): EstimatedQuoteResponseWithTx {
