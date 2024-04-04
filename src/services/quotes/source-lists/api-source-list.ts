@@ -3,6 +3,7 @@ import { SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
+import { SourceWithConfigId } from '../source-registry';
 
 export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
 type SingleSourceListRequest = PartialOnly<APISourceListRequest, 'sources'> & { sourceId: SourceId };
@@ -40,6 +41,7 @@ export class APISourceList implements IQuoteSourceList {
       body: JSON.stringify({
         ...request,
         quoteTimeout: reducedTimeout,
+        sourceConfig: { global: request.sourceConfig?.global, custom: request.sourceConfig?.custom?.[request.sourceId as SourceWithConfigId] },
       }),
       timeout: request.quoteTimeout,
     });

@@ -35,10 +35,11 @@ export class BatchAPISourceList implements IQuoteSourceList {
       body: JSON.stringify({
         ...request,
         quoteTimeout: reducedTimeout,
+        sourceConfig: { global: request.sourceConfig?.global, custom: request.sourceConfig?.custom },
       }),
       timeout: request.quoteTimeout,
     });
-    const result: Promise<SourceListResponse[]> = response.then((result) => result.json());
-    return Object.fromEntries(request.sources.map((sourceId, index) => [sourceId, result.then((responses) => responses[index])]));
+    const result: Promise<Record<SourceId, SourceListResponse>> = response.then((result) => result.json());
+    return Object.fromEntries(request.sources.map((sourceId, _) => [sourceId, result.then((responses) => responses[sourceId])]));
   }
 }

@@ -2,7 +2,7 @@ import { QuoteTransaction, SourceId } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
-import { QUOTE_SOURCES } from '../source-registry';
+import { QUOTE_SOURCES, SourceWithConfigId } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { IFetchService } from '@services/fetch/types';
@@ -53,7 +53,7 @@ export class LocalSourceList implements IQuoteSourceList {
     // Ask for quote
     const response = await source.quote({
       components: { providerService: this.providerService, fetchService: this.fetchService },
-      config,
+      config: { ...config.global, ...config.custom?.[sourceId as SourceWithConfigId] },
       request: sourceRequest,
     });
 
