@@ -25,8 +25,7 @@ const BALANCER_METADATA: QuoteSourceMetadata<BalancerSupport> = {
     swapAndTransfer: false,
     buyOrders: true,
   },
-  // TODO: add Balancer logo
-  logoURI: 'ipfs://',
+  logoURI: 'ipfs://QmSb9Lr6Jgi9Y3RUuShfWcuCaa9EYxpyZWgBTe8GbvsUL7',
 };
 type BalancerSupport = { buyOrders: true; swapAndTransfer: false };
 export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<BalancerSupport> {
