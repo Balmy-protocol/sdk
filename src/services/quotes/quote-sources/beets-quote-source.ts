@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
-import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
-import { formatUnits } from 'viem';
+import { calculateAllowanceTarget, failed } from './utils';
+import { formatUnits, parseUnits } from 'viem';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { ChainId } from '@types';
 
@@ -25,6 +25,7 @@ const BEETS_METADATA: QuoteSourceMetadata<BeetsSupport> = {
     swapAndTransfer: false,
     buyOrders: true,
   },
+  // TODO: add Beets logo
   logoURI: 'ipfs://',
 };
 type BeetsSupport = { buyOrders: true; swapAndTransfer: false };
@@ -61,8 +62,6 @@ export class BeetsQuoteSource extends AlwaysValidConfigAndContextSource<BeetsSup
           queryBatchSwap: true
           callDataInput: {sender: "${takeFrom}", receiver: "${takeFrom}", slippagePercentage: "${slippagePercentage}"}
         ) {
-          swapAmount
-          returnAmount
           tokenInAmount
           tokenOutAmount
           callData {
@@ -91,25 +90,26 @@ export class BeetsQuoteSource extends AlwaysValidConfigAndContextSource<BeetsSup
     }
 
     const {
-      callData: { callData: data, to, value },
-      returnAmount,
-      swapAmount,
+      callData: { callData: data, to, value, minAmountOutRaw, maxAmountInRaw },
       tokenInAmount,
       tokenOutAmount,
     } = quoteResult.data.sorGetSwapPaths;
     const allowanceAddress = calculateAllowanceTarget(sellToken, to);
-    const quote = {
+    const minBuyAmount = order.type === 'sell' ? parseUnits(minAmountOutRaw, buyTokenDataResult.decimals) : BigInt(tokenOutAmount);
+    const maxSellAmount = order.type === 'sell' ? BigInt(tokenInAmount) : parseUnits(maxAmountInRaw, sellTokenDataResult.decimals);
+    return {
       sellAmount: BigInt(tokenInAmount),
       buyAmount: BigInt(tokenOutAmount),
       estimatedGas: undefined,
+      minBuyAmount,
+      maxSellAmount,
       allowanceTarget: allowanceAddress,
+      type: order.type,
       tx: {
         calldata: data,
         to,
         value: BigInt(value ?? 0),
       },
     };
-
-    return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 }
