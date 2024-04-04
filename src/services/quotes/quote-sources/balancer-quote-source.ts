@@ -18,20 +18,20 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM_SEPOLIA.chainId]: 'SEPOLIA',
 };
 
-const BEETS_METADATA: QuoteSourceMetadata<BeetsSupport> = {
-  name: 'Beets',
+const BALANCER_METADATA: QuoteSourceMetadata<BalancerSupport> = {
+  name: 'Balancer',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: false,
     buyOrders: true,
   },
-  // TODO: add Beets logo
+  // TODO: add Balancer logo
   logoURI: 'ipfs://',
 };
-type BeetsSupport = { buyOrders: true; swapAndTransfer: false };
-export class BeetsQuoteSource extends AlwaysValidConfigAndContextSource<BeetsSupport> {
+type BalancerSupport = { buyOrders: true; swapAndTransfer: false };
+export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<BalancerSupport> {
   getMetadata() {
-    return BEETS_METADATA;
+    return BALANCER_METADATA;
   }
   async quote({
     components: { fetchService },
@@ -45,7 +45,7 @@ export class BeetsQuoteSource extends AlwaysValidConfigAndContextSource<BeetsSup
       external,
     },
     config,
-  }: QuoteParams<BeetsSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BalancerSupport>): Promise<SourceQuoteResponse> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await external.tokenData.request();
     const amount =
       order.type == 'sell'
@@ -81,12 +81,12 @@ export class BeetsQuoteSource extends AlwaysValidConfigAndContextSource<BeetsSup
     });
 
     if (!quoteResponse.ok) {
-      failed(BEETS_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(BALANCER_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     const quoteResult = await quoteResponse.json();
 
     if (!quoteResult.data.sorGetSwapPaths.callData) {
-      failed(BEETS_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(BALANCER_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
 
     const {
