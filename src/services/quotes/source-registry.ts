@@ -25,6 +25,7 @@ import { BrainDexQuoteSource } from './quote-sources/braindex-quote-source';
 import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
 import { BarterQuoteSource } from './quote-sources/barter-quote-source';
 import { DodoDexQuoteSource } from './quote-sources/dodo-quote-source';
+import { BeetsQuoteSource } from './quote-sources/beets-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -51,6 +52,7 @@ export const QUOTE_SOURCES = {
   'okx-dex': new OKXDexQuoteSource(),
   conveyor: new ConveyorQuoteSource(),
   dodo: new DodoDexQuoteSource(),
+  beets: new BeetsQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(
