@@ -3,17 +3,15 @@ import { SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
-import { SourceWithConfigId } from '../source-registry';
 
-export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
-type SingleSourceListRequest = PartialOnly<APISourceListRequest, 'sources'> & { sourceId: SourceId };
-export type URIGenerator = (request: SingleSourceListRequest) => string;
+export type BatchAPISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
+export type URIGenerator = (request: BatchAPISourceListRequest) => string;
 type ConstructorParameters = {
   fetchService: IFetchService;
   baseUri: URIGenerator;
   sources: Record<SourceId, SourceMetadata>;
 };
-export class APISourceList implements IQuoteSourceList {
+export class BatchAPISourceList implements IQuoteSourceList {
   private readonly fetchService: IFetchService;
   private readonly baseUri: URIGenerator;
   private readonly sources: Record<SourceId, SourceMetadata>;
@@ -28,23 +26,19 @@ export class APISourceList implements IQuoteSourceList {
     return this.sources;
   }
 
-  getQuotes(request: APISourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
-    const quotePromises = request.sources.map((sourceId) => [sourceId, this.getQuote({ ...request, sourceId })]);
-    return Object.fromEntries(quotePromises);
-  }
-  private async getQuote(request: SingleSourceListRequest): Promise<SourceListResponse> {
+  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
     const uri = this.baseUri(request);
-    const response = await this.fetchService.fetch(uri, {
+    const response = this.fetchService.fetch(uri, {
       method: 'POST',
       body: JSON.stringify({
         ...request,
         quoteTimeout: reducedTimeout,
-        sourceConfig: { global: request.sourceConfig?.global, custom: request.sourceConfig?.custom?.[request.sourceId as SourceWithConfigId] },
       }),
       timeout: request.quoteTimeout,
     });
-    return response.json();
+    const result: Promise<Record<SourceId, SourceListResponse>> = response.then((result) => result.json());
+    return Object.fromEntries(request.sources.map((sourceId) => [sourceId, result.then((responses) => responses[sourceId])]));
   }
 }

@@ -3,14 +3,15 @@ import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
 import { Address, AmountOfToken, TimeString } from '@types';
 import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig, QuoteTransaction } from '../types';
+import { SourceConfig } from '../source-registry';
 
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
-  getQuote(request: SourceListRequest): Promise<SourceListResponse>;
+  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>>;
 };
 
 export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
-  sourceId: SourceId;
+  sources: SourceId[];
   external: {
     tokenData: ITriggerablePromise<{
       sellToken: BaseTokenMetadata;
@@ -18,7 +19,7 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
     }>;
     gasPrice: ITriggerablePromise<GasPrice>;
   };
-  sourceConfig?: GlobalQuoteSourceConfig;
+  sourceConfig?: SourceConfig;
   quoteTimeout?: TimeString;
 };
 

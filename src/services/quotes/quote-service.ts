@@ -23,7 +23,7 @@ import { reduceTimeout } from '@shared/timeouts';
 import { formatUnits } from 'viem';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { couldSupportMeetRequirements } from '@shared/requirements-and-support';
-import { SourceConfig, SourceWithConfigId } from './source-registry';
+import { SourceConfig } from './source-registry';
 import {
   FailedToGenerateAnyQuotesError,
   FailedToGenerateQuoteError,
@@ -167,18 +167,14 @@ export class QuoteService implements IQuoteService {
   getQuotes({ request, config }: { request: QuoteRequest; config?: { timeout?: TimeString } }): Promise<QuoteResponse | FailedQuote>[] {
     const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
-    return sources
-      .map((sourceId) => ({
-        sourceId,
-        response: this.sourceList.getQuote({
-          ...request,
-          sourceId,
-          sourceConfig: this.calculateConfig(sourceId, request.sourceConfig),
-          external,
-          quoteTimeout: config?.timeout,
-        }),
-      }))
-      .map(({ sourceId, response }) => this.listResponseToQuoteResponse({ sourceId, request, response, promises }));
+    const responses = this.sourceList.getQuotes({
+      ...request,
+      sources,
+      external,
+      quoteTimeout: config?.timeout,
+      sourceConfig: this.calculateConfig(request.sourceConfig),
+    });
+    return sources.map((sourceId, _) => this.listResponseToQuoteResponse({ sourceId, request, response: responses[sourceId], promises }));
   }
 
   async getAllQuotes<IgnoreFailed extends boolean = true>({
@@ -378,13 +374,10 @@ export class QuoteService implements IQuoteService {
     });
   }
 
-  private calculateConfig(sourceId: string, sourceConfigs: SourceConfig | undefined) {
-    const id = sourceId as SourceWithConfigId;
+  private calculateConfig(sourceConfigs: SourceConfig | undefined): SourceConfig {
     return {
-      ...this.defaultConfig?.global,
-      ...this.defaultConfig?.custom?.[id],
-      ...sourceConfigs?.global,
-      ...sourceConfigs?.custom?.[id],
+      global: { ...this.defaultConfig?.global, ...sourceConfigs?.global },
+      custom: { ...this.defaultConfig?.custom, ...sourceConfigs?.custom },
     };
   }
 }
