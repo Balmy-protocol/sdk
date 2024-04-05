@@ -40,6 +40,7 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
   [Chains.LINEA.chainId]: { chainKey: 'linea', nativeTokenKey: 'ethereum' },
   [Chains.MODE.chainId]: { chainKey: 'mode', nativeTokenKey: 'ethereum' },
   [Chains.BLAST.chainId]: { chainKey: 'blast', nativeTokenKey: 'ethereum' },
+  [Chains.SCROLL.chainId]: { chainKey: 'scroll', nativeTokenKey: 'ethereum' },
 };
 export class CoingeckoPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
