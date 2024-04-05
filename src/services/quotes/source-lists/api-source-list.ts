@@ -41,7 +41,7 @@ export class APISourceList implements IQuoteSourceList {
       body: JSON.stringify({
         ...request,
         quoteTimeout: reducedTimeout,
-        sourceConfig: { global: request.sourceConfig?.global, custom: request.sourceConfig?.custom?.[request.sourceId as SourceWithConfigId] },
+        sourceConfig: { ...request.sourceConfig?.global, ...request.sourceConfig?.custom?.[request.sourceId as SourceWithConfigId] },
       }),
       timeout: request.quoteTimeout,
     });
