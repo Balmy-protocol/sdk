@@ -46,14 +46,14 @@ export class LocalSourceList implements IQuoteSourceList {
 
     // Check config is valid
     const config = request.sourceConfig;
-    if (!source.isConfigAndContextValid(config)) {
+    if (!source.isConfigAndContextValid({ ...config?.global, ...config?.custom?.[sourceId as SourceWithConfigId] })) {
       throw new SourceInvalidConfigOrContextError(sourceId);
     }
 
     // Ask for quote
     const response = await source.quote({
       components: { providerService: this.providerService, fetchService: this.fetchService },
-      config: { ...config.global, ...config.custom?.[sourceId as SourceWithConfigId] },
+      config: { ...config?.global, ...config?.custom?.[sourceId as SourceWithConfigId] },
       request: sourceRequest,
     });
 
