@@ -28,7 +28,7 @@ export class BatchAPISourceList implements IQuoteSourceList {
 
   getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
     // We reduce the request a little bit so that the server tries to be faster that the timeout
-    const reducedTimeout = reduceTimeout(request.quoteTimeout, '100');
+    const reducedTimeout = reduceTimeout(request.quoteTimeout, '500');
     const uri = this.baseUri(request);
     const response = this.fetchService.fetch(uri, {
       method: 'POST',
