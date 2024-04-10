@@ -32,6 +32,7 @@ import {
   SourceNotFoundError,
   SourceNotOnChainError,
 } from './errors';
+import merge from 'deepmerge';
 
 const REQUIREMENTS: FieldsRequirements<BaseTokenMetadata> = {
   requirements: { symbol: 'required', decimals: 'required' },
@@ -376,8 +377,8 @@ export class QuoteService implements IQuoteService {
 
   private calculateConfig(sourceConfigs: SourceConfig | undefined): SourceConfig {
     return {
-      global: { ...this.defaultConfig?.global, ...sourceConfigs?.global },
-      custom: { ...this.defaultConfig?.custom, ...sourceConfigs?.custom },
+      global: merge(this.defaultConfig?.global ?? {}, sourceConfigs?.global ?? {}),
+      custom: merge(this.defaultConfig?.custom ?? {}, sourceConfigs?.custom ?? {}),
     };
   }
 }
