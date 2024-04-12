@@ -1,4 +1,4 @@
-import { chainsUnion } from '@chains';
+import { Chains, chainsUnion } from '@chains';
 import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '@services/quotes/source-registry';
 
 export const CONFIG: SourceConfig = {
@@ -8,7 +8,10 @@ export const CONFIG: SourceConfig = {
   },
   custom: {
     odos: { sourceDenylist: ['Hashflow'] },
-    barter: { sourceDenylist: ['Hashflow'] },
+    barter: {
+      sourceDenylist: ['Hashflow'],
+      endpoints: {},
+    },
   },
 };
 if (process.env.RANGO_API_KEY) {
@@ -28,6 +31,18 @@ if (process.env.PORTALS_FI_API_KEY) {
 }
 if (process.env.DODO_API_KEY) {
   CONFIG.custom!.dodo = { apiKey: process.env.DODO_API_KEY };
+}
+
+if (process.env.BARTER_AUTH_HEADER) {
+  CONFIG.custom!.barter!.headers = { Authorization: process.env.BARTER_AUTH_HEADER };
+}
+
+if (process.env.BARTER_ETHEREUM_ENDPOINT) {
+  CONFIG.custom!.barter!.endpoints![Chains.ETHEREUM.chainId] = process.env.BARTER_ETHEREUM_ENDPOINT;
+}
+
+if (process.env.BARTER_ARBITRUM_ENDPOINT) {
+  CONFIG.custom!.barter!.endpoints![Chains.ARBITRUM.chainId] = process.env.BARTER_ARBITRUM_ENDPOINT;
 }
 
 export function supportedChains() {
