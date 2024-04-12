@@ -1,19 +1,19 @@
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CacheConfig, ConcurrentLRUCache, ConcurrentLRUCacheWithContext } from '@shared/concurrent-lru-cache';
 import { BalanceQueriesSupport, IBalanceSource } from '../types';
 
 type Config = { timeout?: TimeString } | undefined;
 export class CachedBalanceSource implements IBalanceSource {
-  private readonly cacheHeldByAccount: ConcurrentLRUCacheWithContext<Config, KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>;
-  private readonly cacheAmountInChain: ConcurrentLRUCacheWithContext<Config, KeyTokenInChain, AmountOfToken>;
+  private readonly cacheHeldByAccount: ConcurrentLRUCacheWithContext<Config, KeyHeldByAccount, Record<TokenAddress, bigint>>;
+  private readonly cacheAmountInChain: ConcurrentLRUCacheWithContext<Config, KeyTokenInChain, bigint>;
 
   constructor(private readonly source: IBalanceSource, config: CacheConfig) {
-    this.cacheHeldByAccount = new ConcurrentLRUCacheWithContext<Config, KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>({
+    this.cacheHeldByAccount = new ConcurrentLRUCacheWithContext<Config, KeyHeldByAccount, Record<TokenAddress, bigint>>({
       calculate: (config, keysHeldByAccount) => this.fetchTokensHeldByAccount(keysHeldByAccount, config),
       config,
     });
 
-    this.cacheAmountInChain = new ConcurrentLRUCacheWithContext<Config, KeyTokenInChain, AmountOfToken>({
+    this.cacheAmountInChain = new ConcurrentLRUCacheWithContext<Config, KeyTokenInChain, bigint>({
       calculate: (config, keysTokenInChain) => this.fetchBalancesForTokens(keysTokenInChain, config),
       config,
     });
@@ -29,7 +29,7 @@ export class CachedBalanceSource implements IBalanceSource {
   }: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const support = this.supportedQueries();
     for (const chainId in accounts) {
       if (!support[chainId]?.getTokensHeldByAccount) {
@@ -44,7 +44,7 @@ export class CachedBalanceSource implements IBalanceSource {
       timeout: config?.timeout,
       context: config,
     });
-    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
     for (const key in cacheResults) {
       const { chainId, account } = fromKeyHeldByAccount(key as KeyTokenInChain);
       if (!(chainId in result)) result[chainId] = {};
@@ -59,7 +59,7 @@ export class CachedBalanceSource implements IBalanceSource {
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const allChainAndAccountPairs = Object.entries(tokens).flatMap(([chainId, tokens]) =>
       Object.keys(tokens).map((account) => ({ chainId: Number(chainId), account }))
     );
@@ -70,7 +70,7 @@ export class CachedBalanceSource implements IBalanceSource {
       ({ chainId, account }) => !this.cacheHeldByAccount.holdsValidValue(toKeyHeldByAccount(chainId, account))
     );
 
-    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
     if (accountsWithHeldByAccount.length > 0) {
       // Note: we know these values are cached, so no sense in parallelizing with the query below
       const keys = accountsWithHeldByAccount.map(({ chainId, account }) => toKeyHeldByAccount(chainId, account));
@@ -105,7 +105,7 @@ export class CachedBalanceSource implements IBalanceSource {
   private async fetchTokensHeldByAccount(
     keys: KeyHeldByAccount[],
     config: Config
-  ): Promise<Record<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>>> {
+  ): Promise<Record<KeyHeldByAccount, Record<TokenAddress, bigint>>> {
     const accounts: Record<ChainId, Address[]> = {};
     for (const key of keys) {
       const { chainId, account } = fromKeyHeldByAccount(key);
@@ -115,7 +115,7 @@ export class CachedBalanceSource implements IBalanceSource {
 
     const balances = await this.source.getTokensHeldByAccounts({ accounts, config });
 
-    const result: Record<KeyHeldByAccount, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<KeyHeldByAccount, Record<TokenAddress, bigint>> = {};
     for (const chainId in balances) {
       for (const account in balances[chainId]) {
         const key = toKeyHeldByAccount(Number(chainId), account);
@@ -126,7 +126,7 @@ export class CachedBalanceSource implements IBalanceSource {
     return result;
   }
 
-  private async fetchBalancesForTokens(keys: KeyTokenInChain[], config: Config): Promise<Record<KeyTokenInChain, AmountOfToken>> {
+  private async fetchBalancesForTokens(keys: KeyTokenInChain[], config: Config): Promise<Record<KeyTokenInChain, bigint>> {
     const tokens: Record<ChainId, Record<Address, TokenAddress[]>> = {};
     for (const key of keys) {
       const { chainId, account, token } = fromKeyTokenInChain(key);
@@ -137,7 +137,7 @@ export class CachedBalanceSource implements IBalanceSource {
 
     const balances = await this.source.getBalancesForTokens({ tokens, config });
 
-    const result: Record<KeyTokenInChain, AmountOfToken> = {};
+    const result: Record<KeyTokenInChain, bigint> = {};
     for (const key of keys) {
       const { chainId, account, token } = fromKeyTokenInChain(key as KeyTokenInChain);
       const balance = balances?.[chainId]?.[account]?.[token];

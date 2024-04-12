@@ -154,7 +154,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       let gas: QuoteResponse['gas'] = undefined;
       if (quote.gas) {
         gas = {
-          estimatedGas: gasSpent.toString(),
+          estimatedGas: gasSpent,
           ...calculateGasDetails(quote.gas.gasTokenSymbol, gasCost['standard'].gasCostNativeToken, quote.gas.gasTokenPrice),
         };
       }

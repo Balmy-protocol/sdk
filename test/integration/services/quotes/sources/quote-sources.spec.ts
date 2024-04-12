@@ -9,7 +9,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
-import { addPercentage, isSameAddress, substractPercentage, wait } from '@shared/utils';
+import { addPercentage, isSameAddress, subtractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
@@ -299,7 +299,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
         let slippage = SLIPPAGE_PERCENTAGE;
         if (ROUNDING_ISSUES.includes(sourceId)) slippage += 0.05;
         if (quote.type === 'sell') {
-          expect(quote.minBuyAmount).to.be.gte(substractPercentage(quote.buyAmount.toString(), slippage, 'up'));
+          expect(quote.minBuyAmount).to.be.gte(subtractPercentage(quote.buyAmount.toString(), slippage, 'up'));
         } else {
           expect(quote.maxSellAmount).to.be.lte(addPercentage(quote.sellAmount.toString(), slippage, 'up'));
         }

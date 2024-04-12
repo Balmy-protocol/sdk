@@ -23,8 +23,8 @@ export class RPCGasPriceSource implements IGasPriceSource<GasValues> {
     const feeData = await timeoutPromise(this.providerService.getEthersProvider({ chainId }).getFeeData(), config?.timeout);
     const gasPrice =
       !!feeData.maxFeePerGas && !!feeData.maxPriorityFeePerGas
-        ? { standard: { maxFeePerGas: feeData.maxFeePerGas.toString(), maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toString() } }
-        : { standard: { gasPrice: feeData.gasPrice!.toString() } };
+        ? { standard: { maxFeePerGas: feeData.maxFeePerGas.toBigInt(), maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toBigInt() } }
+        : { standard: { gasPrice: feeData.gasPrice!.toBigInt() } };
     return gasPrice as GasPriceResult<GasValues, Requirements>;
   }
 }

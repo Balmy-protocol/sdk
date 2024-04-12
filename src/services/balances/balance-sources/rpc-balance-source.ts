@@ -1,5 +1,5 @@
 import { Address as ViemAddress } from 'viem';
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
@@ -29,7 +29,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
     throw new Error('Operation not supported');
   }
 
@@ -37,7 +37,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     chainId: ChainId,
     accounts: Record<Address, TokenAddress[]>,
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
     const calls = pairs.map(({ account, token }) => ({
       address: token,
@@ -50,7 +50,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       calls,
       ...this.config,
     });
-    const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<Address, Record<TokenAddress, bigint>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const multicallResult = multicallResults[i];
       if (multicallResult.status === 'failure') continue;
@@ -65,7 +65,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, AmountOfToken>> {
+  ): Promise<Record<Address, bigint>> {
     const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]);
     return Object.fromEntries(await Promise.all(entries));
   }

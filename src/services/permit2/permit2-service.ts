@@ -21,7 +21,7 @@ import { IQuoteService } from '@services/quotes';
 import { IGasService } from '@services/gas';
 
 export class Permit2Service implements IPermit2Service {
-  readonly permit2ContractAddress: Address = PERMIT2_ADDRESS;
+  readonly permit2ContractAddress = PERMIT2_ADDRESS;
   readonly arbitrary: IPermit2ArbitraryService;
   readonly quotes: IPermit2QuoteService;
 
@@ -41,7 +41,7 @@ export class Permit2Service implements IPermit2Service {
 
     // Fetch bitmaps for user's words
     const calls = words.map((word) => ({
-      address: PERMIT2_ADDRESS,
+      address: PERMIT2_ADDRESS(chainId),
       abi: { humanReadable: PERMIT2_ABI },
       functionName: 'nonceBitmap',
       args: [user, word],
@@ -77,10 +77,10 @@ export class Permit2Service implements IPermit2Service {
         domain: {
           name: 'Permit2',
           chainId,
-          verifyingContract: PERMIT2_ADDRESS,
+          verifyingContract: PERMIT2_ADDRESS(chainId),
         },
         message: {
-          permitted: { token, amount: amount.toString() },
+          permitted: { token, amount: BigInt(amount) },
           spender,
           nonce,
           deadline,
@@ -89,7 +89,7 @@ export class Permit2Service implements IPermit2Service {
       },
       permitData: {
         token,
-        amount: amount.toString(),
+        amount: BigInt(amount),
         nonce,
         deadline,
       },
@@ -112,10 +112,10 @@ export class Permit2Service implements IPermit2Service {
         domain: {
           name: 'Permit2',
           chainId,
-          verifyingContract: PERMIT2_ADDRESS,
+          verifyingContract: PERMIT2_ADDRESS(chainId),
         },
         message: {
-          permitted: Object.entries(tokens).map(([token, amount]) => ({ token, amount: amount.toString() })),
+          permitted: Object.entries(tokens).map(([token, amount]) => ({ token, amount: BigInt(amount) })),
           spender,
           nonce,
           deadline,
@@ -125,7 +125,7 @@ export class Permit2Service implements IPermit2Service {
       permitData: {
         nonce,
         deadline,
-        tokens: Object.entries(tokens).map(([token, amount]) => ({ token, amount: amount.toString() })),
+        tokens: Object.entries(tokens).map(([token, amount]) => ({ token, amount: BigInt(amount) })),
       },
     };
   }

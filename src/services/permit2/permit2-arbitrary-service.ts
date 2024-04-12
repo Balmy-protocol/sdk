@@ -100,7 +100,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     return {
       to: PERMIT2_ADAPTER_ADDRESS(chainId),
       data,
-      value: totalValue.toString(),
+      value: totalValue,
     };
   }
 }

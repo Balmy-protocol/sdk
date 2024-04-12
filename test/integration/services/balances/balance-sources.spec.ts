@@ -6,11 +6,10 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
-import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
-import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
+import { Address, ChainId, TokenAddress } from '@types';
 import { IBalanceSource } from '@services/balances/types';
 import chaiAsPromised from 'chai-as-promised';
 import dotenv from 'dotenv';
@@ -66,7 +65,6 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   maxSize: 100,
 });
 const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
-const MAGPIE_BALANCE_SOURCE = new MagpieBalanceSource(FETCH_SERVICE);
 const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE]);
 
 jest.retryTimes(2);
@@ -78,7 +76,6 @@ describe('Balance Sources', () => {
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
   // balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE }); Disabled because Cloudlare is acting up and blocking all non-browser requests
   // balanceSourceTest({ title: 'Moralis Source', source: MORALIS_BALANCE_SOURCE }); Note: can't test it properly because of rate limiting and dead address blacklist
-  // balanceSourceTest({ title: 'Magpie', source: MAGPIE_BALANCE_SOURCE }); Note: fails to return all tokens since there are so many
   balanceSourceTest({ title: 'Fastest Source', source: FASTEST_BALANCE_SOURCE });
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
@@ -88,7 +85,7 @@ describe('Balance Sources', () => {
       );
 
       describe('getBalancesForTokens', () => {
-        let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
+        let result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
         beforeAll(async () => {
           const chains = Object.keys(sourceSupport).map(Number);
           const entries = chains.map<[ChainId, Record<Address, TokenAddress[]>]>((chainId) => {
@@ -115,7 +112,7 @@ describe('Balance Sources', () => {
           .map(([chainId]) => Number(chainId));
 
         if (supportedChains.length > 0) {
-          let result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
+          let result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
           beforeAll(async () => {
             const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
             result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '1m' } });
@@ -138,7 +135,7 @@ describe('Balance Sources', () => {
       });
 
       function validateBalances(
-        result: () => Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>,
+        result: () => Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
         chains: ChainId[],
         shouldZeroBalanceBeShown: boolean
       ) {
@@ -187,7 +184,7 @@ describe('Balance Sources', () => {
         minAmount,
         result,
       }: {
-        result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>;
+        result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
         chainId: ChainId | string;
         address: TokenAddress;
         decimals: number;

@@ -1,7 +1,9 @@
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 
-export const PERMIT2_ADDRESS = '0x000000000022d473030f116ddee9f6b43ac78ba3';
+export function PERMIT2_ADDRESS(chainId: ChainId) {
+  return '0x000000000022d473030f116ddee9f6b43ac78ba3';
+}
 export function PERMIT2_ADAPTER_ADDRESS(chainId: ChainId) {
   switch (chainId) {
     case Chains.POLYGON_ZKEVM.chainId:

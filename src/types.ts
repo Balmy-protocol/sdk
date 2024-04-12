@@ -6,7 +6,6 @@ export type TokenAddress = Address;
 export type ChainId = number;
 export type TimeString = StringValue;
 export type Timestamp = number;
-export type AmountOfToken = string;
 export type BigIntish = string | number | bigint;
 export type Chain = Readonly<{
   chainId: ChainId;
@@ -22,23 +21,23 @@ export type InputTransaction = {
   from: Address;
   to: Address;
   data?: string;
-  value?: BigIntish;
+  value?: bigint;
   nonce?: number;
-  maxPriorityFeePerGas?: BigIntish;
-  maxFeePerGas?: BigIntish;
-  gasPrice?: BigIntish;
-  gasLimit?: BigIntish;
+  maxPriorityFeePerGas?: bigint;
+  maxFeePerGas?: bigint;
+  gasPrice?: bigint;
+  gasLimit?: bigint;
   type?: number;
 };
 export type AmountsOfToken = {
-  amount: AmountOfToken;
+  amount: bigint;
   amountInUnits: string;
   amountInUSD?: string;
 };
 export type BuiltTransaction = {
   to: string;
   data: string;
-  value?: AmountOfToken;
+  value?: bigint;
   nonce?: number;
   maxPriorityFeePerGas?: BigIntish;
   maxFeePerGas?: BigIntish;

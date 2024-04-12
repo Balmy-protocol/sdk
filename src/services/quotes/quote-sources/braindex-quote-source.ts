@@ -1,7 +1,7 @@
 import { encodeFunctionData, toHex, Address as ViemAddress, Hex } from 'viem';
 import { Address, Chain, ChainId } from '@types';
 import { Chains } from '@chains';
-import { calculateDeadline, isSameAddress, substractPercentage } from '@shared/utils';
+import { calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
@@ -67,7 +67,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
 
     const router = ROUTER_ADDRESS[chain.chainId];
     const buyAmount = BigInt(amount_out);
-    const minBuyAmount = BigInt(substractPercentage(buyAmount, slippagePercentage, 'up'));
+    const minBuyAmount = BigInt(subtractPercentage(buyAmount, slippagePercentage, 'up'));
     const deadline = BigInt(calculateDeadline(txValidFor) ?? Uint.MAX_256);
 
     let calldata: string;

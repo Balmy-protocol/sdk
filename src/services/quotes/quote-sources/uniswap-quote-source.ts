@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
-import { isSameAddress, substractPercentage, timeToSeconds } from '@shared/utils';
+import { isSameAddress, subtractPercentage, timeToSeconds } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
@@ -122,7 +122,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
 }
 
 function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: bigint, slippagePercentage: number) {
-  return type === 'sell' ? BigInt(substractPercentage(buyAmount, slippagePercentage, 'up')) : buyAmount;
+  return type === 'sell' ? BigInt(subtractPercentage(buyAmount, slippagePercentage, 'up')) : buyAmount;
 }
 
 function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {

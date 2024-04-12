@@ -41,5 +41,5 @@ export class ParaswapGasPriceSource implements IGasPriceSource<GasValues> {
 }
 
 function stringToLegacyGasPrice(body: any, key: string) {
-  return { gasPrice: `${body[key]}` };
+  return { gasPrice: BigInt(body[key]) };
 }

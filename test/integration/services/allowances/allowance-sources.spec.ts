@@ -7,7 +7,7 @@ import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains, getChainByKey } from '@chains';
-import { AmountOfToken, ChainId, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
 dotenv.config();
@@ -54,7 +54,7 @@ describe('Allowance Sources', () => {
     describe(title, () => {
       const chains = source.supportedChains().filter((chainId) => chainId in TESTS);
       let input: Record<ChainId, AllowanceCheck[]>;
-      let result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>;
+      let result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>;
       beforeAll(async () => {
         const entries = chains.map((chainId) => [chainId, [{ token: TESTS[chainId].address, owner: OWNER, spender: SPENDER }]]);
         input = Object.fromEntries(entries);

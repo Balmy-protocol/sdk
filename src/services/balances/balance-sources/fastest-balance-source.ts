@@ -1,5 +1,5 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import {
   filterRequestForSource,
   fillResponseWithNewResult,
@@ -26,7 +26,7 @@ export class FastestBalanceSource implements IBalanceSource {
   }: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     return executeFastest({
       allSources: this.sources,
       fullRequest: accounts,
@@ -49,7 +49,7 @@ export class FastestBalanceSource implements IBalanceSource {
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     return executeFastest({
       allSources: this.sources,
       fullRequest: tokens,
@@ -80,14 +80,14 @@ async function executeFastest<Request>({
     source: IBalanceSource,
     filteredRequest: Record<ChainId, Request>,
     sourceTimeout: TimeString | undefined
-  ) => Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>>;
+  ) => Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>>;
   expected: Record<ChainId, Record<Address, TokenAddress[]>>;
   timeout: TimeString | undefined;
 }) {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
   const reducedTimeout = reduceTimeout(timeout, '100');
-  return new Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>>(async (resolve, reject) => {
-    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+  return new Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>>(async (resolve, reject) => {
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
     const allPromises = sourcesInChains.map((source) =>
       timeoutPromise(getResult(source, filterRequestForSource(fullRequest, query, source), reducedTimeout), reducedTimeout).then((response) => {
         fillResponseWithNewResult(result, response);

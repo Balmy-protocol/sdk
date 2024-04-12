@@ -1,4 +1,4 @@
-import { AmountOfToken, BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, InputTransaction } from '@types';
+import { BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, InputTransaction } from '@types';
 import { chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculator, SupportedGasValues, IGasPriceSource, GasEstimation, GasPrice } from './types';
@@ -30,7 +30,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return Object.fromEntries(entries);
   }
 
-  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken> {
+  estimateGas({ chainId, tx, config }: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<bigint> {
     const promise = this.estimateGasInternal(chainId, tx);
     return timeoutPromise(promise, config?.timeout);
   }
@@ -89,7 +89,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return gasCalculator.calculateGasCost({ gasEstimation, tx });
   }
 
-  private estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<AmountOfToken> {
+  private estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<bigint> {
     const viemTx = mapTxToViemTx(tx);
     const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
     return viemSupported
@@ -99,10 +99,10 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
             ...viemTx,
             account: viemTx.from,
           })
-          .then((estimate) => estimate.toString())
+          .then((estimate) => estimate)
       : this.providerService
           .getEthersProvider({ chainId })
           .estimateGas(tx)
-          .then((estimate) => estimate.toString());
+          .then((estimate) => estimate.toBigInt());
   }
 }
