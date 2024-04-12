@@ -16,7 +16,7 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
     ? {
         ...quote,
         type,
-        minBuyAmount: BigInt(subtractPercentage(quote.buyAmount, slippagePercentage, 'up')),
+        minBuyAmount: subtractPercentage(quote.buyAmount, slippagePercentage, 'up'),
         maxSellAmount: quote.sellAmount,
       }
     : {

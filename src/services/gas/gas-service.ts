@@ -93,13 +93,10 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     const viemTx = mapTxToViemTx(tx);
     const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
     return viemSupported
-      ? this.providerService
-          .getViemPublicClient({ chainId })
-          .estimateGas({
-            ...viemTx,
-            account: viemTx.from,
-          })
-          .then((estimate) => estimate)
+      ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
+          ...viemTx,
+          account: viemTx.from,
+        })
       : this.providerService
           .getEthersProvider({ chainId })
           .estimateGas(tx)

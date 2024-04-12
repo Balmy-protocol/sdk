@@ -67,7 +67,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
 
     const router = ROUTER_ADDRESS[chain.chainId];
     const buyAmount = BigInt(amount_out);
-    const minBuyAmount = BigInt(subtractPercentage(buyAmount, slippagePercentage, 'up'));
+    const minBuyAmount = subtractPercentage(buyAmount, slippagePercentage, 'up');
     const deadline = BigInt(calculateDeadline(txValidFor) ?? Uint.MAX_256);
 
     let calldata: string;
