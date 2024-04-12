@@ -10,7 +10,6 @@ export const CONFIG: SourceConfig = {
     odos: { sourceDenylist: ['Hashflow'] },
     barter: {
       sourceDenylist: ['Hashflow'],
-      endpoints: {},
     },
   },
 };
@@ -34,15 +33,11 @@ if (process.env.DODO_API_KEY) {
 }
 
 if (process.env.BARTER_AUTH_HEADER) {
-  CONFIG.custom!.barter!.headers = { Authorization: process.env.BARTER_AUTH_HEADER };
+  CONFIG.custom!.barter!.authHeader = process.env.BARTER_AUTH_HEADER;
 }
 
-if (process.env.BARTER_ETHEREUM_ENDPOINT) {
-  CONFIG.custom!.barter!.endpoints![Chains.ETHEREUM.chainId] = process.env.BARTER_ETHEREUM_ENDPOINT;
-}
-
-if (process.env.BARTER_ARBITRUM_ENDPOINT) {
-  CONFIG.custom!.barter!.endpoints![Chains.ARBITRUM.chainId] = process.env.BARTER_ARBITRUM_ENDPOINT;
+if (process.env.BARTER_CUSTOM_SUBDOMAIN) {
+  CONFIG.custom!.barter!.customSubdomain = process.env.BARTER_CUSTOM_SUBDOMAIN;
 }
 
 export function supportedChains() {
