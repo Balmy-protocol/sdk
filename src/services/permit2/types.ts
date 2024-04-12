@@ -17,7 +17,7 @@ export type IPermit2Service = {
   permit2ContractAddress: Address;
   arbitrary: IPermit2ArbitraryService;
   quotes: IPermit2QuoteService;
-  calculateNonce(params: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<string>;
+  calculateNonce(params: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<bigint>;
   preparePermitData(params: GenericSinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: GenericBatchPermitParams): Promise<BatchPermitData>;
 };
@@ -104,16 +104,16 @@ export type PermitData = {
         amount: AmountOfToken;
       };
       spender: Address;
-      nonce: string;
-      deadline: string;
+      nonce: bigint;
+      deadline: bigint;
     };
     primaryType: 'PermitTransferFrom';
   };
   permitData: {
     token: Address;
     amount: AmountOfToken;
-    nonce: string;
-    deadline: string;
+    nonce: bigint;
+    deadline: bigint;
   };
 };
 
@@ -127,15 +127,15 @@ export type BatchPermitData = {
         amount: AmountOfToken;
       }[];
       spender: Address;
-      nonce: string;
-      deadline: string;
+      nonce: bigint;
+      deadline: bigint;
     };
     primaryType: 'PermitBatchTransferFrom';
   };
   permitData: {
     tokens: { token: TokenAddress; amount: AmountOfToken }[];
-    nonce: string;
-    deadline: string;
+    nonce: bigint;
+    deadline: bigint;
   };
 };
 

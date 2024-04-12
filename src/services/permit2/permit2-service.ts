@@ -35,7 +35,7 @@ export class Permit2Service implements IPermit2Service {
     this.quotes = new Permit2QuoteService(this, quoteService, providerService, gasService);
   }
 
-  async calculateNonce({ chainId, appId, user }: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<string> {
+  async calculateNonce({ chainId, appId, user }: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<bigint> {
     // Calculate words based on seed word
     const words = new Array(WORDS_FOR_NONCE_CALCULATION).fill(0).map((_, i) => BigInt(appId) + BigInt(i));
 
@@ -53,7 +53,7 @@ export class Permit2Service implements IPermit2Service {
     for (let i = 0; i < results.length; i++) {
       const result = BigInt(results[i]);
       if (result < Uint.MAX_256) {
-        return ((words[i] << 8n) + findUnusedBit(result)).toString();
+        return (words[i] << 8n) + findUnusedBit(result);
       }
     }
 
@@ -70,7 +70,7 @@ export class Permit2Service implements IPermit2Service {
     signatureValidFor,
   }: GenericSinglePermitParams): Promise<PermitData> {
     const nonce = await this.calculateNonce({ chainId, appId, user: signerAddress });
-    const deadline = calculateDeadline(signatureValidFor).toString();
+    const deadline = BigInt(calculateDeadline(signatureValidFor));
     return {
       dataToSign: {
         types: PERMIT2_TRANSFER_FROM_TYPES,
@@ -105,7 +105,7 @@ export class Permit2Service implements IPermit2Service {
     signatureValidFor,
   }: GenericBatchPermitParams): Promise<BatchPermitData> {
     const nonce = await this.calculateNonce({ chainId, appId, user: signerAddress });
-    const deadline = calculateDeadline(signatureValidFor).toString();
+    const deadline = BigInt(calculateDeadline(signatureValidFor));
     return {
       dataToSign: {
         types: PERMIT2_BATCH_TRANSFER_FROM_TYPES,
