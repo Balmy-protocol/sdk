@@ -4,7 +4,6 @@ import { ProviderService } from '@services/providers/provider-service';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
-import { AlchemyBalanceSource } from '@services/balances/balance-sources/alchemy-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
@@ -59,7 +58,6 @@ const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
-const ALCHEMY_BALANCE_SOURCE = new AlchemyBalanceSource(process.env.ALCHEMY_API_KEY!);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',
