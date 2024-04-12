@@ -1,12 +1,15 @@
 import { Chains } from '@chains';
-import { Address, Chain, TimeString } from '@types';
+import { Address, Chain, ChainId, TimeString } from '@types';
 import { IFetchService } from '@services/fetch';
 import { calculateDeadline, isSameAddress, substractPercentage } from '@shared/utils';
 import { Addresses } from '@shared/constants';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
+const BARTER_NETWORKS: Record<ChainId, string> = {
+  [Chains.ETHEREUM.chainId]: 'eth',
+  [Chains.ARBITRUM.chainId]: 'arb',
+};
 const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
   name: 'Barter',
   supports: {
@@ -17,8 +20,11 @@ const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
   logoURI: 'ipfs://QmYhY34jBV93MwZ9xYVrXbcUjg1wL9btspWVoRTQCzxNUx',
 };
 type BarterSupport = { buyOrders: false; swapAndTransfer: true };
-type BarterConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
-export class BarterQuoteSource extends AlwaysValidConfigAndContextSource<BarterSupport, BarterConfig> {
+type BarterConfig = ({ sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] }) & {
+  authHeader: string;
+  customSubdomain: string;
+};
+export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConfig> {
   getMetadata() {
     return BARTER_METADATA;
   }
@@ -39,19 +45,22 @@ export class BarterQuoteSource extends AlwaysValidConfigAndContextSource<BarterS
     const target = checksumAndMapIfNecessary(buyToken);
     const amount = `${order.sellAmount}`;
 
-    const headers: HeadersInit = { accept: 'application/json', ['Content-Type']: 'application/json' };
+    const headers: HeadersInit = { accept: 'application/json', ['Content-Type']: 'application/json', Authorization: config.authHeader };
     if (config.referrer?.name) {
       headers['X-From'] = config.referrer.name;
     }
 
     const typeFiltersPromise = calculateTypeFilters({ config, fetchService, chain, sellToken, buyToken, headers, timeout });
-    const swapRoutePromise = fetchService.fetch('https://api.barterswap.xyz/getSwapRoute', {
-      method: 'POST',
-      // Note: we won't apply the type filter here, so that we can parallelize the quote and speed things up
-      body: JSON.stringify({ source, target, amount }),
-      timeout,
-      headers,
-    });
+    const swapRoutePromise = fetchService.fetch(
+      `https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/getSwapRoute`,
+      {
+        method: 'POST',
+        // Note: we won't apply the type filter here, so that we can parallelize the quote and speed things up
+        body: JSON.stringify({ source, target, amount }),
+        timeout,
+        headers,
+      }
+    );
 
     const [responseSwapRoute, typeFilter] = await Promise.all([swapRoutePromise, typeFiltersPromise]);
     if (!responseSwapRoute.ok) {
@@ -70,7 +79,7 @@ export class BarterQuoteSource extends AlwaysValidConfigAndContextSource<BarterS
       typeFilter,
     };
 
-    const responseSwap = await fetchService.fetch('https://api.barterswap.xyz/swap', {
+    const responseSwap = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/swap`, {
       method: 'POST',
       body: JSON.stringify(bodySwap),
       timeout,
@@ -102,6 +111,10 @@ export class BarterQuoteSource extends AlwaysValidConfigAndContextSource<BarterS
       },
     };
   }
+
+  isConfigAndContextValid(config: Partial<BarterConfig> | undefined): config is BarterConfig {
+    return !!config?.authHeader && !!config?.customSubdomain;
+  }
 }
 
 async function calculateTypeFilters({
@@ -124,7 +137,10 @@ async function calculateTypeFilters({
   if (config.sourceAllowlist) {
     return config.sourceAllowlist;
   } else if (config.sourceDenylist) {
-    const response = await fetchService.fetch('https://api.barterswap.xyz/env', { headers, timeout });
+    const response = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/env`, {
+      headers,
+      timeout,
+    });
     if (!response.ok) {
       failed(BARTER_METADATA, chain, sellToken, buyToken, await response.text());
     }

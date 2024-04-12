@@ -51,6 +51,8 @@ jobs:
         timeout-minutes: 15
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
+          BARTER_AUTH_HEADER: ${{secrets.BARTER_AUTH_HEADER}}
+          BARTER_CUSTOM_SUBDOMAIN: ${{secrets.BARTER_CUSTOM_SUBDOMAIN}}
 
   integration-quotes:
     needs: ['integration']
@@ -77,4 +79,6 @@ jobs:
         env:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
           RANGO_API_KEY: ${{secrets.RANGO_API_KEY}}
+          BARTER_AUTH_HEADER: ${{secrets.BARTER_AUTH_HEADER}}
+          BARTER_CUSTOM_SUBDOMAIN: ${{secrets.BARTER_CUSTOM_SUBDOMAIN}}
           CI_CONTEXT: true
