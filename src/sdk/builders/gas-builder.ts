@@ -15,7 +15,6 @@ import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/ethersc
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
-import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
 import { CachedGasPriceSource } from '@services/gas/gas-price-sources/cached-gas-price-source';
 import { ILogsService } from '@services/logs';
 
@@ -36,7 +35,6 @@ export type GasSourceInput =
         maxSize?: number;
       };
     }
-  | { type: 'changelly'; key: string }
   | { type: 'owlracle'; key: string }
   | { type: 'etherscan'; keys?: Record<ChainId, string> }
   | { type: 'custom'; instance: IGasPriceSource<any> }
@@ -65,8 +63,6 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? PolygonGasStationGasPriceSource
   : Input extends { type: 'owlracle' }
   ? OwlracleGasPriceSource
-  : Input extends { type: 'changelly' }
-  ? ChangellyGasPriceSource
   : Input extends { type: 'etherscan' }
   ? EtherscanGasPriceSource
   : Input extends { type: 'custom' }
@@ -132,8 +128,6 @@ function buildSource(
       return new EtherscanGasPriceSource(fetchService, source.keys);
     case 'owlracle':
       return new OwlracleGasPriceSource(fetchService, source.key);
-    case 'changelly':
-      return new ChangellyGasPriceSource(fetchService, source.key);
     case 'custom':
       return source.instance;
     case 'aggregate':
