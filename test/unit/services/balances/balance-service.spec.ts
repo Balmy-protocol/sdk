@@ -38,9 +38,9 @@ describe('Balance Service', () => {
       });
       expect(balances).to.have.keys(Chains.ETHEREUM.chainId);
       expect(balances[Chains.ETHEREUM.chainId]).to.have.keys([DAI, USDC, WETH]);
-      expect(balances[Chains.ETHEREUM.chainId][DAI]).to.equal('0');
-      expect(balances[Chains.ETHEREUM.chainId][USDC]).to.equal('10000');
-      expect(balances[Chains.ETHEREUM.chainId][WETH]).to.equal('20000');
+      expect(balances[Chains.ETHEREUM.chainId][DAI]).to.equal(0n);
+      expect(balances[Chains.ETHEREUM.chainId][USDC]).to.equal(10000n);
+      expect(balances[Chains.ETHEREUM.chainId][WETH]).to.equal(20000n);
     });
   });
 });
