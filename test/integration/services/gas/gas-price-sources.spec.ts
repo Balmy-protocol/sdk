@@ -60,7 +60,10 @@ describe('Gas Price Sources', () => {
             for (const speed of AVAILABLE_GAS_SPEEDS) {
               const expected = speed in supportedSpeeds ? (supportedSpeeds as any)[speed] : 'missing';
               if (expected === 'present') {
-                expect(isGasPriceIsSetForSpeed(gasPrice, speed), `${speed} was not set in ${JSON.stringify(gasPrice)}`).to.be.true;
+                expect(
+                  isGasPriceIsSetForSpeed(gasPrice, speed),
+                  `${speed} was not set in ${JSON.stringify(gasPrice, (_, value) => (typeof value === 'bigint' ? value.toString() : value))}`
+                ).to.be.true;
               } else if (expected === 'optional') {
                 expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               } else {
