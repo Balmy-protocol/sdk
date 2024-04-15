@@ -150,8 +150,8 @@ const FAILING_PRICE_SERVICE: IPriceService = {
 const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {
   supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' } as any),
   calculateGasCost: (_: { gasEstimation: BigIntish; tx?: InputTransaction }) =>
-    ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10', gasCostNativeToken: '10' } } as any),
-  getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } } as any),
+    ({ standard: { maxFeePerGas: 10n, maxPriorityFeePerGas: 10n, gasCostNativeToken: 10n } } as any),
+  getGasPrice: () => ({ standard: { maxFeePerGas: 10n, maxPriorityFeePerGas: 10n } } as any),
 };
 const GAS_SERVICE: IGasService<DefaultGasValues> = {
   supportedSpeeds: () => ({}),

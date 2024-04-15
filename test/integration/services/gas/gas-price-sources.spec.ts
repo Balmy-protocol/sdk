@@ -75,10 +75,10 @@ describe('Gas Price Sources', () => {
         function isGasPriceIsSetForSpeed(gasPrice: GasPriceResult<object>, speed: string) {
           if (isEIP1159Compatible(gasPrice)) {
             return (
-              typeof (gasPrice as any)[speed]?.maxFeePerGas === 'string' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'string'
+              typeof (gasPrice as any)[speed]?.maxFeePerGas === 'bigint' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'bigint'
             );
           } else {
-            return typeof (gasPrice as any)[speed]?.gasPrice === 'string';
+            return typeof (gasPrice as any)[speed]?.gasPrice === 'bigint';
           }
         }
       }
