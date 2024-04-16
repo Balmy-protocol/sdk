@@ -35,7 +35,7 @@ export class EthGasStationGasPriceSource implements IGasPriceSource<GasValues> {
 
 function calculateGas(baseFee: number, priorityFee: number): EIP1159GasPrice {
   return {
-    maxFeePerGas: parseUnits(`${baseFee + priorityFee}`, 9).toString(),
-    maxPriorityFeePerGas: parseUnits(`${priorityFee}`, 9).toString(),
+    maxFeePerGas: parseUnits(`${baseFee + priorityFee}`, 9),
+    maxPriorityFeePerGas: parseUnits(`${priorityFee}`, 9),
   };
 }

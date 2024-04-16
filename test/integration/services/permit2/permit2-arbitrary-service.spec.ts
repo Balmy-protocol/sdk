@@ -38,8 +38,8 @@ describe('Permit2 Arbitrary Service', () => {
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
     await mint({ amount: ORIGINAL_AMOUNT_WETH, of: wToken, to: user });
     await mint({ amount: ORIGINAL_AMOUNT_USDC, of: STABLE_ERC20, to: user });
-    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS, for: STABLE_ERC20, from: user });
-    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS, for: wToken, from: user });
+    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS(chainId), for: STABLE_ERC20, from: user });
+    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS(chainId), for: wToken, from: user });
     chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     snapshot = await takeSnapshot();
     arbitrary = buildSDK().permit2Service.arbitrary;

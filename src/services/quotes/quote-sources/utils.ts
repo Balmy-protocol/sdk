@@ -1,5 +1,5 @@
 import { getAddress } from 'viem';
-import { addPercentage, isSameAddress, substractPercentage } from '@shared/utils';
+import { addPercentage, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Address, Chain, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './types';
 import { FailedToGenerateQuoteError } from '../errors';
@@ -16,7 +16,7 @@ export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy',
     ? {
         ...quote,
         type,
-        minBuyAmount: BigInt(substractPercentage(quote.buyAmount, slippagePercentage, 'up')),
+        minBuyAmount: subtractPercentage(quote.buyAmount, slippagePercentage, 'up'),
         maxSellAmount: quote.sellAmount,
       }
     : {

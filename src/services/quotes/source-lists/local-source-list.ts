@@ -89,17 +89,17 @@ function mapSourceResponseToResponse({
 }): SourceListResponse {
   const tx: QuoteTransaction = {
     to: response.tx.to,
-    value: response.tx.value?.toString(),
+    value: response.tx.value,
     data: response.tx.calldata,
     from: request.takerAddress,
   };
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
-    sellAmount: response.sellAmount.toString(),
-    buyAmount: response.buyAmount.toString(),
-    maxSellAmount: response.maxSellAmount.toString(),
-    minBuyAmount: response.minBuyAmount.toString(),
-    estimatedGas: response.estimatedGas?.toString(),
+    sellAmount: response.sellAmount,
+    buyAmount: response.buyAmount,
+    maxSellAmount: response.maxSellAmount,
+    minBuyAmount: response.minBuyAmount,
+    estimatedGas: response.estimatedGas,
     recipient,
     source: {
       id: sourceId,

@@ -64,7 +64,7 @@ export class DCAService implements IDCAService {
     usePermit2?: boolean;
   }): Address {
     if (usePermit2) {
-      return PERMIT2_ADDRESS;
+      return PERMIT2_ADDRESS(chainId);
     } else if (isSameAddress(from, depositWith)) {
       return DCA_HUB_ADDRESS;
     } else {
@@ -880,7 +880,7 @@ async function buildCompanionMulticall({ calls, value }: { calls: Call[]; value?
     functionName: 'multicall',
     args: [calls],
   });
-  return { to: COMPANION_ADDRESS, data, value: value?.toString() };
+  return { to: COMPANION_ADDRESS, data, value };
 }
 
 type Call = Hex;

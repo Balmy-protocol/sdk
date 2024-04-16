@@ -7,7 +7,6 @@ import { BalanceService } from '@services/balances/balance-service';
 import { IFetchService } from '@services/fetch';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
-import { MagpieBalanceSource } from '@services/balances/balance-sources/magpie-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
 import { BuildProviderParams, buildProviderService } from './provider-builder';
 import { buildMulticallService } from './multicall-builder';
@@ -17,7 +16,6 @@ export type BalanceSourceInput =
   | { type: 'cached'; underlyingSource: BalanceSourceInput; config: CacheConfig }
   | { type: 'custom'; instance: IBalanceSource }
   | { type: '1inch' }
-  | { type: 'magpie' }
   | { type: 'fastest'; sources: BalanceSourceInput[] };
 export type BuildBalancesParams = { source: BalanceSourceInput };
 
@@ -47,8 +45,6 @@ function buildSource(
       return source.instance;
     case '1inch':
       return new OneInchBalanceSource(fetchService);
-    case 'magpie':
-      return new MagpieBalanceSource(fetchService);
     case 'fastest':
       return new FastestBalanceSource(source.sources.map((source) => buildSource(source, { fetchService, providerService })));
   }

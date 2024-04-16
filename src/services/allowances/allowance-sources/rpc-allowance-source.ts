@@ -1,4 +1,4 @@
-import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { IMulticallService } from '@services/multicall';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 import { timeoutPromise } from '@shared/timeouts';
@@ -18,7 +18,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
   }: {
     allowances: Record<ChainId, AllowanceCheck[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>> {
     const promises = Object.entries(allowances).map(async ([chainId, checks]) => [
       parseInt(chainId),
       await timeoutPromise(this.getAllowancesInChain(parseInt(chainId), checks), config?.timeout, { reduceBy: '100' }),
@@ -34,7 +34,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
       args: [owner, spender],
     }));
     const multicallResults = await this.multicallService.tryReadOnlyMulticall({ chainId, calls });
-    const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>> = {};
+    const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>> = {};
     for (let i = 0; i < multicallResults.length; i++) {
       const multicallResult = multicallResults[i];
       if (multicallResult.status === 'failure') continue;

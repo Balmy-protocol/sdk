@@ -13,7 +13,6 @@ export {
   SupportInChain,
   FieldRequirementOptions,
   FieldsRequirements,
-  AmountOfToken,
   BigIntish,
   Timestamp,
   InputTransaction,

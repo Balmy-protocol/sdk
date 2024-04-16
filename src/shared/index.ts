@@ -5,7 +5,7 @@ export { timeoutPromise, reduceTimeout, TimeoutError } from './timeouts';
 export {
   wait,
   isSameAddress,
-  substractPercentage,
+  subtractPercentage,
   addPercentage,
   mulDivByNumber,
   calculateDeadline,

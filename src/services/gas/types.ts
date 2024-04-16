@@ -1,5 +1,4 @@
 import {
-  AmountOfToken,
   BigIntish,
   BasedOnRequirements,
   ChainId,
@@ -22,7 +21,7 @@ export type GasEstimation<
 export type IGasService<GasValues extends SupportedGasValues = DefaultGasValues> = {
   supportedChains(): ChainId[];
   supportedSpeeds(): Record<ChainId, SupportInChain<GasValues>>;
-  estimateGas(_: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<AmountOfToken>;
+  estimateGas(_: { chainId: ChainId; tx: InputTransaction; config?: { timeout?: TimeString } }): Promise<bigint>;
   getGasPrice<Requirements extends FieldsRequirements<GasValues> = DefaultRequirements<GasValues>>(_: {
     chainId: ChainId;
     config?: { timeout?: TimeString; fields?: Requirements };
@@ -68,8 +67,8 @@ export type MergeGasValues<Sources extends IGasPriceSource<object>[] | []> = Uni
 >;
 export type ExtractGasValues<Source extends IGasPriceSource<object>> = Source extends IGasPriceSource<infer R> ? R : never;
 
-export type EIP1159GasPrice = { maxFeePerGas: AmountOfToken; maxPriorityFeePerGas: AmountOfToken };
-export type LegacyGasPrice = { gasPrice: AmountOfToken };
+export type EIP1159GasPrice = { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint };
+export type LegacyGasPrice = { gasPrice: bigint };
 
 export type DefaultGasValues = GasValueForVersions<GasSpeed>;
-type AddGasCost<GasValues extends SupportedGasValues> = { [K in keyof GasValues]: GasValues[K] & { gasCostNativeToken: AmountOfToken } };
+type AddGasCost<GasValues extends SupportedGasValues> = { [K in keyof GasValues]: GasValues[K] & { gasCostNativeToken: bigint } };
