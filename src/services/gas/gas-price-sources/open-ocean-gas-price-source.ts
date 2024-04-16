@@ -60,11 +60,11 @@ export class OpenOceanGasPriceSource implements IGasPriceSource<GasValues> {
 function toEip1159GasPrice(body: any, key: GasSpeed) {
   const { maxPriorityFeePerGas, maxFeePerGas } = body[key];
   return {
-    maxFeePerGas: `${maxFeePerGas}`,
-    maxPriorityFeePerGas: `${maxPriorityFeePerGas}`,
+    maxFeePerGas: BigInt(maxFeePerGas),
+    maxPriorityFeePerGas: BigInt(maxPriorityFeePerGas),
   };
 }
 
 function stringToLegacyGasPrice(body: any, key: GasSpeed) {
-  return { gasPrice: `${body[key]}` };
+  return { gasPrice: BigInt(body[key]) };
 }

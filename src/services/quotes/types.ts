@@ -1,6 +1,6 @@
 import { GasSpeed, SupportedGasValues } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
-import { Address, AmountOfToken, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction, AmountsOfToken } from '@types';
+import { Address, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, BuiltTransaction, AmountsOfToken } from '@types';
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
@@ -86,8 +86,8 @@ export type QuoteResponse = {
   maxSellAmount: AmountsOfToken;
   minBuyAmount: AmountsOfToken;
   gas?: {
-    estimatedGas: AmountOfToken;
-    estimatedCost: AmountOfToken;
+    estimatedGas: bigint;
+    estimatedCost: bigint;
     estimatedCostInUnits: string;
     gasTokenSymbol: string;
     estimatedCostInUSD?: string;
@@ -101,10 +101,10 @@ export type QuoteResponse = {
 
 export type QuoteTransaction = BuiltTransaction & {
   from: Address;
-  maxPriorityFeePerGas?: AmountOfToken;
-  maxFeePerGas?: AmountOfToken;
-  gasPrice?: AmountOfToken;
-  gasLimit?: AmountOfToken;
+  maxPriorityFeePerGas?: bigint;
+  maxFeePerGas?: bigint;
+  gasPrice?: bigint;
+  gasLimit?: bigint;
 };
 
 export type IndividualQuoteRequest = Omit<

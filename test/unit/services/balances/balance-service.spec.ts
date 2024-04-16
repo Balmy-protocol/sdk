@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Chains } from '@chains';
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport, IBalanceService, IBalanceSource } from '@services/balances/types';
 import { BalanceService } from '@services/balances/balance-service';
 import { given } from '@test-utils/bdd';
@@ -38,9 +38,9 @@ describe('Balance Service', () => {
       });
       expect(balances).to.have.keys(Chains.ETHEREUM.chainId);
       expect(balances[Chains.ETHEREUM.chainId]).to.have.keys([DAI, USDC, WETH]);
-      expect(balances[Chains.ETHEREUM.chainId][DAI]).to.equal('0');
-      expect(balances[Chains.ETHEREUM.chainId][USDC]).to.equal('10000');
-      expect(balances[Chains.ETHEREUM.chainId][WETH]).to.equal('20000');
+      expect(balances[Chains.ETHEREUM.chainId][DAI]).to.equal(0n);
+      expect(balances[Chains.ETHEREUM.chainId][USDC]).to.equal(10000n);
+      expect(balances[Chains.ETHEREUM.chainId][WETH]).to.equal(20000n);
     });
   });
 });
@@ -52,7 +52,7 @@ const SOURCE: IBalanceSource = {
   getTokensHeldByAccounts(_: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     throw new Error('Not implemented');
   },
   getBalancesForTokens({
@@ -60,15 +60,15 @@ const SOURCE: IBalanceSource = {
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
-    const result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
+    const result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
     for (const [chainIdString, record] of Object.entries(tokens)) {
       const chainId = Number(chainIdString);
       result[chainId] = {};
       for (const [address, tokens] of Object.entries(record)) {
         result[chainId][address] = {};
         for (let i = 0; i < tokens.length; i++) {
-          result[chainId][address][tokens[i]] = `${i * 10000}`;
+          result[chainId][address][tokens[i]] = BigInt(i * 10000);
         }
       }
     }

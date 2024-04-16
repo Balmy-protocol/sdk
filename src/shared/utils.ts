@@ -10,7 +10,7 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
-export function substractPercentage(amount: BigIntish, slippagePercentage: number, rounding: 'up' | 'down'): bigint {
+export function subtractPercentage(amount: BigIntish, slippagePercentage: number, rounding: 'up' | 'down'): bigint {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigInt(amount) - percentage;
 }
@@ -100,7 +100,7 @@ export function splitInChunks<T>(list: T[], chunkSize: number): T[][] {
 export function toAmountsOfToken({ price, decimals, amount }: { price?: number; decimals: number; amount: BigIntish }) {
   const amountInUSD = amountToUSD(decimals, amount, price);
   return {
-    amount: amount.toString(),
+    amount: BigInt(amount),
     amountInUnits: formatUnits(BigInt(amount), decimals),
     amountInUSD,
   };

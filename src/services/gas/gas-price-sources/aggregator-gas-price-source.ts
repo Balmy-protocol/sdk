@@ -1,7 +1,7 @@
 import { couldSupportMeetRequirements, combineSourcesSupport, doesResponseMeetRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
-import { AmountOfToken, ChainId, FieldsRequirements, TimeString } from '@types';
+import { ChainId, FieldsRequirements, TimeString } from '@types';
 import { EIP1159GasPrice, GasPrice, GasPriceResult, IGasPriceSource, LegacyGasPrice, MergeGasValues } from '../types';
 import { filterOutInvalidSpeeds, isEIP1159Compatible } from '../utils';
 import { ILogger, ILogsService } from '@services/logs';
@@ -117,14 +117,14 @@ function aggregateLegacy(toAggregate: LegacyGasPrice[], method: GasPriceAggregat
 }
 
 function medianByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  const sorted = array.sort((a, b) => (BigInt(a[property] as AmountOfToken) <= BigInt(b[property] as AmountOfToken) ? -1 : 1));
+  const sorted = array.sort((a, b) => (BigInt(a[property] as bigint) <= BigInt(b[property] as bigint) ? -1 : 1));
   return sorted[Math.floor(Math.max(sorted.length - 1, 0) / 2)];
 }
 
 function maxByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  return array.reduce((accum, curr) => (BigInt(accum[property] as AmountOfToken) >= BigInt(curr[property] as AmountOfToken) ? accum : curr));
+  return array.reduce((accum, curr) => (BigInt(accum[property] as bigint) >= BigInt(curr[property] as bigint) ? accum : curr));
 }
 
 function minByProperty<GasPriceVersion extends GasPrice>(array: GasPriceVersion[], property: keyof GasPriceVersion): GasPriceVersion {
-  return array.reduce((accum, curr) => (BigInt(accum[property] as AmountOfToken) <= BigInt(curr[property] as AmountOfToken) ? accum : curr));
+  return array.reduce((accum, curr) => (BigInt(accum[property] as bigint) <= BigInt(curr[property] as bigint) ? accum : curr));
 }

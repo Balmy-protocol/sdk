@@ -1,7 +1,7 @@
 import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
-import { Address, AmountOfToken, TimeString } from '@types';
+import { Address, TimeString } from '@types';
 import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig, QuoteTransaction } from '../types';
 import { SourceConfig } from '../source-registry';
 
@@ -24,11 +24,11 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
 };
 
 export type SourceListResponse = {
-  sellAmount: AmountOfToken;
-  buyAmount: AmountOfToken;
-  maxSellAmount: AmountOfToken;
-  minBuyAmount: AmountOfToken;
-  estimatedGas?: AmountOfToken;
+  sellAmount: bigint;
+  buyAmount: bigint;
+  maxSellAmount: bigint;
+  minBuyAmount: bigint;
+  estimatedGas?: bigint;
   type: 'sell' | 'buy';
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };

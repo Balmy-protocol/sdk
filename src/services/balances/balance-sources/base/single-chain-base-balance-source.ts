@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
@@ -11,7 +11,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const promises = Object.entries(tokens).map(async ([chainId, tokens]) => [
       parseInt(chainId),
       await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, { reduceBy: '100' }),
@@ -25,7 +25,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   }: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const support = this.supportedQueries();
     for (const chainId in accounts) {
       if (!support[chainId]?.getTokensHeldByAccount) {
@@ -43,7 +43,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     chainId: ChainId,
     tokens: Record<Address, TokenAddress[]>,
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
     const accountsToFetchNativeToken: Address[] = [];
     const tokensWithoutNativeToken: Record<Address, TokenAddress[]> = {};
 
@@ -56,22 +56,22 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     const erc20Promise =
       Object.keys(tokensWithoutNativeToken).length > 0
         ? this.fetchERC20BalancesForAccountsInChain(chainId, tokensWithoutNativeToken, config)
-        : Promise.resolve<Record<Address, Record<TokenAddress, AmountOfToken>>>({});
+        : Promise.resolve<Record<Address, Record<TokenAddress, bigint>>>({});
 
     const nativePromise =
       accountsToFetchNativeToken.length > 0
         ? this.fetchNativeBalancesInChain(chainId, accountsToFetchNativeToken)
-        : Promise.resolve<Record<Address, AmountOfToken>>({});
+        : Promise.resolve<Record<Address, bigint>>({});
 
     const [erc20Result, nativeResult] = await Promise.all([erc20Promise, nativePromise]);
 
-    const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<Address, Record<TokenAddress, bigint>> = {};
 
     for (const account in tokens) {
       const lowercasedEntries = Object.entries(erc20Result[account] ?? {})
         .filter(([, balance]) => isValidBalance(balance))
         .map(([address, balance]) => [address.toLowerCase(), balance]);
-      const lowercased: Record<TokenAddress, AmountOfToken> = Object.fromEntries(lowercasedEntries);
+      const lowercased: Record<TokenAddress, bigint> = Object.fromEntries(lowercasedEntries);
 
       for (const token of tokensWithoutNativeToken[account] ?? []) {
         const balance = lowercased[token.toLowerCase()];
@@ -95,12 +95,12 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>> {
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
     const erc20Promise = this.fetchERC20TokensHeldByAccountsInChain(chainId, accounts, config);
     const nativePromise = this.fetchNativeBalancesInChain(chainId, accounts);
     const [erc20Result, nativeResult] = await Promise.all([erc20Promise, nativePromise]);
 
-    const result: Record<Address, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<Address, Record<TokenAddress, bigint>> = {};
     for (const account of accounts) {
       const entries = Object.entries(erc20Result[account]).filter(([, balance]) => isValidBalanceAndNonZero(balance));
       result[account] = Object.fromEntries(entries);
@@ -117,29 +117,29 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>>;
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>>;
   protected abstract fetchERC20BalancesForAccountsInChain(
     chainId: ChainId,
     accounts: Record<Address, TokenAddress[]>,
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, AmountOfToken>>>;
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>>;
   protected abstract fetchNativeBalancesInChain(
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
-  ): Promise<Record<Address, AmountOfToken>>;
+  ): Promise<Record<Address, bigint>>;
 }
 
-function isValidBalance(text: AmountOfToken | undefined) {
+function isValidBalance(text: bigint | undefined) {
   return typeof toBigInt(text) === 'bigint';
 }
 
-function isValidBalanceAndNonZero(text: AmountOfToken | undefined) {
+function isValidBalanceAndNonZero(text: bigint | undefined) {
   const bn = toBigInt(text);
   return typeof bn === 'bigint' && bn > 0n;
 }
 
-function toBigInt(text: AmountOfToken | undefined): bigint | undefined {
+function toBigInt(text: bigint | undefined): bigint | undefined {
   try {
     if (text) {
       return BigInt(text);

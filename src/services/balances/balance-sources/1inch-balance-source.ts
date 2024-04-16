@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch';
 import { OnlyTokensHeldBalanceSource } from './base/only-tokens-held-balance-source';
 import { ONE_INCH_METADATA } from '@services/quotes/quote-sources/1inch-quote-source';
@@ -14,7 +14,7 @@ export class OneInchBalanceSource extends OnlyTokensHeldBalanceSource {
   }: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const accountsInChain: { chainId: ChainId; account: Address }[] = Object.entries(accounts).flatMap(([chainId, accounts]) =>
       accounts.map((account) => ({ chainId: Number(chainId), account }))
     );
@@ -26,7 +26,7 @@ export class OneInchBalanceSource extends OnlyTokensHeldBalanceSource {
         balances: await this.fetchTokensHeldByAccount(account, chainId, config?.timeout),
       }))
     );
-    const merged: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>> = {};
+    const merged: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
     for (const { chainId, account, balances } of allResults) {
       if (!(chainId in merged)) merged[chainId] = {};
       merged[chainId][account] = balances;
@@ -38,11 +38,7 @@ export class OneInchBalanceSource extends OnlyTokensHeldBalanceSource {
     return ONE_INCH_METADATA.supports.chains;
   }
 
-  private async fetchTokensHeldByAccount(
-    account: Address,
-    chainId: ChainId,
-    timeout?: TimeString
-  ): Promise<Record<TokenAddress, AmountOfToken>> {
+  private async fetchTokensHeldByAccount(account: Address, chainId: ChainId, timeout?: TimeString): Promise<Record<TokenAddress, bigint>> {
     const response = await this.fetchService.fetch(`https://balances.1inch.io/v1.1/${chainId}/balances/${account}`, {
       timeout,
     });

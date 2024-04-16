@@ -10,7 +10,7 @@ chai.use(chaiAsPromised);
 
 describe('Fastest Gas Price Source Combinator', () => {
   const CHAIN_ID = Chains.ETHEREUM.chainId;
-  const LEGACY = (amount: number) => ({ gasPrice: amount.toString() });
+  const LEGACY = (amount: number) => ({ gasPrice: amount });
 
   when('trying to create without sources', () => {
     then('an error is thrown', () => {

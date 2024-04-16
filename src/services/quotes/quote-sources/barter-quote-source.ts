@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { Address, Chain, TimeString } from '@types';
 import { IFetchService } from '@services/fetch';
-import { calculateDeadline, isSameAddress, substractPercentage } from '@shared/utils';
+import { calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
@@ -58,7 +58,7 @@ export class BarterQuoteSource extends AlwaysValidConfigAndContextSource<BarterS
       failed(BARTER_METADATA, chain, sellToken, buyToken, await responseSwapRoute.text());
     }
     const resultSwapRoute = await responseSwapRoute.json();
-    const minBuyAmount = substractPercentage(resultSwapRoute.outputAmount, slippagePercentage, 'up');
+    const minBuyAmount = subtractPercentage(resultSwapRoute.outputAmount, slippagePercentage, 'up');
 
     const bodySwap = {
       source,
