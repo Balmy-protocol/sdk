@@ -66,5 +66,5 @@ function toEip1159GasPrice(body: any, key: GasSpeed) {
 }
 
 function stringToLegacyGasPrice(body: any, key: GasSpeed) {
-  return { gasPrice: `${body[key]}` };
+  return { gasPrice: BigInt(body[key]) };
 }
