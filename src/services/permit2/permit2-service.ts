@@ -22,6 +22,7 @@ import { IGasService } from '@services/gas';
 
 export class Permit2Service implements IPermit2Service {
   readonly permit2ContractAddress = PERMIT2_ADDRESS;
+  readonly permit2ContractAddress = PERMIT2_ADDRESS;
   readonly arbitrary: IPermit2ArbitraryService;
   readonly quotes: IPermit2QuoteService;
 
