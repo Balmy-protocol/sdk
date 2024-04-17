@@ -5,7 +5,7 @@ import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
-import { ERC20_ABI } from '@shared/abis/erc20';
+import ERC20_ABI from '@shared/abis/erc20';
 
 export type RPCBalanceSourceConfig = {
   batching?: { maxSizeInBytes: number };
@@ -41,7 +41,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
     const calls = pairs.map(({ account, token }) => ({
       address: token,
-      abi: { humanReadable: ERC20_ABI },
+      abi: { json: ERC20_ABI },
       functionName: 'balanceOf',
       args: [account],
     }));

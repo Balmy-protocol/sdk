@@ -38,7 +38,7 @@ import {
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
 import { IMulticallService } from '@services/multicall';
-import { ERC721_ABI } from '@shared/abis/erc721';
+import ERC721_ABI from '@shared/abis/erc721';
 import { IFetchService } from '@services/fetch';
 import { IPriceService, PriceResult } from '@services/prices';
 
@@ -192,7 +192,7 @@ export class DCAService implements IDCAService {
     const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
       chainId,
       calls: [
-        { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: { json: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
         { abi: { json: dcaHubAbi }, address: hubAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
     });
@@ -561,7 +561,7 @@ export class DCAService implements IDCAService {
     const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
       chainId,
       calls: [
-        { abi: { humanReadable: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: { json: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
         { abi: { json: dcaHubAbi }, address: sourceHub, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
     });

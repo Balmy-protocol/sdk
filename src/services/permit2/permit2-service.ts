@@ -13,7 +13,7 @@ import { Permit2ArbitraryService } from './permit2-arbitrary-service';
 import { PERMIT2_ADDRESS, WORDS_FOR_NONCE_CALCULATION } from './utils/config';
 import { calculateDeadline } from '@shared/utils';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
-import { PERMIT2_ABI } from '@shared/abis/permit2';
+import PERMIT2_ABI from '@shared/abis/permit2';
 import { Uint } from '@shared/constants';
 import { Permit2QuoteService } from './permit2-quote-service';
 import { IProviderService } from '@services/providers';
@@ -42,7 +42,7 @@ export class Permit2Service implements IPermit2Service {
     // Fetch bitmaps for user's words
     const calls = words.map((word) => ({
       address: PERMIT2_ADDRESS(chainId),
-      abi: { humanReadable: PERMIT2_ABI },
+      abi: { json: PERMIT2_ABI },
       functionName: 'nonceBitmap',
       args: [user, word],
     }));
