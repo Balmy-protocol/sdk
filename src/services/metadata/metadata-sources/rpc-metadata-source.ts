@@ -1,4 +1,4 @@
-import { Address, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, ContractCall, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { getChainByKey } from '@chains';
 import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
@@ -6,7 +6,7 @@ import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
-import { ERC20_ABI } from '@shared/abis/erc20';
+import ERC20_ABI from '@shared/abis/erc20';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
@@ -45,9 +45,9 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
       .filter(([, requirement]) => requirement !== 'can ignore')
       .map(([field]) => field as keyof RPCMetadataProperties);
     if (fieldsToFetch.length === 0) return {};
-    const calls: { address: Address; abi: { humanReadable: string[] }; functionName: string }[] = [];
+    const calls: ContractCall[] = [];
     for (const field of fieldsToFetch) {
-      calls.push(...addressesWithoutNativeToken.map((address) => ({ address, functionName: field, abi: { humanReadable: ERC20_ABI } })));
+      calls.push(...addressesWithoutNativeToken.map((address) => ({ address, functionName: field, abi: { json: ERC20_ABI } })));
     }
     const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};

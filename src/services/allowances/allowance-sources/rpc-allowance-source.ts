@@ -3,7 +3,7 @@ import { IMulticallService } from '@services/multicall';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
-import { ERC20_ABI } from '@shared/abis/erc20';
+import ERC20_ABI from '@shared/abis/erc20';
 
 export class RPCAllowanceSource implements IAllowanceSource {
   constructor(private readonly multicallService: IMulticallService) {}
@@ -29,7 +29,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
   private async getAllowancesInChain(chainId: ChainId, checks: AllowanceCheck[]) {
     const calls = checks.map(({ token, owner, spender }) => ({
       address: token,
-      abi: { humanReadable: ERC20_ABI },
+      abi: { json: ERC20_ABI },
       functionName: 'allowance',
       args: [owner, spender],
     }));

@@ -5,7 +5,7 @@ import { Chains } from '@chains';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { MulticallService } from '@services/multicall/multicall-service';
 import { ProviderService } from '@services/providers/provider-service';
-import { ERC20_ABI } from '@shared/abis/erc20';
+import ERC20_ABI from '@shared/abis/erc20';
 import { CallResult, FailedCall, SuccessfulCall } from '@services/multicall/types';
 
 jest.retryTimes(3);
@@ -27,7 +27,7 @@ describe('Multicall Service', () => {
     let response: ReadonlyArray<bigint>[];
     when(`trying a call with ${client}`, () => {
       given(async () => {
-        const calls = [{ address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] }];
+        const calls = [{ address: DAI, abi: { json: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] }];
         response = await new MulticallService(PROVIDER_SERVICE, client).readOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
       then('both are reported correctly', () => {
@@ -42,8 +42,8 @@ describe('Multicall Service', () => {
     when(`trying a call that fails with another that works with ${client}`, () => {
       given(async () => {
         const calls = [
-          { address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'transferFrom', args: [OWNER, OWNER, 100000000000] },
-          { address: DAI, abi: { humanReadable: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] },
+          { address: DAI, abi: { json: ERC20_ABI }, functionName: 'transferFrom', args: [OWNER, OWNER, 100000000000] },
+          { address: DAI, abi: { json: ERC20_ABI }, functionName: 'allowance', args: [OWNER, OWNER] },
         ];
         response = await new MulticallService(PROVIDER_SERVICE, client).tryReadOnlyMulticall({ chainId: Chains.ETHEREUM.chainId, calls });
       });
