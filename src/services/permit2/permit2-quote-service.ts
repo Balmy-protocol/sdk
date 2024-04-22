@@ -176,7 +176,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
     if (viemSupported) {
       const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
-        address: this.contractAddress(chainId),
+        address: this.contractAddress(chainId) as ViemAddress,
         abi: permit2AdapterAbi,
         functionName: 'simulate',
         args: [calls as Hex[]],
