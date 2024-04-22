@@ -40,7 +40,7 @@ const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
   },
   logoURI: 'ipfs://QmTvX3XyrFDSiDAKPJg9xFgn8DgQbp31wYWE8q7VhaR2c7',
 };
-type RangoConfig = { apiKey: string };
+type RangoConfig = { apiKey: string; contractCall?: boolean };
 type RangoSupport = { buyOrders: false; swapAndTransfer: true };
 export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig> {
   getMetadata() {
@@ -71,7 +71,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       toAddress: recipient ?? takeFrom,
       disableEstimate: config.disableValidation,
       slippage: slippagePercentage,
-      referrerAddress: config.referrer?.address,
+      contractCall: config.contractCall,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.rango.exchange/basic/swap?${queryString}`;
