@@ -1,6 +1,5 @@
 import { Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
@@ -50,7 +49,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       if (multicallResult.status === 'failure') continue;
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = BigInt(multicallResult.result as bigint);
+      result[account][token] = multicallResult.result as bigint;
     }
     return result;
   }

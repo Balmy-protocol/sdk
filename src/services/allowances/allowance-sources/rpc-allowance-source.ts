@@ -4,7 +4,7 @@ import { timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
-import { Address } from 'viem';
+import { Address as ViemAddress } from 'viem';
 
 export class RPCAllowanceSource implements IAllowanceSource {
   constructor(private readonly providerService: IProviderService) {}
@@ -29,12 +29,12 @@ export class RPCAllowanceSource implements IAllowanceSource {
 
   private async getAllowancesInChain(chainId: ChainId, checks: AllowanceCheck[]) {
     const contracts = checks.map(({ token, owner, spender }) => ({
-      address: token as Address,
+      address: token as ViemAddress,
       abi: ERC20_ABI,
       functionName: 'allowance',
       args: [owner, spender],
     }));
-    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts });
+    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts, batchSize: 0 });
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>> = {};
     for (let i = 0; i < multicallResults.length; i++) {
       const multicallResult = multicallResults[i];
@@ -42,7 +42,7 @@ export class RPCAllowanceSource implements IAllowanceSource {
       const { token, owner, spender } = checks[i];
       if (!(token in result)) result[token] = {};
       if (!(owner in result[token])) result[token][owner] = {};
-      result[token][owner][spender] = BigInt(multicallResult.result as bigint);
+      result[token][owner][spender] = multicallResult.result as bigint;
     }
     return result;
   }

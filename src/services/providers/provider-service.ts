@@ -1,6 +1,7 @@
 import { PublicClient, Transport, createPublicClient } from 'viem';
 import { ChainId } from '@types';
 import { IProviderService, IProviderSource } from './types';
+import { chainIdToViemChain } from './utils';
 
 export class ProviderService implements IProviderService {
   // Viem clients have a lot of state and they even do some polling at regular intervals
@@ -26,8 +27,9 @@ export class ProviderService implements IProviderService {
   getViemPublicClient({ chainId }: { chainId: ChainId }): PublicClient {
     if (!this.viemPublicClients.has(chainId)) {
       const transport = this.getViemTransport({ chainId });
-      const client = createPublicClient({ transport });
-      this.viemPublicClients.set(chainId, client);
+      const chain = chainIdToViemChain(chainId);
+      const client = createPublicClient({ chain, transport });
+      this.viemPublicClients.set(chainId, client as PublicClient);
     }
     return this.viemPublicClients.get(chainId)!;
   }
