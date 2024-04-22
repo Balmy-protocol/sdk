@@ -794,7 +794,6 @@ export class DCAService implements IDCAService {
         BigInt(bestQuote.tx.value ?? 0),
         arbitraryCall.data as Hex,
         bestQuote.buyToken.address as ViemAddress,
-        BigInt(bestQuote.minBuyAmount.amount),
       ],
     });
 

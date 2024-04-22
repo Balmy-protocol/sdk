@@ -1,72 +1,65 @@
 export default [
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: 'spender',
-        type: 'address',
-      },
+      { internalType: 'address', name: '_swapper', type: 'address' },
+      { internalType: 'address', name: '_allowanceTarget', type: 'address' },
+      { internalType: 'address', name: '_governor', type: 'address' },
+      { internalType: 'contract IPermit2', name: '_permit2', type: 'address' },
     ],
-    name: 'InvalidAllowanceTarget',
-    type: 'error',
+    stateMutability: 'nonpayable',
+    type: 'constructor',
   },
+  { inputs: [{ internalType: 'address', name: 'target', type: 'address' }], name: 'AddressEmptyCode', type: 'error' },
+  { inputs: [{ internalType: 'address', name: 'account', type: 'address' }], name: 'AddressInsufficientBalance', type: 'error' },
+  { inputs: [], name: 'FailedInnerCall', type: 'error' },
+  { inputs: [], name: 'GovernorIsZeroAddress', type: 'error' },
+  { inputs: [], name: 'InvalidMask', type: 'error' },
+  { inputs: [], name: 'OnlyGovernor', type: 'error' },
+  { inputs: [], name: 'OnlyPendingGovernor', type: 'error' },
+  { inputs: [{ internalType: 'address', name: 'token', type: 'address' }], name: 'SafeERC20FailedOperation', type: 'error' },
   {
     inputs: [
       {
-        internalType: 'uint256',
-        name: 'received',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'expected',
-        type: 'uint256',
+        components: [
+          { internalType: 'bool', name: 'success', type: 'bool' },
+          { internalType: 'bytes', name: 'result', type: 'bytes' },
+          { internalType: 'uint256', name: 'gasSpent', type: 'uint256' },
+        ],
+        internalType: 'struct ISimulationAdapter.SimulationResult',
+        name: 'result',
+        type: 'tuple',
       },
     ],
-    name: 'ReceivedTooLittleTokenOut',
+    name: 'SimulatedCall',
     type: 'error',
   },
+  { inputs: [], name: 'UnauthorizedCaller', type: 'error' },
+  { anonymous: false, inputs: [], name: 'PendingGovernorAccepted', type: 'event' },
   {
-    inputs: [],
-    name: 'ZeroAddress',
-    type: 'error',
+    anonymous: false,
+    inputs: [{ indexed: false, internalType: 'address', name: 'newPendingGovernor', type: 'address' }],
+    name: 'PendingGovernorSet',
+    type: 'event',
   },
   {
     inputs: [],
     name: 'PERMIT2',
-    outputs: [
-      {
-        internalType: 'contract IPermit2',
-        name: '',
-        type: 'address',
-      },
-    ],
+    outputs: [{ internalType: 'contract IPermit2', name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function',
   },
   {
     inputs: [],
     name: 'PROTOCOL_TOKEN',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function',
   },
+  { inputs: [], name: 'acceptPendingGovernor', outputs: [], stateMutability: 'nonpayable', type: 'function' },
   {
     inputs: [],
     name: 'allowanceTarget',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
     stateMutability: 'view',
     type: 'function',
   },
@@ -74,41 +67,17 @@ export default [
     inputs: [
       {
         components: [
-          {
-            internalType: 'address',
-            name: 'token',
-            type: 'address',
-          },
-          {
-            internalType: 'uint256',
-            name: 'amount',
-            type: 'uint256',
-          },
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'uint256', name: 'amount', type: 'uint256' },
         ],
         internalType: 'struct IPermit2.TokenPermissions[]',
         name: '_tokens',
         type: 'tuple[]',
       },
-      {
-        internalType: 'uint256',
-        name: '_nonce',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_deadline',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: '_signature',
-        type: 'bytes',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'uint256', name: '_nonce', type: 'uint256' },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+      { internalType: 'bytes', name: '_signature', type: 'bytes' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'batchPermitTakeFromCaller',
     outputs: [],
@@ -117,163 +86,113 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_from',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_to',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint32',
-        name: '_amountOfSwaps',
-        type: 'uint32',
-      },
-      {
-        internalType: 'uint32',
-        name: '_swapInterval',
-        type: 'uint32',
-      },
-      {
-        internalType: 'address',
-        name: '_owner',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'address', name: '_from', type: 'address' },
+      { internalType: 'address', name: '_to', type: 'address' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'uint32', name: '_amountOfSwaps', type: 'uint32' },
+      { internalType: 'uint32', name: '_swapInterval', type: 'uint32' },
+      { internalType: 'address', name: '_owner', type: 'address' },
       {
         components: [
-          {
-            internalType: 'address',
-            name: 'operator',
-            type: 'address',
-          },
-          {
-            internalType: 'enum IDCAPermissionManager.Permission[]',
-            name: 'permissions',
-            type: 'uint8[]',
-          },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'enum IDCAPermissionManager.Permission[]', name: 'permissions', type: 'uint8[]' },
         ],
         internalType: 'struct IDCAPermissionManager.PermissionSet[]',
         name: '_permissions',
         type: 'tuple[]',
       },
-      {
-        internalType: 'bytes',
-        name: '_miscellaneous',
-        type: 'bytes',
-      },
+      { internalType: 'bytes', name: '_miscellaneous', type: 'bytes' },
     ],
     name: 'deposit',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-    ],
+    outputs: [{ internalType: 'uint256', name: '_positionId', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_from',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_to',
-        type: 'address',
-      },
-      {
-        internalType: 'uint32',
-        name: '_amountOfSwaps',
-        type: 'uint32',
-      },
-      {
-        internalType: 'uint32',
-        name: '_swapInterval',
-        type: 'uint32',
-      },
-      {
-        internalType: 'address',
-        name: '_owner',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'address', name: '_from', type: 'address' },
+      { internalType: 'address', name: '_to', type: 'address' },
+      { internalType: 'uint32', name: '_amountOfSwaps', type: 'uint32' },
+      { internalType: 'uint32', name: '_swapInterval', type: 'uint32' },
+      { internalType: 'address', name: '_owner', type: 'address' },
       {
         components: [
-          {
-            internalType: 'address',
-            name: 'operator',
-            type: 'address',
-          },
-          {
-            internalType: 'enum IDCAPermissionManager.Permission[]',
-            name: 'permissions',
-            type: 'uint8[]',
-          },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'enum IDCAPermissionManager.Permission[]', name: 'permissions', type: 'uint8[]' },
         ],
         internalType: 'struct IDCAPermissionManager.PermissionSet[]',
         name: '_permissions',
         type: 'tuple[]',
       },
-      {
-        internalType: 'bytes',
-        name: '_miscellaneous',
-        type: 'bytes',
-      },
+      { internalType: 'bytes', name: '_miscellaneous', type: 'bytes' },
     ],
     name: 'depositWithBalanceOnContract',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-    ],
+    outputs: [{ internalType: 'uint256', name: '_positionId', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
     inputs: [
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
       {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
+        components: [
+          { internalType: 'address', name: 'tokenA', type: 'address' },
+          { internalType: 'address', name: 'tokenB', type: 'address' },
+        ],
+        internalType: 'struct Pair[]',
+        name: '_pairs',
+        type: 'tuple[]',
       },
+      { internalType: 'bool', name: '_calculatePrivilegedAvailability', type: 'bool' },
+      { internalType: 'bytes', name: '_oracleData', type: 'bytes' },
+    ],
+    name: 'getNextSwapInfo',
+    outputs: [
       {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
+        components: [
+          {
+            components: [
+              { internalType: 'address', name: 'token', type: 'address' },
+              { internalType: 'uint256', name: 'reward', type: 'uint256' },
+              { internalType: 'uint256', name: 'toProvide', type: 'uint256' },
+              { internalType: 'uint256', name: 'platformFee', type: 'uint256' },
+            ],
+            internalType: 'struct IDCAHubSwapHandler.TokenInSwap[]',
+            name: 'tokens',
+            type: 'tuple[]',
+          },
+          {
+            components: [
+              { internalType: 'address', name: 'tokenA', type: 'address' },
+              { internalType: 'address', name: 'tokenB', type: 'address' },
+              { internalType: 'uint256', name: 'totalAmountToSwapTokenA', type: 'uint256' },
+              { internalType: 'uint256', name: 'totalAmountToSwapTokenB', type: 'uint256' },
+              { internalType: 'uint256', name: 'ratioAToB', type: 'uint256' },
+              { internalType: 'uint256', name: 'ratioBToA', type: 'uint256' },
+              { internalType: 'bytes1', name: 'intervalsInSwap', type: 'bytes1' },
+            ],
+            internalType: 'struct IDCAHubSwapHandler.PairInSwap[]',
+            name: 'pairs',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct IDCAHubSwapHandler.SwapInfo',
+        name: '',
+        type: 'tuple',
       },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint32',
-        name: '_newSwaps',
-        type: 'uint32',
-      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  { inputs: [], name: 'governor', outputs: [{ internalType: 'address', name: '', type: 'address' }], stateMutability: 'view', type: 'function' },
+  {
+    inputs: [
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'uint256', name: '_positionId', type: 'uint256' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'uint32', name: '_newSwaps', type: 'uint32' },
     ],
     name: 'increasePosition',
     outputs: [],
@@ -282,21 +201,9 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint32',
-        name: '_newSwaps',
-        type: 'uint32',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'uint256', name: '_positionId', type: 'uint256' },
+      { internalType: 'uint32', name: '_newSwaps', type: 'uint32' },
     ],
     name: 'increasePositionWithBalanceOnContract',
     outputs: [],
@@ -304,31 +211,78 @@ export default [
     type: 'function',
   },
   {
+    inputs: [{ internalType: 'address', name: '_account', type: 'address' }],
+    name: 'isGovernor',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: '_account', type: 'address' }],
+    name: 'isPendingGovernor',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [
+      { internalType: 'contract ILegacyDCAHub', name: '_hub', type: 'address' },
       {
-        internalType: 'contract IDCAPermissionManager',
-        name: '_permissionManager',
-        type: 'address',
+        components: [
+          { internalType: 'address', name: 'tokenA', type: 'address' },
+          { internalType: 'address', name: 'tokenB', type: 'address' },
+        ],
+        internalType: 'struct Pair[]',
+        name: '_pairs',
+        type: 'tuple[]',
       },
+    ],
+    name: 'legacyGetNextSwapInfo',
+    outputs: [
       {
         components: [
           {
-            internalType: 'uint256',
-            name: 'tokenId',
-            type: 'uint256',
+            components: [
+              { internalType: 'address', name: 'token', type: 'address' },
+              { internalType: 'uint256', name: 'reward', type: 'uint256' },
+              { internalType: 'uint256', name: 'toProvide', type: 'uint256' },
+              { internalType: 'uint256', name: 'platformFee', type: 'uint256' },
+            ],
+            internalType: 'struct ILegacyDCAHub.TokenInSwap[]',
+            name: 'tokens',
+            type: 'tuple[]',
           },
           {
             components: [
-              {
-                internalType: 'address',
-                name: 'operator',
-                type: 'address',
-              },
-              {
-                internalType: 'enum IDCAPermissionManager.Permission[]',
-                name: 'permissions',
-                type: 'uint8[]',
-              },
+              { internalType: 'address', name: 'tokenA', type: 'address' },
+              { internalType: 'address', name: 'tokenB', type: 'address' },
+              { internalType: 'uint256', name: 'ratioAToB', type: 'uint256' },
+              { internalType: 'uint256', name: 'ratioBToA', type: 'uint256' },
+              { internalType: 'bytes1', name: 'intervalsInSwap', type: 'bytes1' },
+            ],
+            internalType: 'struct ILegacyDCAHub.PairInSwap[]',
+            name: 'pairs',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct ILegacyDCAHub.SwapInfo',
+        name: '',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'contract IDCAPermissionManager', name: '_permissionManager', type: 'address' },
+      {
+        components: [
+          { internalType: 'uint256', name: 'tokenId', type: 'uint256' },
+          {
+            components: [
+              { internalType: 'address', name: 'operator', type: 'address' },
+              { internalType: 'enum IDCAPermissionManager.Permission[]', name: 'permissions', type: 'uint8[]' },
             ],
             internalType: 'struct IDCAPermissionManager.PermissionSet[]',
             name: 'permissionSets',
@@ -339,26 +293,10 @@ export default [
         name: '_permissions',
         type: 'tuple[]',
       },
-      {
-        internalType: 'uint256',
-        name: '_deadline',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint8',
-        name: '_v',
-        type: 'uint8',
-      },
-      {
-        internalType: 'bytes32',
-        name: '_r',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'bytes32',
-        name: '_s',
-        type: 'bytes32',
-      },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+      { internalType: 'uint8', name: '_v', type: 'uint8' },
+      { internalType: 'bytes32', name: '_r', type: 'bytes32' },
+      { internalType: 'bytes32', name: '_s', type: 'bytes32' },
     ],
     name: 'multiPermissionPermit',
     outputs: [],
@@ -366,73 +304,36 @@ export default [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'bytes[]',
-        name: '_data',
-        type: 'bytes[]',
-      },
-    ],
+    inputs: [{ internalType: 'bytes[]', name: '_data', type: 'bytes[]' }],
     name: 'multicall',
-    outputs: [
-      {
-        internalType: 'bytes[]',
-        name: '_results',
-        type: 'bytes[]',
-      },
-    ],
+    outputs: [{ internalType: 'bytes[]', name: '_results', type: 'bytes[]' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
+    inputs: [],
+    name: 'pendingGovernor',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
     inputs: [
-      {
-        internalType: 'contract IDCAPermissionManager',
-        name: '_permissionManager',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAPermissionManager', name: '_permissionManager', type: 'address' },
       {
         components: [
-          {
-            internalType: 'address',
-            name: 'operator',
-            type: 'address',
-          },
-          {
-            internalType: 'enum IDCAPermissionManager.Permission[]',
-            name: 'permissions',
-            type: 'uint8[]',
-          },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'enum IDCAPermissionManager.Permission[]', name: 'permissions', type: 'uint8[]' },
         ],
         internalType: 'struct IDCAPermissionManager.PermissionSet[]',
         name: '_permissions',
         type: 'tuple[]',
       },
-      {
-        internalType: 'uint256',
-        name: '_tokenId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_deadline',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint8',
-        name: '_v',
-        type: 'uint8',
-      },
-      {
-        internalType: 'bytes32',
-        name: '_r',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'bytes32',
-        name: '_s',
-        type: 'bytes32',
-      },
+      { internalType: 'uint256', name: '_tokenId', type: 'uint256' },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+      { internalType: 'uint8', name: '_v', type: 'uint8' },
+      { internalType: 'bytes32', name: '_r', type: 'bytes32' },
+      { internalType: 'bytes32', name: '_s', type: 'bytes32' },
     ],
     name: 'permissionPermit',
     outputs: [],
@@ -441,36 +342,12 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: '_token',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_nonce',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_deadline',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: '_signature',
-        type: 'bytes',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'address', name: '_token', type: 'address' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'uint256', name: '_nonce', type: 'uint256' },
+      { internalType: 'uint256', name: '_deadline', type: 'uint256' },
+      { internalType: 'bytes', name: '_signature', type: 'bytes' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'permitTakeFromCaller',
     outputs: [],
@@ -479,31 +356,11 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint32',
-        name: '_newSwaps',
-        type: 'uint32',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'uint256', name: '_positionId', type: 'uint256' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'uint32', name: '_newSwaps', type: 'uint32' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'reducePosition',
     outputs: [],
@@ -512,49 +369,39 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: '_allowanceToken',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_value',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes',
-        name: '_swapData',
-        type: 'bytes',
-      },
-      {
-        internalType: 'address',
-        name: '_tokenOut',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_minTokenOut',
-        type: 'uint256',
-      },
+      { internalType: 'address', name: '_allowanceToken', type: 'address' },
+      { internalType: 'uint256', name: '_value', type: 'uint256' },
+      { internalType: 'bytes', name: '_swapData', type: 'bytes' },
+      { internalType: 'address', name: '_tokenOut', type: 'address' },
     ],
     name: 'runSwap',
-    outputs: [],
+    outputs: [{ internalType: 'uint256', name: '_amountOut', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
     inputs: [
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
       {
-        internalType: 'address',
-        name: '_token',
-        type: 'address',
+        components: [
+          { internalType: 'address', name: 'tokenA', type: 'address' },
+          { internalType: 'address', name: 'tokenB', type: 'address' },
+        ],
+        internalType: 'struct Pair[]',
+        name: '_pairs',
+        type: 'tuple[]',
       },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'bool', name: '_calculatePrivilegedAvailability', type: 'bool' },
+    ],
+    name: 'secondsUntilNextSwap',
+    outputs: [{ internalType: 'uint256[]', name: '', type: 'uint256[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '_token', type: 'address' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'sendBalanceOnContractToRecipient',
     outputs: [],
@@ -563,21 +410,9 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'address',
-        name: '_token',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'address', name: '_token', type: 'address' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'sendToRecipient',
     outputs: [],
@@ -585,13 +420,7 @@ export default [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'address',
-        name: '_pendingGovernor',
-        type: 'address',
-      },
-    ],
+    inputs: [{ internalType: 'address', name: '_pendingGovernor', type: 'address' }],
     name: 'setPendingGovernor',
     outputs: [],
     stateMutability: 'nonpayable',
@@ -599,21 +428,52 @@ export default [
   },
   {
     inputs: [
+      { internalType: 'address', name: '_newSwapper', type: 'address' },
+      { internalType: 'address', name: '_newAllowanceTarget', type: 'address' },
+    ],
+    name: 'setSwapper',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes[]', name: '_calls', type: 'bytes[]' }],
+    name: 'simulate',
+    outputs: [
       {
-        internalType: 'contract IERC20',
-        name: '_token',
-        type: 'address',
+        components: [
+          { internalType: 'bool', name: 'success', type: 'bool' },
+          { internalType: 'bytes', name: 'result', type: 'bytes' },
+          { internalType: 'uint256', name: 'gasSpent', type: 'uint256' },
+        ],
+        internalType: 'struct ISimulationAdapter.SimulationResult[]',
+        name: '_results',
+        type: 'tuple[]',
       },
-      {
-        internalType: 'uint256',
-        name: '_amount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes', name: '_call', type: 'bytes' }],
+    name: 'simulateAndRevert',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes4', name: '_interfaceId', type: 'bytes4' }],
+    name: 'supportsInterface',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  { inputs: [], name: 'swapper', outputs: [{ internalType: 'address', name: '', type: 'address' }], stateMutability: 'view', type: 'function' },
+  {
+    inputs: [
+      { internalType: 'contract IERC20', name: '_token', type: 'address' },
+      { internalType: 'uint256', name: '_amount', type: 'uint256' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'takeFromCaller',
     outputs: [],
@@ -622,115 +482,48 @@ export default [
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: '_recipientUnswapped',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_recipientSwapped',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'uint256', name: '_positionId', type: 'uint256' },
+      { internalType: 'address', name: '_recipientUnswapped', type: 'address' },
+      { internalType: 'address', name: '_recipientSwapped', type: 'address' },
     ],
     name: 'terminate',
     outputs: [
-      {
-        internalType: 'uint256',
-        name: '_unswapped',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: '_swapped',
-        type: 'uint256',
-      },
+      { internalType: 'uint256', name: '_unswapped', type: 'uint256' },
+      { internalType: 'uint256', name: '_swapped', type: 'uint256' },
     ],
     stateMutability: 'payable',
     type: 'function',
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: '_positionId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
+      { internalType: 'uint256', name: '_positionId', type: 'uint256' },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'withdrawSwapped',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '_swapped',
-        type: 'uint256',
-      },
-    ],
+    outputs: [{ internalType: 'uint256', name: '_swapped', type: 'uint256' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
     inputs: [
-      {
-        internalType: 'contract IDCAHub',
-        name: '_hub',
-        type: 'address',
-      },
+      { internalType: 'contract IDCAHub', name: '_hub', type: 'address' },
       {
         components: [
-          {
-            internalType: 'address',
-            name: 'token',
-            type: 'address',
-          },
-          {
-            internalType: 'uint256[]',
-            name: 'positionIds',
-            type: 'uint256[]',
-          },
+          { internalType: 'address', name: 'token', type: 'address' },
+          { internalType: 'uint256[]', name: 'positionIds', type: 'uint256[]' },
         ],
         internalType: 'struct IDCAHubPositionHandler.PositionSet[]',
         name: '_positions',
         type: 'tuple[]',
       },
-      {
-        internalType: 'address',
-        name: '_recipient',
-        type: 'address',
-      },
+      { internalType: 'address', name: '_recipient', type: 'address' },
     ],
     name: 'withdrawSwappedMany',
-    outputs: [
-      {
-        internalType: 'uint256[]',
-        name: '_withdrawn',
-        type: 'uint256[]',
-      },
-    ],
+    outputs: [{ internalType: 'uint256[]', name: '_withdrawn', type: 'uint256[]' }],
     stateMutability: 'payable',
     type: 'function',
   },
-  {
-    stateMutability: 'payable',
-    type: 'receive',
-  },
+  { stateMutability: 'payable', type: 'receive' },
 ] as const;
