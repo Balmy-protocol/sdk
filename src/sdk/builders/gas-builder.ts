@@ -2,7 +2,6 @@ import { ChainId } from '@types';
 import { ExpirationConfigOptions } from '@shared/concurrent-lru-cache';
 import { IFetchService } from '@services/fetch/types';
 import { IProviderService } from '@services/providers/types';
-import { IMulticallService } from '@services/multicall/types';
 import { ExtractGasValues, IGasPriceSource, IGasService } from '@services/gas/types';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
@@ -85,11 +84,10 @@ export function buildGasService<Params extends BuildGasParams | undefined>(
   params: Params,
   logsService: ILogsService,
   fetchService: IFetchService,
-  providerService: IProviderService,
-  multicallService: IMulticallService
+  providerService: IProviderService
 ): IGasService<ExtractGasValues<CalculateSourceFromParams<Params>>> {
   const sourceInput: CachelessInput | undefined = params?.source?.type === 'cached' ? params.source.underlyingSource : params?.source;
-  const gasPriceSource = buildSource(sourceInput, { logsService, fetchService, multicallService, providerService }) as IGasPriceSource<
+  const gasPriceSource = buildSource(sourceInput, { logsService, fetchService, providerService }) as IGasPriceSource<
     CalculateGasValuesFromSourceParams<Params>
   >;
   return new GasService({ providerService, gasPriceSource });
@@ -97,12 +95,7 @@ export function buildGasService<Params extends BuildGasParams | undefined>(
 
 function buildSource(
   source: GasSourceInput | undefined,
-  {
-    logsService,
-    providerService,
-    multicallService,
-    fetchService,
-  }: { providerService: IProviderService; multicallService: IMulticallService; fetchService: IFetchService; logsService: ILogsService }
+  { logsService, providerService, fetchService }: { providerService: IProviderService; fetchService: IFetchService; logsService: ILogsService }
 ): IGasPriceSource<object> {
   switch (source?.type) {
     case undefined:
@@ -110,7 +103,7 @@ function buildSource(
     case 'open-ocean':
       return new OpenOceanGasPriceSource(fetchService);
     case 'cached':
-      const underlying = buildSource(source.underlyingSource, { logsService, fetchService, providerService, multicallService });
+      const underlying = buildSource(source.underlyingSource, { logsService, fetchService, providerService });
       return new CachedGasPriceSource({
         underlying,
         expiration: { default: source.config.expiration, overrides: source.config.expiration.overrides },
@@ -133,16 +126,14 @@ function buildSource(
     case 'aggregate':
       return new AggregatorGasPriceSource(
         logsService,
-        calculateSources(source.sources, { fetchService, multicallService, providerService, logsService }),
+        calculateSources(source.sources, { fetchService, providerService, logsService }),
         source.by
       );
     case 'fastest':
-      return new FastestGasPriceSourceCombinator(
-        calculateSources(source.sources, { fetchService, multicallService, providerService, logsService })
-      );
+      return new FastestGasPriceSourceCombinator(calculateSources(source.sources, { fetchService, providerService, logsService }));
     case 'prioritized':
       return new PrioritizedGasPriceSourceCombinator(
-        source.sources.map((source) => buildSource(source, { logsService, fetchService, multicallService, providerService }))
+        source.sources.map((source) => buildSource(source, { logsService, fetchService, providerService }))
       );
   }
 }
@@ -158,14 +149,9 @@ type PublicSources = [
 
 function calculateSources(
   sources: CachelessInput[],
-  {
-    providerService,
-    multicallService,
-    fetchService,
-    logsService,
-  }: { providerService: IProviderService; multicallService: IMulticallService; fetchService: IFetchService; logsService: ILogsService }
+  { providerService, fetchService, logsService }: { providerService: IProviderService; fetchService: IFetchService; logsService: ILogsService }
 ) {
-  return sources.map((source) => buildSource(source, { logsService, fetchService, multicallService, providerService }));
+  return sources.map((source) => buildSource(source, { logsService, fetchService, providerService }));
 }
 
 function calculatePublicSources({

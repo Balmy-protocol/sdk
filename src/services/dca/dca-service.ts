@@ -37,15 +37,15 @@ import {
   ActionTypeAction,
 } from './types';
 import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
-import { IMulticallService } from '@services/multicall';
 import ERC721_ABI from '@shared/abis/erc721';
 import { IFetchService } from '@services/fetch';
 import { IPriceService, PriceResult } from '@services/prices';
+import { IProviderService } from '..';
 
 export class DCAService implements IDCAService {
   constructor(
     private readonly apiUrl: string,
-    private readonly multicallService: IMulticallService,
+    private readonly providerService: IProviderService,
     private readonly permit2Service: IPermit2Service,
     private readonly quoteService: IQuoteService,
     private readonly fetchService: IFetchService,
@@ -189,12 +189,12 @@ export class DCAService implements IDCAService {
     }
 
     const bigIntPositionId = BigInt(positionId);
-    const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
-      chainId,
-      calls: [
-        { abi: { json: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
-        { abi: { json: dcaHubAbi }, address: hubAddress, functionName: 'userPosition', args: [bigIntPositionId] },
+    const [positionOwner, position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: [
+        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
+      allowFailure: false,
     });
 
     const needsSwap = !isSameAddress(increaseInfo.token, position.from);
@@ -558,12 +558,12 @@ export class DCAService implements IDCAService {
     permissionPermit,
   }: MigrateDCAPositionParams): Promise<BuiltTransaction> {
     const bigIntPositionId = BigInt(positionId);
-    const [positionOwner, position] = await this.multicallService.readOnlyMulticall({
-      chainId,
-      calls: [
-        { abi: { json: ERC721_ABI }, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
-        { abi: { json: dcaHubAbi }, address: sourceHub, functionName: 'userPosition', args: [bigIntPositionId] },
+    const [positionOwner, position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: [
+        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: dcaHubAbi, address: sourceHub as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
+      allowFailure: false,
     });
 
     const newFrom = migration.newFrom?.variantId ?? position.from;
@@ -638,7 +638,7 @@ export class DCAService implements IDCAService {
         functionName: 'depositWithBalanceOnContract',
         args: [
           targetHub as ViemAddress,
-          newFrom,
+          newFrom as ViemAddress,
           (migration.newTo?.variantId ?? position.to) as ViemAddress,
           position.swapsLeft,
           position.swapInterval,
@@ -805,9 +805,9 @@ export class DCAService implements IDCAService {
     hubAddress: Address,
     positionId: BigIntish
   ): Promise<{ from: TokenAddress; to: TokenAddress; remaining: bigint; swapped: bigint }> {
-    const [position] = await this.multicallService.readOnlyMulticall({
-      chainId,
-      calls: [{ abi: { json: dcaHubAbi }, address: hubAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
+    const [position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: [{ abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
+      allowFailure: false,
     });
     return { ...position, remaining: BigInt(position.remaining), swapped: BigInt(position.swapped) };
   }

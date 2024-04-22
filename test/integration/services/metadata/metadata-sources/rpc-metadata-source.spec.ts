@@ -1,7 +1,6 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import { RPCMetadataProperties, RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
-import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { Addresses } from '@shared/constants';
 import { ChainId, FieldsRequirements, TokenAddress } from '@types';
@@ -12,7 +11,7 @@ import { ProviderService } from '@services/providers/provider-service';
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(PROVIDER_SERVICE));
+const RPC_METADATA_SOURCE = new RPCMetadataSource(PROVIDER_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));

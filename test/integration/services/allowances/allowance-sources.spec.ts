@@ -1,7 +1,6 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
-import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
@@ -34,7 +33,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   },
 };
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
+const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(PROVIDER_SERVICE);
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',

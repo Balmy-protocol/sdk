@@ -4,7 +4,6 @@ import { ProviderService } from '@services/providers/provider-service';
 import { RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
 import { DefiLlamaMetadataSource } from '@services/metadata/metadata-sources/defi-llama-metadata-source';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
-import { MulticallService } from '@services/multicall/multicall-service';
 import { FetchService } from '@services/fetch/fetch-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { Chains, getChainByKey } from '@chains';
@@ -23,7 +22,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 
 const FETCH_SERVICE = new FetchService();
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const RPC_METADATA_SOURCE = new RPCMetadataSource(new MulticallService(PROVIDER_SERVICE));
+const RPC_METADATA_SOURCE = new RPCMetadataSource(PROVIDER_SERVICE);
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
 const CACHED_METADATA_SOURCE = new CachedMetadataSource(DEFI_LLAMA_METADATA_SOURCE, {

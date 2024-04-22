@@ -1,6 +1,5 @@
 import { Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { IMulticallService } from '@services/multicall';
 import { chainsIntersection } from '@chains';
 import { BalanceQueriesSupport } from '../types';
 import { IProviderService } from '@services/providers/types';
@@ -11,16 +10,12 @@ export type RPCBalanceSourceConfig = {
   batching?: { maxSizeInBytes: number };
 };
 export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(
-    private readonly providerService: IProviderService,
-    private readonly multicallService: IMulticallService,
-    private readonly config?: RPCBalanceSourceConfig | undefined
-  ) {
+  constructor(private readonly providerService: IProviderService, private readonly config?: RPCBalanceSourceConfig | undefined) {
     super();
   }
 
   supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    const supportedChains = chainsIntersection(this.providerService.supportedChains(), this.multicallService.supportedChains());
+    const supportedChains = this.providerService.supportedChains();
     const entries = supportedChains.map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: false }]);
     return Object.fromEntries(entries);
   }
@@ -39,15 +34,14 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
     const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
-    const calls = pairs.map(({ account, token }) => ({
-      address: token,
-      abi: { json: ERC20_ABI },
+    const contracts = pairs.map(({ account, token }) => ({
+      address: token as ViemAddress,
+      abi: ERC20_ABI,
       functionName: 'balanceOf',
       args: [account],
     }));
-    const multicallResults = await this.multicallService.tryReadOnlyMulticall({
-      chainId,
-      calls,
+    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts,
       ...this.config,
     });
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
@@ -56,7 +50,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       if (multicallResult.status === 'failure') continue;
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResult.result.toString();
+      result[account][token] = BigInt(multicallResult.result as bigint);
     }
     return result;
   }

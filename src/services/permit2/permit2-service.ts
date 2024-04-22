@@ -1,5 +1,4 @@
 import { Address, BigIntish, ChainId } from '@types';
-import { IMulticallService } from '@services/multicall';
 import {
   BatchPermitData,
   GenericBatchPermitParams,
@@ -19,21 +18,19 @@ import { Permit2QuoteService } from './permit2-quote-service';
 import { IProviderService } from '@services/providers';
 import { IQuoteService } from '@services/quotes';
 import { IGasService } from '@services/gas';
+import { Address as ViemAddress } from 'viem';
 
 export class Permit2Service implements IPermit2Service {
   readonly permit2ContractAddress = PERMIT2_ADDRESS;
   readonly permit2ContractAddress = PERMIT2_ADDRESS;
   readonly arbitrary: IPermit2ArbitraryService;
   readonly quotes: IPermit2QuoteService;
+  readonly providerService: IProviderService;
 
-  constructor(
-    private readonly multicallService: IMulticallService,
-    providerService: IProviderService,
-    quoteService: IQuoteService,
-    gasService: IGasService
-  ) {
+  constructor(providerService: IProviderService, quoteService: IQuoteService, gasService: IGasService) {
     this.arbitrary = new Permit2ArbitraryService(this);
     this.quotes = new Permit2QuoteService(this, quoteService, providerService, gasService);
+    this.providerService = providerService;
   }
 
   async calculateNonce({ chainId, appId, user }: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<bigint> {
@@ -41,18 +38,18 @@ export class Permit2Service implements IPermit2Service {
     const words = new Array(WORDS_FOR_NONCE_CALCULATION).fill(0).map((_, i) => BigInt(appId) + BigInt(i));
 
     // Fetch bitmaps for user's words
-    const calls = words.map((word) => ({
-      address: PERMIT2_ADDRESS(chainId),
-      abi: { json: PERMIT2_ABI },
+    const contracts = words.map((word) => ({
+      address: PERMIT2_ADDRESS(chainId) as ViemAddress,
+      abi: PERMIT2_ABI,
       functionName: 'nonceBitmap',
       args: [user, word],
     }));
 
-    const results = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const results = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts, allowFailure: false });
 
     // Find nonce
     for (let i = 0; i < results.length; i++) {
-      const result = BigInt(results[i]);
+      const result = BigInt(results[i] as bigint);
       if (result < Uint.MAX_256) {
         return (words[i] << 8n) + findUnusedBit(result);
       }

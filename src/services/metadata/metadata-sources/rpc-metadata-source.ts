@@ -1,17 +1,19 @@
 import { Address, ChainId, ContractCall, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
+import { Address as ViemAddress } from 'viem';
 import { getChainByKey } from '@chains';
-import { IMulticallService } from '@services/multicall/types';
 import { Addresses } from '@shared/constants';
 import { filterRejectedResults, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
 import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import ERC20_ABI from '@shared/abis/erc20';
+import { IProviderService } from '@services/providers';
+import { ContractFunctionConfig } from 'viem';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
 export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties> {
-  constructor(private readonly multicallService: IMulticallService) {}
+  constructor(private readonly providerService: IProviderService) {}
 
   async getMetadata<Requirements extends FieldsRequirements<RPCMetadataProperties>>({
     addresses,
@@ -30,7 +32,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
   }
 
   supportedProperties() {
-    return Object.fromEntries(this.multicallService.supportedChains().map((chainId) => [chainId, SUPPORT]));
+    return Object.fromEntries(this.providerService.supportedChains().map((chainId) => [chainId, SUPPORT]));
   }
 
   private async fetchMetadataInChain<Requirements extends FieldsRequirements<RPCMetadataProperties>>(
@@ -45,11 +47,13 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
       .filter(([, requirement]) => requirement !== 'can ignore')
       .map(([field]) => field as keyof RPCMetadataProperties);
     if (fieldsToFetch.length === 0) return {};
-    const calls: ContractCall[] = [];
+    const contracts = [];
     for (const field of fieldsToFetch) {
-      calls.push(...addressesWithoutNativeToken.map((address) => ({ address, functionName: field, abi: { json: ERC20_ABI } })));
+      contracts.push(
+        ...addressesWithoutNativeToken.map((address) => ({ address: address as ViemAddress, functionName: field, abi: ERC20_ABI }))
+      );
     }
-    const multicallResults = await this.multicallService.readOnlyMulticall({ chainId, calls });
+    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts, allowFailure: false });
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
