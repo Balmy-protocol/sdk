@@ -4,7 +4,7 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
-export const MEAN_FINANCE_SUPPORTED_CHAINS = [
+export const BALMY_SUPPORTED_CHAINS = [
   Chains.ETHEREUM,
   Chains.OPTIMISM,
   Chains.POLYGON,
@@ -12,29 +12,28 @@ export const MEAN_FINANCE_SUPPORTED_CHAINS = [
   Chains.ARBITRUM,
   Chains.GNOSIS,
   Chains.BASE,
-  Chains.BASE_GOERLI,
   Chains.MOONBEAM,
   Chains.ROOTSTOCK,
 ].map(({ chainId }) => chainId);
 
-const MEAN_METADATA: QuoteSourceMetadata<MeanFinanceSupport> = {
-  name: 'Mean Finance',
+const BALMY_METADATA: QuoteSourceMetadata<BalmySupport> = {
+  name: 'Balmy',
   supports: {
-    chains: MEAN_FINANCE_SUPPORTED_CHAINS,
+    chains: BALMY_SUPPORTED_CHAINS,
     buyOrders: true,
     swapAndTransfer: true,
   },
-  logoURI: 'ipfs://QmUUbaZvrD8Ymr2nV6db4Cbtd1aMCiSP7MoyvBv9LTnrmP',
+  logoURI: 'ipfs://QmU3GnALKonFNwkv42LWNoXdquFskWXPAiq6sYH7DKQPGJ',
 };
-type MeanFinanceConfig = {
+type BalmyConfig = {
   alwaysUseTransformers?: boolean;
   swapperContract?: Address;
   leftoverRecipient?: Address;
 };
-type MeanFinanceSupport = { buyOrders: true; swapAndTransfer: true };
-export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<MeanFinanceSupport, MeanFinanceConfig> {
+type BalmySupport = { buyOrders: true; swapAndTransfer: true };
+export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySupport, BalmyConfig> {
   getMetadata() {
-    return MEAN_METADATA;
+    return BALMY_METADATA;
   }
 
   async quote({
@@ -48,8 +47,8 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<Me
       ...request
     },
     config,
-  }: QuoteParams<MeanFinanceSupport, MeanFinanceConfig>): Promise<SourceQuoteResponse> {
-    const url = `https://api.mean.finance/v1/swap/networks/${chain.chainId}/quotes/mean-finance`;
+  }: QuoteParams<BalmySupport, BalmyConfig>): Promise<SourceQuoteResponse> {
+    const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/balmy`;
     const stringOrder =
       order.type === 'sell' ? { type: 'sell', sellAmount: order.sellAmount.toString() } : { type: 'buy', buyAmount: order.buyAmount.toString() };
     const body = {
@@ -69,7 +68,7 @@ export class MeanFinanceQuoteSource extends AlwaysValidConfigAndContextSource<Me
       timeout,
     });
     if (!response.ok) {
-      failed(MEAN_METADATA, chain, request.sellToken, request.buyToken, await response.text());
+      failed(BALMY_METADATA, chain, request.sellToken, request.buyToken, await response.text());
     }
     const {
       sellAmount,

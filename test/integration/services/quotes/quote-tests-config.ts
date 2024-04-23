@@ -60,7 +60,7 @@ export const EXCEPTIONS: Partial<Record<string, Test[]>> = {
   kyberswap: [Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN],
   sovryn: [Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN],
   oku: [Test.WRAP_NATIVE_TOKEN, Test.UNWRAP_WTOKEN],
-  'mean-finance': [
+  balmy: [
     Test.SELL_RANDOM_ERC20_TO_STABLE,
     Test.SELL_STABLE_TO_NATIVE,
     Test.SELL_NATIVE_TO_RANDOM_ERC20,

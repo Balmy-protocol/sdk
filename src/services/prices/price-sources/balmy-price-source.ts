@@ -1,18 +1,16 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
 import { TokenInChain, fromTokenInChain, toTokenInChain } from '@shared/utils';
-import { MEAN_FINANCE_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/mean-finance-quote-source';
+import { BALMY_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/balmy-quote-source';
 import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
-import { Chains } from '@chains';
 import { nowInSeconds } from './utils';
 
-export class MeanFinancePriceSource implements IPriceSource {
+export class BalmyPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService) {}
 
   supportedQueries() {
     const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true, getChart: false };
-    const entries = MEAN_FINANCE_SUPPORTED_CHAINS.filter((chainId) => chainId !== Chains.BASE_GOERLI.chainId) // Mean's price source does not support Base goerli
-      .map((chainId) => [chainId, support]);
+    const entries = BALMY_SUPPORTED_CHAINS.map((chainId) => [chainId, support]);
     return Object.fromEntries(entries);
   }
 
@@ -26,7 +24,7 @@ export class MeanFinancePriceSource implements IPriceSource {
     const tokens = Object.entries(addresses).flatMap(([chainId, addresses]) =>
       addresses.map((address) => toTokenInChain(Number(chainId), address))
     );
-    const response = await this.fetch.fetch('https://api.mean.finance/v1/prices', {
+    const response = await this.fetch.fetch('https://api.balmy.xyz/v1/prices', {
       body: JSON.stringify({ tokens }),
       method: 'POST',
       timeout: config?.timeout,
@@ -78,7 +76,7 @@ export class MeanFinancePriceSource implements IPriceSource {
     const tokens = Object.entries(addresses).flatMap(([chainId, tokens]) =>
       tokens.map(({ token, timestamp }) => ({ chain: chainId, token, timestamp }))
     );
-    const response = await this.fetch.fetch('https://api.mean.finance/v1/historical-prices', {
+    const response = await this.fetch.fetch('https://api.balmy.xyz/v1/historical-prices', {
       body: JSON.stringify({ tokens }),
       method: 'POST',
       timeout: config?.timeout,

@@ -79,7 +79,7 @@ function buildList(
   }
 }
 
-// If no referrer address was set, then we will use Mean's address
+// If no referrer address was set, then we will use Balmy's address
 function addReferrerIfNotSet(config?: GlobalQuoteSourceConfig) {
-  return { referrer: { address: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', name: 'MeanFinance' }, ...config };
+  return { referrer: { address: '0x1a00e1E311009E56e3b0B9Ed6F86f5Ce128a1C01', name: 'Balmy' }, ...config };
 }

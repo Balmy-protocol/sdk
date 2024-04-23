@@ -14,7 +14,7 @@ import { IPriceSource, PricesQueriesSupport } from '@services/prices/types';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
-import { MeanFinancePriceSource } from '@services/prices/price-sources/mean-finance-price-source';
+import { BalmyPriceSource } from '@services/prices/price-sources/balmy-price-source';
 chai.use(chaiAsPromised);
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
@@ -38,7 +38,7 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
-const MEAN_PRICE_SOURCE = new MeanFinancePriceSource(FETCH_SERVICE);
+const BALMY_PRICE_SOURCE = new BalmyPriceSource(FETCH_SERVICE);
 const MORALIS_PRICE_SOURCE = new MoralisPriceSource(FETCH_SERVICE, 'API_KEY');
 const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
 
@@ -52,7 +52,7 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Prioritized Source', source: PRIORITIZED_PRICE_SOURCE });
   priceSourceTest({ title: 'Fastest Source', source: FASTEST_PRICE_SOURCE });
   priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
-  priceSourceTest({ title: 'Mean Finance', source: MEAN_PRICE_SOURCE });
+  priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE });
   // priceSourceTest({ title: 'Moralis Source', source: MORALIS_PRICE_SOURCE }); // Commented out because we need API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
 
