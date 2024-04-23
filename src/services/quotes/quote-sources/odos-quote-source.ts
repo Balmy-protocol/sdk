@@ -27,7 +27,7 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
   },
   logoURI: 'ipfs://Qma71evDJfVUSBU53qkf8eDDysUgojsZNSnFRWa4qWragz',
 };
-const MEAN_REFERRAL_CODE = 1533410238;
+const BALMY_REFERRAL_CODE = 1533410238;
 type SourcesConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
 type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
 type OdosSupport = { buyOrders: false; swapAndTransfer: true };
@@ -79,7 +79,7 @@ async function getQuote({
     simulate: !config.disableValidation,
     pathViz: false,
     disableRFQs: !config?.supportRFQs, // Disable by default
-    referralCode: config?.referralCode ?? MEAN_REFERRAL_CODE, // If not set, we will use Mean's code
+    referralCode: config?.referralCode ?? BALMY_REFERRAL_CODE, // If not set, we will use Balmy's code
     simple,
   };
 

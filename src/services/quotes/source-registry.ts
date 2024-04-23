@@ -11,7 +11,7 @@ import { LiFiQuoteSource } from './quote-sources/li-fi-quote-source';
 import { KyberswapQuoteSource } from './quote-sources/kyberswap-quote-source';
 import { RangoQuoteSource } from './quote-sources/rango-quote-source';
 import { ChangellyQuoteSource } from './quote-sources/changelly-quote-source';
-import { MeanFinanceQuoteSource } from './quote-sources/mean-finance-quote-source';
+import { BalmyQuoteSource } from './quote-sources/balmy-quote-source';
 import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
@@ -43,7 +43,7 @@ export const QUOTE_SOURCES = {
   sovryn: new SovrynQuoteSource(),
   rango: new RangoQuoteSource(),
   changelly: new ChangellyQuoteSource(),
-  'mean-finance': new MeanFinanceQuoteSource(),
+  balmy: new BalmyQuoteSource(),
   oku: new OkuQuoteSource(),
   magpie: new MagpieQuoteSource(),
   squid: new SquidQuoteSource(),

@@ -10,13 +10,13 @@ import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
-import { MeanFinancePriceSource } from '@services/prices/price-sources/mean-finance-price-source';
+import { BalmyPriceSource } from '@services/prices/price-sources/balmy-price-source';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
   | { type: 'odos' }
   | { type: 'coingecko' }
-  | { type: 'mean-finance' }
+  | { type: 'balmy' }
   | { type: 'moralis'; key: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'fastest'; sources: PriceSourceInput[] }
@@ -41,8 +41,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return defiLlama;
     case 'odos':
       return new OdosPriceSource(fetchService);
-    case 'mean-finance':
-      return new MeanFinancePriceSource(fetchService);
+    case 'balmy':
+      return new BalmyPriceSource(fetchService);
     case 'moralis':
       return new MoralisPriceSource(fetchService, source.key);
     case 'coingecko':

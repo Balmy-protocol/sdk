@@ -30,7 +30,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
     },
     config,
   }: QuoteParams<SovrynSupport>): Promise<SourceQuoteResponse> {
-    const url = `https://api.mean.finance/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
+    const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
     const body = {
       ...request,
       order: { type: 'sell', sellAmount: order.sellAmount.toString() },

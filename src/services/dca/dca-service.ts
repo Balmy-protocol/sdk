@@ -761,8 +761,8 @@ export class DCAService implements IDCAService {
         takerAddress: COMPANION_SWAPPER_ADDRESS,
         recipient: COMPANION_SWAPPER_ADDRESS,
         txValidFor,
-        filters: { includeSources: ['mean-finance'] }, // TODO: allow more sources and simulate to find the best one
-        sourceConfig: { custom: { ['mean-finance']: { leftoverRecipient } } },
+        filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
+        sourceConfig: { custom: { ['balmy']: { leftoverRecipient } } },
       },
       config: {
         timeout: '5s',
