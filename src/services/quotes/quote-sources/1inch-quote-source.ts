@@ -35,11 +35,11 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
   }
 
   async quote(params: QuoteParams<OneInchSupport, OneInchConfig>): Promise<SourceQuoteResponse> {
-    const { toAmount, to, data, value, gas } = await this.getQuote(params);
+    const { dstAmount, to, data, value, gas } = await this.getQuote(params);
 
     const quote = {
       sellAmount: params.request.order.sellAmount,
-      buyAmount: BigInt(toAmount),
+      buyAmount: BigInt(dstAmount),
       estimatedGas: gas ? BigInt(gas) : undefined,
       allowanceTarget: calculateAllowanceTarget(params.request.sellToken, to),
       tx: {
@@ -74,6 +74,7 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
       receiver: !!recipient && !isSameAddress(takeFrom, recipient) ? recipient : undefined,
       referrer: config.referrer?.address,
       protocols: config.sourceAllowlist,
+      includeGas: true,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `${getUrl(config)}/${chain.chainId}/swap?${queryString}`;
@@ -82,10 +83,10 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
       failed(ONE_INCH_METADATA, chain, sellToken, buyToken, (await response.text()) || `Failed with status ${response.status}`);
     }
     const {
-      toAmount,
+      dstAmount,
       tx: { to, data, value, gas },
     } = await response.json();
-    return { toAmount, to, data, value, gas };
+    return { dstAmount, to, data, value, gas };
   }
 
   isConfigAndContextValid(config: Partial<OneInchConfig> | undefined): config is OneInchConfig {
@@ -94,7 +95,7 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
 }
 
 function getUrl(config: OneInchConfig) {
-  return config.customUrl ?? 'https://api.1inch.dev/swap/v5.2';
+  return config.customUrl ?? 'https://api.1inch.dev/swap/v6.0';
 }
 
 function getHeaders(config: OneInchConfig) {
