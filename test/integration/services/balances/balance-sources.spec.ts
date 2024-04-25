@@ -48,6 +48,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; minAmount: `${number}`; de
 const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
   Chains.AURORA.chainId,
   Chains.OASIS_EMERALD.chainId,
+  Chains.ONTOLOGY.chainId,
   Chains.POLYGON_ZKEVM.chainId,
 ]);
 

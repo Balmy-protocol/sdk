@@ -35,9 +35,9 @@ export class RPCAllowanceSource implements IAllowanceSource {
       functionName: 'allowance',
       args: [owner, spender],
     }));
-    const multicallResults = await this.providerService
-      .getViemPublicClient({ chainId })
-      .multicall({ multicallAddress: MULTICALL_ADDRESS, contracts, batchSize: 0 });
+    const multicallResults = contracts.length
+      ? await this.providerService.getViemPublicClient({ chainId }).multicall({ multicallAddress: MULTICALL_ADDRESS, contracts, batchSize: 0 })
+      : [];
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>> = {};
     for (let i = 0; i < multicallResults.length; i++) {
       const multicallResult = multicallResults[i];

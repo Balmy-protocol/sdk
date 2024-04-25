@@ -45,9 +45,11 @@ export class Permit2Service implements IPermit2Service {
       args: [user, word],
     }));
 
-    const results = await this.providerService
-      .getViemPublicClient({ chainId })
-      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 });
+    const results = contracts.length
+      ? await this.providerService
+          .getViemPublicClient({ chainId })
+          .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 })
+      : [];
 
     // Find nonce
     for (let i = 0; i < results.length; i++) {

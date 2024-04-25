@@ -54,9 +54,11 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
         ...addressesWithoutNativeToken.map((address) => ({ address: address as ViemAddress, functionName: field, abi: ERC20_ABI }))
       );
     }
-    const multicallResults = await this.providerService
-      .getViemPublicClient({ chainId })
-      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 });
+    const multicallResults = contracts.length
+      ? await this.providerService
+          .getViemPublicClient({ chainId })
+          .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 })
+      : [];
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];

@@ -40,12 +40,14 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       functionName: 'balanceOf',
       args: [account],
     }));
-    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({
-      contracts,
-      multicallAddress: MULTICALL_ADDRESS,
-      batchSize: 0,
-      ...this.config,
-    });
+    const multicallResults = contracts.length
+      ? await this.providerService.getViemPublicClient({ chainId }).multicall({
+          contracts,
+          multicallAddress: MULTICALL_ADDRESS,
+          batchSize: 0,
+          ...this.config,
+        })
+      : [];
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
     for (let i = 0; i < pairs.length; i++) {
       const multicallResult = multicallResults[i];
