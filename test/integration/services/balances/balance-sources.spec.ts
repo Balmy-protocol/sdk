@@ -1,7 +1,6 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
-import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
@@ -49,6 +48,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; minAmount: `${number}`; de
 const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
   Chains.AURORA.chainId,
   Chains.OASIS_EMERALD.chainId,
+  Chains.ONTOLOGY.chainId,
   Chains.POLYGON_ZKEVM.chainId,
 ]);
 
@@ -56,7 +56,7 @@ const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService();
-const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, new MulticallService(PROVIDER_SERVICE));
+const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',

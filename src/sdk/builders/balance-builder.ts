@@ -1,4 +1,3 @@
-import { IMulticallService } from '@services/multicall/types';
 import { IBalanceService, IBalanceSource } from '@services/balances/types';
 import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { RPCBalanceSource, RPCBalanceSourceConfig } from '@services/balances/balance-sources/rpc-balance-source';
@@ -9,7 +8,6 @@ import { CachedBalanceSource } from '@services/balances/balance-sources/cached-b
 import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
 import { BuildProviderParams, buildProviderService } from './provider-builder';
-import { buildMulticallService } from './multicall-builder';
 
 export type BalanceSourceInput =
   | { type: 'rpc-multicall'; config?: RPCBalanceSourceConfig; customProvider?: BuildProviderParams }
@@ -36,8 +34,7 @@ function buildSource(
     case undefined:
     case 'rpc-multicall':
       const provider = source?.customProvider ? buildProviderService(source.customProvider) : providerService;
-      const multicall = buildMulticallService(provider);
-      return new RPCBalanceSource(provider, multicall, source?.config);
+      return new RPCBalanceSource(provider, source?.config);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, providerService });
       return new CachedBalanceSource(underlying, source.config);

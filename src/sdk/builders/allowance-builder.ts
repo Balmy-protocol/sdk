@@ -1,10 +1,10 @@
 import { IFetchService } from '@services/fetch';
-import { IMulticallService } from '@services/multicall/types';
 import { CacheConfig } from '@shared/concurrent-lru-cache';
 import { IAllowanceService, IAllowanceSource } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { AllowanceService } from '@services/allowances/allowance-service';
 import { CachedAllowanceSource } from '@services/allowances/allowance-sources/cached-allowance-source';
+import { IProviderService } from '@services/providers';
 
 export type AllowanceSourceInput =
   | { type: 'rpc-multicall' }
@@ -15,22 +15,22 @@ export type BuildAllowanceParams = { source: AllowanceSourceInput };
 export function buildAllowanceService(
   params: BuildAllowanceParams | undefined,
   fetchService: IFetchService,
-  multicallService: IMulticallService
+  providerService: IProviderService
 ): IAllowanceService {
-  const source = buildSource(params?.source, { fetchService, multicallService });
+  const source = buildSource(params?.source, { fetchService, providerService });
   return new AllowanceService(source);
 }
 
 function buildSource(
   source: AllowanceSourceInput | undefined,
-  { fetchService, multicallService }: { fetchService: IFetchService; multicallService: IMulticallService }
+  { fetchService, providerService }: { fetchService: IFetchService; providerService: IProviderService }
 ): IAllowanceSource {
   switch (source?.type) {
     case undefined:
     case 'rpc-multicall':
-      return new RPCAllowanceSource(multicallService);
+      return new RPCAllowanceSource(providerService);
     case 'cached':
-      const underlying = buildSource(source.underlyingSource, { fetchService, multicallService });
+      const underlying = buildSource(source.underlyingSource, { fetchService, providerService });
       return new CachedAllowanceSource(underlying, source.config);
     case 'custom':
       return source.instance;
