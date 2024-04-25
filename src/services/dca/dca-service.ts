@@ -41,6 +41,7 @@ import ERC721_ABI from '@shared/abis/erc721';
 import { IFetchService } from '@services/fetch';
 import { IPriceService, PriceResult } from '@services/prices';
 import { IProviderService } from '..';
+import { MULTICALL_ADDRESS } from '@services/providers/utils';
 
 export class DCAService implements IDCAService {
   constructor(
@@ -195,6 +196,7 @@ export class DCAService implements IDCAService {
         { abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
       allowFailure: false,
+      multicallAddress: MULTICALL_ADDRESS,
     });
 
     const needsSwap = !isSameAddress(increaseInfo.token, position.from);
@@ -564,6 +566,7 @@ export class DCAService implements IDCAService {
         { abi: dcaHubAbi, address: sourceHub as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
       allowFailure: false,
+      multicallAddress: MULTICALL_ADDRESS,
     });
 
     const newFrom = migration.newFrom?.variantId ?? position.from;
@@ -808,6 +811,7 @@ export class DCAService implements IDCAService {
     const [position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [{ abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
       allowFailure: false,
+      multicallAddress: MULTICALL_ADDRESS,
     });
     return { ...position, remaining: BigInt(position.remaining), swapped: BigInt(position.swapped) };
   }

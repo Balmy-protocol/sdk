@@ -19,6 +19,7 @@ import { IProviderService } from '@services/providers';
 import { IQuoteService } from '@services/quotes';
 import { IGasService } from '@services/gas';
 import { Address as ViemAddress } from 'viem';
+import { MULTICALL_ADDRESS } from '@services/providers/utils';
 
 export class Permit2Service implements IPermit2Service {
   readonly permit2ContractAddress = PERMIT2_ADDRESS;
@@ -44,7 +45,9 @@ export class Permit2Service implements IPermit2Service {
       args: [user, word],
     }));
 
-    const results = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts, allowFailure: false });
+    const results = await this.providerService
+      .getViemPublicClient({ chainId })
+      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS });
 
     // Find nonce
     for (let i = 0; i < results.length; i++) {

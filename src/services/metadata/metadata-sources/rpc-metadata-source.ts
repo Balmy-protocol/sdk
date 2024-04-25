@@ -9,6 +9,7 @@ import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
 import { ContractFunctionConfig } from 'viem';
+import { MULTICALL_ADDRESS } from '@services/providers/utils';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };
 const SUPPORT: SupportInChain<RPCMetadataProperties> = { symbol: 'present', decimals: 'present', name: 'present' };
@@ -53,7 +54,9 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
         ...addressesWithoutNativeToken.map((address) => ({ address: address as ViemAddress, functionName: field, abi: ERC20_ABI }))
       );
     }
-    const multicallResults = await this.providerService.getViemPublicClient({ chainId }).multicall({ contracts, allowFailure: false });
+    const multicallResults = await this.providerService
+      .getViemPublicClient({ chainId })
+      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS });
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
