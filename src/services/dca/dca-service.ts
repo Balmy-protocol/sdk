@@ -197,6 +197,7 @@ export class DCAService implements IDCAService {
       ],
       allowFailure: false,
       multicallAddress: MULTICALL_ADDRESS,
+      batchSize: 0,
     });
 
     const needsSwap = !isSameAddress(increaseInfo.token, position.from);
@@ -567,6 +568,7 @@ export class DCAService implements IDCAService {
       ],
       allowFailure: false,
       multicallAddress: MULTICALL_ADDRESS,
+      batchSize: 0,
     });
 
     const newFrom = migration.newFrom?.variantId ?? position.from;
@@ -812,6 +814,7 @@ export class DCAService implements IDCAService {
       contracts: [{ abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
       allowFailure: false,
       multicallAddress: MULTICALL_ADDRESS,
+      batchSize: 0,
     });
     return { ...position, remaining: BigInt(position.remaining), swapped: BigInt(position.swapped) };
   }

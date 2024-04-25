@@ -56,7 +56,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     }
     const multicallResults = await this.providerService
       .getViemPublicClient({ chainId })
-      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS });
+      .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 });
     const result: Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>> = {};
     for (let i = 0; i < addressesWithoutNativeToken.length; i++) {
       const address = addressesWithoutNativeToken[i];
