@@ -22,7 +22,6 @@ import { Address as ViemAddress } from 'viem';
 
 export class Permit2Service implements IPermit2Service {
   readonly permit2ContractAddress = PERMIT2_ADDRESS;
-  readonly permit2ContractAddress = PERMIT2_ADDRESS;
   readonly arbitrary: IPermit2ArbitraryService;
   readonly quotes: IPermit2QuoteService;
   readonly providerService: IProviderService;
