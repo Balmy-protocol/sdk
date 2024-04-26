@@ -25,7 +25,7 @@ const OPEN_OCEAN_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const PARASWAP_SOURCE = new ParaswapGasPriceSource(FETCH_SERVICE);
 const POLYGON_GAS_STATION_SOURCE = new PolygonGasStationGasPriceSource(FETCH_SERVICE);
 const ETHERSCAN_SOURCE = new EtherscanGasPriceSource(FETCH_SERVICE);
-const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSource({ config: { ethers: { quorum: 1 } } })));
+const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSource()));
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([PARASWAP_SOURCE, RPC_SOURCE]);
 const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [PARASWAP_SOURCE, RPC_SOURCE], 'median');
@@ -56,7 +56,7 @@ describe('Gas Price Sources', () => {
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Gas prices are valid values`, async () => {
             const supportedSpeeds = source.supportedSpeeds()[chainId];
-            const gasPrice = await source.getGasPrice({ chainId });
+            const gasPrice = await source.getGasPrice({ chainId, config: { timeout: '10s' } });
             for (const speed of AVAILABLE_GAS_SPEEDS) {
               const expected = speed in supportedSpeeds ? (supportedSpeeds as any)[speed] : 'missing';
               if (expected === 'present') {

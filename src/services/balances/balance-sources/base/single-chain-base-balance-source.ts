@@ -68,9 +68,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
 
     for (const account in tokens) {
-      const lowercasedEntries = Object.entries(erc20Result[account] ?? {})
-        .filter(([, balance]) => isValidBalance(balance))
-        .map(([address, balance]) => [address.toLowerCase(), balance]);
+      const lowercasedEntries = Object.entries(erc20Result[account] ?? {}).map(([address, balance]) => [address.toLowerCase(), balance]);
       const lowercased: Record<TokenAddress, bigint> = Object.fromEntries(lowercasedEntries);
 
       for (const token of tokensWithoutNativeToken[account] ?? []) {
@@ -81,7 +79,7 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
         }
       }
 
-      if (isValidBalance(nativeResult[account])) {
+      if (nativeResult[account] !== undefined) {
         const nativeAddressUsed = tokens[account].find((address) => isSameAddress(Addresses.NATIVE_TOKEN, address))!;
         if (!(account in result)) result[account] = {};
         result[account][nativeAddressUsed] = nativeResult[account];
@@ -130,20 +128,6 @@ export abstract class SingleChainBaseBalanceSource implements IBalanceSource {
   ): Promise<Record<Address, bigint>>;
 }
 
-function isValidBalance(text: bigint | undefined) {
-  return typeof toBigInt(text) === 'bigint';
-}
-
-function isValidBalanceAndNonZero(text: bigint | undefined) {
-  const bn = toBigInt(text);
-  return typeof bn === 'bigint' && bn > 0n;
-}
-
-function toBigInt(text: bigint | undefined): bigint | undefined {
-  try {
-    if (text) {
-      return BigInt(text);
-    }
-  } catch {}
-  return undefined;
+function isValidBalanceAndNonZero(balance: bigint | undefined) {
+  return balance !== undefined && balance > 0n;
 }

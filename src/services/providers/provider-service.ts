@@ -11,23 +11,14 @@ export class ProviderService implements IProviderService {
   constructor(private readonly source: IProviderSource) {}
 
   supportedChains(): ChainId[] {
-    return Object.entries(this.source.supportedClients())
-      .filter(([chainId, support]) => support.ethers || support.viem)
-      .map(([chainId]) => Number(chainId));
-  }
-
-  supportedClients() {
-    return this.source.supportedClients();
-  }
-
-  getEthersProvider({ chainId }: { chainId: ChainId }) {
-    return this.source.getEthersProvider({ chainId });
+    return this.source.supportedChains();
   }
 
   getViemPublicClient({ chainId }: { chainId: ChainId }): PublicClient {
     if (!this.viemPublicClients.has(chainId)) {
       const transport = this.getViemTransport({ chainId });
-      const client = createPublicClient({ chain: getViemChain(chainId), transport });
+      const chain = getViemChain(chainId);
+      const client = createPublicClient({ chain, transport });
       this.viemPublicClients.set(chainId, client as PublicClient);
     }
     return this.viemPublicClients.get(chainId)!;
