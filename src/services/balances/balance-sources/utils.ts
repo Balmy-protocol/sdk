@@ -1,9 +1,9 @@
-import { Address, AmountOfToken, ChainId, TokenAddress } from '@types';
+import { Address, ChainId, TokenAddress } from '@types';
 import { IBalanceSource, BalanceQueriesSupport } from '../types';
 
 export function fillResponseWithNewResult(
-  result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>,
-  newResult: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>
+  result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
+  newResult: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>
 ) {
   for (const chainId in newResult) {
     if (!(chainId in result)) result[chainId] = {};
@@ -19,7 +19,7 @@ export function fillResponseWithNewResult(
 }
 
 export function doesResponseFulfilRequest(
-  result: Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>,
+  result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
   request: Record<ChainId, Record<Address, TokenAddress[]>>
 ) {
   for (const chainId in request) {

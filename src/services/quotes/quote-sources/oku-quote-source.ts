@@ -3,7 +3,7 @@ import { Address, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { GasPrice } from '@services/gas';
-import { addPercentage, calculateDeadline, isSameAddress, substractPercentage } from '@shared/utils';
+import { addPercentage, calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
@@ -118,7 +118,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     const buyAmount = parseUnits(outAmount, tokenData.buyToken.decimals);
     const [maxSellAmount, minBuyAmount] =
       order.type === 'sell'
-        ? [order.sellAmount, substractPercentage(buyAmount, slippagePercentage, 'up')]
+        ? [order.sellAmount, subtractPercentage(buyAmount, slippagePercentage, 'up')]
         : [addPercentage(sellAmount, slippagePercentage, 'up'), order.buyAmount];
 
     const deadline = BigInt(calculateDeadline(txValidFor) ?? calculateDeadline('1w'));

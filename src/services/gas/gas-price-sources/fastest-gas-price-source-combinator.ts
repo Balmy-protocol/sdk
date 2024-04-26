@@ -27,7 +27,11 @@ export class FastestGasPriceSourceCombinator<Sources extends IGasPriceSource<obj
     );
     if (sourcesInChain.length === 0) throw new Error(`Chain with id ${chainId} cannot support the given requirements`);
     const gasResults = sourcesInChain.map((source) =>
-      source.getGasPrice({ chainId, config }).then((response) => failIfResponseDoesNotMeetRequirements(response, config?.fields))
+      source
+        .getGasPrice({ chainId, config })
+        .then((response) =>
+          failIfResponseDoesNotMeetRequirements(response, config?.fields ?? ({} as FieldsRequirements<GasPriceResult<object, Requirements>>))
+        )
     );
     return Promise.any(gasResults) as Promise<GasPriceResult<MergeGasValues<Sources>, Requirements>>;
   }

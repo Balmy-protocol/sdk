@@ -15,7 +15,6 @@ import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
 import { ParaswapGasPriceSource } from '@services/gas/gas-price-sources/paraswap-gas-price-source';
-import { ChangellyGasPriceSource } from '@services/gas/gas-price-sources/changelly-gas-price-source';
 import { ProviderService } from '@services/providers/provider-service';
 import { CHAINS_WITH_KNOWN_ISSUES } from '@test-utils/other';
 import { LogsService } from '@services/logs/logs-service';
@@ -32,7 +31,6 @@ const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([PARASWAP_SOURCE,
 const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [PARASWAP_SOURCE, RPC_SOURCE], 'median');
 const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
-const CHANGELLY_GAS_SOURCE = new ChangellyGasPriceSource(FETCH_SERVICE, process.env.CHANGELLY_API_KEY!);
 
 jest.retryTimes(3);
 jest.setTimeout(ms('30s'));
@@ -48,7 +46,6 @@ describe('Gas Price Sources', () => {
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Paraswap Source', source: PARASWAP_SOURCE });
-  // gasPriceSourceTest({ title: 'Changelly Source', source: CHANGELLY_GAS_SOURCE }); We comment this out because we need an API key
 
   function gasPriceSourceTest({ title, source }: { title: string; source: IGasPriceSource<object> }) {
     describe(title, () => {
@@ -63,7 +60,10 @@ describe('Gas Price Sources', () => {
             for (const speed of AVAILABLE_GAS_SPEEDS) {
               const expected = speed in supportedSpeeds ? (supportedSpeeds as any)[speed] : 'missing';
               if (expected === 'present') {
-                expect(isGasPriceIsSetForSpeed(gasPrice, speed), `${speed} was not set in ${JSON.stringify(gasPrice)}`).to.be.true;
+                expect(
+                  isGasPriceIsSetForSpeed(gasPrice, speed),
+                  `${speed} was not set in ${JSON.stringify(gasPrice, (_, value) => (typeof value === 'bigint' ? value.toString() : value))}`
+                ).to.be.true;
               } else if (expected === 'optional') {
                 expect(!(speed in gasPrice) || isGasPriceIsSetForSpeed(gasPrice, speed)).to.be.true;
               } else {
@@ -75,10 +75,10 @@ describe('Gas Price Sources', () => {
         function isGasPriceIsSetForSpeed(gasPrice: GasPriceResult<object>, speed: string) {
           if (isEIP1159Compatible(gasPrice)) {
             return (
-              typeof (gasPrice as any)[speed]?.maxFeePerGas === 'string' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'string'
+              typeof (gasPrice as any)[speed]?.maxFeePerGas === 'bigint' && typeof (gasPrice as any)[speed]?.maxPriorityFeePerGas === 'bigint'
             );
           } else {
-            return typeof (gasPrice as any)[speed]?.gasPrice === 'string';
+            return typeof (gasPrice as any)[speed]?.gasPrice === 'bigint';
           }
         }
       }

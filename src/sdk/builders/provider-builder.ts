@@ -2,7 +2,6 @@ import { BaseProvider } from '@ethersproject/providers';
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { EIP1993Provider, EIP1993ProviderSource } from '@services/providers/provider-sources/eip1993-provider';
-import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { FallbackProviderSourceConfig, FallbackSource } from '@services/providers/provider-sources/fallback-provider';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
@@ -29,7 +28,6 @@ export type ProviderSourceInput =
   | { type: 'updatable'; provider: () => ProviderSourceInput | undefined }
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }
-  | { type: 'alchemy'; key: string; protocol?: 'https' | 'wss'; onChains?: ChainId[] }
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
@@ -67,8 +65,6 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return source.instance;
     case 'public-rpcs':
       return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
-    case 'alchemy':
-      return new AlchemyProviderSource(source.key, source.protocol ?? 'https', source.onChains);
     case 'dRPC':
       return new dRPCProviderSource(source.key, source.onChains);
     case 'blast':

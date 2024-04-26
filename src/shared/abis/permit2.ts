@@ -1,1 +1,12 @@
-export const PERMIT2_ABI = ['function nonceBitmap(address, uint256) view returns(uint256)'];
+export default [
+  {
+    inputs: [
+      { internalType: 'address', name: '', type: 'address' },
+      { internalType: 'uint256', name: '', type: 'uint256' },
+    ],
+    name: 'nonceBitmap',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;

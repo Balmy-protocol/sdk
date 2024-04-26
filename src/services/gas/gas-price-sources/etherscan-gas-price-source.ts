@@ -47,10 +47,10 @@ export class EtherscanGasPriceSource implements IGasPriceSource<GasValues> {
 
 function calculateGas(price: `${number}`, baseFee?: `${number}`): GasPrice {
   const gasPrice = parseUnits(price, 9);
-  if (!baseFee) return { gasPrice: gasPrice.toString() };
+  if (!baseFee) return { gasPrice };
   const base = parseUnits(baseFee, 9);
   return {
-    maxFeePerGas: gasPrice.toString(),
-    maxPriorityFeePerGas: (gasPrice - base).toString(),
+    maxFeePerGas: gasPrice,
+    maxPriorityFeePerGas: gasPrice - base,
   };
 }

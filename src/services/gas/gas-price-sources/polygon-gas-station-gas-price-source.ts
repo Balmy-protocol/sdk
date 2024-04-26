@@ -32,8 +32,8 @@ export class PolygonGasStationGasPriceSource implements IGasPriceSource<GasValue
 
 function calculateGas(gas: Gas): EIP1159GasPrice {
   return {
-    maxFeePerGas: parseUnits(gas.maxFee.toFixed(9) as `${number}`, 9).toString(),
-    maxPriorityFeePerGas: parseUnits(gas.maxPriorityFee.toFixed(9) as `${number}`, 9).toString(),
+    maxFeePerGas: parseUnits(gas.maxFee.toFixed(9) as `${number}`, 9),
+    maxPriorityFeePerGas: parseUnits(gas.maxPriorityFee.toFixed(9) as `${number}`, 9),
   };
 }
 

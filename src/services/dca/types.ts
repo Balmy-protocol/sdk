@@ -62,7 +62,6 @@ export type PositionSummary = {
   rate: AmountsOfToken;
   funds: PositionFunds;
   generatedByYield?: Partial<PositionFunds>;
-  platformMessages: PlatformMessage[];
   history: DCAPositionAction[];
 };
 export type DCAPositionAction = { tx: DCATransaction } & ActionType;

@@ -1,25 +1,25 @@
 {
-  "name": "@mean-finance/sdk",
-  "version": "0.0.237",
+  "name": "@balmy/sdk",
+  "version": "0.0.0",
   "contributors": [
     {
       "name": "Nicolás Chamo",
-      "email": "nchamo@mean.finance",
+      "email": "nchamo@balmy.xyz",
       "url": "https://github.com/nchamo"
     },
     {
       "name": "fiboape",
-      "email": "fiboape@mean.finance",
+      "email": "fiboape@balmy.xyz",
       "url": "https://github.com/fiboape"
     },
     {
       "name": "0xged",
-      "email": "0xged@mean.finance",
+      "email": "ged@balmy.xyz",
       "url": "https://github.com/0xged"
     },
     {
       "name": "Sam Bugs",
-      "email": "sam@mean.finance",
+      "email": "sam@balmy.xyz",
       "url": "https://github.com/0xsambugs"
     }
   ],
@@ -42,14 +42,13 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
-    "alchemy-sdk": "2.9.2",
     "cross-fetch": "3.1.5",
     "crypto-js": "4.2.0",
     "deepmerge": "4.3.1",
     "lru-cache": "9.0.3",
     "ms": "3.0.0-canary.1",
     "qs": "6.11.2",
-    "viem": "1.2.0"
+    "viem": "2.9.27"
   },
   "devDependencies": {
     "@commitlint/cli": "17.8.0",
@@ -79,6 +78,6 @@
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.2.0",
     "tsconfig-replace-paths": "0.0.14",
-    "typescript": "4.9.5"
+    "typescript": "5.4.2"
   }
 }

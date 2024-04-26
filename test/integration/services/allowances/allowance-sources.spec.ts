@@ -1,14 +1,12 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
-import { MulticallService } from '@services/multicall/multicall-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
-import { AlchemyAllowanceSource } from '@services/allowances/allowance-sources/alchemy-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains, getChainByKey } from '@chains';
-import { AmountOfToken, ChainId, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
 dotenv.config();
@@ -35,8 +33,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   },
 };
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
-const ALCHEMY_ALLOWANCE_SOURCE = new AlchemyAllowanceSource(process.env.ALCHEMY_API_KEY!);
-const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(new MulticallService(PROVIDER_SERVICE));
+const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(PROVIDER_SERVICE);
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',
@@ -51,13 +48,12 @@ jest.setTimeout(ms('1m'));
 describe('Allowance Sources', () => {
   allowanceSourceTest({ title: 'RPC Source', source: RPC_ALLOWANCE_SOURCE });
   allowanceSourceTest({ title: 'Cached RPC Source', source: CACHED_ALLOWANCE_SOURCE });
-  allowanceSourceTest({ title: 'Alchemy RPC Source', source: ALCHEMY_ALLOWANCE_SOURCE });
 
   function allowanceSourceTest({ title, source }: { title: string; source: IAllowanceSource }) {
     describe(title, () => {
       const chains = source.supportedChains().filter((chainId) => chainId in TESTS);
       let input: Record<ChainId, AllowanceCheck[]>;
-      let result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, AmountOfToken>>>>;
+      let result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>;
       beforeAll(async () => {
         const entries = chains.map((chainId) => [chainId, [{ token: TESTS[chainId].address, owner: OWNER, spender: SPENDER }]]);
         input = Object.fromEntries(entries);

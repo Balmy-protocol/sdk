@@ -1,4 +1,4 @@
-import { Address, AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceQueriesSupport, IBalanceService, IBalanceSource } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 
@@ -23,11 +23,11 @@ export class BalanceService implements IBalanceService {
     account: Address;
     chains: ChainId[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, bigint>>> {
     const entries = chains.map((chainId) => [chainId, [account]]);
     const accounts = Object.fromEntries(entries);
     const resultsPerAccounts = await this.getTokensHeldByAccounts({ accounts, config });
-    const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<ChainId, Record<TokenAddress, bigint>> = {};
     for (const chainId of chains) {
       result[chainId] = resultsPerAccounts[chainId][account];
     }
@@ -42,13 +42,13 @@ export class BalanceService implements IBalanceService {
     account: Address;
     tokens: Record<ChainId, TokenAddress[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, AmountOfToken>>> {
+  }): Promise<Record<ChainId, Record<TokenAddress, bigint>>> {
     const entries = Object.entries(tokens).map<[ChainId, Record<Address, TokenAddress[]>]>(([chainId, tokens]) => [
       Number(chainId),
       { [account]: tokens },
     ]);
     const resultsPerAccounts = await this.getBalancesForTokensForAccounts({ tokens: Object.fromEntries(entries), config });
-    const result: Record<ChainId, Record<TokenAddress, AmountOfToken>> = {};
+    const result: Record<ChainId, Record<TokenAddress, bigint>> = {};
     for (const chainId in tokens) {
       result[chainId] = resultsPerAccounts[chainId]?.[account] ?? {};
     }
@@ -61,7 +61,7 @@ export class BalanceService implements IBalanceService {
   }: {
     accounts: Record<ChainId, Address[]>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     return timeoutPromise(this.source.getTokensHeldByAccounts({ accounts, config }), config?.timeout);
   }
 
@@ -71,7 +71,7 @@ export class BalanceService implements IBalanceService {
   }: {
     tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, AmountOfToken>>>> {
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     return timeoutPromise(this.source.getBalancesForTokens({ tokens, config }), config?.timeout);
   }
 }

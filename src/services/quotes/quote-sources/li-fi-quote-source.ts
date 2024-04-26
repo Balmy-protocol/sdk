@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { AmountOfToken, TokenAddress } from '@types';
+import { TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
@@ -84,7 +84,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
       transactionRequest: { to, data, value },
     } = await response.json();
 
-    const estimatedGas = (gasCosts as { estimate: AmountOfToken }[]).reduce((accum, { estimate }) => accum + BigInt(estimate), 0n);
+    const estimatedGas = (gasCosts as { estimate: bigint }[]).reduce((accum, { estimate }) => accum + BigInt(estimate), 0n);
 
     return {
       sellAmount: order.sellAmount,

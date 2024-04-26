@@ -84,11 +84,11 @@ describe('Quote Service', () => {
 const SOURCE = 'source';
 
 const RESPONSE: SourceListResponse = {
-  sellAmount: '1000',
-  buyAmount: '1234',
-  maxSellAmount: '1000',
-  minBuyAmount: '1000',
-  estimatedGas: '12345',
+  sellAmount: 1000n,
+  buyAmount: 1234n,
+  maxSellAmount: 1000n,
+  minBuyAmount: 1000n,
+  estimatedGas: 12345n,
   type: 'sell',
   recipient: '0x0000000000000000000000000000000000000004',
   source: { id: SOURCE, allowanceTarget: '0x0000000000000000000000000000000000000005', name: 'Name', logoURI: 'logo' },
@@ -150,8 +150,8 @@ const FAILING_PRICE_SERVICE: IPriceService = {
 const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {
   supportedSpeeds: () => ({ standard: 'present', fast: 'optional', instant: 'optional' } as any),
   calculateGasCost: (_: { gasEstimation: BigIntish; tx?: InputTransaction }) =>
-    ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10', gasCostNativeToken: '10' } } as any),
-  getGasPrice: () => ({ standard: { maxFeePerGas: '10', maxPriorityFeePerGas: '10' } } as any),
+    ({ standard: { maxFeePerGas: 10n, maxPriorityFeePerGas: 10n, gasCostNativeToken: 10n } } as any),
+  getGasPrice: () => ({ standard: { maxFeePerGas: 10n, maxPriorityFeePerGas: 10n } } as any),
 };
 const GAS_SERVICE: IGasService<DefaultGasValues> = {
   supportedSpeeds: () => ({}),

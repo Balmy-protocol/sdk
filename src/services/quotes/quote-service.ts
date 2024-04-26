@@ -410,8 +410,8 @@ function quoteResponseToEstimated({ recipient, tx, ...response }: QuoteResponse)
 
 export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
   return {
-    estimatedCost: gasCostNativeToken.toString(),
-    estimatedCostInUnits: formatUnits(BigInt(gasCostNativeToken), 18).toString(),
+    estimatedCost: BigInt(gasCostNativeToken),
+    estimatedCostInUnits: formatUnits(BigInt(gasCostNativeToken), 18),
     estimatedCostInUSD: amountToUSD(18, gasCostNativeToken, nativeTokenPrice),
     gasTokenPrice: nativeTokenPrice,
     gasTokenSymbol,

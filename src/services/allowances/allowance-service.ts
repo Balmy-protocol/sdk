@@ -1,4 +1,4 @@
-import { AmountOfToken, ChainId, TimeString, TokenAddress } from '@types';
+import { ChainId, TimeString, TokenAddress } from '@types';
 import { AllowanceCheck, IAllowanceService, IAllowanceSource, OwnerAddress, SpenderAddress } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 
@@ -21,7 +21,7 @@ export class AllowanceService implements IAllowanceService {
     owner: OwnerAddress;
     spender: SpenderAddress;
     config?: { timeout?: TimeString };
-  }): Promise<AmountOfToken> {
+  }): Promise<bigint> {
     const { [spender]: result } = await this.getAllowancesInChain({ chainId, token, owner, spenders: [spender], config });
     return result;
   }
@@ -38,7 +38,7 @@ export class AllowanceService implements IAllowanceService {
     owner: OwnerAddress;
     spenders: SpenderAddress[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<SpenderAddress, AmountOfToken>> {
+  }): Promise<Record<SpenderAddress, bigint>> {
     const allowancesInChain = spenders.map((spender) => ({ token, owner, spender }));
     const result = await this.getMultipleAllowancesInChain({
       chainId,
