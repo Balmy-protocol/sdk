@@ -79,5 +79,8 @@
     "tsconfig-paths": "4.2.0",
     "tsconfig-replace-paths": "0.0.14",
     "typescript": "5.4.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
