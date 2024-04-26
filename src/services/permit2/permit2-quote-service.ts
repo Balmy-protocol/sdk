@@ -11,7 +11,7 @@ import { Either } from '@utility-types';
 import { IGasService } from '@services/gas';
 import { Addresses } from '@shared/constants';
 import { IProviderService } from '..';
-import { BigNumber, Contract } from 'alchemy-sdk';
+import { BigNumber, Contract } from 'ethers';
 
 export class Permit2QuoteService implements IPermit2QuoteService {
   readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
