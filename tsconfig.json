@@ -16,6 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "@builder": ["src/sdk/sdk-builder"],

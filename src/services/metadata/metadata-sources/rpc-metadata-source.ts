@@ -8,7 +8,6 @@ import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
-import { ContractFunctionConfig } from 'viem';
 import { MULTICALL_ADDRESS } from '@services/providers/utils';
 
 export type RPCMetadataProperties = BaseTokenMetadata & { name: string };

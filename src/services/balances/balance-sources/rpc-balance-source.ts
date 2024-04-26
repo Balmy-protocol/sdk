@@ -54,7 +54,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       if (multicallResult.status === 'failure') continue;
       const { account, token } = pairs[i];
       if (!(account in result)) result[account] = {};
-      result[account][token] = multicallResult.result as bigint;
+      result[account][token] = multicallResult.result as unknown as bigint;
     }
     return result;
   }
