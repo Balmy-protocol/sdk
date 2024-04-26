@@ -64,8 +64,8 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     accounts: Address[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, bigint>> {
-    const entries = accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]);
-    return Object.fromEntries(await Promise.all(entries));
+    const entries = await Promise.all(accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]));
+    return Object.fromEntries(entries);
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {

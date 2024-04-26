@@ -14,7 +14,10 @@ export class FallbackSource implements IProviderSource {
   }
 
   getViemTransport({ chainId }: { chainId: ChainId }) {
-    const transports = this.sources.map((source) => source.getViemTransport({ chainId }));
+    const transports = this.sources
+      .filter((source) => source.supportedChains().includes(chainId))
+      .map((source) => source.getViemTransport({ chainId }));
+    if (transports.length === 0) throw new Error(`Chain with id ${chainId} not supported`);
     return fallback(transports, this.config);
   }
 }
