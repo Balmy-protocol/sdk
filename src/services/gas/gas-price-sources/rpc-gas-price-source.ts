@@ -20,11 +20,11 @@ export class RPCGasPriceSource implements IGasPriceSource<GasValues> {
     chainId: ChainId;
     config?: { timeout?: TimeString };
   }) {
-    const feeData = await timeoutPromise(this.providerService.getEthersProvider({ chainId }).getFeeData(), config?.timeout);
+    const feeData = await timeoutPromise(this.providerService.getViemPublicClient({ chainId }).estimateFeesPerGas(), config?.timeout);
     const gasPrice =
       !!feeData.maxFeePerGas && !!feeData.maxPriorityFeePerGas
-        ? { standard: { maxFeePerGas: feeData.maxFeePerGas.toBigInt(), maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.toBigInt() } }
-        : { standard: { gasPrice: feeData.gasPrice!.toBigInt() } };
+        ? { standard: { maxFeePerGas: feeData.maxFeePerGas, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas } }
+        : { standard: { gasPrice: feeData.gasPrice! } };
     return gasPrice as GasPriceResult<GasValues, Requirements>;
   }
 }

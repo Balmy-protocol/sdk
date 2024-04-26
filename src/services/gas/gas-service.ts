@@ -91,15 +91,9 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
 
   private estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<bigint> {
     const viemTx = mapTxToViemTx(tx);
-    const viemSupported = this.providerService.supportedClients()[chainId]?.viem;
-    return viemSupported
-      ? this.providerService.getViemPublicClient({ chainId }).estimateGas({
-          ...viemTx,
-          account: viemTx.from,
-        })
-      : this.providerService
-          .getEthersProvider({ chainId })
-          .estimateGas(tx)
-          .then((estimate) => estimate.toBigInt());
+    return this.providerService.getViemPublicClient({ chainId }).estimateGas({
+      ...viemTx,
+      account: viemTx.from,
+    });
   }
 }
