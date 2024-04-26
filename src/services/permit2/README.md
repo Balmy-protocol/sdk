@@ -31,7 +31,7 @@ Remember that before Permit2 can be used, you'll need to have the user authorize
 
 ```ts
 import { Contract, constants } from "ethers";
-import { buildSDK } from "@mean-finance/sdk";
+import { buildSDK } from "@balmy/sdk";
 
 const sdk = buildSDK();
 
@@ -55,7 +55,7 @@ If you simply want to take one token from the user and do something with it, thi
 ##### Example: take tokens and deposit into yield generating vault
 
 ```ts
-import { buildSDK } from "@mean-finance/sdk";
+import { buildSDK } from "@balmy/sdk";
 
 const sdk = buildSDK();
 const { arbitrary } = sdk.permit2Service;
@@ -115,7 +115,7 @@ If you want to take more than one token from the user, you can do it also in one
 ##### Example: take multiple tokens and deposit into many yield generating vaults
 
 ```ts
-import { buildSDK } from "@mean-finance/sdk";
+import { buildSDK } from "@balmy/sdk";
 
 const sdk = buildSDK();
 const { arbitrary } = sdk.permit2Service;

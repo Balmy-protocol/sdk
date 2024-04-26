@@ -1,25 +1,25 @@
 {
-  "name": "@mean-finance/sdk",
-  "version": "0.0.237",
+  "name": "@balmy/sdk",
+  "version": "0.0.0",
   "contributors": [
     {
       "name": "Nicolás Chamo",
-      "email": "nchamo@mean.finance",
+      "email": "nchamo@balmy.xyz",
       "url": "https://github.com/nchamo"
     },
     {
       "name": "fiboape",
-      "email": "fiboape@mean.finance",
+      "email": "fiboape@balmy.xyz",
       "url": "https://github.com/fiboape"
     },
     {
       "name": "0xged",
-      "email": "0xged@mean.finance",
+      "email": "ged@balmy.xyz",
       "url": "https://github.com/0xged"
     },
     {
       "name": "Sam Bugs",
-      "email": "sam@mean.finance",
+      "email": "sam@balmy.xyz",
       "url": "https://github.com/0xsambugs"
     }
   ],

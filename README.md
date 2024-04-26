@@ -1,19 +1,19 @@
-# Mean Finance SDK
+# Balmy SDK
 
-This repository contains the code for the Mean Finance sdk.
+This repository contains the code for the Balmy sdk.
 
 ## 🧪 Installing
 
 ### Yarn
 
 ```bash
-yarn add @mean-finance/sdk
+yarn add @balmy/sdk
 ```
 
 ### NPM
 
 ```bash
-npm install @mean-finance/sdk
+npm install @balmy/sdk
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ npm install @mean-finance/sdk
 ### 👷🏽‍♀️ Building the SDK
 
 ```javascript
-import { buildSdk } from "@mean-finance/sdk";
+import { buildSdk } from "@balmy/sdk";
 
 const sdk = buildSdk(config);
 ```
@@ -111,4 +111,4 @@ yarn install
 
 ## 📖 Docs
 
-WIP - Will be at [docs.mean.finance](https://docs.mean.finance)
+WIP - Will be at [docs.balmy.xyz](https://docs.balmy.xyz)
