@@ -29,4 +29,5 @@ export const PERMIT2_SUPPORTED_CHAINS = [
   Chains.ROOTSTOCK,
   Chains.BLAST,
   Chains.SCROLL,
+  Chains.MODE,
 ].map(({ chainId }) => chainId);
