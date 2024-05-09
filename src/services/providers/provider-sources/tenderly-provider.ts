@@ -9,7 +9,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON_MUMBAI.chainId]: 'https://polygon-mumbai.gateway.tenderly.co',
   [Chains.OPTIMISM.chainId]: 'https://optimism.gateway.tenderly.co',
   [Chains.BASE.chainId]: 'https://base.gateway.tenderly.co',
-  [Chains.ARBITRUM.chainId]: 'https://arbitrum-one.gateway.tenderly.co',
+  [Chains.ARBITRUM.chainId]: 'https://arbitrum.gateway.tenderly.co',
   [Chains.BOBA.chainId]: 'https://boba-ethereum.gateway.tenderly.co',
 };
 
