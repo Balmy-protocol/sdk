@@ -9,6 +9,7 @@ import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
+// https://docs.openocean.finance/dev/supported-chains
 const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Address }> = {
   [Chains.ETHEREUM.chainId]: { chainKey: 'eth' },
   [Chains.BNB_CHAIN.chainId]: { chainKey: 'bsc' },
@@ -31,6 +32,7 @@ const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Addres
   [Chains.GNOSIS.chainId]: { chainKey: 'xdai' },
   [Chains.opBNB.chainId]: { chainKey: 'opbnb' },
   [Chains.BLAST.chainId]: { chainKey: 'blast' },
+  [Chains.ROOTSTOCK.chainId]: { chainKey: 'rootstock' },
 };
 
 const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
