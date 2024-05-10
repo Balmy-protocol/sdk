@@ -22,8 +22,9 @@ const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
   },
   logoURI: 'ipfs://QmTMusok8SqDoa1MDGgZ3xohrPTnY6j2xxR5jPphBDaUDi',
 };
+type BebopConfig = { apiKey: string };
 type BebopSupport = { buyOrders: true; swapAndTransfer: true };
-export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSupport> {
+export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSupport, BebopConfig> {
   getMetadata() {
     return BEBOP_METADATA;
   }
@@ -39,7 +40,7 @@ export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSup
       accounts: { takeFrom, recipient },
     },
     config,
-  }: QuoteParams<BebopSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BebopSupport, BebopConfig>): Promise<SourceQuoteResponse> {
     const queryParams = {
       sell_tokens: [checksum(sellToken)],
       buy_tokens: [checksum(buyToken)],
@@ -54,7 +55,8 @@ export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSup
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.bebop.xyz/${NETWORK_KEY[chain.chainId]}/v2/quote?${queryString}`;
 
-    const response = await fetchService.fetch(url, { timeout });
+    const headers = { 'source-auth': config.apiKey };
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(BEBOP_METADATA, chain, sellToken, buyToken, await response.text());
     }
@@ -77,5 +79,9 @@ export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSup
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  isConfigAndContextValid(config: Partial<BebopConfig> | undefined): config is BebopConfig {
+    return !!config?.apiKey;
   }
 }
