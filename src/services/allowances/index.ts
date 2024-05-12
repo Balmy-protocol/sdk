@@ -1,1 +1,1 @@
-export { IAllowanceService, IAllowanceSource, AllowanceCheck } from './types';
+export { IAllowanceService, IAllowanceSource, AllowanceInput } from './types';

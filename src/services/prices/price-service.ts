@@ -1,6 +1,6 @@
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { IPriceService, IPriceSource, PriceResult } from './types';
+import { IPriceService, IPriceSource, PriceInput, PriceResult } from './types';
 
 export class PriceService implements IPriceService {
   constructor(private readonly priceSource: IPriceSource) {}
@@ -15,47 +15,47 @@ export class PriceService implements IPriceService {
     return this.priceSource.supportedQueries();
   }
 
-  async getCurrentPricesForChain({
+  async getCurrentPricesInChain({
     chainId,
-    addresses,
+    tokens,
     config,
   }: {
     chainId: ChainId;
-    addresses: TokenAddress[];
+    tokens: TokenAddress[];
     config?: { timeout?: TimeString };
   }): Promise<Record<TokenAddress, PriceResult>> {
-    const byChainId = { [chainId]: addresses };
-    const result = await this.getCurrentPrices({ addresses: byChainId, config });
+    const input = tokens.map((token) => ({ chainId, token }));
+    const result = await this.getCurrentPrices({ tokens: input, config });
     return result[chainId] ?? {};
   }
 
   getCurrentPrices({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    return timeoutPromise(this.priceSource.getCurrentPrices({ addresses, config }), config?.timeout, {
+    return timeoutPromise(this.priceSource.getCurrentPrices({ tokens, config }), config?.timeout, {
       description: 'Timeouted while fetching current prices',
     });
   }
 
-  async getHistoricalPricesForChain({
+  async getHistoricalPricesInChain({
     chainId,
-    addresses,
+    tokens,
     timestamp,
     searchWidth,
     config,
   }: {
     chainId: ChainId;
-    addresses: TokenAddress[];
+    tokens: TokenAddress[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }) {
-    const byChainId = { [chainId]: addresses };
-    const result = await this.getHistoricalPrices({ addresses: byChainId, timestamp, searchWidth, config });
+    const input = tokens.map((token) => ({ chainId, token }));
+    const result = await this.getHistoricalPrices({ tokens: input, timestamp, searchWidth, config });
     return result[chainId] ?? {};
   }
 
@@ -64,7 +64,7 @@ export class PriceService implements IPriceService {
     searchWidth,
     ...params
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
@@ -75,20 +75,15 @@ export class PriceService implements IPriceService {
   }
 
   getBulkHistoricalPrices({
-    addresses,
+    tokens,
     searchWidth,
     config,
   }: {
-    addresses: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
-    const collectedByChainId: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]> = {};
-    for (const { chainId, token, timestamp } of addresses) {
-      if (!(chainId in collectedByChainId)) collectedByChainId[chainId] = [];
-      collectedByChainId[chainId].push({ token, timestamp });
-    }
-    return timeoutPromise(this.priceSource.getBulkHistoricalPrices({ addresses: collectedByChainId, searchWidth, config }), config?.timeout, {
+    return timeoutPromise(this.priceSource.getBulkHistoricalPrices({ tokens, searchWidth, config }), config?.timeout, {
       description: 'Timeouted while fetching bulk historical prices',
     });
   }
@@ -100,7 +95,7 @@ export class PriceService implements IPriceService {
     searchWidth,
     config,
   }: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };

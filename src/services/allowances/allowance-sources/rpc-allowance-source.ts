@@ -1,7 +1,7 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
+import { AllowanceInput, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 import { timeoutPromise } from '@shared/timeouts';
-import { filterRejectedResults } from '@shared/utils';
+import { filterRejectedResults, groupByChain } from '@shared/utils';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
 import { Address as ViemAddress } from 'viem';
@@ -18,17 +18,19 @@ export class RPCAllowanceSource implements IAllowanceSource {
     allowances,
     config,
   }: {
-    allowances: Record<ChainId, AllowanceCheck[]>;
+    allowances: AllowanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>> {
-    const promises = Object.entries(allowances).map(async ([chainId, checks]) => [
-      parseInt(chainId),
-      await timeoutPromise(this.getAllowancesInChain(parseInt(chainId), checks), config?.timeout, { reduceBy: '100' }),
+    const groupedByChain = groupByChain(allowances);
+
+    const promises = Object.entries(groupedByChain).map(async ([chainId, checks]) => [
+      Number(chainId),
+      await timeoutPromise(this.getAllowancesInChain(Number(chainId), checks), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
-  private async getAllowancesInChain(chainId: ChainId, checks: AllowanceCheck[]) {
+  private async getAllowancesInChain(chainId: ChainId, checks: Omit<AllowanceInput, 'chainId'>[]) {
     const contracts = checks.map(({ token, owner, spender }) => ({
       address: token as ViemAddress,
       abi: ERC20_ABI,

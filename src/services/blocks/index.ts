@@ -1,1 +1,1 @@
-export { IBlocksService, IBlocksSource, BlockResult } from './types';
+export { IBlocksService, IBlocksSource, BlockResult, BlockInput } from './types';

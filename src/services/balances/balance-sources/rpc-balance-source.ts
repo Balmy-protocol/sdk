@@ -1,6 +1,6 @@
 import { Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { BalanceQueriesSupport } from '../types';
+import { BalanceInput } from '../types';
 import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 import ERC20_ABI from '@shared/abis/erc20';
@@ -14,27 +14,16 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     super();
   }
 
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    const supportedChains = this.providerService.supportedChains();
-    const entries = supportedChains.map((chainId) => [chainId, { getBalancesForTokens: true, getTokensHeldByAccount: false }]);
-    return Object.fromEntries(entries);
+  supportedChains(): ChainId[] {
+    return this.providerService.supportedChains();
   }
 
-  protected fetchERC20TokensHeldByAccountsInChain(
+  protected async fetchERC20BalancesInChain(
     chainId: ChainId,
-    accounts: Address[],
+    tokens: Omit<BalanceInput, 'chainId'>[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
-    throw new Error('Operation not supported');
-  }
-
-  protected async fetchERC20BalancesForAccountsInChain(
-    chainId: ChainId,
-    accounts: Record<Address, TokenAddress[]>,
-    config?: { timeout?: TimeString }
-  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
-    const pairs = Object.entries(accounts).flatMap(([account, tokens]) => tokens.map((token) => ({ account, token })));
-    const contracts = pairs.map(({ account, token }) => ({
+    const contracts = tokens.map(({ account, token }) => ({
       address: token as ViemAddress,
       abi: ERC20_ABI,
       functionName: 'balanceOf',
@@ -49,10 +38,10 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
         })
       : [];
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
-    for (let i = 0; i < pairs.length; i++) {
+    for (let i = 0; i < tokens.length; i++) {
       const multicallResult = multicallResults[i];
       if (multicallResult.status === 'failure') continue;
-      const { account, token } = pairs[i];
+      const { account, token } = tokens[i];
       if (!(account in result)) result[account] = {};
       result[account][token] = multicallResult.result as unknown as bigint;
     }
@@ -68,7 +57,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     return Object.fromEntries(entries);
   }
 
-  private fetchNativeBalanceInChain(chainId: ChainId, account: Address) {
+  private fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }) {
     return this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' });
   }
 }

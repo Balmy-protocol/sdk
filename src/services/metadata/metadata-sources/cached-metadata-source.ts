@@ -1,6 +1,6 @@
 import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString, TokenAddress } from '@types';
 import { CacheConfig, ConcurrentLRUCacheWithContext } from '@shared/concurrent-lru-cache';
-import { IMetadataSource, MetadataResult } from '../types';
+import { IMetadataSource, MetadataInput, MetadataResult } from '../types';
 import { calculateFieldRequirements, combineSupportInChains } from '@shared/requirements-and-support';
 
 type CacheContext = { timeout?: TimeString } | undefined;
@@ -15,25 +15,25 @@ export class CachedMetadataSource<TokenMetadata extends object> implements IMeta
   }
 
   async getMetadata<Requirements extends FieldsRequirements<TokenMetadata>>({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { timeout?: TimeString; fields?: Requirements };
   }) {
-    const chainIds = Object.keys(addresses).map(Number);
+    const chainIds = [...new Set(tokens.map(({ chainId }) => chainId))];
     const support = combineSupportInChains(chainIds, this.supportedProperties());
     const fieldRequirements = calculateFieldRequirements(support, config?.fields);
     const requiredFields = Object.entries(fieldRequirements)
       .filter(([, requirement]) => requirement === 'required')
       .map(([field]) => field);
-    const tokensInChain = addressesToTokensInChain(addresses, requiredFields);
-    const tokens = await this.cache.getOrCalculate({
+    const tokensInChain = addressesToTokensInChain(tokens, requiredFields);
+    const result = await this.cache.getOrCalculate({
       context: config,
       keys: tokensInChain,
       timeout: config?.timeout,
     });
-    return tokenInChainRecordToChainAndAddress(tokens) as Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>;
+    return tokenInChainRecordToChainAndAddress(result) as Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>;
   }
 
   supportedProperties() {
@@ -41,39 +41,33 @@ export class CachedMetadataSource<TokenMetadata extends object> implements IMeta
   }
 
   private async fetchMetadata(tokensInChain: TokenInChain[], context: CacheContext): Promise<Record<TokenInChain, TokenMetadata>> {
-    const { addresses, requiredFields } = tokensInChainToAddresses(tokensInChain);
+    const { tokens, requiredFields } = tokensInChainToAddresses(tokensInChain);
     const requirements = Object.fromEntries(requiredFields.map((field) => [field, 'required'])) as Partial<
       Record<keyof TokenMetadata, FieldRequirementOptions>
     >;
     // We set the default to best effort here, even if it wasn't set on the original request. The idea is that we try our best to fetch all properties,
     // so that if we have a future request with the same required fields and best effort is set, then we can use the cached values
     const metadata = (await this.source.getMetadata({
-      addresses,
+      tokens,
       config: { timeout: context?.timeout, fields: { requirements, default: 'best effort' } },
     })) as Record<ChainId, Record<TokenAddress, TokenMetadata>>;
     return chainAndAddressRecordToTokenInChain(metadata, requiredFields);
   }
 }
 
-function addressesToTokensInChain(addresses: Record<ChainId, TokenAddress[]>, requiredFields: string[]): TokenInChain[] {
-  return Object.entries(addresses).flatMap(([chainId, addresses]) =>
-    addresses.map((address) => toTokenInChain(Number(chainId), address, requiredFields))
-  );
+function addressesToTokensInChain(tokens: MetadataInput[], requiredFields: string[]): TokenInChain[] {
+  return tokens.map(({ chainId, token }) => toTokenInChain(chainId, token, requiredFields));
 }
 
-function tokensInChainToAddresses(tokensInChain: TokenInChain[]): { addresses: Record<ChainId, TokenAddress[]>; requiredFields: string[] } {
-  const result: Record<ChainId, TokenAddress[]> = {};
+function tokensInChainToAddresses(tokensInChain: TokenInChain[]): { tokens: MetadataInput[]; requiredFields: string[] } {
+  const result: MetadataInput[] = [];
   let requiredFieldsResult: string[] = [];
   for (const tokenInChain of tokensInChain) {
     const { chainId, address, requiredFields } = fromTokenInChain(tokenInChain);
     requiredFieldsResult = requiredFields; // All tokens should have the same required fields
-    if (chainId in result) {
-      result[chainId].push(address);
-    } else {
-      result[chainId] = [address];
-    }
+    result.push({ chainId, token: address });
   }
-  return { addresses: result, requiredFields: requiredFieldsResult };
+  return { tokens: result, requiredFields: requiredFieldsResult };
 }
 
 function tokenInChainRecordToChainAndAddress<TokenMetadata>(

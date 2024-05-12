@@ -1,6 +1,6 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, PriceInput } from '../types';
 import {
   doesResponseFulfillRequest,
   fillResponseWithNewResult,
@@ -20,7 +20,7 @@ export class PrioritizedPriceSource implements IPriceSource {
     return combineSupport(this.sources);
   }
 
-  async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
+  async getCurrentPrices({ tokens, config }: { tokens: PriceInput[]; config?: { timeout?: TimeString } }) {
     return executePrioritized({
       allSources: this.sources,
       fullRequest: addresses,

@@ -1,77 +1,64 @@
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { BalanceQueriesSupport, IBalanceService, IBalanceSource } from './types';
+import { BalanceInput, IBalanceService, IBalanceSource } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 
 export class BalanceService implements IBalanceService {
   constructor(private readonly source: IBalanceSource) {}
 
   supportedChains(): ChainId[] {
-    return Object.entries(this.supportedQueries())
-      .filter(([, support]) => support.getBalancesForTokens || support.getBalancesForTokens)
-      .map(([chainId]) => Number(chainId));
+    return this.source.supportedChains();
   }
 
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    return this.source.supportedQueries();
-  }
-
-  async getTokensHeldByAccount({
+  async getBalancesForAccountInChain({
+    chainId,
     account,
-    chains,
+    tokens,
     config,
   }: {
+    chainId: ChainId;
     account: Address;
-    chains: ChainId[];
+    tokens: TokenAddress[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, bigint>>> {
-    const entries = chains.map((chainId) => [chainId, [account]]);
-    const accounts = Object.fromEntries(entries);
-    const resultsPerAccounts = await this.getTokensHeldByAccounts({ accounts, config });
-    const result: Record<ChainId, Record<TokenAddress, bigint>> = {};
-    for (const chainId of chains) {
-      result[chainId] = resultsPerAccounts[chainId][account];
-    }
-    return result;
+  }): Promise<Record<TokenAddress, bigint>> {
+    const result = await this.getBalancesForAccount({
+      account,
+      tokens: tokens.map((token) => ({ chainId, token })),
+      config,
+    });
+    return result[chainId];
   }
 
-  async getBalancesForTokens({
+  async getBalancesForAccount({
     account,
     tokens,
     config,
   }: {
     account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: Omit<BalanceInput, 'account'>[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, bigint>>> {
-    const entries = Object.entries(tokens).map<[ChainId, Record<Address, TokenAddress[]>]>(([chainId, tokens]) => [
+    const result = await this.getBalances({ tokens: tokens.map((token) => ({ account, ...token })), config });
+    const entries = Object.entries(result).map<[ChainId, Record<TokenAddress, bigint>]>(([chainId, result]) => [
       Number(chainId),
-      { [account]: tokens },
+      result[account],
     ]);
-    const resultsPerAccounts = await this.getBalancesForTokensForAccounts({ tokens: Object.fromEntries(entries), config });
-    const result: Record<ChainId, Record<TokenAddress, bigint>> = {};
-    for (const chainId in tokens) {
-      result[chainId] = resultsPerAccounts[chainId]?.[account] ?? {};
-    }
-    return result;
+    return Object.fromEntries(entries);
   }
 
-  getTokensHeldByAccounts({
-    accounts,
-    config,
-  }: {
-    accounts: Record<ChainId, Address[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
-    return timeoutPromise(this.source.getTokensHeldByAccounts({ accounts, config }), config?.timeout);
-  }
-
-  getBalancesForTokensForAccounts({
+  async getBalancesInChain({
+    chainId,
     tokens,
     config,
   }: {
-    tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
+    chainId: ChainId;
+    tokens: Omit<BalanceInput, 'chainId'>[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
-    return timeoutPromise(this.source.getBalancesForTokens({ tokens, config }), config?.timeout);
+  }) {
+    const result = await this.getBalances({ tokens: tokens.map((token) => ({ chainId, ...token })), config });
+    return result[chainId];
+  }
+
+  getBalances({ tokens, config }: { tokens: BalanceInput[]; config?: { timeout?: TimeString } }) {
+    return timeoutPromise(this.source.getBalances({ tokens, config }), config?.timeout);
   }
 }

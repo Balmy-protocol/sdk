@@ -33,14 +33,13 @@ function doesSourceSupportQueryInAnyOfTheChains(source: IPriceSource, query: key
   return chains.some((chainId) => support[chainId]?.[query]);
 }
 
-export function filterRequestForSource<T>(
-  request: Record<ChainId, T>,
+export function filterRequestForSource<T extends { chainId: ChainId }>(
+  request: T[],
   query: keyof PricesQueriesSupport,
   source: IPriceSource
-): Record<ChainId, T> {
+): T[] {
   const support = source.supportedQueries();
-  const entries = Object.entries(request).filter(([chainId]) => support[Number(chainId)]?.[query]);
-  return Object.fromEntries(entries);
+  return request.filter(({ chainId }) => support[chainId]?.[query]);
 }
 
 export function combineSupport(sources: IPriceSource[]): Record<ChainId, PricesQueriesSupport> {

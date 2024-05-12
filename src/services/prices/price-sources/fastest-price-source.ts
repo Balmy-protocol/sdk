@@ -1,6 +1,6 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, PriceInput } from '../types';
 import {
   filterRequestForSource,
   fillResponseWithNewResult,
@@ -20,15 +20,15 @@ export class FastestPriceSource implements IPriceSource {
     return combineSupport(this.sources);
   }
 
-  getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
+  getCurrentPrices({ tokens, config }: { tokens: PriceInput[]; config?: { timeout?: TimeString } }) {
     return executeFastest({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getCurrentPrices',
-      addressesFromRequest: (addresses) => addresses,
+      addressesFromRequest: (tokens) => tokens.map(({ token }) => token),
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
-          addresses: filteredRequest,
+          tokens: filteredRequest,
           config: { timeout: sourceTimeout },
         }),
       timeout: config?.timeout,
@@ -36,24 +36,24 @@ export class FastestPriceSource implements IPriceSource {
   }
 
   getHistoricalPrices({
-    addresses,
+    tokens,
     timestamp,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     return executeFastest({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getHistoricalPrices',
-      addressesFromRequest: (addresses) => addresses,
+      addressesFromRequest: (tokens) => tokens.map(({ token }) => token),
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
-          addresses: filteredRequest,
+          token: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
@@ -94,7 +94,7 @@ export class FastestPriceSource implements IPriceSource {
     searchWidth,
     config,
   }: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
@@ -120,23 +120,21 @@ export class FastestPriceSource implements IPriceSource {
   }
 }
 
-async function executeFastest<Request, Result>({
+async function executeFastest<Request extends PriceInput, Result>({
   allSources,
   fullRequest,
   query,
   getResult,
-  addressesFromRequest,
   timeout,
 }: {
   allSources: IPriceSource[];
-  fullRequest: Record<ChainId, Request>;
+  fullRequest: Request[];
   query: keyof PricesQueriesSupport;
   getResult: (
     source: IPriceSource,
-    filteredRequest: Record<ChainId, Request>,
+    filteredRequest: Request[],
     sourceTimeout: TimeString | undefined
   ) => Promise<Record<ChainId, Record<TokenAddress, Result>>>;
-  addressesFromRequest: (request: Request) => TokenAddress[];
   timeout: TimeString | undefined;
 }) {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);

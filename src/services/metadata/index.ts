@@ -1,1 +1,1 @@
-export { IMetadataService, IMetadataSource, MetadataResult } from './types';
+export { IMetadataService, IMetadataSource, MetadataResult, MetadataInput } from './types';

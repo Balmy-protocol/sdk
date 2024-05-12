@@ -1,7 +1,7 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults } from '@shared/utils';
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
-import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, PriceInput } from '../types';
 import { combineSupport, filterRequestForSource, getSourcesThatSupportRequestOrFail } from './utils';
 
 export type PriceAggregationMethod = 'median' | 'min' | 'max' | 'avg';
@@ -14,14 +14,14 @@ export class AggregatorPriceSource implements IPriceSource {
     return combineSupport(this.sources);
   }
 
-  async getCurrentPrices({ addresses, config }: { addresses: Record<ChainId, TokenAddress[]>; config?: { timeout?: TimeString } }) {
+  async getCurrentPrices({ tokens, config }: { tokens: PriceInput[]; config?: { timeout?: TimeString } }) {
     const collected = await collectAllResults({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getCurrentPrices',
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
-          addresses: filteredRequest,
+          tokens: filteredRequest,
           config: { timeout: sourceTimeout },
         }),
       timeout: config?.timeout,
@@ -30,23 +30,23 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 
   async getHistoricalPrices({
-    addresses,
+    tokens,
     timestamp,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const collected = await collectAllResults({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getHistoricalPrices',
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
-          addresses: filteredRequest,
+          tokens: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
@@ -57,21 +57,21 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 
   async getBulkHistoricalPrices({
-    addresses,
+    tokens,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     const collected = await collectAllResults({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getBulkHistoricalPrices',
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getBulkHistoricalPrices({
-          addresses: filteredRequest,
+          tokens: filteredRequest,
           searchWidth,
           config: { timeout: sourceTimeout },
         }),
@@ -88,7 +88,7 @@ export class AggregatorPriceSource implements IPriceSource {
     searchWidth,
     config,
   }: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
@@ -112,7 +112,7 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 }
 
-async function collectAllResults<Request, Result>({
+async function collectAllResults<Request extends { chainId: ChainId }, Result>({
   allSources,
   fullRequest,
   query,
@@ -120,11 +120,11 @@ async function collectAllResults<Request, Result>({
   timeout,
 }: {
   allSources: IPriceSource[];
-  fullRequest: Record<ChainId, Request>;
+  fullRequest: Request[];
   query: keyof PricesQueriesSupport;
   getResult: (
     source: IPriceSource,
-    filteredRequest: Record<ChainId, Request>,
+    filteredRequest: Request[],
     sourceTimeout: TimeString | undefined
   ) => Promise<Record<ChainId, Record<TokenAddress, Result>>>;
   timeout: TimeString | undefined;

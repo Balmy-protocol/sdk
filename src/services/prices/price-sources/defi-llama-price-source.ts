@@ -1,6 +1,6 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { PriceResult, IPriceSource, PricesQueriesSupport } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, PriceInput } from '../types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 
 export class DefiLlamaPriceSource implements IPriceSource {
@@ -17,7 +17,7 @@ export class DefiLlamaPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices(params: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
@@ -33,7 +33,7 @@ export class DefiLlamaPriceSource implements IPriceSource {
   }
 
   async getHistoricalPrices(params: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
@@ -51,15 +51,15 @@ export class DefiLlamaPriceSource implements IPriceSource {
   }
 
   async getBulkHistoricalPrices({
-    addresses,
+    tokens,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
-    return this.defiLlama.getBulkHistoricalTokenData({ addresses, searchWidth, config });
+    return this.defiLlama.getBulkHistoricalTokenData({ tokens, searchWidth, config });
   }
 
   async getChart({
@@ -70,7 +70,7 @@ export class DefiLlamaPriceSource implements IPriceSource {
     searchWidth,
     config,
   }: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };

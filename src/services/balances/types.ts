@@ -2,42 +2,40 @@ import { Address, ChainId, TimeString, TokenAddress } from '@types';
 
 type Account = Address;
 
-export type BalanceQueriesSupport = {
-  getTokensHeldByAccount: boolean;
-  getBalancesForTokens: true;
-};
-
 export type IBalanceService = {
   supportedChains(): ChainId[];
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport>;
-  getTokensHeldByAccount(_: {
+  getBalancesForAccountInChain(_: {
+    chainId: ChainId;
     account: Address;
-    chains: ChainId[];
+    tokens: TokenAddress[];
+    config?: { timeout?: TimeString };
+  }): Promise<Record<TokenAddress, bigint>>;
+  getBalancesForAccount(_: {
+    account: Address;
+    tokens: Omit<BalanceInput, 'account'>[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, bigint>>>;
-  getBalancesForTokens(_: {
-    account: Address;
-    tokens: Record<ChainId, TokenAddress[]>;
+  getBalancesInChain(_: {
+    chainId: ChainId;
+    tokens: Omit<BalanceInput, 'chainId'>[];
     config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<TokenAddress, bigint>>>;
-  getTokensHeldByAccounts(_: {
-    accounts: Record<ChainId, Account[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, bigint>>>>;
-  getBalancesForTokensForAccounts(_: {
-    tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
+  }): Promise<Record<Account, Record<TokenAddress, bigint>>>;
+  getBalances(_: {
+    tokens: BalanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, bigint>>>>;
 };
 
 export type IBalanceSource = {
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport>;
-  getTokensHeldByAccounts(_: {
-    accounts: Record<ChainId, Account[]>;
+  supportedChains(): ChainId[];
+  getBalances(_: {
+    tokens: BalanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, bigint>>>>;
-  getBalancesForTokens(_: {
-    tokens: Record<ChainId, Record<Account, TokenAddress[]>>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Account, Record<TokenAddress, bigint>>>>;
+};
+
+export type BalanceInput = {
+  chainId: ChainId;
+  account: Account;
+  token: TokenAddress;
 };

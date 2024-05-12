@@ -4,20 +4,20 @@ import { UnionMerge } from '@utility-types';
 export type IMetadataService<TokenMetadata extends object> = {
   supportedChains(): ChainId[];
   supportedProperties(): Record<ChainId, SupportInChain<TokenMetadata>>;
-  getMetadataForChain<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
+  getMetadataInChain<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
     chainId: ChainId;
-    addresses: TokenAddress[];
+    tokens: TokenAddress[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>;
   getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>>;
 };
 
 export type IMetadataSource<TokenMetadata extends object> = {
   getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(_: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>>>;
   supportedProperties(): Record<ChainId, SupportInChain<TokenMetadata>>;
@@ -38,3 +38,8 @@ export type ExtractMetadata<Source extends IMetadataSource<object>> = Source ext
 export type MergeMetadata<Sources extends IMetadataSource<object>[] | []> = UnionMerge<
   { [K in keyof Sources]: ExtractMetadata<Sources[K]> }[number]
 >;
+
+export type MetadataInput = {
+  chainId: ChainId;
+  token: TokenAddress;
+};

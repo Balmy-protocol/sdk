@@ -1,5 +1,5 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
-import { AllowanceCheck, IAllowanceService, IAllowanceSource, OwnerAddress, SpenderAddress } from './types';
+import { AllowanceInput, IAllowanceService, IAllowanceSource, OwnerAddress, SpenderAddress } from './types';
 import { timeoutPromise } from '@shared/timeouts';
 
 export class AllowanceService implements IAllowanceService {
@@ -22,48 +22,37 @@ export class AllowanceService implements IAllowanceService {
     spender: SpenderAddress;
     config?: { timeout?: TimeString };
   }): Promise<bigint> {
-    const { [spender]: result } = await this.getAllowancesInChain({ chainId, token, owner, spenders: [spender], config });
-    return result;
+    const result = await this.getAllowancesInChain({
+      chainId,
+      allowances: [{ token, owner, spender }],
+      config,
+    });
+    return result[token][owner][spender];
   }
 
   async getAllowancesInChain({
     chainId,
-    token,
-    owner,
-    spenders,
+    allowances,
     config,
   }: {
     chainId: ChainId;
-    token: TokenAddress;
-    owner: OwnerAddress;
-    spenders: SpenderAddress[];
-    config?: { timeout?: TimeString };
-  }): Promise<Record<SpenderAddress, bigint>> {
-    const allowancesInChain = spenders.map((spender) => ({ token, owner, spender }));
-    const result = await this.getMultipleAllowancesInChain({
-      chainId,
-      check: allowancesInChain,
-      config,
-    });
-    return result[token][owner];
-  }
-
-  async getMultipleAllowancesInChain({
-    chainId,
-    check,
-    config,
-  }: {
-    chainId: ChainId;
-    check: AllowanceCheck[];
+    allowances: Omit<AllowanceInput, 'chainId'>[];
     config?: { timeout?: TimeString };
   }) {
-    const result = await timeoutPromise(
+    const result = await this.getAllowances({
+      allowances: allowances.map((allowance) => ({ chainId, ...allowance })),
+      config,
+    });
+    return result[chainId] ?? {};
+  }
+
+  async getAllowances({ allowances, config }: { allowances: AllowanceInput[]; config?: { timeout?: TimeString } }) {
+    return timeoutPromise(
       this.source.getAllowances({
-        allowances: { [chainId]: check },
+        allowances,
         config,
       }),
       config?.timeout
     );
-    return result[chainId] ?? {};
   }
 }

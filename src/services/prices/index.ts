@@ -1,1 +1,1 @@
-export { IPriceService, IPriceSource, TokenPrice, PriceResult } from './types';
+export { IPriceService, IPriceSource, TokenPrice, PriceResult, PriceInput } from './types';

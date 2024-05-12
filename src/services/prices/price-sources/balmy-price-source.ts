@@ -2,7 +2,7 @@ import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
 import { TokenInChain, fromTokenInChain, toTokenInChain } from '@shared/utils';
 import { BALMY_SUPPORTED_CHAINS } from '@services/quotes/quote-sources/balmy-quote-source';
-import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice, PriceInput } from '../types';
 import { nowInSeconds } from './utils';
 
 export class BalmyPriceSource implements IPriceSource {
@@ -15,17 +15,15 @@ export class BalmyPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const tokens = Object.entries(addresses).flatMap(([chainId, addresses]) =>
-      addresses.map((address) => toTokenInChain(Number(chainId), address))
-    );
+    const tokensInChain = tokens.map(({ chainId, token }) => toTokenInChain(chainId, token));
     const response = await this.fetch.fetch('https://api.balmy.xyz/v1/prices', {
-      body: JSON.stringify({ tokens }),
+      body: JSON.stringify({ tokens: tokensInChain }),
       method: 'POST',
       timeout: config?.timeout,
     });
@@ -40,23 +38,18 @@ export class BalmyPriceSource implements IPriceSource {
   }
 
   async getHistoricalPrices({
-    addresses,
+    tokens,
     timestamp,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const entries = Object.fromEntries(
-      Object.entries(addresses).map<[ChainId, { token: TokenAddress; timestamp: Timestamp }[]]>(([chainId, tokens]) => [
-        Number(chainId),
-        tokens.map((token) => ({ token, timestamp })),
-      ])
-    );
-    const prices = await this.getBulkHistoricalPrices({ addresses: entries, searchWidth, config });
+    const input = tokens.map(({ token, chainId }) => ({ chainId, token, timestamp }));
+    const prices = await this.getBulkHistoricalPrices({ tokens: input, searchWidth, config });
     return Object.fromEntries(
       Object.entries(prices).map(([chainId, tokens]) => [
         chainId,
@@ -66,18 +59,16 @@ export class BalmyPriceSource implements IPriceSource {
   }
 
   async getBulkHistoricalPrices({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
-    const tokens = Object.entries(addresses).flatMap(([chainId, tokens]) =>
-      tokens.map(({ token, timestamp }) => ({ chain: chainId, token, timestamp }))
-    );
+    const tokensInput = tokens.map(({ chainId, token, timestamp }) => ({ chain: chainId, token, timestamp }));
     const response = await this.fetch.fetch('https://api.balmy.xyz/v1/historical-prices', {
-      body: JSON.stringify({ tokens }),
+      body: JSON.stringify({ tokens: tokensInput }),
       method: 'POST',
       timeout: config?.timeout,
     });
@@ -86,7 +77,7 @@ export class BalmyPriceSource implements IPriceSource {
   }
 
   async getChart(_: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };

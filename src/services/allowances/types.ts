@@ -14,27 +14,25 @@ export type IAllowanceService = {
   }): Promise<bigint>;
   getAllowancesInChain(_: {
     chainId: ChainId;
-    token: TokenAddress;
-    owner: OwnerAddress;
-    spenders: SpenderAddress[];
-    config?: { timeout?: TimeString };
-  }): Promise<Record<SpenderAddress, bigint>>;
-  getMultipleAllowancesInChain(_: {
-    chainId: ChainId;
-    check: AllowanceCheck[];
+    allowances: Omit<AllowanceInput, 'chainId'>[];
     config?: { timeout?: TimeString };
   }): Promise<Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>;
+  getAllowances(_: {
+    allowances: AllowanceInput[];
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>>;
 };
 
 export type IAllowanceSource = {
   supportedChains(): ChainId[];
   getAllowances(_: {
-    allowances: Record<ChainId, AllowanceCheck[]>;
+    allowances: AllowanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>>;
 };
 
-export type AllowanceCheck = {
+export type AllowanceInput = {
+  chainId: ChainId;
   token: TokenAddress;
   owner: Address;
   spender: Address;

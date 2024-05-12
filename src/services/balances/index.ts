@@ -1,1 +1,1 @@
-export { IBalanceService, IBalanceSource, BalanceQueriesSupport } from './types';
+export { IBalanceService, IBalanceSource, BalanceInput } from './types';
