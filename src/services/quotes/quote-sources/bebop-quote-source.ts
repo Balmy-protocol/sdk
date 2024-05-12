@@ -2,9 +2,8 @@ import qs from 'qs';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 // Supported Networks: https://docs.bebop.xyz/bebop/bebop-api/api-introduction#smart-contract
 const NETWORK_KEY: Record<ChainId, string> = {
@@ -24,7 +23,7 @@ const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
 };
 type BebopConfig = { apiKey: string };
 type BebopSupport = { buyOrders: true; swapAndTransfer: true };
-export class BebopQuoteSource extends AlwaysValidConfigAndContextSource<BebopSupport, BebopConfig> {
+export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig> {
   getMetadata() {
     return BEBOP_METADATA;
   }
