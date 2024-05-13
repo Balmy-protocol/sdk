@@ -110,11 +110,14 @@ export function isBigIntish(value: any) {
   return typeof value === 'bigint' || typeof value === 'string' || typeof value === 'number';
 }
 
-export function groupByChain<T extends { chainId: ChainId }>(elements: T[]): Record<ChainId, Omit<T, 'chainId'>[]> {
-  const groupedByChain: Record<ChainId, Omit<T, 'chainId'>[]> = {};
+export function groupByChain<T extends { chainId: ChainId }, R = Omit<T, 'chainId'>>(
+  elements: T[],
+  map: (param: Omit<T, 'chainId'>) => R = (elem) => elem as R
+): Record<ChainId, R[]> {
+  const groupedByChain: Record<ChainId, R[]> = {};
   for (const { chainId, ...rest } of elements) {
     if (!(chainId in groupedByChain)) groupedByChain[chainId] = [];
-    groupedByChain[chainId].push(rest);
+    groupedByChain[chainId].push(map(rest));
   }
   return groupedByChain;
 }

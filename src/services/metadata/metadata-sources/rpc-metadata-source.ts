@@ -22,20 +22,12 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
     tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout: TimeString };
   }) {
-    const groupedByChain = groupByChain(tokens);
+    const groupedByChain = groupByChain(tokens, ({ token }) => token);
     const promises = Object.entries(groupedByChain).map<
       Promise<[ChainId, Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>>]>
     >(async ([chainId, tokens]) => [
       Number(chainId),
-      await timeoutPromise(
-        this.fetchMetadataInChain(
-          Number(chainId),
-          tokens.map(({ token }) => token),
-          config?.fields
-        ),
-        config?.timeout,
-        { reduceBy: '100' }
-      ),
+      await timeoutPromise(this.fetchMetadataInChain(Number(chainId), tokens, config?.fields), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }

@@ -30,18 +30,11 @@ export class OdosPriceSource implements IPriceSource {
     tokens: PriceInput[];
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const groupedByChain = groupByChain(tokens);
+    const groupedByChain = groupByChain(tokens, ({ token }) => token);
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
     const promises = Object.entries(groupedByChain).map(async ([chainId, tokens]) => [
       Number(chainId),
-      await timeoutPromise(
-        this.getCurrentPricesInChain(
-          chainId,
-          tokens.map(({ token }) => token),
-          reducedTimeout
-        ),
-        reducedTimeout
-      ),
+      await timeoutPromise(this.getCurrentPricesInChain(chainId, tokens, reducedTimeout), reducedTimeout),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }

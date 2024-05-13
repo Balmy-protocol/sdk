@@ -8,6 +8,7 @@ import {
   combineSupport,
   getSourcesThatSupportRequestOrFail,
 } from './utils';
+import { groupByChain } from '@shared/utils';
 
 // This source will take a list of sources and combine the results of each one to try to fulfill
 // the request. As soon as there there is a response that is valid for the request, it will be returned
@@ -25,7 +26,6 @@ export class FastestPriceSource implements IPriceSource {
       allSources: this.sources,
       fullRequest: tokens,
       query: 'getCurrentPrices',
-      addressesFromRequest: (tokens) => tokens.map(({ token }) => token),
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getCurrentPrices({
           tokens: filteredRequest,
@@ -50,10 +50,9 @@ export class FastestPriceSource implements IPriceSource {
       allSources: this.sources,
       fullRequest: tokens,
       query: 'getHistoricalPrices',
-      addressesFromRequest: (tokens) => tokens.map(({ token }) => token),
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getHistoricalPrices({
-          token: filteredRequest,
+          tokens: filteredRequest,
           timestamp,
           searchWidth,
           config: { timeout: sourceTimeout },
@@ -63,22 +62,21 @@ export class FastestPriceSource implements IPriceSource {
   }
 
   getBulkHistoricalPrices({
-    addresses,
+    tokens,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     return executeFastest({
       allSources: this.sources,
-      fullRequest: addresses,
+      fullRequest: tokens,
       query: 'getBulkHistoricalPrices',
-      addressesFromRequest: (request) => request.map(({ token }) => token),
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getBulkHistoricalPrices({
-          addresses: filteredRequest,
+          tokens: filteredRequest,
           searchWidth,
           config: { timeout: sourceTimeout },
         }),
@@ -105,7 +103,6 @@ export class FastestPriceSource implements IPriceSource {
       allSources: this.sources,
       fullRequest: tokens,
       query: 'getChart',
-      addressesFromRequest: (tokens) => tokens,
       getResult: (source, filteredRequest, sourceTimeout) =>
         source.getChart({
           tokens: filteredRequest,
@@ -139,9 +136,7 @@ async function executeFastest<Request extends PriceInput, Result>({
 }) {
   const sourcesInChains = getSourcesThatSupportRequestOrFail(fullRequest, allSources, query);
   const reducedTimeout = reduceTimeout(timeout, '100');
-  const addressesPerChain: Record<ChainId, TokenAddress[]> = Object.fromEntries(
-    Object.entries(fullRequest).map(([chainId, request]) => [chainId, addressesFromRequest(request)])
-  );
+  const addressesPerChain: Record<ChainId, TokenAddress[]> = groupByChain(fullRequest, ({ token }) => token);
   return new Promise<Record<ChainId, Record<TokenAddress, Result>>>(async (resolve) => {
     const result: Record<ChainId, Record<TokenAddress, Result>> = {};
     const allPromises = sourcesInChains.map((source) =>
