@@ -189,7 +189,10 @@ describe('Fastest Price Source', () => {
   });
 });
 function getPrices({ addresses, sources }: { addresses: Record<ChainId, TokenAddress[]>; sources: IPriceSource[] }) {
-  const result = new FastestPriceSource(sources).getCurrentPrices({ addresses });
+  const tokens = Object.entries(addresses).flatMap(([chainIdString, tokens]) =>
+    tokens.map((token) => ({ chainId: Number(chainIdString), token }))
+  );
+  const result = new FastestPriceSource(sources).getCurrentPrices({ tokens });
   const promiseWithState: PromiseWithState<Awaited<typeof result>> = {
     result,
     status: 'pending',

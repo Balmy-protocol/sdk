@@ -1,6 +1,6 @@
 import { ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
+import { BaseTokenMetadata, IMetadataSource, MetadataInput, MetadataResult } from '../types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 
 export class DefiLlamaMetadataSource implements IMetadataSource<BaseTokenMetadata> {
@@ -11,7 +11,7 @@ export class DefiLlamaMetadataSource implements IMetadataSource<BaseTokenMetadat
   }
 
   async getMetadata<Requirements extends FieldsRequirements<BaseTokenMetadata>>(params: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { timeout?: TimeString };
   }) {
     const result: Record<ChainId, Record<TokenAddress, BaseTokenMetadata>> = {};

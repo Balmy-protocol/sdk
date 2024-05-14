@@ -6,7 +6,6 @@ import { PriceService } from '@services/prices/price-service';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
-import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
@@ -17,7 +16,6 @@ export type PriceSourceInput =
   | { type: 'odos' }
   | { type: 'coingecko' }
   | { type: 'balmy' }
-  | { type: 'moralis'; key: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'fastest'; sources: PriceSourceInput[] }
   | { type: 'aggregate'; sources: PriceSourceInput[]; by: PriceAggregationMethod }
@@ -43,8 +41,6 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return new OdosPriceSource(fetchService);
     case 'balmy':
       return new BalmyPriceSource(fetchService);
-    case 'moralis':
-      return new MoralisPriceSource(fetchService, source.key);
     case 'coingecko':
       return coingecko;
     case 'cached':

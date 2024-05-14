@@ -1,6 +1,6 @@
 import { ChainId, TimeString, TokenAddress } from '@types';
 import { CacheConfig, ConcurrentLRUCache } from '@shared/concurrent-lru-cache';
-import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
+import { AllowanceInput, IAllowanceSource, OwnerAddress, SpenderAddress } from '../types';
 
 export class CachedAllowanceSource implements IAllowanceSource {
   private readonly cache: ConcurrentLRUCache<Key, bigint>;
@@ -20,7 +20,7 @@ export class CachedAllowanceSource implements IAllowanceSource {
     allowances,
     config,
   }: {
-    allowances: Record<ChainId, AllowanceCheck[]>;
+    allowances: AllowanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>> {
     const keys = allowanceChecksToKeys(allowances);
@@ -37,10 +37,8 @@ export class CachedAllowanceSource implements IAllowanceSource {
 
 type Key = `${ChainId}-${TokenAddress}-${OwnerAddress}-${SpenderAddress}`;
 
-function allowanceChecksToKeys(allowances: Record<ChainId, AllowanceCheck[]>): Key[] {
-  return Object.entries(allowances).flatMap(([chainId, checks]) =>
-    checks.map(({ token, owner, spender }) => toKey(Number(chainId), token, owner, spender))
-  );
+function allowanceChecksToKeys(allowances: AllowanceInput[]): Key[] {
+  return allowances.map(({ chainId, token, owner, spender }) => toKey(chainId, token, owner, spender));
 }
 
 function resultsToKeyResults(result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>) {
@@ -59,13 +57,7 @@ function resultsToKeyResults(result: Record<ChainId, Record<TokenAddress, Record
 }
 
 function keysToAllowanceChecks(keys: Key[]) {
-  const result: Record<ChainId, AllowanceCheck[]> = {};
-  for (const key of keys) {
-    const { chainId, token, owner, spender } = fromKey(key);
-    if (!(chainId in result)) result[chainId] = [];
-    result[chainId].push({ token, owner, spender });
-  }
-  return result;
+  return keys.map(fromKey);
 }
 
 function keyResultsToResult(keyResults: Record<Key, bigint>) {

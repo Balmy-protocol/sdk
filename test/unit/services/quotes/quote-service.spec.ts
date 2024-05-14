@@ -123,28 +123,28 @@ const METADATA_SERVICE: IMetadataService<BaseTokenMetadata> = {
   supportedChains: () => [1],
   supportedProperties: () => ({ [1]: { symbol: 'present', decimals: 'present' } }),
   getMetadata: () => Promise.reject(new Error('Should not be called')),
-  getMetadataForChain: ({ chainId, addresses }: { chainId: ChainId; addresses: TokenAddress[] }) =>
-    Promise.resolve(Object.fromEntries(addresses.map((address) => [address, { symbol: 'SYM', decimals: 18 }]))) as any,
+  getMetadataInChain: ({ chainId, tokens }: { chainId: ChainId; tokens: TokenAddress[] }) =>
+    Promise.resolve(Object.fromEntries(tokens.map((address) => [address, { symbol: 'SYM', decimals: 18 }]))) as any,
 };
 const FAILING_METADATA_SERVICE: IMetadataService<BaseTokenMetadata> = {
   ...METADATA_SERVICE,
-  getMetadataForChain: ({ chainId, addresses }: { chainId: ChainId; addresses: TokenAddress[] }) => Promise.reject(new Error('Failed')),
+  getMetadataInChain: ({ chainId, tokens }: { chainId: ChainId; tokens: TokenAddress[] }) => Promise.reject(new Error('Failed')),
 };
 
 const PRICE_SERVICE: IPriceService = {
   supportedChains: () => [1],
   supportedQueries: () => ({ [1]: { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: false, getChart: false } }),
   getCurrentPrices: () => Promise.reject(new Error('Should not be called')),
-  getCurrentPricesForChain: ({ addresses }) =>
-    Promise.resolve(Object.fromEntries(addresses.map((address, i) => [address, { price: i * 10, closestTimestamp: 0 }]))),
+  getCurrentPricesInChain: ({ tokens }) =>
+    Promise.resolve(Object.fromEntries(tokens.map((address, i) => [address, { price: i * 10, closestTimestamp: 0 }]))),
   getHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
-  getHistoricalPricesForChain: () => Promise.reject(new Error('Should not be called')),
+  getHistoricalPricesInChain: () => Promise.reject(new Error('Should not be called')),
   getBulkHistoricalPrices: () => Promise.reject(new Error('Should not be called')),
   getChart: () => Promise.reject(new Error('Should not be called')),
 };
 const FAILING_PRICE_SERVICE: IPriceService = {
   ...PRICE_SERVICE,
-  getCurrentPricesForChain: () => Promise.reject(new Error('Failed')),
+  getCurrentPricesInChain: () => Promise.reject(new Error('Failed')),
 };
 
 const GAS_CALCULATOR: IQuickGasCostCalculator<DefaultGasValues> = {

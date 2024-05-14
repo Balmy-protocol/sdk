@@ -1,7 +1,8 @@
 import { ChainId, FieldRequirementOptions, FieldsRequirements, TimeString, TokenAddress } from '@types';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
-import { IMetadataSource, MergeMetadata, MetadataResult } from '../types';
+import { IMetadataSource, MergeMetadata, MetadataInput, MetadataResult } from '../types';
 import { calculateFieldRequirementsPerChain, combineSourcesSupport, makeRequirementsCompatible } from '@shared/requirements-and-support';
+import { groupByChain } from '@shared/utils';
 
 // This fallback source will use different sources and combine the results of each of them
 export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | []> implements IMetadataSource<MergeMetadata<Sources>> {
@@ -11,14 +12,14 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
 
   // @ts-ignore Will get 'Return type annotation circularly references itself' if not ignored
   getMetadata<Requirements extends FieldsRequirements<MergeMetadata<Sources>>>({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }) {
     return new Promise<Record<ChainId, Record<TokenAddress, MetadataResult<MergeMetadata<Sources>, Requirements>>>>((resolve, reject) => {
-      const chainsInRequest = Object.keys(addresses).map(Number);
+      const chainsInRequest = [...new Set(tokens.map(({ chainId }) => chainId))];
       const sources = this.sources.filter((source) => doesSourceSupportAtLeastOneChain(source, chainsInRequest)) as Sources;
       if (sources.length === 0) {
         reject(new Error(`Couldn't find sources that supported the given chains`));
@@ -26,7 +27,7 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
 
       const result: Record<ChainId, Record<TokenAddress, MetadataResult<MergeMetadata<Sources>, Requirements>>> = {};
       const requirements = calculateFieldRequirementsPerChain(this.supportedProperties(), config?.fields);
-      const requestTracker = buildRequestTracker(sources, addresses, requirements);
+      const requestTracker = buildRequestTracker(sources, tokens, requirements);
 
       const handleFulfil = (source: IMetadataSource<object>) => {
         updateCounterWhenSourceFulfilled(source, requestTracker);
@@ -39,19 +40,19 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
       };
 
       sources.forEach(async (source) => {
-        const addressesForSource = getAddressesForSource(source, addresses);
+        const tokensForSource = getAddressesForSource(source, tokens);
         const reducedTimeout = reduceTimeout(config?.timeout, '100');
         try {
           // Some requirements might not be compatible with all sources, so we need to filter them before
           // passing them to the source. This is so that the underlying source doesn't fail
           const filteredRequirements = makeRequirementsCompatible(
             source.supportedProperties(),
-            Object.keys(addressesForSource).map(Number),
+            [...new Set(tokensForSource.map(({ chainId }) => chainId))],
             config?.fields
           );
           const sourceResult = await timeoutPromise(
             source.getMetadata({
-              addresses: addressesForSource,
+              tokens: tokensForSource,
               config: { timeout: reducedTimeout, fields: filteredRequirements },
             }),
             reducedTimeout
@@ -89,12 +90,13 @@ export class FallbackMetadataSource<Sources extends IMetadataSource<object>[] | 
 
 function buildRequestTracker<Sources extends IMetadataSource<object>[] | []>(
   sources: Sources,
-  addresses: Record<ChainId, TokenAddress[]>,
+  tokens: MetadataInput[],
   fieldRequirements: RequestRequirements<Sources>
 ) {
+  const groupedByChain = groupByChain(tokens, ({ token }) => token);
   const requestTracker: RequestTracker<Sources> = {};
-  for (const chainId in addresses) {
-    const addressesInChain = addresses[chainId];
+  for (const [chainIdString, addressesInChain] of Object.entries(groupedByChain)) {
+    const chainId = Number(chainIdString);
     requestTracker[chainId] = Object.fromEntries(
       Object.entries(fieldRequirements[chainId]).map(([property, requirement]) => [
         property,
@@ -142,15 +144,9 @@ function checkStatus<Sources extends IMetadataSource<object>[] | []>(requestTrac
   return result;
 }
 
-function getAddressesForSource<TokenMetadata extends object>(
-  source: IMetadataSource<TokenMetadata>,
-  addresses: Record<ChainId, TokenAddress[]>
-): Record<ChainId, TokenAddress[]> {
-  const chainsForSource = new Set(Object.keys(source.supportedProperties()));
-  const filteredEntries = Object.entries(addresses)
-    .filter(([chainId]) => chainsForSource.has(chainId))
-    .map<[ChainId, TokenAddress[]]>(([chainId, addresses]) => [Number(chainId), addresses]);
-  return Object.fromEntries(filteredEntries);
+function getAddressesForSource<TokenMetadata extends object>(source: IMetadataSource<TokenMetadata>, tokens: MetadataInput[]): MetadataInput[] {
+  const chainsForSource = new Set(Object.keys(source.supportedProperties()).map(Number));
+  return tokens.filter(({ chainId }) => chainsForSource.has(chainId));
 }
 
 function doesSourceSupportAtLeastOneChain(source: IMetadataSource<object>, chainIds: ChainId[]) {

@@ -2,13 +2,12 @@ import ms from 'ms';
 import { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { AllowanceCheck, IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
+import { IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
 import { Chains, getChainByKey } from '@chains';
 import { ChainId, TokenAddress } from '@types';
 import dotenv from 'dotenv';
-import { FetchService } from '@services/fetch/fetch-service';
 dotenv.config();
 
 const OWNER = '0x49c590F6a2dfB0f809E82B9e2BF788C0Dd1c31f9'; // DCAHubCompanion
@@ -52,12 +51,10 @@ describe('Allowance Sources', () => {
   function allowanceSourceTest({ title, source }: { title: string; source: IAllowanceSource }) {
     describe(title, () => {
       const chains = source.supportedChains().filter((chainId) => chainId in TESTS);
-      let input: Record<ChainId, AllowanceCheck[]>;
       let result: Record<ChainId, Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>>>;
       beforeAll(async () => {
-        const entries = chains.map((chainId) => [chainId, [{ token: TESTS[chainId].address, owner: OWNER, spender: SPENDER }]]);
-        input = Object.fromEntries(entries);
-        result = await source.getAllowances({ allowances: input });
+        const allowances = chains.map((chainId) => ({ chainId, token: TESTS[chainId].address, owner: OWNER, spender: SPENDER }));
+        result = await source.getAllowances({ allowances });
       });
 
       test(`Returned amount of chains is as expected`, () => {

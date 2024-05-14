@@ -347,8 +347,11 @@ export async function loadTokens(chain: Chain) {
   const address = (name: string) => TOKENS[chain.chainId][name].address;
   const whale = (name: string) => TOKENS[chain.chainId][name].whale;
   const tokenSource = new DefiLlamaClient(new FetchService());
-  const addresses = { [chain.chainId]: [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')] };
-  const tokens = await tokenSource.getCurrentTokenData({ addresses });
+  const input = [Addresses.NATIVE_TOKEN, chain.wToken, address('STABLE_ERC20'), address('RANDOM_ERC20')].map((token) => ({
+    chainId: chain.chainId,
+    token,
+  }));
+  const tokens = await tokenSource.getCurrentTokenData({ tokens: input });
   if (!tokens[chain.chainId][Addresses.NATIVE_TOKEN]) {
     tokens[chain.chainId][Addresses.NATIVE_TOKEN] = {
       ...tokens[chain.chainId][chain.wToken],

@@ -1,5 +1,5 @@
 import { Address, ChainId, TokenAddress } from '@types';
-import { IBalanceSource, BalanceQueriesSupport } from '../types';
+import { IBalanceSource, BalanceInput } from '../types';
 
 export function fillResponseWithNewResult(
   result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
@@ -18,66 +18,23 @@ export function fillResponseWithNewResult(
   }
 }
 
-export function doesResponseFulfilRequest(
-  result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
-  request: Record<ChainId, Record<Address, TokenAddress[]>>
-) {
-  for (const chainId in request) {
-    for (const address in request[chainId]) {
-      const tokens = request[chainId][address];
-      if (tokens.length === 0) {
-        if (typeof result[chainId]?.[address] === 'undefined') {
-          return false;
-        }
-      } else {
-        for (const token of tokens) {
-          if (typeof result[chainId]?.[address]?.[token] === 'undefined') {
-            return false;
-          }
-        }
-      }
+export function doesResponseFulfilRequest(result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>, request: BalanceInput[]) {
+  for (const { chainId, token, account } of request) {
+    if (typeof result[chainId]?.[account]?.[token] === 'undefined') {
+      return false;
     }
   }
   return true;
 }
 
-function doesSourceSupportQueryInAnyOfTheChains(source: IBalanceSource, query: keyof BalanceQueriesSupport, chains: ChainId[]) {
-  const support = source.supportedQueries();
-  return chains.some((chainId) => support[chainId]?.[query]);
+export function filterRequestForSource(request: BalanceInput[], source: IBalanceSource) {
+  const support = source.supportedChains();
+  return request.filter(({ chainId }) => support.includes(chainId));
 }
 
-export function filterRequestForSource<T>(
-  request: Record<ChainId, T>,
-  query: keyof BalanceQueriesSupport,
-  source: IBalanceSource
-): Record<ChainId, T> {
-  const support = source.supportedQueries();
-  const entries = Object.entries(request).filter(([chainId]) => support[Number(chainId)]?.[query]);
-  return Object.fromEntries(entries);
-}
-
-export function combineSupport(sources: IBalanceSource[]): Record<ChainId, BalanceQueriesSupport> {
-  const result: Record<ChainId, BalanceQueriesSupport> = {};
-  for (const source of sources) {
-    for (const [chainIdString, support] of Object.entries(source.supportedQueries())) {
-      const chainId = Number(chainIdString);
-      const current = result[chainId] ?? { getBalancesForTokens: false, getTokensHeldByAccount: false };
-      result[chainId] = {
-        getBalancesForTokens: current.getBalancesForTokens || support.getBalancesForTokens,
-        getTokensHeldByAccount: current.getTokensHeldByAccount || support.getTokensHeldByAccount,
-      };
-    }
-  }
-  return result;
-}
-
-export function getSourcesThatSupportRequestOrFail<T>(
-  request: Record<ChainId, T>,
-  sources: IBalanceSource[],
-  query: keyof BalanceQueriesSupport
-) {
-  const chainsInRequest = Object.keys(request).map(Number);
-  const sourcesInChain = sources.filter((source) => doesSourceSupportQueryInAnyOfTheChains(source, query, chainsInRequest));
+export function getSourcesThatSupportRequestOrFail(request: BalanceInput[], sources: IBalanceSource[]) {
+  const chainsInRequest = new Set(request.map(({ chainId }) => chainId));
+  const sourcesInChain = sources.filter((source) => source.supportedChains().some((chainId) => chainsInRequest.has(chainId)));
   if (sourcesInChain.length === 0) throw new Error('Operation not supported');
   return sourcesInChain;
 }

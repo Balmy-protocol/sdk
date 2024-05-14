@@ -7,7 +7,7 @@ import { buildSDK } from '@builder';
 import { CONFIG } from './quote-tests-config';
 import { FailedQuote } from '@services/quotes';
 import { ChainId, DefaultRequirements, FieldsRequirements, TimeString, TokenAddress } from '@types';
-import { IMetadataSource, MetadataResult } from '@services/metadata';
+import { IMetadataSource, MetadataInput, MetadataResult } from '@services/metadata';
 import { parseEther } from 'viem';
 
 jest.setTimeout(ms('1m'));
@@ -16,16 +16,15 @@ type TokenMetadata = { symbol: string; decimals: number };
 const MOCKED_METADATA_SOURCE: IMetadataSource<TokenMetadata> = {
   supportedProperties: () => ({ [Chains.ETHEREUM.chainId]: { symbol: 'present', decimals: 'present' } }),
   getMetadata: <Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
-    addresses,
+    tokens,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }) => {
     const result: Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata, Requirements>>> = {};
-    for (const [chainId, tokens] of Object.entries(addresses)) {
-      result[Number(chainId)] = Object.fromEntries(
-        tokens.map((token) => [token, { symbol: 'SYM', decimals: 18 } as MetadataResult<TokenMetadata, Requirements>])
-      );
+    for (const { chainId, token } of tokens) {
+      if (!(chainId in result)) result[chainId] = {};
+      result[chainId][token] = { symbol: 'SYM', decimals: 18 } as MetadataResult<TokenMetadata, Requirements>;
     }
     return Promise.resolve(result);
   },

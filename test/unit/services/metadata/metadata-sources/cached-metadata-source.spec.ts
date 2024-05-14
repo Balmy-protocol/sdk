@@ -5,7 +5,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { Chains } from '@chains';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import { IMetadataSource } from '@services/metadata';
-import { BaseTokenMetadata } from '@services/metadata/types';
+import { BaseTokenMetadata, MetadataInput } from '@services/metadata/types';
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 import { StringValue } from 'ms';
 chai.use(chaiAsPromised);
@@ -73,7 +73,7 @@ describe('Cached Metadata Source', () => {
     calls: Pick<CallParams, 'config'>[];
     expected: ('pass-through' | 'cached')[];
   }) {
-    const addresses = { [CHAIN_ID]: [TOKEN] };
+    const tokens = [{ chainId: CHAIN_ID, token: TOKEN }];
     when(title, () => {
       then('it works as expected', async () => {
         const wrapped = new MockedMetadataSource();
@@ -82,7 +82,7 @@ describe('Cached Metadata Source', () => {
           maxSize: 100,
         });
         for (const call of calls) {
-          const result = await cached.getMetadata({ addresses, ...call });
+          const result = await cached.getMetadata({ tokens, ...call });
           expect(result).to.eql(RETURN_VALUE);
         }
         const expectedCalls = expected.filter((expected) => expected === 'pass-through').length;
@@ -95,7 +95,7 @@ describe('Cached Metadata Source', () => {
           const requirements = Object.fromEntries(requiredFields.map((field) => [field, 'required'])) as Partial<
             Record<keyof TokenMetadata, FieldRequirementOptions>
           >;
-          expect(wrapped.calls[i].addresses).to.eql(addresses);
+          expect(wrapped.calls[i].tokens).to.eql(tokens);
           expect(wrapped.calls[i].config).to.eql({ ...calls[i].config, fields: { requirements, default: 'best effort' } });
         }
       });
@@ -113,7 +113,7 @@ class MockedMetadataSource implements IMetadataSource<TokenMetadata> {
     return { [CHAIN_ID]: support };
   }
   getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>(params: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: StringValue };
   }) {
     this.calls.push(params);
@@ -121,6 +121,6 @@ class MockedMetadataSource implements IMetadataSource<TokenMetadata> {
   }
 }
 type CallParams = {
-  addresses: Record<ChainId, TokenAddress[]>;
+  tokens: MetadataInput[];
   config?: { fields?: FieldsRequirements<TokenMetadata>; timeout?: TimeString };
 };

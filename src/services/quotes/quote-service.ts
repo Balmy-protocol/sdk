@@ -309,9 +309,9 @@ export class QuoteService implements IQuoteService {
     const reducedTimeout = reduceTimeout(config?.timeout, '200');
     const selectedGasSpeed = request.gasSpeed?.speed ?? 'standard';
     const tokens = this.metadataService
-      .getMetadataForChain({
+      .getMetadataInChain({
         chainId: request.chainId,
-        addresses: [request.sellToken, request.buyToken],
+        tokens: [request.sellToken, request.buyToken],
         config: {
           timeout: reducedTimeout,
           fields: REQUIREMENTS,
@@ -319,9 +319,9 @@ export class QuoteService implements IQuoteService {
       })
       .catch(() => undefined);
     const prices = this.priceService
-      .getCurrentPricesForChain({
+      .getCurrentPricesInChain({
         chainId: request.chainId,
-        addresses: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
+        tokens: [request.sellToken, request.buyToken, Addresses.NATIVE_TOKEN],
         config: { timeout: reducedTimeout },
       })
       .catch(() => undefined);

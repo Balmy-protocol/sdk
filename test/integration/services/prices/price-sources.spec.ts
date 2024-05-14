@@ -4,13 +4,12 @@ import chaiAsPromised from 'chai-as-promised';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
-import { MoralisPriceSource } from '@services/prices/price-sources/moralis-price-source';
 import { CachedPriceSource } from '@services/prices/price-sources/cached-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
-import { IPriceSource, PricesQueriesSupport } from '@services/prices/types';
+import { IPriceSource, PriceInput, PricesQueriesSupport } from '@services/prices/types';
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
@@ -39,7 +38,6 @@ const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, 
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
 const BALMY_PRICE_SOURCE = new BalmyPriceSource(FETCH_SERVICE);
-const MORALIS_PRICE_SOURCE = new MoralisPriceSource(FETCH_SERVICE, 'API_KEY');
 const COINGECKO_TOKEN_SOURCE = new CoingeckoPriceSource(FETCH_SERVICE);
 
 jest.retryTimes(2);
@@ -53,7 +51,6 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Fastest Source', source: FASTEST_PRICE_SOURCE });
   priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
   priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE });
-  // priceSourceTest({ title: 'Moralis Source', source: MORALIS_PRICE_SOURCE }); // Commented out because we need API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
 
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
@@ -61,9 +58,9 @@ describe('Token Price Sources', () => {
       queryTest({
         source,
         query: 'getCurrentPrices',
-        getResult: (source, addresses) =>
+        getResult: (source, tokens) =>
           source.getCurrentPrices({
-            addresses,
+            tokens,
             config: { timeout: '10s' },
           }),
         validation: (price) => {
@@ -74,9 +71,9 @@ describe('Token Price Sources', () => {
       queryTest({
         source,
         query: 'getHistoricalPrices',
-        getResult: (source, addresses) =>
+        getResult: (source, tokens) =>
           source.getHistoricalPrices({
-            addresses,
+            tokens,
             timestamp: 1680220800, // Friday, 31 March 2023 0:00:00
             config: { timeout: '10s' },
             searchWidth: undefined,
@@ -118,7 +115,7 @@ describe('Token Price Sources', () => {
     validation: validate,
   }: {
     source: IPriceSource;
-    getResult: (source: IPriceSource, input: Record<ChainId, TokenAddress[]>) => Promise<Record<ChainId, Record<TokenAddress, T>>>;
+    getResult: (source: IPriceSource, input: PriceInput[]) => Promise<Record<ChainId, Record<TokenAddress, T>>>;
     query: keyof PricesQueriesSupport;
     validation: (value: T) => void;
   }) {
@@ -140,7 +137,8 @@ describe('Token Price Sources', () => {
             const chain = getChainByKey(chainId);
             describe(chain?.name ?? `Chain with id ${chainId}`, () => {
               test(`Returned amount of prices is as expected`, () => {
-                expect(Object.keys(result[chainId])).to.have.lengthOf(addresses[chainId].length);
+                const tokensInChain = addresses.filter(({ chainId }) => chainId == chain?.chainId);
+                expect(Object.keys(result[chainId])).to.have.lengthOf(tokensInChain.length);
               });
               test(chain?.nativeCurrency?.symbol ?? 'Native token', () => {
                 validate(result[chainId][Addresses.NATIVE_TOKEN]);
@@ -159,7 +157,7 @@ describe('Token Price Sources', () => {
           for (const chainId of notSupported) {
             const chain = getChainByKey(chainId);
             test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, async () => {
-              const promise = getResult(source, { [chainId]: [] });
+              const promise = getResult(source, [{ chainId, token: Addresses.NATIVE_TOKEN }]);
               await expect(promise).to.eventually.be.rejectedWith('Operation not supported');
             });
           }
@@ -176,13 +174,14 @@ describe('Token Price Sources', () => {
     return { supported, notSupported };
   }
 
-  function getAddressesForChains(chainIds: ChainId[]) {
-    return Object.fromEntries(
-      chainIds.map<[ChainId, TokenAddress[]]>((chainId) => {
-        const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
-        if (chainId in TESTS) addresses.push(TESTS[chainId].address);
-        return [chainId, addresses];
-      })
-    );
+  function getAddressesForChains(chainIds: ChainId[]): PriceInput[] {
+    const result: PriceInput[] = [];
+    for (const chainId of chainIds) {
+      result.push({ chainId, token: Addresses.NATIVE_TOKEN });
+      if (chainId in TESTS) {
+        result.push({ chainId, token: TESTS[chainId].address });
+      }
+    }
+    return result;
   }
 });

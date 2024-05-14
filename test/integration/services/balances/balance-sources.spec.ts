@@ -4,7 +4,6 @@ import { ProviderService } from '@services/providers/provider-service';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
-import { OneInchBalanceSource } from '@services/balances/balance-sources/1inch-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
@@ -64,7 +63,6 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   },
   maxSize: 100,
 });
-const ONE_INCH_BALANCE_SOURCE = new OneInchBalanceSource(FETCH_SERVICE);
 const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE]);
 
 jest.retryTimes(2);
@@ -73,63 +71,27 @@ jest.setTimeout(ms('1m'));
 describe('Balance Sources', () => {
   balanceSourceTest({ title: 'RPC Source', source: RPC_BALANCE_SOURCE });
   balanceSourceTest({ title: 'Cached Source', source: CACHED_BALANCE_SOURCE });
-  // balanceSourceTest({ title: '1inch Source', source: ONE_INCH_BALANCE_SOURCE }); Disabled because Cloudlare is acting up and blocking all non-browser requests
   balanceSourceTest({ title: 'Fastest Source', source: FASTEST_BALANCE_SOURCE });
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
-      const sourceSupport = Object.fromEntries(
-        Object.entries(source.supportedQueries()).filter(([chainId]) => !CHAINS_WITH_KNOWN_ISSUES.includes(Number(chainId)))
-      );
+      const supportedChains = source.supportedChains().filter((chainId) => !CHAINS_WITH_KNOWN_ISSUES.includes(chainId));
 
       describe('getBalancesForTokens', () => {
         let result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
+
         beforeAll(async () => {
-          const chains = Object.keys(sourceSupport).map(Number);
-          const entries = chains.map<[ChainId, Record<Address, TokenAddress[]>]>((chainId) => {
-            const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
-            if (chainId in TESTS) addresses.push(TESTS[chainId].address);
-            return [chainId, { [DEAD_ADDRESS]: addresses }];
-          });
-          const input = Object.fromEntries(entries);
-          result = await source.getBalancesForTokens({ tokens: input, config: { timeout: '30s' } });
+          const tokens = supportedChains.flatMap((chainId) =>
+            [Addresses.NATIVE_TOKEN, ...(chainId in TESTS ? [TESTS[chainId].address] : [])].map((token) => ({
+              chainId,
+              token,
+              account: DEAD_ADDRESS,
+            }))
+          );
+          result = await source.getBalances({ tokens, config: { timeout: '30s' } });
         });
 
-        test('getBalancesForTokens is supported', () => {
-          for (const { getBalancesForTokens } of Object.values(sourceSupport)) {
-            expect(getBalancesForTokens).to.be.true;
-          }
-        });
-
-        validateBalances(() => result, Object.keys(sourceSupport).map(Number), true);
-      });
-
-      describe('getTokensHeldByAccount', () => {
-        const supportedChains = Object.entries(sourceSupport)
-          .filter(([, support]) => support.getTokensHeldByAccount)
-          .map(([chainId]) => Number(chainId));
-
-        if (supportedChains.length > 0) {
-          let result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
-          beforeAll(async () => {
-            const accounts = Object.fromEntries(supportedChains.map((chainId) => [chainId, [DEAD_ADDRESS]]));
-            result = await source.getTokensHeldByAccounts({ accounts, config: { timeout: '1m' } });
-          });
-
-          validateBalances(() => result, supportedChains, false);
-        }
-
-        const unsupportedChains = Object.entries(sourceSupport)
-          .filter(([, support]) => !support.getTokensHeldByAccount)
-          .map(([chainId]) => Number(chainId));
-        for (const chainId of unsupportedChains) {
-          const chain = getChainByKey(chainId);
-          test(`${chain?.name ?? `Chain with id ${chainId}`} fails as it's not supported`, async () => {
-            await expect(source.getTokensHeldByAccounts({ accounts: { [chainId]: [] } })).to.eventually.be.rejectedWith(
-              'Operation not supported'
-            );
-          });
-        }
+        validateBalances(() => result, supportedChains, true);
       });
 
       function validateBalances(

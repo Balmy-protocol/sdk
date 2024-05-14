@@ -1,7 +1,7 @@
 import { doesResponseMeetRequirements, validateRequirements } from '@shared/requirements-and-support';
 import { timeoutPromise } from '@shared/timeouts';
 import { ChainId, DefaultRequirements, FieldsRequirements, TimeString, TokenAddress } from '@types';
-import { IMetadataService, IMetadataSource } from './types';
+import { IMetadataService, IMetadataSource, MetadataInput } from './types';
 
 export class MetadataService<TokenMetadata extends object> implements IMetadataService<TokenMetadata> {
   constructor(private readonly metadataSource: IMetadataSource<TokenMetadata>) {}
@@ -14,46 +14,43 @@ export class MetadataService<TokenMetadata extends object> implements IMetadataS
     return this.metadataSource.supportedProperties();
   }
 
-  async getMetadataForChain<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
+  async getMetadataInChain<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
     chainId,
-    addresses,
+    tokens,
     config,
   }: {
     chainId: ChainId;
-    addresses: TokenAddress[];
+    tokens: TokenAddress[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }) {
-    const byChainId = { [chainId]: addresses };
-    const result = await this.getMetadata({ addresses: byChainId, config });
+    const result = await this.getMetadata({ tokens: tokens.map((token) => ({ chainId, token })), config });
     return result[chainId] ?? {};
   }
 
   async getMetadata<Requirements extends FieldsRequirements<TokenMetadata> = DefaultRequirements<TokenMetadata>>({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout?: TimeString };
   }) {
-    const chains = Object.keys(addresses).map(Number);
-    if (chains.length === 0) return {};
+    if (tokens.length === 0) return {};
+    const chains = [...new Set(tokens.map(({ chainId }) => chainId))];
     validateRequirements(this.supportedProperties(), chains, config?.fields);
-    const response = await timeoutPromise(this.metadataSource.getMetadata({ addresses, config }), config?.timeout);
-    validateResponse(addresses, response, config?.fields);
+    const response = await timeoutPromise(this.metadataSource.getMetadata({ tokens, config }), config?.timeout);
+    validateResponse(tokens, response, config?.fields);
     return response;
   }
 }
 
 function validateResponse<Values extends object, Requirements extends FieldsRequirements<Values>>(
-  request: Record<ChainId, TokenAddress[]>,
+  request: MetadataInput[],
   response: Record<ChainId, Record<TokenAddress, Values>>,
   requirements: Requirements | undefined
 ) {
-  for (const chainId in request) {
-    for (const token of request[chainId]) {
-      if (!doesResponseMeetRequirements(response[chainId]?.[token], requirements)) {
-        throw new Error('Failed to fetch metadata that meets the given requirements');
-      }
+  for (const { chainId, token } of request) {
+    if (!doesResponseMeetRequirements(response[chainId]?.[token], requirements)) {
+      throw new Error('Failed to fetch metadata that meets the given requirements');
     }
   }
 }

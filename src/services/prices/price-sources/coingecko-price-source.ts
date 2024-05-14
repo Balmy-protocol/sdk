@@ -1,9 +1,9 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { IFetchService } from '@services/fetch/types';
-import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice } from '../types';
+import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice, PriceInput } from '../types';
 import { Chains } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
-import { filterRejectedResults, isSameAddress } from '@shared/utils';
+import { filterRejectedResults, groupByChain, isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 
 const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: string }> = {
@@ -59,22 +59,23 @@ export class CoingeckoPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const groupedByChain = groupByChain(tokens, ({ token }) => token);
     const reducedTimeout = reduceTimeout(config?.timeout, '100');
-    const promises = Object.entries(addresses).map(async ([chainId, addresses]) => [
+    const promises = Object.entries(groupedByChain).map(async ([chainId, tokens]) => [
       Number(chainId),
-      await timeoutPromise(this.getCurrentPricesInChain(Number(chainId), addresses, reducedTimeout), reducedTimeout),
+      await timeoutPromise(this.getCurrentPricesInChain(Number(chainId), tokens, reducedTimeout), reducedTimeout),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
 
   getHistoricalPrices(_: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
@@ -84,7 +85,7 @@ export class CoingeckoPriceSource implements IPriceSource {
   }
 
   getBulkHistoricalPrices(_: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
@@ -92,7 +93,7 @@ export class CoingeckoPriceSource implements IPriceSource {
   }
 
   async getChart(_: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };

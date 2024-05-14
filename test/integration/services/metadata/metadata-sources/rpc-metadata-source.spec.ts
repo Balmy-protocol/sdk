@@ -52,7 +52,10 @@ describe('RPC Metadata Source', () => {
           let result: Record<ChainId, Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>>>;
           given(async () => {
             result = await RPC_METADATA_SOURCE.getMetadata({
-              addresses: { [1]: [DAI, Addresses.NATIVE_TOKEN] },
+              tokens: [
+                { chainId: 1, token: DAI },
+                { chainId: 1, token: Addresses.NATIVE_TOKEN },
+              ],
               config: { fields: requirements, timeout: '30s' },
             });
           });

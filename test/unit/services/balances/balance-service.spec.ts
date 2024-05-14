@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Chains } from '@chains';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { BalanceQueriesSupport, IBalanceService, IBalanceSource } from '@services/balances/types';
+import { BalanceInput, IBalanceService, IBalanceSource } from '@services/balances/types';
 import { BalanceService } from '@services/balances/balance-service';
 import { given } from '@test-utils/bdd';
 
@@ -11,66 +11,47 @@ const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
-const SUPPORT: Record<ChainId, BalanceQueriesSupport> = {
-  [Chains.ETHEREUM.chainId]: {
-    getBalancesForTokens: true,
-    getTokensHeldByAccount: false,
-  },
-};
-
 describe('Balance Service', () => {
   let service: IBalanceService;
   given(() => {
     service = new BalanceService(SOURCE);
   });
 
-  test('supportedQueries is calculated based on source', () => {
-    expect(service.supportedQueries()).to.eql(SUPPORT);
+  test('supportedChains is calculated based on source', () => {
+    expect(service.supportedChains()).to.eql([Chains.ETHEREUM.chainId]);
   });
 
   describe('getBalancesForTokens', () => {
     test('Returned balances is as expected', async () => {
-      const balances = await service.getBalancesForTokens({
+      const balances = await service.getBalancesForAccountInChain({
         account: OWNER,
-        tokens: {
-          [Chains.ETHEREUM.chainId]: [DAI, USDC, WETH],
-        },
+        chainId: Chains.ETHEREUM.chainId,
+        tokens: [DAI, USDC, WETH],
       });
-      expect(balances).to.have.keys(Chains.ETHEREUM.chainId);
-      expect(balances[Chains.ETHEREUM.chainId]).to.have.keys([DAI, USDC, WETH]);
-      expect(balances[Chains.ETHEREUM.chainId][DAI]).to.equal(0n);
-      expect(balances[Chains.ETHEREUM.chainId][USDC]).to.equal(10000n);
-      expect(balances[Chains.ETHEREUM.chainId][WETH]).to.equal(20000n);
+      expect(balances).to.have.keys([DAI, USDC, WETH]);
+      expect(balances[DAI]).to.equal(0n);
+      expect(balances[USDC]).to.equal(10000n);
+      expect(balances[WETH]).to.equal(20000n);
     });
   });
 });
 
 const SOURCE: IBalanceSource = {
-  supportedQueries(): Record<ChainId, BalanceQueriesSupport> {
-    return SUPPORT;
+  supportedChains() {
+    return [Chains.ETHEREUM.chainId];
   },
-  getTokensHeldByAccounts(_: {
-    accounts: Record<ChainId, Address[]>;
-    config?: { timeout?: TimeString };
-  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
-    throw new Error('Not implemented');
-  },
-  getBalancesForTokens({
+  getBalances({
     tokens,
   }: {
-    tokens: Record<ChainId, Record<Address, TokenAddress[]>>;
+    tokens: BalanceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
     const result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>> = {};
-    for (const [chainIdString, record] of Object.entries(tokens)) {
-      const chainId = Number(chainIdString);
-      result[chainId] = {};
-      for (const [address, tokens] of Object.entries(record)) {
-        result[chainId][address] = {};
-        for (let i = 0; i < tokens.length; i++) {
-          result[chainId][address][tokens[i]] = BigInt(i * 10000);
-        }
-      }
+    for (let i = 0; i < tokens.length; i++) {
+      const { chainId, token, account } = tokens[i];
+      if (!(chainId in result)) result[chainId] = {};
+      if (!(account in result[chainId])) result[chainId][account] = {};
+      result[chainId][account][token] = BigInt(i * 10000);
     }
     return Promise.resolve(result);
   },

@@ -1,7 +1,7 @@
 import { ChainId, Timestamp } from '@types';
 import { IFetchService } from '@services/fetch';
 import { DefiLlamaClient } from '@shared/defi-llama';
-import { BlockResult, IBlocksSource } from '../types';
+import { BlockInput, BlockResult, IBlocksSource } from '../types';
 import { IProviderService } from '@services/providers';
 
 export class DefiLlamaBlockSource implements IBlocksSource {
@@ -17,11 +17,7 @@ export class DefiLlamaBlockSource implements IBlocksSource {
     return this.defiLlama.supportedChains();
   }
 
-  async getBlocksClosestToTimestamps({
-    timestamps,
-  }: {
-    timestamps: { chainId: ChainId; timestamp: Timestamp }[];
-  }): Promise<Record<ChainId, Record<Timestamp, BlockResult>>> {
+  async getBlocksClosestToTimestamps({ timestamps }: { timestamps: BlockInput[] }): Promise<Record<ChainId, Record<Timestamp, BlockResult>>> {
     const result: Record<ChainId, Record<Timestamp, BlockResult>> = {};
     const promises: Promise<any>[] = [];
     for (const { chainId, timestamp } of timestamps) {

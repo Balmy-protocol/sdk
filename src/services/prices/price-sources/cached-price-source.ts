@@ -1,6 +1,6 @@
 import { ChainId, TimeString, Timestamp, TokenAddress } from '@types';
 import { CacheConfig, ConcurrentLRUCacheWithContext } from '@shared/concurrent-lru-cache';
-import { PriceResult, IPriceSource } from '../types';
+import { PriceResult, IPriceSource, PriceInput } from '../types';
 import { toTokenInChain, fromTokenInChain, TokenInChain } from '@shared/utils';
 
 type CacheContext = { timeout?: TimeString } | undefined;
@@ -19,43 +19,43 @@ export class CachedPriceSource implements IPriceSource {
   }
 
   async getCurrentPrices({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const tokensInChain = addressesToTokensInChain(addresses);
-    const tokens = await this.cache.getOrCalculate({ keys: tokensInChain, context: config, timeout: config?.timeout });
-    return tokenInChainRecordToChainAndAddress(tokens);
+    const tokensInChain = addressesToTokensInChain(tokens);
+    const cacheResult = await this.cache.getOrCalculate({ keys: tokensInChain, context: config, timeout: config?.timeout });
+    return tokenInChainRecordToChainAndAddress(cacheResult);
   }
 
   getHistoricalPrices({
-    addresses,
+    tokens,
     timestamp,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     timestamp: Timestamp;
     searchWidth?: TimeString;
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     // TODO: Support caching, but make it configurable
-    return this.source.getHistoricalPrices({ addresses, timestamp, searchWidth, config });
+    return this.source.getHistoricalPrices({ tokens, timestamp, searchWidth, config });
   }
 
   getBulkHistoricalPrices({
-    addresses,
+    tokens,
     searchWidth,
     config,
   }: {
-    addresses: Record<ChainId, { token: TokenAddress; timestamp: Timestamp }[]>;
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
     searchWidth: TimeString | undefined;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     // TODO: Support caching, but make it configurable
-    return this.source.getBulkHistoricalPrices({ addresses, searchWidth, config });
+    return this.source.getBulkHistoricalPrices({ tokens, searchWidth, config });
   }
 
   async getChart({
@@ -66,7 +66,7 @@ export class CachedPriceSource implements IPriceSource {
     searchWidth,
     config,
   }: {
-    tokens: Record<ChainId, TokenAddress[]>;
+    tokens: PriceInput[];
     span: number;
     period: TimeString;
     bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
@@ -86,26 +86,20 @@ export class CachedPriceSource implements IPriceSource {
 
   private async fetchTokens(tokensInChain: TokenInChain[], context?: CacheContext): Promise<Record<TokenInChain, PriceResult>> {
     const addresses = tokensInChainToAddresses(tokensInChain);
-    const tokens = await this.source.getCurrentPrices({ addresses, config: { timeout: context?.timeout } });
+    const tokens = await this.source.getCurrentPrices({ tokens: addresses, config: { timeout: context?.timeout } });
     return chainAndAddressRecordToTokenInChain(tokens);
   }
 }
 
-function addressesToTokensInChain(addresses: Record<ChainId, TokenAddress[]>): TokenInChain[] {
-  return Object.entries(addresses).flatMap(([chainId, addresses]) => addresses.map((address) => toTokenInChain(parseInt(chainId), address)));
+function addressesToTokensInChain(tokens: PriceInput[]): TokenInChain[] {
+  return tokens.map(({ chainId, token }) => toTokenInChain(chainId, token));
 }
 
-function tokensInChainToAddresses(tokensInChain: TokenInChain[]): Record<ChainId, TokenAddress[]> {
-  const result: Record<ChainId, TokenAddress[]> = {};
-  for (const tokenInChain of tokensInChain) {
+function tokensInChainToAddresses(tokensInChain: TokenInChain[]): PriceInput[] {
+  return tokensInChain.map((tokenInChain) => {
     const { chainId, address } = fromTokenInChain(tokenInChain);
-    if (chainId in result) {
-      result[chainId].push(address);
-    } else {
-      result[chainId] = [address];
-    }
-  }
-  return result;
+    return { chainId, token: address };
+  });
 }
 
 function tokenInChainRecordToChainAndAddress(record: Record<TokenInChain, PriceResult>): Record<ChainId, Record<TokenAddress, PriceResult>> {

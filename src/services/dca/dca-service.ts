@@ -737,9 +737,7 @@ export class DCAService implements IDCAService {
     const body: PositionsResponse = await response.json();
     const tokensToFetch = calculateMissingPrices(body);
     const prices =
-      tokensToFetch.length === 0
-        ? {}
-        : await this.priceService.getBulkHistoricalPrices({ addresses: tokensToFetch, config: { timeout: timeout } });
+      tokensToFetch.length === 0 ? {} : await this.priceService.getBulkHistoricalPrices({ tokens: tokensToFetch, config: { timeout: timeout } });
 
     const result: Record<ChainId, PositionSummary[]> = {};
     for (const chainId in body.positionsByNetwork) {

@@ -2,9 +2,9 @@ import { Address, ChainId, ContractCall, FieldsRequirements, SupportInChain, Tim
 import { Address as ViemAddress } from 'viem';
 import { getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
-import { filterRejectedResults, isSameAddress } from '@shared/utils';
+import { filterRejectedResults, groupByChain, isSameAddress } from '@shared/utils';
 import { timeoutPromise } from '@shared/timeouts';
-import { BaseTokenMetadata, IMetadataSource, MetadataResult } from '../types';
+import { BaseTokenMetadata, IMetadataSource, MetadataInput, MetadataResult } from '../types';
 import { calculateFieldRequirements } from '@shared/requirements-and-support';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
@@ -16,17 +16,18 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
   constructor(private readonly providerService: IProviderService) {}
 
   async getMetadata<Requirements extends FieldsRequirements<RPCMetadataProperties>>({
-    addresses,
+    tokens,
     config,
   }: {
-    addresses: Record<ChainId, TokenAddress[]>;
+    tokens: MetadataInput[];
     config?: { fields?: Requirements; timeout: TimeString };
   }) {
-    const promises = Object.entries(addresses).map<
+    const groupedByChain = groupByChain(tokens, ({ token }) => token);
+    const promises = Object.entries(groupedByChain).map<
       Promise<[ChainId, Record<TokenAddress, MetadataResult<RPCMetadataProperties, Requirements>>]>
-    >(async ([chainId, addresses]) => [
+    >(async ([chainId, tokens]) => [
       Number(chainId),
-      await timeoutPromise(this.fetchMetadataInChain(Number(chainId), addresses, config?.fields), config?.timeout, { reduceBy: '100' }),
+      await timeoutPromise(this.fetchMetadataInChain(Number(chainId), tokens, config?.fields), config?.timeout, { reduceBy: '100' }),
     ]);
     return Object.fromEntries(await filterRejectedResults(promises));
   }
@@ -37,11 +38,11 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
 
   private async fetchMetadataInChain<Requirements extends FieldsRequirements<RPCMetadataProperties>>(
     chainId: ChainId,
-    addresses: Address[],
+    tokens: TokenAddress[],
     requirements: Requirements | undefined
   ) {
     const chain = getChainByKey(chainId);
-    const addressesWithoutNativeToken = addresses.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
+    const addressesWithoutNativeToken = tokens.filter((address) => !isSameAddress(address, Addresses.NATIVE_TOKEN));
     const fieldRequirements = calculateFieldRequirements(SUPPORT, requirements);
     const fieldsToFetch = Object.entries(fieldRequirements)
       .filter(([, requirement]) => requirement !== 'can ignore')
@@ -67,7 +68,7 @@ export class RPCMetadataSource implements IMetadataSource<RPCMetadataProperties>
       result[address] = tokenMetadata;
     }
 
-    if (addressesWithoutNativeToken.length !== addresses.length) {
+    if (addressesWithoutNativeToken.length !== tokens.length) {
       const nativeResult = {} as MetadataResult<RPCMetadataProperties, Requirements>;
       if (fieldsToFetch.includes('symbol')) {
         nativeResult.symbol = chain?.nativeCurrency?.symbol ?? '???';
