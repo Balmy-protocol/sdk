@@ -112,7 +112,7 @@ export class AggregatorPriceSource implements IPriceSource {
   }
 }
 
-async function collectAllResults<Request extends { chainId: ChainId }, Result>({
+async function collectAllResults<Request extends PriceInput, Result>({
   allSources,
   fullRequest,
   query,

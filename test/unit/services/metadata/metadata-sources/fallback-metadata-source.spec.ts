@@ -244,7 +244,10 @@ describe('Fallback Token Source', () => {
     requirements?: FieldsRequirements<MergeMetadata<Sources>>['requirements'];
     sources: Sources;
   }) {
-    const result = new FallbackMetadataSource(sources).getMetadata({ addresses, config: { fields: { requirements: requirements ?? {} } } });
+    const tokens = Object.entries(addresses).flatMap(([chainIdString, tokens]) =>
+      tokens.map((token) => ({ chainId: Number(chainIdString), token }))
+    );
+    const result = new FallbackMetadataSource(sources).getMetadata({ tokens, config: { fields: { requirements: requirements ?? {} } } });
     const promiseWithState: PromiseWithState<Awaited<typeof result>> = {
       result,
       status: 'pending',

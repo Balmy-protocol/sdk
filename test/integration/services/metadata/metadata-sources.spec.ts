@@ -9,7 +9,7 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { ChainId, TokenAddress } from '@types';
-import { IMetadataSource, MetadataResult } from '@services/metadata';
+import { IMetadataSource, MetadataInput, MetadataResult } from '@services/metadata';
 import { CachedMetadataSource } from '@services/metadata/metadata-sources/cached-metadata-source';
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
@@ -90,17 +90,17 @@ describe('Metadata Sources', () => {
       });
 
       describe('getMetadata', () => {
-        let input: Record<ChainId, TokenAddress[]>;
+        const input: MetadataInput[] = [];
         let result: Record<ChainId, Record<TokenAddress, MetadataResult<TokenMetadata>>>;
         beforeAll(async () => {
           const chains = Object.keys(source.supportedProperties()).map(Number);
-          const entries = chains.map<[ChainId, TokenAddress[]]>((chainId) => {
-            const addresses: TokenAddress[] = [Addresses.NATIVE_TOKEN];
-            if (chainId in TESTS) addresses.push(TESTS[chainId].address);
-            return [chainId, addresses];
-          });
-          input = Object.fromEntries(entries);
-          result = await source.getMetadata({ addresses: input, config: { timeout: '30s' } });
+          for (const chainId of chains) {
+            input.push({ chainId, token: Addresses.NATIVE_TOKEN });
+            if (chainId in TESTS) {
+              input.push({ chainId, token: TESTS[chainId].address });
+            }
+          }
+          result = await source.getMetadata({ tokens: input, config: { timeout: '30s' } });
         });
 
         test(`Returned amount of chains is as expected`, () => {
@@ -112,7 +112,8 @@ describe('Metadata Sources', () => {
           const chain = getChainByKey(chainId);
           describe(chain?.name ?? `Chain with id ${chainId}`, () => {
             test(`Returned amount of tokens is as expected`, () => {
-              expect(Object.keys(result[chainId])).to.have.lengthOf(input[chainId].length);
+              const tokensInChain = input.filter(({ chainId }) => chainId == chain?.chainId);
+              expect(Object.keys(result[chainId])).to.have.lengthOf(tokensInChain.length);
             });
             test(chain?.nativeCurrency?.symbol ?? 'Native token', () => {
               validateMetadata({ chainId, address: Addresses.NATIVE_TOKEN, symbol: chain!.nativeCurrency.symbol });

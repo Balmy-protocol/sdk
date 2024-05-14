@@ -23,7 +23,7 @@ describe('Aggregator Price Source', () => {
       const source2 = buildSource({}, 1);
       const aggregator = new AggregatorPriceSource([source1, source2], 'median');
 
-      const promise = aggregator.getCurrentPrices({ addresses: { [2]: [TOKEN_A] } });
+      const promise = aggregator.getCurrentPrices({ tokens: [{ chainId: 2, token: TOKEN_A }] });
       await expect(promise).to.to.eventually.be.rejectedWith(`Current price sources can't support all the given chains`);
     });
   });
@@ -32,7 +32,7 @@ describe('Aggregator Price Source', () => {
     then('that result is returned', async () => {
       const prices = { [TOKEN_A]: { price: 10, closestTimestamp: 20 } };
       const aggregator = new AggregatorPriceSource([buildSource(prices, 1), buildSourceThatFails(1)], 'median');
-      const result = await aggregator.getCurrentPrices({ addresses: { [1]: [TOKEN_A] } });
+      const result = await aggregator.getCurrentPrices({ tokens: [{ chainId: 1, token: TOKEN_A }] });
       expect(result).to.deep.equal({ [1]: prices });
     });
   });
@@ -43,7 +43,7 @@ describe('Aggregator Price Source', () => {
       const source2 = buildSourceThatFails(1);
       const aggregator = new AggregatorPriceSource([source1, source2], 'median');
 
-      const result = await aggregator.getCurrentPrices({ addresses: { [1]: [TOKEN_A] } });
+      const result = await aggregator.getCurrentPrices({ tokens: [{ chainId: 1, token: TOKEN_A }] });
       expect(result).to.deep.equal({});
     });
   });
@@ -96,8 +96,9 @@ describe('Aggregator Price Source', () => {
       given(async () => {
         const sources = prices.map((price) => buildSource(addTimestamp(price)));
         const allTokens = [...new Set(prices.flatMap((prices) => Object.keys(prices)))];
+        const tokens = allTokens.map((token) => ({ token, chainId: 1 }));
         const aggSource = new AggregatorPriceSource(sources, method);
-        result = await aggSource.getCurrentPrices({ addresses: { [1]: allTokens } }).then((result) => result[1]);
+        result = await aggSource.getCurrentPrices({ tokens }).then((result) => result[1]);
       });
 
       then('result is as expected', () => {

@@ -1,5 +1,5 @@
 import { ChainId, TokenAddress } from '@types';
-import { IPriceSource, PricesQueriesSupport } from '../types';
+import { IPriceSource, PriceInput, PricesQueriesSupport } from '../types';
 
 export function fillResponseWithNewResult<T>(
   result: Record<ChainId, Record<TokenAddress, T>>,
@@ -64,8 +64,12 @@ export function combineSupport(sources: IPriceSource[]): Record<ChainId, PricesQ
   return result;
 }
 
-export function getSourcesThatSupportRequestOrFail<T>(request: Record<ChainId, T>, sources: IPriceSource[], query: keyof PricesQueriesSupport) {
-  const chainsInRequest = Object.keys(request).map(Number);
+export function getSourcesThatSupportRequestOrFail<T extends PriceInput>(
+  request: T[],
+  sources: IPriceSource[],
+  query: keyof PricesQueriesSupport
+) {
+  const chainsInRequest = [...new Set(request.map(({ chainId }) => chainId))];
   const sourcesInChain = sources.filter((source) => doesSourceSupportQueryInAnyOfTheChains(source, query, chainsInRequest));
   if (sourcesInChain.length === 0) throw new Error(`Current price sources can't support all the given chains`);
   return sourcesInChain;
