@@ -34,3 +34,6 @@ export type SourceListResponse = {
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
   tx: QuoteTransaction;
 };
+
+export type StringifiedSourceListResponse = StringifyBigInt<SourceListResponse>;
+type StringifyBigInt<T extends any> = T extends object ? { [K in keyof T]: bigint extends T[K] ? `${bigint}` : StringifyBigInt<T[K]> } : T;

@@ -5,6 +5,7 @@ import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
 import { LocalSourceConfig, SourceConfig } from './source-registry';
+import { Transaction } from 'viem';
 
 export type GlobalQuoteSourceConfig = {
   referrer?: {
