@@ -19,7 +19,7 @@ const TESTS: Record<ChainId, Timestamp> = {
 
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
 const FETCH_SERVICE = new FetchService();
-const DEFI_LLAMA_BLOCKS_SOURCE = new DefiLlamaBlockSource(FETCH_SERVICE);
+const DEFI_LLAMA_BLOCKS_SOURCE = new DefiLlamaBlockSource(FETCH_SERVICE, PROVIDER_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
