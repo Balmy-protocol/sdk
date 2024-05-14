@@ -1,9 +1,10 @@
 import { reduceTimeout } from '@shared/timeouts';
 import { SourceId, SourceMetadata } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
+import { IQuoteSourceList, SourceListRequest, SourceListResponse, StringifiedSourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
 import { SourceWithConfigId } from '../source-registry';
+import { bigintify } from './utils';
 
 export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
 type SingleSourceListRequest = PartialOnly<APISourceListRequest, 'sources'> & { sourceId: SourceId };
@@ -45,6 +46,7 @@ export class APISourceList implements IQuoteSourceList {
       }),
       timeout: request.quoteTimeout,
     });
-    return response.json();
+    const quote: StringifiedSourceListResponse = await response.json();
+    return bigintify(quote);
   }
 }
