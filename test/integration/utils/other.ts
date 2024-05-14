@@ -19,4 +19,5 @@ export const CHAINS_WITH_KNOWN_ISSUES = [
   Chains.POLYGON_MUMBAI,
   Chains.BASE_GOERLI,
   Chains.BOBA,
+  Chains.opBNB,
 ].map(({ chainId }) => chainId);
