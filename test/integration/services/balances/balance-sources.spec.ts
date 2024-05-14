@@ -75,7 +75,7 @@ describe('Balance Sources', () => {
 
   function balanceSourceTest({ title, source }: { title: string; source: IBalanceSource }) {
     describe(title, () => {
-      const supportedChains = source.supportedChains().filter((chainId) => CHAINS_WITH_KNOWN_ISSUES.includes(chainId));
+      const supportedChains = source.supportedChains().filter((chainId) => !CHAINS_WITH_KNOWN_ISSUES.includes(chainId));
 
       describe('getBalancesForTokens', () => {
         let result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>;
