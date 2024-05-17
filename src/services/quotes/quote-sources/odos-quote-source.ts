@@ -1,6 +1,6 @@
 import { Address } from '@types';
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { Addresses } from '@shared/constants';
 import { timeoutPromise } from '@shared/timeouts';
 import { isSameAddress } from '@shared/utils';
@@ -29,14 +29,15 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
 };
 const BALMY_REFERRAL_CODE = 1533410238;
 type SourcesConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
-type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
 type OdosSupport = { buyOrders: false; swapAndTransfer: true };
-export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig> {
+type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
+type OdosData = { pathId: string };
+export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig, OdosData> {
   getMetadata() {
     return ODOS_METADATA;
   }
 
-  async quote(params: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse> {
+  async quote(params: QuoteParams<OdosSupport, OdosConfig>): Promise<SourceQuoteResponse<OdosData>> {
     // Note: Odos supports simple and advanced quotes. Simple quotes may offer worse prices, but it resolves faster. Since the advanced quote
     //       might timeout, we will make two quotes (one simple and one advanced) and we'll return the simple one if the other one timeouts
     const simpleQuote = getQuote({ ...params, simple: true });
@@ -51,6 +52,37 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       return Promise.reject(simple.reason);
     }
   }
+
+  async buildTx({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      accounts: { takeFrom, recipient },
+      config: { timeout },
+      customData: { pathId },
+    },
+  }: BuildTxParams<OdosConfig, OdosData>): Promise<SourceQuoteTransaction> {
+    const assembleResponse = await fetchService.fetch('https://api.odos.xyz/sor/assemble', {
+      body: JSON.stringify({ userAddr: takeFrom, pathId, receiver: recipient }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      timeout,
+    });
+    if (!assembleResponse.ok) {
+      failed(ODOS_METADATA, chain, sellToken, buyToken, await assembleResponse.text());
+    }
+    const {
+      transaction: { data, to, value },
+    }: AssemblyResponse = await assembleResponse.json();
+
+    return {
+      to,
+      calldata: data,
+      value: BigInt(value),
+    };
+  }
 }
 
 async function getQuote({
@@ -61,11 +93,11 @@ async function getQuote({
     sellToken,
     buyToken,
     order,
-    accounts: { takeFrom, recipient },
+    accounts: { takeFrom },
     config: { slippagePercentage, timeout },
   },
   config,
-}: QuoteParams<OdosSupport, OdosConfig> & { simple: boolean }): Promise<SourceQuoteResponse> {
+}: QuoteParams<OdosSupport, OdosConfig> & { simple: boolean }): Promise<SourceQuoteResponse<OdosData>> {
   const checksummedSell = checksumAndMapIfNecessary(sellToken);
   const checksummedBuy = checksumAndMapIfNecessary(buyToken);
   const quoteBody = {
@@ -83,45 +115,38 @@ async function getQuote({
     simple,
   };
 
-  const quoteResponse = await fetchService.fetch('https://api.odos.xyz/sor/quote/v2', {
-    body: JSON.stringify(quoteBody),
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    timeout,
-  });
+  const [quoteResponse, routerResponse] = await Promise.all([
+    fetchService.fetch('https://api.odos.xyz/sor/quote/v2', {
+      body: JSON.stringify(quoteBody),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      timeout,
+    }),
+    fetchService.fetch(`https://api.odos.xyz/info/router/v2/${chain.chainId}`, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout,
+    }),
+  ]);
   if (!quoteResponse.ok) {
     failed(ODOS_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
   }
+  if (!routerResponse.ok) {
+    failed(ODOS_METADATA, chain, sellToken, buyToken, await routerResponse.text());
+  }
   const {
     pathId,
+    gasEstimate,
     outAmounts: [outputTokenAmount],
   }: QuoteResponse = await quoteResponse.json();
 
-  const assembleResponse = await fetchService.fetch('https://api.odos.xyz/sor/assemble', {
-    body: JSON.stringify({ userAddr: takeFrom, pathId, receiver: recipient }),
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    timeout,
-  });
-  if (!assembleResponse.ok) {
-    failed(ODOS_METADATA, chain, sellToken, buyToken, await assembleResponse.text());
-  }
-  const {
-    gasEstimate,
-    transaction: { data, to, value },
-  }: AssemblyResponse = await assembleResponse.json();
+  const { address } = await quoteResponse.json();
 
   const quote = {
     sellAmount: order.sellAmount,
     buyAmount: BigInt(outputTokenAmount),
-    calldata: data,
     estimatedGas: BigInt(gasEstimate),
-    allowanceTarget: calculateAllowanceTarget(sellToken, to),
-    tx: {
-      to,
-      calldata: data,
-      value: BigInt(value),
-    },
+    allowanceTarget: calculateAllowanceTarget(sellToken, address),
+    customData: { pathId },
   };
 
   return addQuoteSlippage(quote, 'sell', slippagePercentage);
@@ -132,12 +157,12 @@ function checksumAndMapIfNecessary(address: Address) {
 }
 
 type QuoteResponse = {
+  gasEstimate: number;
   pathId: string;
   outAmounts: string[];
 };
 
 type AssemblyResponse = {
-  gasEstimate: number;
   transaction: {
     to: Address;
     data: string;

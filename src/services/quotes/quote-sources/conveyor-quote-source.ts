@@ -1,7 +1,7 @@
 import { isHex } from 'viem';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { calculateAllowanceTarget, failed } from './utils';
 
@@ -32,7 +32,8 @@ const CONVEYOR_METADATA: QuoteSourceMetadata<ConveyorSupport> = {
 };
 type ConveyorConfig = { referrerCodes?: Record<ChainId, number> | 'disable' };
 type ConveyorSupport = { buyOrders: false; swapAndTransfer: false };
-export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<ConveyorSupport, ConveyorConfig> {
+type ConveyorData = { tx: SourceQuoteTransaction };
+export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<ConveyorSupport, ConveyorConfig, ConveyorData> {
   getMetadata() {
     return CONVEYOR_METADATA;
   }
@@ -48,7 +49,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       accounts: { takeFrom },
     },
     config,
-  }: QuoteParams<ConveyorSupport, ConveyorConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<ConveyorSupport, ConveyorConfig>): Promise<SourceQuoteResponse<ConveyorData>> {
     let referrer = '0';
     if (config.referrerCodes !== 'disable') {
       referrer = `${config.referrerCodes?.[chain.chainId] ?? DEFAULT_REFERRERS[chain.chainId] ?? 0}`;
@@ -93,11 +94,17 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       estimatedGas: BigInt(conveyorGas),
       type: 'sell',
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
-      tx: {
-        calldata: isHex(data) ? data : simulation.data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: isHex(data) ? data : simulation.data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<ConveyorConfig, ConveyorData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }

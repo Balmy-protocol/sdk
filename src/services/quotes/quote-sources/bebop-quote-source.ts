@@ -2,7 +2,7 @@ import qs from 'qs';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
 
 // Supported Networks: https://docs.bebop.xyz/bebop/bebop-api/api-introduction#smart-contract
@@ -23,7 +23,8 @@ const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
 };
 type BebopConfig = { apiKey: string };
 type BebopSupport = { buyOrders: true; swapAndTransfer: true };
-export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig> {
+type BebopData = { tx: SourceQuoteTransaction };
+export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig, BebopData> {
   getMetadata() {
     return BEBOP_METADATA;
   }
@@ -39,7 +40,7 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig>
       accounts: { takeFrom, recipient },
     },
     config,
-  }: QuoteParams<BebopSupport, BebopConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BebopSupport, BebopConfig>): Promise<SourceQuoteResponse<BebopData>> {
     const queryParams = {
       sell_tokens: [checksum(sellToken)],
       buy_tokens: [checksum(buyToken)],
@@ -70,14 +71,20 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig>
       buyAmount: BigInt(maker_amounts[0]),
       estimatedGas: BigInt(gas),
       allowanceTarget: calculateAllowanceTarget(sellToken, approvalTarget),
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<BebopConfig, BebopData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<BebopConfig> | undefined): config is BebopConfig {

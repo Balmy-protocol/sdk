@@ -4,7 +4,7 @@ import { BaseTokenMetadata } from '@services/metadata/types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Address, ChainId, TokenAddress } from '@types';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { decodeFunctionData, parseAbi } from 'viem';
 
@@ -42,7 +42,8 @@ const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {
 };
 type RangoConfig = { apiKey: string; contractCall?: boolean };
 type RangoSupport = { buyOrders: false; swapAndTransfer: true };
-export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig> {
+type RangoData = { tx: SourceQuoteTransaction; requestId: string };
+export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig, RangoData> {
   getMetadata() {
     return RANGO_METADATA;
   }
@@ -59,7 +60,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       external: { tokenData },
     },
     config,
-  }: QuoteParams<RangoSupport, RangoConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<RangoSupport, RangoConfig>): Promise<SourceQuoteResponse<RangoData>> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
     const queryParams = {
@@ -109,9 +110,12 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig>
       type: 'sell',
       estimatedGas,
       allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
-      tx,
-      customData: { requestId },
+      customData: { tx, requestId },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<RangoConfig, RangoData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<RangoConfig> | undefined): config is RangoConfig {

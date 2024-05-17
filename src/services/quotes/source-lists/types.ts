@@ -2,12 +2,18 @@ import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
 import { Address, TimeString } from '@types';
-import { QuoteRequest, SourceMetadata, SourceId, GlobalQuoteSourceConfig, QuoteTransaction } from '../types';
+import { QuoteRequest, SourceMetadata, SourceId, QuoteTransaction } from '../types';
 import { SourceConfig } from '../source-registry';
 
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
   getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>>;
+  buildTxs(): Record<SourceId, Promise<QuoteTransaction>>;
+};
+
+export type SourceListRequest2 = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
+  sourceConfig?: SourceConfig;
+  quoteTimeout?: TimeString;
 };
 
 export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
@@ -31,8 +37,8 @@ export type SourceListResponse = {
   estimatedGas?: bigint;
   type: 'sell' | 'buy';
   recipient: Address;
-  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
-  tx: QuoteTransaction;
+  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
+  customData: Record<string, any>;
 };
 
 export type StringifiedSourceListResponse = StringifyBigInt<SourceListResponse>;

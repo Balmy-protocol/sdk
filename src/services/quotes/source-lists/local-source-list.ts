@@ -33,6 +33,10 @@ export class LocalSourceList implements IQuoteSourceList {
     return Object.fromEntries(request.sources.map((sourceId) => [sourceId, this.getQuote(request, sourceId)]));
   }
 
+  buildTxs(): Record<SourceId, Promise<QuoteTransaction>> {
+    throw new Error('Method not implemented.');
+  }
+
   private async getQuote(request: SourceListRequest, sourceId: SourceId): Promise<SourceListResponse> {
     if (!(sourceId in this.sources)) {
       throw new SourceNotFoundError(sourceId);

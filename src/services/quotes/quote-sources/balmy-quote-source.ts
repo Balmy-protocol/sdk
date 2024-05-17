@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { Address } from '@types';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
@@ -31,7 +31,8 @@ type BalmyConfig = {
   leftoverRecipient?: Address;
 };
 type BalmySupport = { buyOrders: true; swapAndTransfer: true };
-export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySupport, BalmyConfig> {
+type BalmyData = { tx: SourceQuoteTransaction };
+export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySupport, BalmyConfig, BalmyData> {
   getMetadata() {
     return BALMY_METADATA;
   }
@@ -47,7 +48,7 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
       ...request
     },
     config,
-  }: QuoteParams<BalmySupport, BalmyConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BalmySupport, BalmyConfig>): Promise<SourceQuoteResponse<BalmyData>> {
     const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/balmy`;
     const stringOrder =
       order.type === 'sell' ? { type: 'sell', sellAmount: order.sellAmount.toString() } : { type: 'buy', buyAmount: order.buyAmount.toString() };
@@ -88,11 +89,17 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
       estimatedGas: estimatedGas ? BigInt(estimatedGas) : undefined,
       allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<BalmyConfig, BalmyData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }

@@ -1,10 +1,22 @@
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, QuoteSourceSupport, SourceQuoteResponse } from '../types';
+import {
+  IQuoteSource,
+  QuoteParams,
+  QuoteSourceMetadata,
+  QuoteSourceSupport,
+  SourceQuoteResponse,
+  SourceQuoteTransaction,
+  BuildTxParams,
+} from '../types';
 
-export abstract class AlwaysValidConfigAndContextSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}>
-  implements IQuoteSource<Support, CustomQuoteSourceConfig>
+export abstract class AlwaysValidConfigAndContextSource<
+  Support extends QuoteSourceSupport,
+  CustomQuoteSourceConfig extends object = {},
+  CustomQuoteSourceData extends Record<string, any> = {}
+> implements IQuoteSource<Support, CustomQuoteSourceConfig, CustomQuoteSourceData>
 {
   abstract getMetadata(): QuoteSourceMetadata<Support>;
-  abstract quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse>;
+  abstract quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse<CustomQuoteSourceData>>;
+  abstract buildTx(_: BuildTxParams<CustomQuoteSourceConfig, CustomQuoteSourceData>): Promise<SourceQuoteTransaction>;
 
   isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig {
     return true;

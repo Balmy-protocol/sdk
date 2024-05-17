@@ -1,9 +1,9 @@
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
-import { ChainId } from '@types';
+import { Address, ChainId, TimeString } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
@@ -35,7 +35,9 @@ const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
   logoURI: 'ipfs://QmNcTVyqeVtNoyrT546VgJTD4vsZEkWp6zhDJ4qhgKkhbK',
 };
 type KyberswapSupport = { buyOrders: false; swapAndTransfer: true };
-export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<KyberswapSupport> {
+type KyberswapConfig = {};
+type KyberswapData = { routeSummary: RouteSummary; txValidFor: TimeString | undefined; slippagePercentage: number };
+export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<KyberswapSupport, KyberswapConfig, KyberswapData> {
   getMetadata() {
     return KYBERSWAP_METADATA;
   }
@@ -47,13 +49,11 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       sellToken,
       buyToken,
       order,
-      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
     },
     config,
-  }: QuoteParams<KyberswapSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<KyberswapSupport>): Promise<SourceQuoteResponse<KyberswapData>> {
     const chainKey = SUPPORTED_CHAINS[chain.chainId];
-
     const headers = config.referrer?.name ? { 'x-client-id': config.referrer?.name } : undefined;
 
     const url =
@@ -70,7 +70,34 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
     }
     const {
       data: { routeSummary },
-    } = await routeResponse.json();
+    }: { data: { routeSummary: RouteSummary } } = await routeResponse.json();
+
+    const quote = {
+      sellAmount: order.sellAmount,
+      buyAmount: BigInt(routeSummary.amountOut),
+      estimatedGas: BigInt(routeSummary.gas),
+      allowanceTarget: calculateAllowanceTarget(sellToken, routeSummary.routerAddress),
+      customData: { routeSummary, slippagePercentage, txValidFor },
+    };
+
+    return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      sellAmount,
+      accounts: { takeFrom, recipient },
+      config: { timeout },
+      customData: { routeSummary, txValidFor, slippagePercentage },
+    },
+    config,
+  }: BuildTxParams<KyberswapConfig, KyberswapData>): Promise<SourceQuoteTransaction> {
+    const chainKey = SUPPORTED_CHAINS[chain.chainId];
+    const headers = config.referrer?.name ? { 'x-client-id': config.referrer?.name } : undefined;
 
     const buildResponse = await fetchService.fetch(`https://aggregator-api.kyberswap.com/${chainKey}/api/v1/route/build`, {
       timeout,
@@ -79,7 +106,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       body: JSON.stringify({
         routeSummary,
         slippageTolerance: slippagePercentage * 100,
-        recipient: recipient ?? takeFrom,
+        recipient: recipient,
         deadline: txValidFor ? calculateDeadline(txValidFor) : undefined,
         source: config.referrer?.name,
         sender: takeFrom,
@@ -90,26 +117,25 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await buildResponse.text());
     }
     const {
-      data: { amountOut, gas, data, routerAddress },
+      data: { data, routerAddress },
     } = await buildResponse.json();
 
     if (!data) {
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, 'Failed to calculate a quote');
     }
 
-    const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n;
-    const quote = {
-      sellAmount: order.sellAmount,
-      buyAmount: BigInt(amountOut),
-      estimatedGas: BigInt(gas),
-      allowanceTarget: calculateAllowanceTarget(sellToken, routerAddress),
-      tx: {
-        to: routerAddress,
-        calldata: data,
-        value,
-      },
-    };
+    const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? sellAmount : 0n;
 
-    return addQuoteSlippage(quote, order.type, slippagePercentage);
+    return {
+      to: routerAddress,
+      value,
+      calldata: data,
+    };
   }
 }
+
+type RouteSummary = {
+  amountOut: `${bigint}`;
+  gas: `${bigint}`;
+  routerAddress: Address;
+};

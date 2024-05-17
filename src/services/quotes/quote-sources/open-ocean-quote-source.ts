@@ -1,7 +1,7 @@
 import qs from 'qs';
 import { Chains } from '@chains';
 import { formatUnits } from 'viem';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { GasPrice } from '@services/gas/types';
 import { Address, ChainId } from '@types';
@@ -46,7 +46,8 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
 type OpenOceanConfig = { sourceAllowlist?: string[] };
-export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig> {
+type OpenOceanData = { tx: SourceQuoteTransaction };
+export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig, OpenOceanData> {
   getMetadata() {
     return OPEN_OCEAN_METADATA;
   }
@@ -63,7 +64,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
       external,
     },
     config,
-  }: QuoteParams<OpenOceanSupport, OpenOceanConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<OpenOceanSupport, OpenOceanConfig>): Promise<SourceQuoteResponse<OpenOceanData>> {
     const [{ sellToken: sellTokenDataResult }, gasPriceResult] = await Promise.all([external.tokenData.request(), external.gasPrice.request()]);
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
@@ -98,12 +99,18 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
       type: 'sell',
       estimatedGas: BigInt(estimatedGas),
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
-      tx: {
-        to,
-        calldata: data,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          to,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<OpenOceanConfig, OpenOceanData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }
 

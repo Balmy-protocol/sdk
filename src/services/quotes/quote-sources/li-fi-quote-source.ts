@@ -3,7 +3,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
 const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
@@ -37,6 +37,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
 };
 type LiFiConfig = { apiKey?: string };
 type LiFiSupport = { buyOrders: false; swapAndTransfer: true };
+type LiFiData = { tx: SourceQuoteTransaction };
 export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSupport, LiFiConfig> {
   getMetadata() {
     return LI_FI_METADATA;
@@ -53,7 +54,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<LiFiSupport, LiFiConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<LiFiSupport, LiFiConfig>): Promise<SourceQuoteResponse<LiFiData>> {
     const mappedSellToken = mapNativeToken(sellToken);
     const mappedBuyToken = mapNativeToken(buyToken);
     let url =
@@ -94,12 +95,18 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
       type: 'sell',
       estimatedGas,
       allowanceTarget: calculateAllowanceTarget(sellToken, approvalAddress),
-      tx: {
-        to,
-        calldata: data,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          to,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<LiFiConfig, LiFiData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }
 

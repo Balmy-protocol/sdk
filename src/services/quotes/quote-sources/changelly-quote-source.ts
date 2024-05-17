@@ -1,6 +1,6 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
@@ -18,7 +18,8 @@ export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
 };
 type ChangellyConfig = { apiKey: string };
 type ChangellySupport = { buyOrders: false; swapAndTransfer: true };
-export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, ChangellyConfig> {
+type ChangellyData = { tx: SourceQuoteTransaction };
+export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, ChangellyConfig, ChangellyData> {
   getMetadata() {
     return CHANGELLY_METADATA;
   }
@@ -34,7 +35,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<ChangellySupport, ChangellyConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<ChangellySupport, ChangellyConfig>): Promise<SourceQuoteResponse<ChangellyData>> {
     const queryParams = {
       fromTokenAddress: sellToken,
       toTokenAddress: buyToken,
@@ -60,13 +61,19 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       buyAmount: BigInt(amount_out_total),
       estimatedGas: BigInt(estimate_gas_total),
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
-      tx: {
-        to,
-        calldata,
-        value: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n,
+      customData: {
+        tx: {
+          to,
+          calldata,
+          value: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? order.sellAmount : 0n,
+        },
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<ChangellyConfig, ChangellyData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<ChangellyConfig> | undefined): config is ChangellyConfig {

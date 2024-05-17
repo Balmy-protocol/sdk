@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { IQuoteSource } from './types';
+import { IQuoteSource, SourceQuoteTransaction, BuildTxParams } from './types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
@@ -27,7 +27,8 @@ const SQUID_METADATA: QuoteSourceMetadata<SquidSupport> = {
 };
 type SquidConfig = { integratorId: string };
 type SquidSupport = { buyOrders: false; swapAndTransfer: true };
-export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig> {
+type SquidData = { tx: SourceQuoteTransaction };
+export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig, SquidData> {
   getMetadata() {
     return SQUID_METADATA;
   }
@@ -43,7 +44,7 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig>
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<SquidSupport, SquidConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<SquidSupport, SquidConfig>): Promise<SourceQuoteResponse<SquidData>> {
     const params = {
       fromChain: `${chain.chainId}`,
       toChain: `${chain.chainId}`,
@@ -85,12 +86,18 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig>
       type: 'sell',
       estimatedGas: BigInt(gasLimit),
       allowanceTarget: calculateAllowanceTarget(sellToken, target),
-      tx: {
-        to: target,
-        calldata: data,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          to: target,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<SquidConfig, SquidData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<SquidConfig> | undefined): config is SquidConfig {

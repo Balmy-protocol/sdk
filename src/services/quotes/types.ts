@@ -21,23 +21,8 @@ export type IQuoteService = {
   supportedChains(): ChainId[];
   supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
-  estimateQuotes(_: {
-    request: EstimatedQuoteRequest;
-    config?: { timeout?: TimeString };
-  }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponse>>[];
-  estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
-    request: EstimatedQuoteRequest;
-    config?: {
-      ignoredFailed?: IgnoreFailed;
-      sort?: {
-        by: CompareQuotesBy;
-        using?: CompareQuotesUsing;
-      };
-      timeout?: TimeString;
-    };
-  }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponse>[]>;
-  getQuote(_: { sourceId: SourceId; request: IndividualQuoteRequest; config?: { timeout?: TimeString } }): Promise<QuoteResponse>;
-  getQuotes(_: { request: QuoteRequest; config?: { timeout?: TimeString } }): Promise<IgnoreFailedQuotes<false, QuoteResponse>>[];
+
+  getQuotes(_: { request: QuoteRequest; config?: { timeout?: TimeString } }): Record<SourceId, Promise<QuoteResponse>>;
   getAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: QuoteRequest;
     config?: {
@@ -59,6 +44,18 @@ export type IQuoteService = {
       timeout?: TimeString;
     };
   }): Promise<QuoteResponse>;
+
+  buildTxs(_: {
+    quotes: Record<SourceId, Promise<QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    config?: { timeout?: TimeString };
+  }): Record<SourceId, Promise<QuoteTransaction>>;
+  buildAllTxs<IgnoreFailed extends boolean = true>(_: {
+    quotes: Record<SourceId, Promise<QuoteResponse>> | Promise<Record<SourceId, QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    config?: {
+      timeout?: TimeString;
+      ignoredFailed?: IgnoreFailed;
+    };
+  }): Promise<Record<SourceId, QuoteTransaction>>;
 };
 
 export type QuoteRequest = {
@@ -96,7 +93,6 @@ export type QuoteResponse = {
   recipient: Address;
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
   type: 'sell' | 'buy';
-  tx: QuoteTransaction;
 };
 
 export type QuoteTransaction = BuiltTransaction & {
@@ -107,21 +103,8 @@ export type QuoteTransaction = BuiltTransaction & {
   gasLimit?: bigint;
 };
 
-export type IndividualQuoteRequest = Omit<
-  QuoteRequest,
-  'filters' | 'includeNonTransferSourcesWhenRecipientIsSet' | 'estimateBuyOrdersWithSellOnlySources' | 'sourceConfig'
-> & {
-  dontFailIfSourceDoesNotSupportTransferAndRecipientIsSet?: boolean;
-  estimateBuyOrderIfSourceDoesNotSupportIt?: boolean;
-  sourceConfig?: { global?: GlobalQuoteSourceConfig; custom?: LocalSourceConfig };
-};
-
-export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
-export type EstimatedQuoteResponse = Omit<QuoteResponse, 'recipient' | 'tx'>;
-
-export type IgnoreFailedQuotes<
-  IgnoredFailed extends boolean,
-  Response extends QuoteResponse | EstimatedQuoteResponse
-> = IgnoredFailed extends true ? Response : Response | FailedQuote;
+export type IgnoreFailedQuotes<IgnoredFailed extends boolean, Response extends QuoteResponse> = IgnoredFailed extends true
+  ? Response
+  : Response | FailedQuote;
 
 export type FailedQuote = { failed: true; source: { id: string; name: string; logoURI: string }; error: any };
