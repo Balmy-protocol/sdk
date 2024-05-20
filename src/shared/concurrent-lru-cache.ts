@@ -76,7 +76,7 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
   private readonly calculate: (context: Context, keys: Key[]) => Promise<Record<Key, Value>>;
   private readonly storableKeyMapper: ToStorableKey<Key>;
   private readonly expirationConfig: ExpirationConfigOptions;
-  private readonly beingCalculated: Map<StorableKey, Promise<any>> = new Map();
+  private readonly beingCalculated: Map<StorableKey, Promise<Value | undefined>> = new Map();
   private readonly cache: LRUCache<string, { lastUpdated: Timestamp; value: Value }>;
 
   constructor({ calculate, config }: CacheConstructorParams<Context, Key, Value>) {
@@ -152,17 +152,22 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
             const value = result[key];
             if (value !== undefined) {
               this.cache.set(storableKey, { lastUpdated: Date.now(), value });
+              return value;
             }
+            return undefined;
           })
-          .catch(() => {})
+          .catch(() => undefined)
           .finally(() => this.beingCalculated.delete(storableKey));
         this.beingCalculated.set(storableKey, promise);
       }
     }
 
     // Wait for all calculations
-    const calculationPromises = notInCache.map((key) => this.beingCalculated.get(storableKeys[key]));
-    await Promise.all(calculationPromises);
+    const calculationPromises = notInCache.map<Promise<[Key, Value | undefined]>>(async (key) => [
+      key,
+      await this.beingCalculated.get(storableKeys[key]),
+    ]);
+    const calculated = Object.fromEntries(await Promise.all(calculationPromises)) as Record<Key, Value | undefined>;
 
     const nowAgain = Date.now();
     const useCachedValueIfCalculationFailed = ({ lastUpdated }: { lastUpdated: Timestamp }) =>
@@ -170,15 +175,22 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
 
     // Check all values again
     for (const key of notInCache) {
-      const storableKey = storableKeys[key];
-      const valueInCache = this.cache.get(storableKey);
-      if (valueInCache) {
-        if (useCachedValueIfCalculationFailed(valueInCache)) {
-          // If can use it, then add it to result
-          result[key] = valueInCache.value;
-        } else {
-          // If not, then delete the value
-          this.cache.delete(storableKey);
+      // Check if we could calculate it
+      const calculatedValue: Value | undefined = calculated[key];
+      if (calculatedValue !== undefined) {
+        result[key] = calculatedValue;
+      } else {
+        // If we couldn't calculate it, check if we had an old value stored in the cache we can still use
+        const storableKey = storableKeys[key];
+        const valueInCache = this.cache.get(storableKey);
+        if (valueInCache) {
+          if (useCachedValueIfCalculationFailed(valueInCache)) {
+            // If can use it, then add it to result
+            result[key] = valueInCache.value;
+          } else {
+            // If not, then delete the value
+            this.cache.delete(storableKey);
+          }
         }
       }
     }
