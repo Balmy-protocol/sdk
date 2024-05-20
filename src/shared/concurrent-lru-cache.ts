@@ -176,7 +176,7 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
     // Check all values again
     for (const key of notInCache) {
       // Check if we could calculate it
-      const calculatedValue = calculated[key];
+      const calculatedValue: Value | undefined = calculated[key];
       if (calculatedValue !== undefined) {
         result[key] = calculatedValue;
       } else {
