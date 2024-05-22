@@ -146,6 +146,7 @@ export class QuoteService implements IQuoteService {
       ([sourceId, response]) => (response instanceof Promise ? [sourceId, response] : [sourceId, Promise.resolve(response)])
     );
     const lala: Record<SourceId, Promise<QuoteResponse>> = Object.fromEntries(entries);
+    return this.sourceList.buildTxs()
   }
 
   async buildAllTxs<IgnoreFailed extends boolean = true>({
@@ -165,7 +166,9 @@ export class QuoteService implements IQuoteService {
         await tx.catch<'failed'>(() => 'failed'),
       ])
     );
-    return;
+    return Object.fromEntries(
+      entries.filter((entry) => )
+    );
   }
 
   private async listResponseToQuoteResponse({

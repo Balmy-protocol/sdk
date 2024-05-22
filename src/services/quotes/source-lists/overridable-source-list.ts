@@ -3,7 +3,10 @@ import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types
 
 type ConstructorParameters = {
   default: IQuoteSourceList;
-  overrides: { list: IQuoteSourceList; sourceIds: SourceId[] }[];
+  overrides: {
+    getQuotes?: { list: IQuoteSourceList; sourceIds: SourceId[] }[]
+    buildTxs?: { list: IQuoteSourceList; sourceIds: SourceId[] }[]
+  };
 };
 export class OverridableSourceList implements IQuoteSourceList {
   private readonly overrides: Record<SourceId, IQuoteSourceList>;

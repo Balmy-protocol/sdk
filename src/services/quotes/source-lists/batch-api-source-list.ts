@@ -3,7 +3,7 @@ import { SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListRequest, SourceListResponse, StringifiedSourceListResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
-import { bigintify } from './utils';
+import { bigintifyQuote } from './utils';
 
 export type BatchAPISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
 export type URIGenerator = (request: BatchAPISourceListRequest) => string;
@@ -40,6 +40,6 @@ export class BatchAPISourceList implements IQuoteSourceList {
       timeout: request.quoteTimeout,
     });
     const result: Promise<Record<SourceId, StringifiedSourceListResponse>> = response.then((result) => result.json());
-    return Object.fromEntries(request.sources.map((sourceId) => [sourceId, result.then((responses) => bigintify(responses[sourceId]))]));
+    return Object.fromEntries(request.sources.map((sourceId) => [sourceId, result.then((responses) => bigintifyQuote(responses[sourceId]))]));
   }
 }

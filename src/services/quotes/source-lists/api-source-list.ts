@@ -4,7 +4,7 @@ import { IQuoteSourceList, SourceListRequest, SourceListResponse, StringifiedSou
 import { IFetchService } from '@services/fetch/types';
 import { PartialOnly } from '@utility-types';
 import { SourceWithConfigId } from '../source-registry';
-import { bigintify } from './utils';
+import { bigintifyQuote } from './utils';
 
 export type APISourceListRequest = PartialOnly<SourceListRequest, 'external'>;
 type SingleSourceListRequest = PartialOnly<APISourceListRequest, 'sources'> & { sourceId: SourceId };
@@ -47,6 +47,6 @@ export class APISourceList implements IQuoteSourceList {
       timeout: request.quoteTimeout,
     });
     const quote: StringifiedSourceListResponse = await response.json();
-    return bigintify(quote);
+    return bigintifyQuote(quote);
   }
 }
