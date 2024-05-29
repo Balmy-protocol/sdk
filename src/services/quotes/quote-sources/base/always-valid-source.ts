@@ -11,7 +11,7 @@ import {
 export abstract class AlwaysValidConfigAndContextSource<
   Support extends QuoteSourceSupport,
   CustomQuoteSourceConfig extends object = {},
-  CustomQuoteSourceData extends Record<string, any> = {}
+  CustomQuoteSourceData extends Record<string, any> = Record<string, any>
 > implements IQuoteSource<Support, CustomQuoteSourceConfig, CustomQuoteSourceData>
 {
   abstract getMetadata(): QuoteSourceMetadata<Support>;

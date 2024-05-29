@@ -39,10 +39,10 @@ export type BuiltTransaction = {
   data: string;
   value?: bigint;
   nonce?: number;
-  maxPriorityFeePerGas?: BigIntish;
-  maxFeePerGas?: BigIntish;
-  gasPrice?: BigIntish;
-  gasLimit?: BigIntish;
+  maxPriorityFeePerGas?: bigint;
+  maxFeePerGas?: bigint;
+  gasPrice?: bigint;
+  gasLimit?: bigint;
   type?: number;
 };
 export type ContractCall = {

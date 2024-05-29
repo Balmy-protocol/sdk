@@ -15,7 +15,7 @@ type SlippagelessQuote<CustomQuoteSourceData extends Record<string, any>> = Omit
   SourceQuoteResponse<CustomQuoteSourceData>,
   'minBuyAmount' | 'maxSellAmount' | 'type'
 >;
-export function addQuoteSlippage<CustomQuoteSourceData extends Record<string, any> = {}>(
+export function addQuoteSlippage<CustomQuoteSourceData extends Record<string, any> = Record<string, any>>(
   quote: SlippagelessQuote<CustomQuoteSourceData>,
   type: 'sell' | 'buy',
   slippagePercentage: number

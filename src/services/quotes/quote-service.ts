@@ -1,16 +1,18 @@
 import { BigIntish, ChainId, FieldsRequirements, SupportInChain, TimeString, TokenAddress } from '@types';
 import {
-  FailedQuote,
+  FailedResponse,
   IQuoteService,
   QuoteRequest,
   QuoteResponse,
-  IgnoreFailedQuotes,
+  IgnoreFailedResponses,
   SourceId,
   SourceMetadata,
   QuoteTransaction,
+  EstimatedQuoteRequest,
+  EstimatedQuoteResponse,
 } from './types';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
-import { IQuoteSourceList, SourceListResponse } from './source-lists/types';
+import { IQuoteSourceList, SourceListQuoteResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, toAmountsOfToken } from '@shared/utils';
 import { IGasService, IMetadataService, IPriceService, PriceResult } from '..';
@@ -75,6 +77,26 @@ export class QuoteService implements IQuoteService {
     return this.gasService.supportedSpeeds();
   }
 
+  estimateQuotes({ request, config }: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }) {
+    const quotes = this.getQuotes({ request: estimatedToQuoteRequest(request), config });
+    const entries = Object.entries(quotes).map(([sourceId, quote]) => [sourceId, quote.then(quoteResponseToEstimated)]);
+    return Object.fromEntries(entries);
+  }
+
+  async estimateAllQuotes<IgnoreFailed extends boolean = true>({
+    request,
+    config,
+  }: {
+    request: EstimatedQuoteRequest;
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, EstimatedQuoteResponse>[]> {
+    const allResponses = await this.getAllQuotes({ request: estimatedToQuoteRequest(request), config });
+    return allResponses.map((response) => ifNotFailed(response, quoteResponseToEstimated)) as IgnoreFailedResponses<
+      IgnoreFailed,
+      EstimatedQuoteResponse
+    >[];
+  }
+
   getQuotes({ request, config }: { request: QuoteRequest; config?: { timeout?: TimeString } }): Record<SourceId, Promise<QuoteResponse>> {
     const { promises, external } = this.calculateExternalPromises(request, config);
     const sources = this.calculateSources(request);
@@ -99,19 +121,19 @@ export class QuoteService implements IQuoteService {
   }: {
     request: QuoteRequest;
     config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
-  }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]> {
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponse>[]> {
     const metadata = this.supportedSources();
     const quotes = Object.entries(this.getQuotes({ request, config })).map(([sourceId, response]) =>
-      handleQuoteFailure(sourceId, response, metadata)
+      handleResponseFailure(sourceId, response, metadata)
     );
 
     const responses = await Promise.all(quotes);
     const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
-    const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedQuote => 'failed' in response) : [];
+    const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedResponse => 'failed' in response) : [];
 
     const sortedQuotes = sortQuotesBy(successfulQuotes, config?.sort?.by ?? 'most-swapped', config?.sort?.using ?? 'sell/buy amounts');
 
-    return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
+    return [...sortedQuotes, ...failedQuotes] as IgnoreFailedResponses<IgnoreFailed, QuoteResponse>[];
   }
 
   async getBestQuote({
@@ -138,37 +160,52 @@ export class QuoteService implements IQuoteService {
   buildTxs({
     quotes,
     config,
+    sourceConfig,
   }: {
     quotes: Record<SourceId, Promise<QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    sourceConfig?: SourceConfig;
     config?: { timeout?: TimeString };
   }): Record<SourceId, Promise<QuoteTransaction>> {
     const entries = Object.entries<Promise<QuoteResponse> | QuoteResponse>(quotes).map<[SourceId, Promise<QuoteResponse>]>(
       ([sourceId, response]) => (response instanceof Promise ? [sourceId, response] : [sourceId, Promise.resolve(response)])
     );
-    const lala: Record<SourceId, Promise<QuoteResponse>> = Object.fromEntries(entries);
-    return this.sourceList.buildTxs()
+    const input: Record<SourceId, Promise<QuoteResponse>> = Object.fromEntries(entries);
+    return this.sourceList.buildTxs({
+      quotes: input,
+      quoteTimeout: config?.timeout,
+      sourceConfig: this.calculateConfig(sourceConfig),
+    });
   }
 
   async buildAllTxs<IgnoreFailed extends boolean = true>({
     quotes,
+    sourceConfig,
     config,
   }: {
     quotes: Record<SourceId, Promise<QuoteResponse>> | Promise<Record<SourceId, QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    sourceConfig?: SourceConfig;
     config?: {
       timeout?: TimeString;
       ignoredFailed?: IgnoreFailed;
     };
-  }): Promise<Record<SourceId, QuoteTransaction>> {
-    const txs = this.buildTxs({ quotes: await quotes, config });
+  }): Promise<Record<SourceId, IgnoreFailedResponses<IgnoreFailed, QuoteTransaction>>> {
+    const txs = this.buildTxs({ quotes: await quotes, sourceConfig, config });
+    const metadata = this.supportedSources();
     const entries = await Promise.all(
-      Object.entries(txs).map<Promise<[SourceId, QuoteTransaction | 'failed']>>(async ([sourceId, tx]) => [
+      Object.entries(txs).map<Promise<[SourceId, QuoteTransaction | FailedResponse]>>(async ([sourceId, tx]) => [
         sourceId,
-        await tx.catch<'failed'>(() => 'failed'),
+        await handleResponseFailure(sourceId, tx, metadata),
       ])
     );
-    return Object.fromEntries(
-      entries.filter((entry) => )
-    );
+    const result = Object.fromEntries(entries) as Record<SourceId, IgnoreFailedResponses<IgnoreFailed, QuoteTransaction>>;
+    if (config?.ignoredFailed !== false) {
+      for (const sourceId in result) {
+        if ('failed' in result[sourceId]) {
+          delete result[sourceId];
+        }
+      }
+    }
+    return result;
   }
 
   private async listResponseToQuoteResponse({
@@ -177,7 +214,7 @@ export class QuoteService implements IQuoteService {
     promises,
   }: {
     request: QuoteRequest;
-    response: Promise<SourceListResponse>;
+    response: Promise<SourceListQuoteResponse>;
     promises: Promises;
   }): Promise<QuoteResponse> {
     const [response, tokens, prices, gasCalculator] = await Promise.all([
@@ -192,7 +229,8 @@ export class QuoteService implements IQuoteService {
     const buyToken = { ...tokens[request.buyToken], price: prices?.[request.buyToken]?.price };
     let gas: QuoteResponse['gas'];
     if (response.estimatedGas) {
-      const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.tx });
+      // Note: some sources provide a tx as part of the custom data, so we'll pass it just in case
+      const gasCost = gasCalculator.calculateGasCost({ gasEstimation: response.estimatedGas, tx: response.customData.tx });
       const { gasCostNativeToken } = gasCost[request.gasSpeed?.speed ?? 'standard'] ?? gasCost['standard'];
       gas = {
         estimatedGas: response.estimatedGas,
@@ -204,7 +242,7 @@ export class QuoteService implements IQuoteService {
       };
     }
     return {
-      ...response,
+      chainId: request.chainId,
       sellToken: { ...sellToken, address: request.sellToken },
       buyToken: { ...buyToken, address: request.buyToken },
       sellAmount: toAmountsOfToken({ ...sellToken, amount: response.sellAmount }),
@@ -212,6 +250,10 @@ export class QuoteService implements IQuoteService {
       maxSellAmount: toAmountsOfToken({ ...sellToken, amount: response.maxSellAmount }),
       minBuyAmount: toAmountsOfToken({ ...buyToken, amount: response.minBuyAmount }),
       gas,
+      accounts: { takerAddress: request.takerAddress, recipient: response.recipient },
+      source: response.source,
+      type: response.type,
+      customData: response.customData,
     };
   }
 
@@ -319,11 +361,29 @@ export class QuoteService implements IQuoteService {
   }
 }
 
-export function ifNotFailed<T1 extends FailedQuote | object, T2>(
-  response: T1 | FailedQuote,
+export function ifNotFailed<T1 extends FailedResponse | object, T2>(
+  response: T1 | FailedResponse,
   mapped: (_: T1) => T2
-): T1 extends FailedQuote ? FailedQuote : T2 {
-  return ('failed' in response ? response : mapped(response)) as T1 extends FailedQuote ? FailedQuote : T2;
+): T1 extends FailedResponse ? FailedResponse : T2 {
+  return ('failed' in response ? response : mapped(response)) as T1 extends FailedResponse ? FailedResponse : T2;
+}
+
+function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
+  return {
+    ...request,
+    sourceConfig: {
+      ...request.sourceConfig,
+      global: {
+        ...request.sourceConfig?.global,
+        disableValidation: true,
+      },
+    },
+    takerAddress: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', // We set a random taker address so that txs can be built at the source level
+  };
+}
+
+function quoteResponseToEstimated({ customData, accounts, ...response }: QuoteResponse): EstimatedQuoteResponse {
+  return response;
 }
 
 export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: BigIntish, nativeTokenPrice?: number) {
@@ -336,8 +396,8 @@ export function calculateGasDetails(gasTokenSymbol: string, gasCostNativeToken: 
   };
 }
 
-function handleQuoteFailure(sourceId: SourceId, response: Promise<QuoteResponse>, sources: Record<SourceId, SourceMetadata>) {
-  return response.catch<FailedQuote>((e) => {
+export function handleResponseFailure<Response>(sourceId: SourceId, response: Promise<Response>, sources: Record<SourceId, SourceMetadata>) {
+  return response.catch<FailedResponse>((e) => {
     const metadata = sources[sourceId];
     return {
       failed: true,

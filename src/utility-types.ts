@@ -17,6 +17,9 @@ export type UnionMerge<T extends object> = {
 } & {
   [k in NonCommonKeys<T>]?: PickTypeOf<T, k>;
 };
+export type StringifyBigInt<T extends any> = T extends object
+  ? { [K in keyof T]: bigint extends T[K] ? `${bigint}` : StringifyBigInt<T[K]> }
+  : T;
 
 type CommonKeys<T extends object> = keyof T;
 type AllKeys<T> = T extends any ? keyof T : never;

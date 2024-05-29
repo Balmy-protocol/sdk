@@ -771,6 +771,11 @@ export class DCAService implements IDCAService {
         timeout: '5s',
       },
     });
+    const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
+      config: { timeout: '5s' },
+      quotes: { [bestQuote.source.id]: bestQuote },
+      sourceConfig: { custom: { ['balmy']: { leftoverRecipient } } },
+    });
 
     const allowanceTargets = isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)
       ? []
@@ -783,7 +788,7 @@ export class DCAService implements IDCAService {
 
     const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
       allowanceTargets,
-      calls: [{ to: bestQuote.tx.to, data: bestQuote.tx.data, value: bestQuote.tx.value ?? 0 }],
+      calls: [{ to: tx.to, data: tx.data, value: tx.value ?? 0n }],
       distribution: { [tokenOutDistribution]: [{ recipient: COMPANION_ADDRESS, shareBps: 0 }] },
       txValidFor,
       chainId: request.chainId,
@@ -794,7 +799,7 @@ export class DCAService implements IDCAService {
       functionName: 'runSwap',
       args: [
         Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
-        BigInt(bestQuote.tx.value ?? 0),
+        tx.value ?? 0n,
         arbitraryCall.data as Hex,
         bestQuote.buyToken.address as ViemAddress,
       ],

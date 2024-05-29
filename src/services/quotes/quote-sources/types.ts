@@ -17,29 +17,35 @@ export type QuoteParams<Support extends QuoteSourceSupport, CustomQuoteSourceCon
   config: CustomQuoteSourceConfig & GlobalQuoteSourceConfig;
   request: SourceQuoteRequest<Support>;
 };
-export type BuildTxParams<CustomQuoteSourceConfig extends object = {}, CustomQuoteSourceData extends Record<string, any> = {}> = {
+export type BuildTxParams<
+  CustomQuoteSourceConfig extends object = {},
+  CustomQuoteSourceData extends Record<string, any> = Record<string, any>
+> = {
   components: QuoteComponents;
   config: CustomQuoteSourceConfig & GlobalQuoteSourceConfig;
-  request: {
-    chain: Chain;
-    sellToken: TokenAddress;
-    buyToken: TokenAddress;
-    type: 'sell' | 'buy';
-    sellAmount: bigint;
-    maxSellAmount: bigint;
-    buyAmount: bigint;
-    minBuyAmount: bigint;
-    accounts: { takeFrom: Address; recipient: Address };
-    customData: CustomQuoteSourceData;
-    config: {
-      timeout?: TimeString;
-    };
+  request: SourceQuoteBuildTxRequest<CustomQuoteSourceData>;
+};
+
+export type SourceQuoteBuildTxRequest<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
+  chain: Chain;
+  sellToken: TokenAddress;
+  buyToken: TokenAddress;
+  type: 'sell' | 'buy';
+  sellAmount: bigint;
+  maxSellAmount: bigint;
+  buyAmount: bigint;
+  minBuyAmount: bigint;
+  accounts: { takeFrom: Address; recipient: Address };
+  customData: CustomQuoteSourceData;
+  config: {
+    timeout?: TimeString;
   };
 };
+
 export type IQuoteSource<
   Support extends QuoteSourceSupport,
   CustomQuoteSourceConfig extends object = {},
-  CustomQuoteSourceData extends Record<string, any> = {}
+  CustomQuoteSourceData extends Record<string, any> = Record<string, any>
 > = {
   isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
@@ -76,7 +82,7 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAcco
   };
 };
 
-// export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any> = {}> = {
+// export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
 export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any>> = {
   sellAmount: bigint;
   maxSellAmount: bigint;

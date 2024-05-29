@@ -1,1 +1,1 @@
-export { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
+export { IQuoteSourceList, SourceListQuoteRequest, SourceListQuoteResponse } from './types';

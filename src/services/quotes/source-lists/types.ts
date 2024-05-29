@@ -1,22 +1,23 @@
 import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
-import { Address, TimeString } from '@types';
-import { QuoteRequest, SourceMetadata, SourceId, QuoteTransaction } from '../types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
+import { QuoteRequest, SourceMetadata, SourceId, QuoteTransaction, QuoteResponse } from '../types';
 import { SourceConfig } from '../source-registry';
 
 export type IQuoteSourceList = {
   supportedSources(): Record<SourceId, SourceMetadata>;
-  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>>;
-  buildTxs(): Record<SourceId, Promise<QuoteTransaction>>;
+  getQuotes(request: SourceListQuoteRequest): Record<SourceId, Promise<SourceListQuoteResponse>>;
+  buildTxs(request: SourceListBuildTxRequest): Record<SourceId, Promise<QuoteTransaction>>;
 };
 
-export type SourceListRequest2 = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
+export type SourceListBuildTxRequest = {
   sourceConfig?: SourceConfig;
+  quotes: Record<SourceId, Promise<QuoteResponse>>;
   quoteTimeout?: TimeString;
 };
 
-export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
+export type SourceListQuoteRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   sources: SourceId[];
   external: {
     tokenData: ITriggerablePromise<{
@@ -29,7 +30,7 @@ export type SourceListRequest = Omit<QuoteRequest, 'filters' | 'gasSpeed'> & {
   quoteTimeout?: TimeString;
 };
 
-export type SourceListResponse = {
+export type SourceListQuoteResponse = {
   sellAmount: bigint;
   buyAmount: bigint;
   maxSellAmount: bigint;
@@ -40,6 +41,3 @@ export type SourceListResponse = {
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   customData: Record<string, any>;
 };
-
-export type StringifiedSourceListResponse = StringifyBigInt<SourceListResponse>;
-type StringifyBigInt<T extends any> = T extends object ? { [K in keyof T]: bigint extends T[K] ? `${bigint}` : StringifyBigInt<T[K]> } : T;

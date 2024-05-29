@@ -4,7 +4,7 @@ import { Address, BigIntish, ChainId, SupportInChain, TimeString, TokenAddress, 
 import { Either } from '@utility-types';
 import { CompareQuotesBy, CompareQuotesUsing } from './quote-compare';
 import { QuoteSourceMetadata, QuoteSourceSupport } from './quote-sources/types';
-import { LocalSourceConfig, SourceConfig } from './source-registry';
+import { SourceConfig } from './source-registry';
 
 export type GlobalQuoteSourceConfig = {
   referrer?: {
@@ -22,6 +22,18 @@ export type IQuoteService = {
   supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
 
+  estimateQuotes(_: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }): Promise<EstimatedQuoteResponse>[];
+  estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
+    request: EstimatedQuoteRequest;
+    config?: {
+      ignoredFailed?: IgnoreFailed;
+      sort?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+      timeout?: TimeString;
+    };
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, EstimatedQuoteResponse>[]>;
   getQuotes(_: { request: QuoteRequest; config?: { timeout?: TimeString } }): Record<SourceId, Promise<QuoteResponse>>;
   getAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: QuoteRequest;
@@ -33,7 +45,7 @@ export type IQuoteService = {
       };
       timeout?: TimeString;
     };
-  }): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponse>[]>;
   getBestQuote(_: {
     request: QuoteRequest;
     config?: {
@@ -47,15 +59,17 @@ export type IQuoteService = {
 
   buildTxs(_: {
     quotes: Record<SourceId, Promise<QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    sourceConfig?: SourceConfig;
     config?: { timeout?: TimeString };
   }): Record<SourceId, Promise<QuoteTransaction>>;
   buildAllTxs<IgnoreFailed extends boolean = true>(_: {
     quotes: Record<SourceId, Promise<QuoteResponse>> | Promise<Record<SourceId, QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    sourceConfig?: SourceConfig;
     config?: {
       timeout?: TimeString;
       ignoredFailed?: IgnoreFailed;
     };
-  }): Promise<Record<SourceId, QuoteTransaction>>;
+  }): Promise<Record<SourceId, IgnoreFailedResponses<IgnoreFailed, QuoteTransaction>>>;
 };
 
 export type QuoteRequest = {
@@ -76,6 +90,7 @@ export type QuoteRequest = {
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { address: TokenAddress; price?: number };
 export type QuoteResponse = {
+  chainId: ChainId;
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
   sellAmount: AmountsOfToken;
@@ -90,21 +105,17 @@ export type QuoteResponse = {
     estimatedCostInUSD?: string;
     gasTokenPrice?: number;
   };
-  recipient: Address;
-  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string; customData?: Record<string, any> };
+  accounts: { takerAddress: Address; recipient: Address };
+  source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
+  customData: Record<string, any>;
 };
 
-export type QuoteTransaction = BuiltTransaction & {
-  from: Address;
-  maxPriorityFeePerGas?: bigint;
-  maxFeePerGas?: bigint;
-  gasPrice?: bigint;
-  gasLimit?: bigint;
-};
+export type QuoteTransaction = BuiltTransaction & { from: Address };
 
-export type IgnoreFailedQuotes<IgnoredFailed extends boolean, Response extends QuoteResponse> = IgnoredFailed extends true
-  ? Response
-  : Response | FailedQuote;
+export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
+export type EstimatedQuoteResponse = Omit<QuoteResponse, 'accounts' | 'customData'>;
 
-export type FailedQuote = { failed: true; source: { id: string; name: string; logoURI: string }; error: any };
+export type IgnoreFailedResponses<IgnoredFailed extends boolean, Response> = IgnoredFailed extends true ? Response : Response | FailedResponse;
+
+export type FailedResponse = { failed: true; source: { id: string; name: string; logoURI: string }; error: any };

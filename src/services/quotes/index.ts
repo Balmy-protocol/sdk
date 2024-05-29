@@ -4,10 +4,9 @@ export {
   IQuoteService,
   QuoteRequest,
   QuoteResponse,
-  IndividualQuoteRequest,
   EstimatedQuoteRequest,
   EstimatedQuoteResponse,
-  FailedQuote,
+  FailedResponse,
   GlobalQuoteSourceConfig,
   QuoteTransaction,
 } from './types';
