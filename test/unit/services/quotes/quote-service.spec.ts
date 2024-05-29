@@ -1,14 +1,16 @@
-import { expect } from 'chai';
+import chai, { expect } from 'chai';
 import { then, when } from '@test-utils/bdd';
 import { GasSpeed, IGasService, IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
 import { BigIntish, ChainId, TokenAddress, InputTransaction } from '@types';
 import { QuoteService } from '@services/quotes/quote-service';
-import { IQuoteSourceList, QuoteRequest } from '@services/quotes';
+import { IQuoteSourceList, QuoteRequest, QuoteTransaction } from '@services/quotes';
 import { IPriceService } from '@services/prices';
 import { IMetadataService } from '@services/metadata';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { CHANGELLY_METADATA } from '@services/quotes/quote-sources/changelly-quote-source';
-import { SourceListResponse } from '@services/quotes/source-lists/types';
+import { SourceListBuildTxRequest, SourceListQuoteResponse } from '@services/quotes/source-lists/types';
+import chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 describe('Quote Service', () => {
   when('request fails', () => {
@@ -21,12 +23,8 @@ describe('Quote Service', () => {
         defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
-      expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.eql({
-        error: 'Something failed at list level',
-        failed: true,
-        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
-      });
+      expect(Object.keys(quotes)).to.have.lengthOf(1);
+      await expect(quotes.source).to.have.rejectedWith('Something failed at list level');
     });
   });
   when('request works but gas request fails', () => {
@@ -39,12 +37,8 @@ describe('Quote Service', () => {
         defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
-      expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.eql({
-        error: 'Failed to fetch gas data',
-        failed: true,
-        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
-      });
+      expect(Object.keys(quotes)).to.have.lengthOf(1);
+      await expect(quotes.source).to.have.rejectedWith('Failed to fetch gas data');
     });
   });
   when('request works but metadata request fails', () => {
@@ -57,12 +51,8 @@ describe('Quote Service', () => {
         defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
-      expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.eql({
-        error: `Failed to fetch the quote's tokens`,
-        failed: true,
-        source: { id: 'source', logoURI: CHANGELLY_METADATA.logoURI, name: CHANGELLY_METADATA.name },
-      });
+      expect(Object.keys(quotes)).to.have.lengthOf(1);
+      await expect(quotes.source).to.have.rejectedWith(`Failed to fetch the quote's tokens`);
     });
   });
   when('request works but price request fails', () => {
@@ -75,15 +65,15 @@ describe('Quote Service', () => {
         defaultConfig: undefined,
       });
       const quotes = sourceList.getQuotes(REQUEST);
-      expect(quotes).to.have.lengthOf(1);
-      expect(await quotes[0]).to.not.have.any.keys('error');
+      expect(Object.keys(quotes)).to.have.lengthOf(1);
+      expect(await quotes.source).to.not.have.any.keys('error');
     });
   });
 });
 
 const SOURCE = 'source';
 
-const RESPONSE: SourceListResponse = {
+const RESPONSE: SourceListQuoteResponse = {
   sellAmount: 1000n,
   buyAmount: 1234n,
   maxSellAmount: 1000n,
@@ -92,10 +82,12 @@ const RESPONSE: SourceListResponse = {
   type: 'sell',
   recipient: '0x0000000000000000000000000000000000000004',
   source: { id: SOURCE, allowanceTarget: '0x0000000000000000000000000000000000000005', name: 'Name', logoURI: 'logo' },
-  tx: {
-    from: '0x0000000000000000000000000000000000000005',
-    to: '0x0000000000000000000000000000000000000006',
-    data: '',
+  customData: {
+    tx: {
+      from: '0x0000000000000000000000000000000000000005',
+      to: '0x0000000000000000000000000000000000000006',
+      data: '',
+    },
   },
 };
 
@@ -113,6 +105,9 @@ const REQUEST: { request: QuoteRequest } = {
 const SOURCE_LIST: IQuoteSourceList = {
   supportedSources: () => ({ [SOURCE]: CHANGELLY_METADATA }),
   getQuotes: () => ({ [SOURCE]: Promise.resolve(RESPONSE) }),
+  buildTxs: () => {
+    throw new Error('Function not implemented.');
+  },
 };
 const FAILING_SOURCE_LIST: IQuoteSourceList = {
   ...SOURCE_LIST,

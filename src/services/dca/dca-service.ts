@@ -765,7 +765,7 @@ export class DCAService implements IDCAService {
         recipient: COMPANION_SWAPPER_ADDRESS,
         txValidFor,
         filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
-        sourceConfig: { custom: { ['balmy']: { leftoverRecipient } } },
+        sourceConfig: { custom: { balmy: { leftoverRecipient } } },
       },
       config: {
         timeout: '5s',
@@ -774,7 +774,7 @@ export class DCAService implements IDCAService {
     const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
       config: { timeout: '5s' },
       quotes: { [bestQuote.source.id]: bestQuote },
-      sourceConfig: { custom: { ['balmy']: { leftoverRecipient } } },
+      sourceConfig: { custom: { balmy: { leftoverRecipient } } },
     });
 
     const allowanceTargets = isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)
