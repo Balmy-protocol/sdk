@@ -53,6 +53,7 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
       source: config.referrer?.name,
       skip_validation: config.disableValidation,
       gasless: false,
+      slippage: slippagePercentage,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.bebop.xyz/router/${NETWORK_KEY[chain.chainId]}/v1/quote?${queryString}`;
