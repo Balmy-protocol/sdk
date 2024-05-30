@@ -1,9 +1,9 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { ChainId } from '@types';
+import { Address, ChainId, Timestamp, TokenAddress } from '@types';
 import { isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
-import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
+import { calculateAllowanceTarget, checksum, failed } from './utils';
 
 // Supported Networks: https://docs.bebop.xyz/bebop/bebop-api/api-introduction#smart-contract
 const NETWORK_KEY: Record<ChainId, string> = {
@@ -23,7 +23,7 @@ const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
 };
 type BebopConfig = { apiKey: string };
 type BebopSupport = { buyOrders: true; swapAndTransfer: true };
-type BebopData = { tx: SourceQuoteTransaction };
+type BebopData = { tx: SourceQuoteTransaction; expiry: Timestamp };
 export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig, BebopData> {
   getMetadata() {
     return BEBOP_METADATA;
@@ -41,9 +41,11 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
     },
     config,
   }: QuoteParams<BebopSupport, BebopConfig>): Promise<SourceQuoteResponse<BebopData>> {
+    const checksummedSellToken = checksum(sellToken);
+    const checksummedBuyToken = checksum(buyToken);
     const queryParams = {
-      sell_tokens: [checksum(sellToken)],
-      buy_tokens: [checksum(buyToken)],
+      sell_tokens: [checksummedSellToken],
+      buy_tokens: [checksummedBuyToken],
       sell_amounts: order.type === 'sell' ? [order.sellAmount.toString()] : undefined,
       buy_amounts: order.type === 'buy' ? [order.buyAmount.toString()] : undefined,
       taker_address: takeFrom,
@@ -53,34 +55,46 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
       gasless: false,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `https://api.bebop.xyz/${NETWORK_KEY[chain.chainId]}/v2/quote?${queryString}`;
+    const url = `https://api.bebop.xyz/router/${NETWORK_KEY[chain.chainId]}/v1/quote?${queryString}`;
 
     const headers = { 'source-auth': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(BEBOP_METADATA, chain, sellToken, buyToken, await response.text());
     }
+    const result: BebopResult = await response.json();
+    if ('error' in result) {
+      failed(BEBOP_METADATA, chain, sellToken, buyToken, result.error.message);
+    }
     const {
-      toSign: { taker_amounts, maker_amounts },
+      sellTokens: {
+        [checksummedSellToken]: { amount: sellAmount },
+      },
+      buyTokens: {
+        [checksummedBuyToken]: { amount: buyAmount, minimumAmount: minBuyAmount },
+      },
       approvalTarget,
+      expiry,
       tx: { to, value, data, gas },
-    } = await response.json();
+    } = result.routes[0].quote;
 
-    const quote = {
-      sellAmount: BigInt(taker_amounts[0]),
-      buyAmount: BigInt(maker_amounts[0]),
+    return {
+      sellAmount: BigInt(sellAmount),
+      maxSellAmount: BigInt(sellAmount),
+      buyAmount: BigInt(buyAmount),
+      minBuyAmount: BigInt(minBuyAmount),
       estimatedGas: BigInt(gas),
       allowanceTarget: calculateAllowanceTarget(sellToken, approvalTarget),
+      type: order.type,
       customData: {
         tx: {
           calldata: data,
           to,
           value: BigInt(value ?? 0),
         },
+        expiry,
       },
     };
-
-    return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 
   async buildTx({ request }: BuildTxParams<BebopConfig, BebopData>): Promise<SourceQuoteTransaction> {
@@ -91,3 +105,27 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
     return !!config?.apiKey;
   }
 }
+
+type BebopResult = BebopSuccessfulResult | BebopErrorResult;
+type BebopSuccessfulResult = {
+  routes: {
+    quote: {
+      expiry: Timestamp;
+      sellTokens: Record<TokenAddress, { amount: `${bigint}` }>;
+      buyTokens: Record<TokenAddress, { amount: `${bigint}`; minimumAmount: `${bigint}` }>;
+      approvalTarget: Address;
+      tx: {
+        to: string;
+        value: string;
+        data: string;
+        gas: string;
+      };
+    };
+  }[];
+};
+
+type BebopErrorResult = {
+  error: {
+    message: string;
+  };
+};

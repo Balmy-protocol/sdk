@@ -69,14 +69,14 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await routeResponse.text());
     }
     const {
-      data: { routeSummary },
-    }: { data: { routeSummary: RouteSummary } } = await routeResponse.json();
+      data: { routeSummary, routerAddress },
+    }: { data: { routeSummary: RouteSummary; routerAddress: Address } } = await routeResponse.json();
 
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigInt(routeSummary.amountOut),
       estimatedGas: BigInt(routeSummary.gas),
-      allowanceTarget: calculateAllowanceTarget(sellToken, routeSummary.routerAddress),
+      allowanceTarget: calculateAllowanceTarget(sellToken, routerAddress),
       customData: { routeSummary, slippagePercentage, txValidFor },
     };
 

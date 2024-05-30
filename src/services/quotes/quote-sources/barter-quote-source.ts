@@ -1,6 +1,5 @@
 import { Chains } from '@chains';
-import { Address, Chain, ChainId, TimeString } from '@types';
-import { IFetchService } from '@services/fetch';
+import { Address, ChainId, TimeString } from '@types';
 import { calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
@@ -41,7 +40,6 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       buyToken,
       order,
       config: { slippagePercentage, timeout, txValidFor },
-      accounts: { takeFrom, recipient },
     },
     config,
   }: QuoteParams<BarterSupport, BarterConfig>): Promise<SourceQuoteResponse<BarterData>> {

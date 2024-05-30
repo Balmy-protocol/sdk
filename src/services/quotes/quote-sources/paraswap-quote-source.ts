@@ -76,8 +76,8 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
     let body: any = {
       srcToken: sellToken,
       srcDecimals,
-      srcAmount: maxSellAmount,
-      destAmount: minBuyAmount,
+      srcAmount: `${maxSellAmount}`,
+      destAmount: `${minBuyAmount}`,
       destToken: buyToken,
       destDecimals,
       priceRoute: route,
@@ -116,9 +116,12 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       destToken: buyToken,
       amount: amount,
       side: order.type.toUpperCase(),
+      partner: config.referrer?.name,
       srcDecimals,
       destDecimals,
       includeDEXS: config.sourceAllowlist,
+      // Note: request will fail if we don't add these sources
+      excludeDEXS: ['ParaSwapPool', 'ParaSwapLimitOrders'],
       // If is swap and transfer, then I need to whitelist methods
       includeContractMethods: !!recipient && !isSameAddress(takeFrom, recipient) ? ['simpleSwap', 'multiSwap', 'megaSwap'] : undefined,
     };

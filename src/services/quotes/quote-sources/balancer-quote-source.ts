@@ -77,7 +77,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     };
     const quoteResponse = await fetchService.fetch(`https://api-v3.balancer.fi/`, {
       method: 'POST',
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query),
     });
 
@@ -87,7 +87,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     const quoteResult = await quoteResponse.json();
 
     if (!quoteResult.data.sorGetSwapPaths.callData) {
-      failed(BALANCER_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(BALANCER_METADATA, chain, sellToken, buyToken, quoteResult);
     }
 
     const {

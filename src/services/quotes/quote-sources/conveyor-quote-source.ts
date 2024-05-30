@@ -82,6 +82,10 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       // when the validation fails, and the config didn't mark it as disabled
       failed(CONVEYOR_METADATA, chain, sellToken, buyToken, JSON.stringify(result.errorStatus));
     }
+    if (!('tx' in result) && 'message' in result) {
+      failed(CONVEYOR_METADATA, chain, sellToken, buyToken, result.message);
+    }
+
     const {
       tx: { to, data, simulation, value },
       info: { amountOut, amountOutMin, conveyorGas },

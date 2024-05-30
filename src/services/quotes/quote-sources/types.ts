@@ -82,8 +82,7 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAcco
   };
 };
 
-// export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
-export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any>> = {
+export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
   sellAmount: bigint;
   maxSellAmount: bigint;
   buyAmount: bigint;

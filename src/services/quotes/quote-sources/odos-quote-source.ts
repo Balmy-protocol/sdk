@@ -139,7 +139,7 @@ async function getQuote({
     outAmounts: [outputTokenAmount],
   }: QuoteResponse = await quoteResponse.json();
 
-  const { address } = await quoteResponse.json();
+  const { address } = await routerResponse.json();
 
   const quote = {
     sellAmount: order.sellAmount,

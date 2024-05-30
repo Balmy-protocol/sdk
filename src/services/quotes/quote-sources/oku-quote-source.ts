@@ -83,7 +83,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
         ? { inTokenAmount: formatUnits(order.sellAmount, tokenData.sellToken.decimals) }
         : { outTokenAmount: formatUnits(order.buyAmount, tokenData.buyToken.decimals) }),
     };
-    const quoteResponse = await fetchService.fetch('https://oku-canoe.fly.dev/market/usor/swap_quote', {
+    const quoteResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/swap_quote', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: { ['Content-Type']: 'application/json' },
@@ -128,7 +128,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       customData: { txValidFor, coupon, signingRequest },
     },
   }: BuildTxParams<OkuConfig, OkuData>): Promise<SourceQuoteTransaction> {
-    const executionResponse = await fetchService.fetch('https://oku-canoe.fly.dev/market/usor/execution_information', {
+    const executionResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/execution_information', {
       method: 'POST',
       body: JSON.stringify({
         coupon,

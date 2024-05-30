@@ -11,7 +11,14 @@ import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
 import { addPercentage, isSameAddress, subtractPercentage, wait } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
-import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteResponse } from '@services/quotes/quote-sources/types';
+import {
+  BuyOrder,
+  IQuoteSource,
+  QuoteSourceSupport,
+  SellOrder,
+  SourceQuoteResponse,
+  SourceQuoteTransaction,
+} from '@services/quotes/quote-sources/types';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { FetchService } from '@services/fetch/fetch-service';
 import { GasPrice } from '@services/gas/types';
@@ -209,21 +216,23 @@ describe.skip('Quote Sources [External Quotes]', () => {
               const quotePromise = buildQuote(sourceId, source, request, test);
               describe(`on ${source.getMetadata().name}`, () => {
                 let quote: SourceQuoteResponse;
+                let tx: SourceQuoteTransaction;
                 let sellToken: TestToken, buyToken: TestToken, recipient: SignerWithAddress | undefined, takeFrom: SignerWithAddress;
                 let txs: TransactionResponse[];
                 given(async () => {
                   [sellToken, buyToken, recipient, takeFrom] = await Promise.all([request.sellToken, request.buyToken, request.recipient, user]);
-                  quote = await quotePromise;
+                  ({ quote, tx } = await quotePromise);
                   const approveTx = isSameAddress(quote.allowanceTarget, Addresses.ZERO_ADDRESS)
                     ? []
                     : [await approve({ amount: quote.maxSellAmount, to: quote.allowanceTarget, for: sellToken, from: takeFrom })];
-                  txs = [...approveTx, await execute({ quote, as: takeFrom })];
+                  txs = [...approveTx, await execute({ tx, as: takeFrom })];
                 });
                 then('result is as expected', async () => {
                   await assertUsersBalanceIsReducedAsExpected({
                     txs,
                     sellToken,
                     quote,
+                    tx,
                     user: takeFrom,
                     initialBalances,
                   });
@@ -235,7 +244,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
                     initialBalances,
                   });
                   const { sellToken: _, buyToken: __, ...rest } = request;
-                  assertQuoteIsConsistent(quote, {
+                  assertQuoteIsConsistent(quote, tx, {
                     sellToken,
                     buyToken,
                     ...rest,
@@ -250,6 +259,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
 
       function assertQuoteIsConsistent(
         quote: SourceQuoteResponse,
+        tx: SourceQuoteTransaction,
         {
           sellToken,
           buyToken,
@@ -288,10 +298,10 @@ describe.skip('Quote Sources [External Quotes]', () => {
         validateMinBuyMaxSell(sourceId, quote);
         if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
           expect(quote.allowanceTarget).to.equal(Addresses.ZERO_ADDRESS);
-          expect(quote.tx.value).to.equal(quote.maxSellAmount);
+          expect(tx.value).to.equal(quote.maxSellAmount);
         } else {
           const isValueNotSet = (value?: bigint) => !value || value === 0n;
-          expect(isValueNotSet(quote.tx.value)).to.be.true;
+          expect(isValueNotSet(tx.value)).to.be.true;
         }
       }
 
@@ -332,7 +342,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           'unitsToSell' in quote
             ? { type: 'sell', sellAmount: parseUnits(`${quote.unitsToSell}`, sellToken.decimals) }
             : { type: 'buy', buyAmount: parseUnits(`${quote.unitsToBuy}`, buyToken.decimals) };
-        return source.quote({
+        const quoteResponse = await source.quote({
           components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
           request: {
             ...quote,
@@ -353,17 +363,23 @@ describe.skip('Quote Sources [External Quotes]', () => {
           },
           config: getConfig(sourceId),
         });
+        const tx = await source.buildTx({
+          components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
+          config: getConfig(sourceId),
+          request: {
+            chain,
+            sellToken: sellToken.address,
+            buyToken: buyToken.address,
+            ...quoteResponse,
+            accounts: { takeFrom: takeFrom.address, recipient: recipient?.address ?? takeFrom.address },
+            customData: quoteResponse.customData,
+            config: { timeout: '15s' },
+          },
+        });
+        return { quote: quoteResponse, tx };
       }
 
-      function execute({
-        as,
-        quote: {
-          tx: { value, calldata, to },
-        },
-      }: {
-        as: SignerWithAddress;
-        quote: SourceQuoteResponse;
-      }) {
+      function execute({ as, tx: { value, calldata, to } }: { as: SignerWithAddress; tx: SourceQuoteTransaction }) {
         return as.sendTransaction({ to, data: calldata, value });
       }
 

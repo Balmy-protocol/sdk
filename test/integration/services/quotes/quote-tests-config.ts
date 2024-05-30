@@ -8,11 +8,6 @@ export const CONFIG: SourceConfig = {
   },
   custom: {
     odos: { sourceDenylist: ['Hashflow'] },
-    barter: {
-      sourceDenylist: ['Hashflow'],
-      authHeader: process.env.BARTER_AUTH_HEADER!,
-      customSubdomain: process.env.BARTER_CUSTOM_SUBDOMAIN!,
-    },
   },
 };
 if (process.env.RANGO_API_KEY) {
@@ -32,6 +27,29 @@ if (process.env.PORTALS_FI_API_KEY) {
 }
 if (process.env.DODO_API_KEY) {
   CONFIG.custom!.dodo = { apiKey: process.env.DODO_API_KEY };
+}
+if (process.env.BEBOP_API_KEY) {
+  CONFIG.custom!.bebop = { apiKey: process.env.BEBOP_API_KEY };
+}
+if (process.env.ENSO_API_KEY) {
+  CONFIG.custom!.enso = { apiKey: process.env.ENSO_API_KEY };
+}
+if (process.env.BARTER_AUTH_HEADER && process.env.BARTER_CUSTOM_SUBDOMAIN) {
+  CONFIG.custom!.barter = {
+    authHeader: process.env.BARTER_AUTH_HEADER,
+    customSubdomain: process.env.BARTER_CUSTOM_SUBDOMAIN,
+    sourceDenylist: ['Hashflow'],
+  };
+}
+if (process.env.SQUID_INTEGRATOR_ID) {
+  CONFIG.custom!.squid = { integratorId: process.env.SQUID_INTEGRATOR_ID };
+}
+if (process.env.OKX_DEX_API_KEY && process.env.OKX_DEX_SECRET_KEY && process.env.OKX_DEX_PASSPHRASE) {
+  CONFIG.custom!['okx-dex'] = {
+    apiKey: process.env.OKX_DEX_API_KEY,
+    secretKey: process.env.OKX_DEX_SECRET_KEY,
+    passphrase: process.env.OKX_DEX_PASSPHRASE,
+  };
 }
 
 export function supportedChains() {
