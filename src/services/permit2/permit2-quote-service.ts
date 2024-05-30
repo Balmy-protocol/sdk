@@ -72,7 +72,10 @@ export class Permit2QuoteService implements IPermit2QuoteService {
 
     const result: Record<SourceId, Promise<EstimatedQuoteResponseWithTx>> = {};
     for (const sourceId in quotes) {
-      result[sourceId] = quotes[sourceId].then((quote) => txs[sourceId].then((estimatedTx) => ({ ...mapToUnsigned(quote), estimatedTx })));
+      result[sourceId] = Promise.all([quotes[sourceId], txs[sourceId]]).then(([quote, estimatedTx]) => ({
+        ...mapToUnsigned(quote),
+        estimatedTx,
+      }));
     }
     return result;
   }

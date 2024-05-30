@@ -21,7 +21,7 @@ import { parseEther } from 'viem';
 import { CONFIG } from '../quotes/quote-tests-config';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
-// jest.retryTimes(3);
+jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
 const {
@@ -31,9 +31,9 @@ const {
 // This test validates quotes, but the SDK can't connect to the local test network. So we need to use addresses that have enough
 // balance, because we can't simulate it on the real chain
 const NATIVE_WHALES = {
-  // [Chains.POLYGON.chainId]: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
+  [Chains.POLYGON.chainId]: '0x06959153B974D0D5fDfd87D561db6d8d4FA0bb0B',
   [Chains.ETHEREUM.chainId]: '0x00000000219ab540356cbb839cbe05303d7705fa',
-  // [Chains.BNB_CHAIN.chainId]: '0xf977814e90da44bfa03b6295a0616a897441acec',
+  [Chains.BNB_CHAIN.chainId]: '0xf977814e90da44bfa03b6295a0616a897441acec',
 };
 const chains = Object.keys(NATIVE_WHALES).map(Number);
 
@@ -76,7 +76,6 @@ describe('Permit2 Quote Service [External Quotes]', () => {
                 type: 'sell',
                 sellAmount: ONE_NATIVE_TOKEN.toString(),
               },
-              filters: { includeSources: ['0x', 'xy-finance'] },
               slippagePercentage: 5,
             },
             config: {
@@ -91,7 +90,6 @@ describe('Permit2 Quote Service [External Quotes]', () => {
             config: { sort: { by: 'most-swapped' } },
           });
           quote = quotes[0];
-          console.log(quote);
           const { gasPrice, maxFeePerGas, maxPriorityFeePerGas, ...tx } = quote.tx;
           response = await user.sendTransaction({ gasPrice, ...tx });
         });
