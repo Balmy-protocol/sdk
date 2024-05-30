@@ -106,7 +106,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       body: JSON.stringify({
         routeSummary,
         slippageTolerance: slippagePercentage * 100,
-        recipient: recipient,
+        recipient,
         deadline: txValidFor ? calculateDeadline(txValidFor) : undefined,
         source: config.referrer?.name,
         sender: takeFrom,

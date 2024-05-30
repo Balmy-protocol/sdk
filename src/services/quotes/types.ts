@@ -22,7 +22,7 @@ export type IQuoteService = {
   supportedSourcesInChain(_: { chainId: ChainId }): Record<SourceId, SourceMetadata>;
   supportedGasSpeeds(): Record<ChainId, SupportInChain<SupportedGasValues>>;
 
-  estimateQuotes(_: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }): Promise<EstimatedQuoteResponse>[];
+  estimateQuotes(_: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }): Record<SourceId, Promise<EstimatedQuoteResponse>>;
   estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: EstimatedQuoteRequest;
     config?: {

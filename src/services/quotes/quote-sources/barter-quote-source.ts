@@ -119,7 +119,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       target,
       amount,
       deadline: `${calculateDeadline(txValidFor ?? '1h')}`,
-      recipient: recipient,
+      recipient,
       targetTokenMinReturn: `${minBuyAmount}`,
       typeFilter,
     };

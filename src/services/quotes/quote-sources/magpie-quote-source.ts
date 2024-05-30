@@ -1,4 +1,5 @@
 import qs from 'qs';
+import { parseUnits } from 'viem';
 import { Chains } from '@chains';
 import { ChainId, TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
@@ -62,12 +63,14 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       failed(MAGPIE_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
+    const estimatedGasNum: `${number}` | undefined = fees.find((fee: { type: string; value: `${number}` }) => fee.type === 'gas')?.value;
+    const estimatedGas = estimatedGasNum ? parseUnits(estimatedGasNum, 9) : undefined;
 
     const quote = {
       sellAmount: order.sellAmount,
       buyAmount: BigInt(amountOut),
-      estimatedGas: undefined, // TODO: read from fees property
-      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress), // We default to "to" in case "targetAddress" is not set
+      estimatedGas,
+      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress),
       customData: { quoteId },
     };
 

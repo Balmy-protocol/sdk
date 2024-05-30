@@ -106,7 +106,7 @@ const SOURCE_LIST: IQuoteSourceList = {
   supportedSources: () => ({ [SOURCE]: CHANGELLY_METADATA }),
   getQuotes: () => ({ [SOURCE]: Promise.resolve(RESPONSE) }),
   buildTxs: () => {
-    throw new Error('Function not implemented.');
+    throw new Error('Should not be called');
   },
 };
 const FAILING_SOURCE_LIST: IQuoteSourceList = {
