@@ -15,6 +15,7 @@ import { QuoteResponse, QuoteTransaction } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 import { parseEther } from 'viem';
+import { QuoteResponseWithTx } from '@services/permit2/types';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
@@ -376,7 +377,7 @@ export async function assertUsersBalanceIsReducedAsExpected({
 }: {
   txs?: TransactionResponse[];
   sellToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse;
+  quote: SourceQuoteResponse | QuoteResponse | QuoteResponseWithTx;
   tx: SourceQuoteTransaction | QuoteTransaction;
   user: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, bigint>>;
@@ -401,7 +402,7 @@ export async function assertRecipientsBalanceIsIncreasedAsExpected({
 }: {
   txs?: TransactionResponse[];
   buyToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse;
+  quote: SourceQuoteResponse | QuoteResponse | QuoteResponseWithTx;
   recipient: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, bigint>>;
 }) {
