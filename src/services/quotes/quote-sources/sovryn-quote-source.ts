@@ -1,7 +1,10 @@
 import { Chains } from '@chains';
+import { StringifyBigInt } from '@utility-types';
+import { QuoteTransaction } from '../types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
+import { SourceListQuoteResponse } from '../source-lists/types';
 
 const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
   name: 'Sovryn',
@@ -58,8 +61,9 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       minBuyAmount,
       estimatedGas,
       source: { allowanceTarget },
-      tx: { to, value, data },
-    } = await response.json();
+      customData,
+    }: StringifyBigInt<SourceListQuoteResponse> = await response.json();
+    const tx = customData.tx as any as StringifyBigInt<QuoteTransaction>;
 
     return {
       sellAmount: BigInt(sellAmount),
@@ -71,9 +75,9 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       type: order.type,
       customData: {
         tx: {
-          calldata: data,
-          to,
-          value: BigInt(value ?? 0),
+          calldata: tx.data,
+          to: tx.to,
+          value: BigInt(tx.value ?? 0),
         },
       },
     };

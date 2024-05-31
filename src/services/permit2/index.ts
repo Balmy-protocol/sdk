@@ -12,4 +12,5 @@ export {
   GenericContractCall,
   DistributionTarget,
   EstimatedQuoteResponseWithTx,
+  QuoteResponseWithTx,
 } from './types';

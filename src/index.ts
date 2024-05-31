@@ -19,3 +19,4 @@ export {
   BuiltTransaction,
   AmountsOfToken,
 } from './types';
+export { WithRequired } from './utility-types';
