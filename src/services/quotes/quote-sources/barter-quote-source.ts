@@ -47,7 +47,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
     const target = checksumAndMapIfNecessary(buyToken);
     const amount = `${order.sellAmount}`;
 
-    const headers: HeadersInit = { accept: 'application/json', ['Content-Type']: 'application/json', Authorization: config.authHeader };
+    const headers: HeadersInit = { accept: 'application/json', 'Content-Type': 'application/json', Authorization: config.authHeader };
     if (config.referrer?.name) {
       headers['X-From'] = config.referrer.name;
     }
@@ -109,7 +109,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
     const target = checksumAndMapIfNecessary(buyToken);
     const amount = `${sellAmount}`;
 
-    const headers: HeadersInit = { accept: 'application/json', ['Content-Type']: 'application/json', Authorization: config.authHeader };
+    const headers: HeadersInit = { accept: 'application/json', 'Content-Type': 'application/json', Authorization: config.authHeader };
     if (config.referrer?.name) {
       headers['X-From'] = config.referrer.name;
     }

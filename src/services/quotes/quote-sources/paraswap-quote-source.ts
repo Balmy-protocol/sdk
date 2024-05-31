@@ -120,7 +120,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       srcDecimals,
       destDecimals,
       includeDEXS: config.sourceAllowlist,
-      // Note: request will fail if we don't add these sources
+      // Note: request will fail if we don't exclude these sources
       excludeDEXS: ['ParaSwapPool', 'ParaSwapLimitOrders'],
       // If is swap and transfer, then I need to whitelist methods
       includeContractMethods: !!recipient && !isSameAddress(takeFrom, recipient) ? ['simpleSwap', 'multiSwap', 'megaSwap'] : undefined,

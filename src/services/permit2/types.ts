@@ -32,7 +32,7 @@ export type IPermit2ArbitraryService = {
 };
 
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
-export type QuoteResponseWithTx = QuoteResponse & { tx: QuoteTransaction };
+export type QuoteResponseWithTx = Omit<QuoteResponse, 'customData'> & { tx: QuoteTransaction };
 
 export type IPermit2QuoteService = {
   contractAddress(chainId: ChainId): Address;

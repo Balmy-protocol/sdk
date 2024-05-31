@@ -287,7 +287,6 @@ function buildRealQuote(
     return {
       ...quote,
       accounts: { takerAddress, recipient },
-      customData: {},
       tx: {
         ...estimatedTx,
         from: takerAddress,

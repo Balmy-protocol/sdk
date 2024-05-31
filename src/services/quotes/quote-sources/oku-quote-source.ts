@@ -86,7 +86,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     const quoteResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/swap_quote', {
       method: 'POST',
       body: JSON.stringify(body),
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       timeout,
     });
     if (!quoteResponse.ok) {
@@ -144,7 +144,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
             }
           : undefined,
       }),
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       timeout,
     });
     if (!executionResponse.ok) {
