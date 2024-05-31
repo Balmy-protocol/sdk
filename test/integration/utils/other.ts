@@ -21,4 +21,5 @@ export const CHAINS_WITH_KNOWN_ISSUES = [
   Chains.BOBA,
   Chains.opBNB,
   Chains.HECO,
+  Chains.EVMOS,
 ].map(({ chainId }) => chainId);
