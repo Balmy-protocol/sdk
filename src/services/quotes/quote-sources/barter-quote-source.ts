@@ -1,9 +1,8 @@
 import { Chains } from '@chains';
-import { Address, Chain, ChainId, TimeString } from '@types';
-import { IFetchService } from '@services/fetch';
+import { Address, ChainId, TimeString } from '@types';
 import { calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Addresses } from '@shared/constants';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
 
 const BARTER_NETWORKS: Record<ChainId, string> = {
@@ -24,7 +23,11 @@ type BarterConfig = ({ sourceAllowlist?: string[]; sourceDenylist?: undefined } 
   authHeader: string;
   customSubdomain: string;
 };
-export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConfig> {
+type BarterData = {
+  typeFilter: string[] | undefined;
+  txValidFor: TimeString | undefined;
+};
+export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConfig, BarterData> {
   getMetadata() {
     return BARTER_METADATA;
   }
@@ -37,44 +40,86 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       buyToken,
       order,
       config: { slippagePercentage, timeout, txValidFor },
-      accounts: { takeFrom, recipient },
     },
     config,
-  }: QuoteParams<BarterSupport, BarterConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BarterSupport, BarterConfig>): Promise<SourceQuoteResponse<BarterData>> {
     const source = checksumAndMapIfNecessary(sellToken);
     const target = checksumAndMapIfNecessary(buyToken);
     const amount = `${order.sellAmount}`;
 
-    const headers: HeadersInit = { accept: 'application/json', ['Content-Type']: 'application/json', Authorization: config.authHeader };
+    const headers: HeadersInit = { accept: 'application/json', 'Content-Type': 'application/json', Authorization: config.authHeader };
     if (config.referrer?.name) {
       headers['X-From'] = config.referrer.name;
     }
 
-    const typeFiltersPromise = calculateTypeFilters({ config, fetchService, chain, sellToken, buyToken, headers, timeout });
-    const swapRoutePromise = fetchService.fetch(
+    const responseEnv = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/env`, {
+      headers,
+      timeout,
+    });
+    if (!responseEnv.ok) {
+      failed(BARTER_METADATA, chain, sellToken, buyToken, await responseEnv.text());
+    }
+
+    const { defaultFilters, facadeAddress } = await responseEnv.json();
+    const typeFilter = calculateTypeFilters({ config, defaultFilters });
+
+    const responseSwapRoute = await fetchService.fetch(
       `https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/getSwapRoute`,
       {
         method: 'POST',
-        // Note: we won't apply the type filter here, so that we can parallelize the quote and speed things up
-        body: JSON.stringify({ source, target, amount }),
+        body: JSON.stringify({ source, target, amount, typeFilter }),
         timeout,
         headers,
       }
     );
 
-    const [responseSwapRoute, typeFilter] = await Promise.all([swapRoutePromise, typeFiltersPromise]);
     if (!responseSwapRoute.ok) {
       failed(BARTER_METADATA, chain, sellToken, buyToken, await responseSwapRoute.text());
     }
-    const resultSwapRoute = await responseSwapRoute.json();
-    const minBuyAmount = subtractPercentage(resultSwapRoute.outputAmount, slippagePercentage, 'up');
+    const { outputAmount, gasEstimation } = await responseSwapRoute.json();
+    const minBuyAmount = subtractPercentage(outputAmount, slippagePercentage, 'up');
+
+    return {
+      sellAmount: order.sellAmount,
+      maxSellAmount: order.sellAmount,
+      type: 'sell',
+      buyAmount: BigInt(outputAmount),
+      minBuyAmount,
+      estimatedGas: BigInt(gasEstimation),
+      allowanceTarget: calculateAllowanceTarget(sellToken, facadeAddress),
+      customData: { typeFilter, txValidFor },
+    };
+  }
+
+  async buildTx({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      sellAmount,
+      minBuyAmount,
+      config: { timeout },
+      accounts: { recipient },
+      customData: { typeFilter, txValidFor },
+    },
+    config,
+  }: BuildTxParams<BarterConfig, BarterData>): Promise<SourceQuoteTransaction> {
+    const source = checksumAndMapIfNecessary(sellToken);
+    const target = checksumAndMapIfNecessary(buyToken);
+    const amount = `${sellAmount}`;
+
+    const headers: HeadersInit = { accept: 'application/json', 'Content-Type': 'application/json', Authorization: config.authHeader };
+    if (config.referrer?.name) {
+      headers['X-From'] = config.referrer.name;
+    }
 
     const bodySwap = {
       source,
       target,
       amount,
       deadline: `${calculateDeadline(txValidFor ?? '1h')}`,
-      recipient: recipient ?? takeFrom,
+      recipient,
       targetTokenMinReturn: `${minBuyAmount}`,
       typeFilter,
     };
@@ -89,26 +134,12 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       failed(BARTER_METADATA, chain, sellToken, buyToken, await responseSwap.text());
     }
     const resultSwap = await responseSwap.json();
-    const {
-      data,
-      to,
-      value,
-      route: { gasEstimation, outputAmount },
-    } = resultSwap;
+    const { data, to, value } = resultSwap;
 
     return {
-      sellAmount: order.sellAmount,
-      maxSellAmount: order.sellAmount,
-      type: 'sell',
-      buyAmount: BigInt(outputAmount),
-      minBuyAmount,
-      estimatedGas: BigInt(gasEstimation),
-      allowanceTarget: calculateAllowanceTarget(sellToken, to),
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
-      },
+      calldata: data,
+      to,
+      value: BigInt(value ?? 0),
     };
   }
 
@@ -117,34 +148,10 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
   }
 }
 
-async function calculateTypeFilters({
-  config,
-  fetchService,
-  headers,
-  chain,
-  sellToken,
-  buyToken,
-  timeout,
-}: {
-  config: BarterConfig;
-  fetchService: IFetchService;
-  headers: HeadersInit;
-  chain: Chain;
-  sellToken: Address;
-  buyToken: Address;
-  timeout: TimeString | undefined;
-}) {
+function calculateTypeFilters({ config, defaultFilters }: { config: BarterConfig; defaultFilters: string[] }) {
   if (config.sourceAllowlist) {
     return config.sourceAllowlist;
   } else if (config.sourceDenylist) {
-    const response = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/env`, {
-      headers,
-      timeout,
-    });
-    if (!response.ok) {
-      failed(BARTER_METADATA, chain, sellToken, buyToken, await response.text());
-    }
-    const { defaultFilters }: { defaultFilters: string[] } = await response.json();
     const lowerDenylist = new Set(config.sourceDenylist!.map((source) => source.toLowerCase()));
     return defaultFilters.filter((filter) => !lowerDenylist.has(filter.toLowerCase()));
   }

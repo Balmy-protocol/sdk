@@ -1,7 +1,7 @@
 import qs from 'qs';
 import CryptoJS from 'crypto-js';
 import { Chains } from '@chains';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { failed } from './utils';
 import { IFetchService } from '@services/fetch';
 import { Address, Chain, TimeString } from '@types';
@@ -33,12 +33,13 @@ const OKX_DEX_METADATA: QuoteSourceMetadata<OKXDexSupport> = {
 };
 type OKXDexConfig = { apiKey: string; secretKey: string; passphrase: string };
 type OKXDexSupport = { buyOrders: false; swapAndTransfer: false };
+type OKXDexData = { tx: SourceQuoteTransaction };
 export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConfig> {
   getMetadata() {
     return OKX_DEX_METADATA;
   }
 
-  async quote({ components, request, config }: QuoteParams<OKXDexSupport, OKXDexConfig>): Promise<SourceQuoteResponse> {
+  async quote({ components, request, config }: QuoteParams<OKXDexSupport, OKXDexConfig>): Promise<SourceQuoteResponse<OKXDexData>> {
     const [approvalTargetResponse, quoteResponse] = await Promise.all([
       calculateApprovalTarget({ components, request, config }),
       calculateQuote({ components, request, config }),
@@ -63,12 +64,18 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
       estimatedGas: BigInt(gas),
       allowanceTarget: approvalTarget,
       type: 'sell',
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<OKXDexConfig, OKXDexData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<OKXDexConfig> | undefined): config is OKXDexConfig {

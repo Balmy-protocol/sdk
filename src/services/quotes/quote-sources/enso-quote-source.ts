@@ -1,8 +1,7 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams, IQuoteSource } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, checksum, failed } from './utils';
-import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
 const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   name: 'Enso',
@@ -23,8 +22,9 @@ const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   logoURI: 'ipfs://QmWc9U7emJ7YvoLsxCvvJMxnEfMncJXrkqFpGoCP2LxZRJ',
 };
 type EnsoSupport = { buyOrders: false; swapAndTransfer: false };
-type EnsoConfig = { apiKey?: string };
-export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSupport, EnsoConfig> {
+type EnsoConfig = { apiKey: string };
+type EnsoData = { tx: SourceQuoteTransaction };
+export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, EnsoData> {
   getMetadata() {
     return ENSO_METADATA;
   }
@@ -40,7 +40,7 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSuppo
       accounts: { takeFrom },
     },
     config,
-  }: QuoteParams<EnsoSupport, EnsoConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<EnsoSupport, EnsoConfig>): Promise<SourceQuoteResponse<EnsoData>> {
     const takeFromChecksummed = checksum(takeFrom);
 
     const queryParams = {
@@ -52,7 +52,7 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSuppo
       tokenOut: buyToken,
       routingStrategy: 'router',
       priceImpact: false,
-      chain: chain.chainId,
+      chainId: chain.chainId,
       slippage: Math.floor(slippagePercentage * 100),
       tokenInAmountToApprove: order.sellAmount.toString(),
       tokenInAmountToTransfer: order.sellAmount.toString(),
@@ -80,13 +80,23 @@ export class EnsoQuoteSource extends AlwaysValidConfigAndContextSource<EnsoSuppo
       buyAmount: BigInt(amountOut),
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
       estimatedGas: BigInt(gas),
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<EnsoConfig, EnsoData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
+  }
+
+  isConfigAndContextValid(config: Partial<EnsoConfig> | undefined): config is EnsoConfig {
+    return !!config?.apiKey;
   }
 }

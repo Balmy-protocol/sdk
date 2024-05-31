@@ -1,17 +1,25 @@
 import { getAddress } from 'viem';
 import { addPercentage, isSameAddress, subtractPercentage } from '@shared/utils';
-import { Address, Chain, TokenAddress } from '@types';
+import { Address, Chain, ChainId, TokenAddress } from '@types';
 import { SourceQuoteResponse } from './types';
 import { FailedToGenerateQuoteError } from '../errors';
 import { SourceMetadata } from '../types';
 import { Addresses } from '@shared/constants';
 
-export function failed(metadata: SourceMetadata, chain: Chain, sellToken: TokenAddress, buyToken: TokenAddress, error?: any): never {
-  throw new FailedToGenerateQuoteError(metadata.name, chain.chainId, sellToken, buyToken, error);
+export function failed(metadata: SourceMetadata, chain: Chain | ChainId, sellToken: TokenAddress, buyToken: TokenAddress, error?: any): never {
+  const chainId = typeof chain === 'number' ? chain : chain.chainId;
+  throw new FailedToGenerateQuoteError(metadata.name, chainId, sellToken, buyToken, error);
 }
 
-type SlippagelessQuote = Omit<SourceQuoteResponse, 'minBuyAmount' | 'maxSellAmount' | 'type'>;
-export function addQuoteSlippage(quote: SlippagelessQuote, type: 'sell' | 'buy', slippagePercentage: number): SourceQuoteResponse {
+type SlippagelessQuote<CustomQuoteSourceData extends Record<string, any>> = Omit<
+  SourceQuoteResponse<CustomQuoteSourceData>,
+  'minBuyAmount' | 'maxSellAmount' | 'type'
+>;
+export function addQuoteSlippage<CustomQuoteSourceData extends Record<string, any>>(
+  quote: SlippagelessQuote<CustomQuoteSourceData>,
+  type: 'sell' | 'buy',
+  slippagePercentage: number
+): SourceQuoteResponse<CustomQuoteSourceData> {
   return type === 'sell'
     ? {
         ...quote,

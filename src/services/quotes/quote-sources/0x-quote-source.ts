@@ -2,7 +2,7 @@ import qs from 'qs';
 import { Chains } from '@chains';
 import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 // Supported Networks: https://0x.org/docs/0x-swap-api/introduction#supported-networks
@@ -31,7 +31,8 @@ const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
 };
 type ZRXConfig = { apiKey: string };
 type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
-export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig> {
+type ZRXData = { tx: SourceQuoteTransaction };
+export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXData> {
   getMetadata() {
     return ZRX_METADATA;
   }
@@ -47,7 +48,7 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig> {
       accounts: { takeFrom },
     },
     config,
-  }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse<ZRXData>> {
     const api = ZRX_API[chain.chainId];
     const queryParams = {
       sellToken,
@@ -78,14 +79,20 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig> {
       buyAmount: BigInt(buyAmount),
       estimatedGas: BigInt(estimatedGas),
       allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
 
     return addQuoteSlippage(quote, order.type, isSameAddress(to, chain.wToken) ? 0 : slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<ZRXConfig, ZRXData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<ZRXConfig> | undefined): config is ZRXConfig {

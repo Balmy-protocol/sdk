@@ -2,7 +2,7 @@ import { Chains } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, subtractPercentage, timeToSeconds } from '@shared/utils';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { encodeFunctionData, parseAbi } from 'viem';
@@ -30,7 +30,9 @@ const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
 };
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
-export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<UniswapSupport> {
+type UniswapConfig = {};
+type UniswapData = { tx: SourceQuoteTransaction };
+export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<UniswapSupport, UniswapConfig, UniswapData> {
   getMetadata() {
     return UNISWAP_METADATA;
   }
@@ -45,7 +47,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom, recipient },
     },
-  }: QuoteParams<UniswapSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<UniswapSupport>): Promise<SourceQuoteResponse<UniswapData>> {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
@@ -111,13 +113,19 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
       buyAmount,
       estimatedGas: BigInt(gasUseEstimate),
       allowanceTarget: calculateAllowanceTarget(sellToken, router),
-      tx: {
-        to: router,
-        calldata,
-        value,
+      customData: {
+        tx: {
+          to: router,
+          calldata,
+          value,
+        },
       },
     };
     return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<UniswapConfig, UniswapData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }
 

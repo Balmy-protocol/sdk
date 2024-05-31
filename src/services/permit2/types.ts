@@ -11,7 +11,7 @@ import {
   QuoteTransaction,
 } from '@services/quotes';
 import { SupportedGasValues } from '@services/gas/types';
-import { IgnoreFailedQuotes } from '@services/quotes/types';
+import { IgnoreFailedResponses } from '@services/quotes/types';
 
 export type IPermit2Service = {
   permit2ContractAddress(chainId: ChainId): Address;
@@ -32,6 +32,7 @@ export type IPermit2ArbitraryService = {
 };
 
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
+export type QuoteResponseWithTx = Omit<QuoteResponse, 'customData'> & { tx: QuoteTransaction };
 
 export type IPermit2QuoteService = {
   contractAddress(chainId: ChainId): Address;
@@ -43,7 +44,7 @@ export type IPermit2QuoteService = {
   estimateQuotes(_: {
     request: EstimatedQuoteRequest;
     config?: { timeout?: TimeString };
-  }): Promise<IgnoreFailedQuotes<false, EstimatedQuoteResponseWithTx>>[];
+  }): Record<SourceId, Promise<EstimatedQuoteResponseWithTx>>;
   estimateAllQuotes<IgnoreFailed extends boolean = true>(_: {
     request: EstimatedQuoteRequest;
     config?: {
@@ -54,8 +55,8 @@ export type IPermit2QuoteService = {
       };
       timeout?: TimeString;
     };
-  }): Promise<IgnoreFailedQuotes<IgnoreFailed, EstimatedQuoteResponseWithTx>[]>;
-  verifyAndPrepareQuotes<IgnoreFailed extends boolean = true>(
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, EstimatedQuoteResponseWithTx>[]>;
+  buildAndSimulateQuotes<IgnoreFailed extends boolean = true>(
     _: {
       chainId: ChainId;
       quotes: EstimatedQuoteResponseWithTx[];
@@ -72,7 +73,7 @@ export type IPermit2QuoteService = {
       | { permitData: PermitData['permitData'] & { signature: string }; txValidFor?: undefined }
       | { txValidFor?: TimeString; permitData?: undefined }
     )
-  ): Promise<IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]>;
+  ): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]>;
 };
 
 export type SinglePermitParams = {

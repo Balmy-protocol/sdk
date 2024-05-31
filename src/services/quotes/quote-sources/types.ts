@@ -17,10 +17,40 @@ export type QuoteParams<Support extends QuoteSourceSupport, CustomQuoteSourceCon
   config: CustomQuoteSourceConfig & GlobalQuoteSourceConfig;
   request: SourceQuoteRequest<Support>;
 };
-export type IQuoteSource<Support extends QuoteSourceSupport, CustomQuoteSourceConfig extends object = {}> = {
+export type BuildTxParams<
+  CustomQuoteSourceConfig extends object = {},
+  CustomQuoteSourceData extends Record<string, any> = Record<string, any>
+> = {
+  components: QuoteComponents;
+  config: CustomQuoteSourceConfig & GlobalQuoteSourceConfig;
+  request: SourceQuoteBuildTxRequest<CustomQuoteSourceData>;
+};
+
+export type SourceQuoteBuildTxRequest<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
+  chain: Chain;
+  sellToken: TokenAddress;
+  buyToken: TokenAddress;
+  type: 'sell' | 'buy';
+  sellAmount: bigint;
+  maxSellAmount: bigint;
+  buyAmount: bigint;
+  minBuyAmount: bigint;
+  accounts: { takeFrom: Address; recipient: Address };
+  customData: CustomQuoteSourceData;
+  config: {
+    timeout?: TimeString;
+  };
+};
+
+export type IQuoteSource<
+  Support extends QuoteSourceSupport,
+  CustomQuoteSourceConfig extends object = {},
+  CustomQuoteSourceData extends Record<string, any> = Record<string, any>
+> = {
   isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
-  quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse>;
+  quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse<CustomQuoteSourceData>>;
+  buildTx(_: BuildTxParams<CustomQuoteSourceConfig, CustomQuoteSourceData>): Promise<SourceQuoteTransaction>;
 };
 
 type QuoteComponents = {
@@ -52,7 +82,7 @@ type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAcco
   };
 };
 
-export type SourceQuoteResponse = {
+export type SourceQuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
   sellAmount: bigint;
   maxSellAmount: bigint;
   buyAmount: bigint;
@@ -60,12 +90,13 @@ export type SourceQuoteResponse = {
   type: 'sell' | 'buy';
   allowanceTarget: Address;
   estimatedGas?: bigint;
-  tx: {
-    to: Address;
-    calldata: string;
-    value?: bigint;
-  };
-  customData?: Record<string, any>;
+  customData: CustomQuoteSourceData;
+};
+
+export type SourceQuoteTransaction = {
+  to: Address;
+  calldata: string;
+  value?: bigint;
 };
 
 export type SourceQuoteRequest<

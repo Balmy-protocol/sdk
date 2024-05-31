@@ -8,13 +8,14 @@ import { Address, BigIntish, Chain, ChainId, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { FetchService } from '@services/fetch/fetch-service';
 import { TransactionResponse } from '@ethersproject/providers';
-import { SourceQuoteResponse } from '@services/quotes/quote-sources/types';
+import { SourceQuoteResponse, SourceQuoteTransaction } from '@services/quotes/quote-sources/types';
 import { CHAINS_WITH_KNOWN_ISSUES, calculateGasSpent } from './other';
 import { expect } from 'chai';
-import { QuoteResponse } from '@services/quotes/types';
+import { QuoteResponse, QuoteTransaction } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 import { parseEther } from 'viem';
+import { QuoteResponseWithTx } from '@services/permit2/types';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
@@ -371,11 +372,13 @@ export async function assertUsersBalanceIsReducedAsExpected({
   sellToken,
   quote,
   user,
+  tx,
   initialBalances,
 }: {
   txs?: TransactionResponse[];
   sellToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse;
+  quote: SourceQuoteResponse | QuoteResponse | QuoteResponseWithTx;
+  tx: SourceQuoteTransaction | QuoteTransaction;
   user: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, bigint>>;
 }) {
@@ -383,9 +386,9 @@ export async function assertUsersBalanceIsReducedAsExpected({
   const bal = await balance({ of: user.address, for: sellToken });
   if (isSameAddress(sellToken.address, Addresses.NATIVE_TOKEN)) {
     const gasSpent = await calculateGasSpent(...(txs ?? []));
-    expect(bal).to.equal(initialBalance - gasSpent - BigInt(quote.tx.value ?? 0));
+    expect(bal).to.equal(initialBalance - gasSpent - (tx.value ?? 0n));
   } else {
-    const maxSellAmount = typeof quote.maxSellAmount === 'object' ? BigInt(quote.maxSellAmount.amount) : quote.maxSellAmount;
+    const maxSellAmount = typeof quote.maxSellAmount === 'object' ? quote.maxSellAmount.amount : quote.maxSellAmount;
     expect(bal).to.be.gte(initialBalance - maxSellAmount);
   }
 }
@@ -399,7 +402,7 @@ export async function assertRecipientsBalanceIsIncreasedAsExpected({
 }: {
   txs?: TransactionResponse[];
   buyToken: IHasAddress;
-  quote: SourceQuoteResponse | QuoteResponse;
+  quote: SourceQuoteResponse | QuoteResponse | QuoteResponseWithTx;
   recipient: IHasAddress;
   initialBalances: Record<Address, Record<TokenAddress, bigint>>;
 }) {

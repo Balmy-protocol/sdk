@@ -3,7 +3,7 @@ import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 import { Chain, ChainId, TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { Chains } from '@chains';
 
 const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
@@ -28,7 +28,8 @@ export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {
 };
 type PortalsFiConfig = { apiKey: string };
 type PortalsFiSupport = { buyOrders: false; swapAndTransfer: false };
-export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, PortalsFiConfig> {
+type PortalsFiData = { tx: SourceQuoteTransaction };
+export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, PortalsFiConfig, PortalsFiData> {
   getMetadata() {
     return PORTALS_FI_METADATA;
   }
@@ -44,7 +45,7 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<PortalsFiSupport, PortalsFiConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<PortalsFiSupport, PortalsFiConfig>): Promise<SourceQuoteResponse<PortalsFiData>> {
     const mappedSellToken = mapToken(chain, sellToken);
     const mappedBuyToken = mapToken(chain, buyToken);
     const queryParams = {
@@ -80,12 +81,18 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
       type: 'sell',
       estimatedGas: gasLimit ? BigInt(gasLimit) : undefined, // Portals does not estimate gas when validate=false
       allowanceTarget: calculateAllowanceTarget(sellToken, to),
-      tx: {
-        to,
-        calldata: data,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          to,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<PortalsFiConfig, PortalsFiData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   isConfigAndContextValid(config: Partial<PortalsFiConfig> | undefined): config is PortalsFiConfig {

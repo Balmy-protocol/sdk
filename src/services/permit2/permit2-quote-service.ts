@@ -1,9 +1,23 @@
-import { EstimatedQuoteResponseWithTx, IPermit2QuoteService, IPermit2Service, PermitData, SinglePermitParams } from './types';
+import {
+  EstimatedQuoteResponseWithTx,
+  IPermit2QuoteService,
+  IPermit2Service,
+  PermitData,
+  QuoteResponseWithTx,
+  SinglePermitParams,
+} from './types';
 import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CompareQuotesBy, CompareQuotesUsing, QuoteResponse, IQuoteService, sortQuotesBy } from '@services/quotes';
-import { calculateGasDetails, ifNotFailed } from '@services/quotes/quote-service';
-import { EstimatedQuoteRequest, FailedQuote, IgnoreFailedQuotes, SourceId, SourceMetadata } from '@services/quotes/types';
+import { calculateGasDetails, handleResponseFailure, ifNotFailed } from '@services/quotes/quote-service';
+import {
+  EstimatedQuoteRequest,
+  EstimatedQuoteResponse,
+  FailedResponse,
+  IgnoreFailedResponses,
+  SourceId,
+  SourceMetadata,
+} from '@services/quotes/types';
 import { calculateDeadline, isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { encodeFunctionData, decodeAbiParameters, parseAbiParameters, Hex, Address as ViemAddress } from 'viem';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
@@ -50,12 +64,20 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   }
 
   estimateQuotes({ request, config }: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }) {
-    return this.quotesService
-      .getQuotes({
-        request: { ...request, takerAddress: this.contractAddress(request.chainId) },
-        config: config,
-      })
-      .map((promise) => promise.then((response) => ifNotFailed(response, mapToUnsigned)));
+    const quotes = this.quotesService.getQuotes({
+      request: { ...request, takerAddress: this.contractAddress(request.chainId) },
+      config: config,
+    });
+    const txs = this.quotesService.buildTxs({ quotes, config });
+
+    const result: Record<SourceId, Promise<EstimatedQuoteResponseWithTx>> = {};
+    for (const sourceId in quotes) {
+      result[sourceId] = Promise.all([quotes[sourceId], txs[sourceId]]).then(([quote, estimatedTx]) => ({
+        ...mapToUnsigned(quote),
+        estimatedTx,
+      }));
+    }
+    return result;
   }
 
   async estimateAllQuotes<IgnoreFailed extends boolean = true>({
@@ -72,14 +94,21 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       timeout?: TimeString;
     };
   }) {
-    const allQuotes = await this.quotesService.getAllQuotes({
-      request: { ...request, takerAddress: this.contractAddress(request.chainId) },
-      config,
-    });
-    return allQuotes.map((response) => ifNotFailed(response, mapToUnsigned));
+    const metadata = this.supportedSources();
+    const quotes = Object.entries(this.estimateQuotes({ request, config })).map(([sourceId, response]) =>
+      handleResponseFailure(sourceId, response, metadata)
+    );
+
+    const responses = await Promise.all(quotes);
+    const successfulQuotes = responses.filter((response): response is EstimatedQuoteResponseWithTx => !('failed' in response));
+    const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedResponse => 'failed' in response) : [];
+
+    const sortedQuotes = sortQuotesBy(successfulQuotes, config?.sort?.by ?? 'most-swapped', config?.sort?.using ?? 'sell/buy amounts');
+
+    return [...sortedQuotes, ...failedQuotes] as IgnoreFailedResponses<IgnoreFailed, EstimatedQuoteResponseWithTx>[];
   }
 
-  async verifyAndPrepareQuotes<IgnoreFailed extends boolean = true>({
+  async buildAndSimulateQuotes<IgnoreFailed extends boolean = true>({
     chainId,
     quotes: estimatedQuotes,
     config,
@@ -97,33 +126,37 @@ export class Permit2QuoteService implements IPermit2QuoteService {
       };
     };
   } & Either<{ permitData?: PermitData['permitData'] & { signature: string } }, { txValidFor?: TimeString }>): Promise<
-    IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[]
+    IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]
   > {
     const quotes = estimatedQuotes.map((estimatedQuote) => buildRealQuote(quoteData, estimatedQuote, chainId));
-    const encoded = quotes.filter((response): response is QuoteResponse => !('failed' in response));
+    const encoded = quotes.filter((response): response is QuoteResponseWithTx => !('failed' in response));
     const responses = await this.verifyAndCorrect(chainId, quoteData.takerAddress, encoded);
 
     if (config?.sort) {
-      const successfulQuotes = responses.filter((response): response is QuoteResponse => !('failed' in response));
+      const successfulQuotes = responses.filter((response): response is QuoteResponseWithTx => !('failed' in response));
       const failedQuotes =
         config?.ignoredFailed === false
           ? [
-              ...quotes.filter((response): response is FailedQuote => 'failed' in response),
-              ...responses.filter((response): response is FailedQuote => 'failed' in response),
+              ...quotes.filter((response): response is FailedResponse => 'failed' in response),
+              ...responses.filter((response): response is FailedResponse => 'failed' in response),
             ]
           : [];
 
       const sortedQuotes = sortQuotesBy(successfulQuotes, config.sort.by, config.sort.using ?? 'sell/buy amounts');
-      return [...sortedQuotes, ...failedQuotes] as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
+      return [...sortedQuotes, ...failedQuotes] as IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[];
     }
 
     // Don't sort, but filter out failed if needed
     const result =
-      config?.ignoredFailed === false ? responses : responses.filter((response): response is QuoteResponse => !('failed' in response));
-    return result as IgnoreFailedQuotes<IgnoreFailed, QuoteResponse>[];
+      config?.ignoredFailed === false ? responses : responses.filter((response): response is QuoteResponseWithTx => !('failed' in response));
+    return result as IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[];
   }
 
-  private async verifyAndCorrect(chainId: ChainId, takerAddress: Address, quotes: QuoteResponse[]): Promise<(QuoteResponse | FailedQuote)[]> {
+  private async verifyAndCorrect(
+    chainId: ChainId,
+    takerAddress: Address,
+    quotes: QuoteResponseWithTx[]
+  ): Promise<(QuoteResponseWithTx | FailedResponse)[]> {
     const calls = quotes.map(({ tx }) => tx.data);
     const maxValue = quotes.reduce((max, { tx: { value } }) => (value && max < (BigInt(value) ?? 0n) ? BigInt(value) : max), 0n);
     const [gasCalculator, encodedResults] = await Promise.all([
@@ -204,7 +237,7 @@ function buildRealQuote(
   },
   { estimatedTx, ...quote }: EstimatedQuoteResponseWithTx,
   chainId: ChainId
-): QuoteResponse | FailedQuote {
+): QuoteResponseWithTx | FailedResponse {
   try {
     recipient = recipient ?? takerAddress;
     const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
@@ -253,7 +286,7 @@ function buildRealQuote(
           });
     return {
       ...quote,
-      recipient,
+      accounts: { takerAddress, recipient },
       tx: {
         ...estimatedTx,
         from: takerAddress,
@@ -270,11 +303,8 @@ function buildRealQuote(
   }
 }
 
-function mapToUnsigned({ recipient, tx, ...quote }: QuoteResponse): EstimatedQuoteResponseWithTx {
-  return {
-    ...quote,
-    estimatedTx: tx,
-  };
+function mapToUnsigned({ accounts, customData, ...quote }: QuoteResponse): EstimatedQuoteResponse {
+  return { ...quote };
 }
 
 function mapIfNative(token: TokenAddress): ViemAddress {

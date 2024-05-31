@@ -1,6 +1,6 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, IQuoteSource } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, IQuoteSource, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 
@@ -29,12 +29,13 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
 type OneInchSupport = { buyOrders: false; swapAndTransfer: true };
 type CustomOrAPIKeyConfig = { customUrl: string; apiKey?: undefined } | { customUrl?: undefined; apiKey: string };
 type OneInchConfig = { sourceAllowlist?: string[] } & CustomOrAPIKeyConfig;
-export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchConfig> {
+type OneInchData = { tx: SourceQuoteTransaction };
+export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchConfig, OneInchData> {
   getMetadata() {
     return ONE_INCH_METADATA;
   }
 
-  async quote(params: QuoteParams<OneInchSupport, OneInchConfig>): Promise<SourceQuoteResponse> {
+  async quote(params: QuoteParams<OneInchSupport, OneInchConfig>): Promise<SourceQuoteResponse<OneInchData>> {
     const { dstAmount, to, data, value, gas } = await this.getQuote(params);
 
     const quote = {
@@ -42,14 +43,20 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
       buyAmount: BigInt(dstAmount),
       estimatedGas: gas ? BigInt(gas) : undefined,
       allowanceTarget: calculateAllowanceTarget(params.request.sellToken, to),
-      tx: {
-        to,
-        calldata: data,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          to,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
       },
     };
 
     return addQuoteSlippage(quote, params.request.order.type, params.request.config.slippagePercentage);
+  }
+
+  async buildTx({ request }: BuildTxParams<OneInchConfig, OneInchData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 
   private async getQuote({

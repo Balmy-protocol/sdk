@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import qs from 'qs';
 import { addQuoteSlippage, failed } from './utils';
 import { parseUnits } from 'viem';
@@ -32,7 +32,8 @@ const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
 };
 type DodoDexConfig = { apiKey: string };
 type DodoDexSupport = { buyOrders: false; swapAndTransfer: false };
-export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexConfig> {
+type DodoDexData = { tx: SourceQuoteTransaction };
+export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexConfig, DodoDexData> {
   getMetadata() {
     return DODO_DEX_METADATA;
   }
@@ -47,7 +48,7 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<DodoDexSupport, DodoDexConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<DodoDexSupport, DodoDexConfig>): Promise<SourceQuoteResponse<DodoDexData>> {
     const queryParams = {
       chainId: chain.chainId,
       fromAmount: order.sellAmount,
@@ -79,15 +80,22 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
       buyAmount,
       estimatedGas: undefined,
       allowanceTarget: targetApproveAddr ?? Addresses.ZERO_ADDRESS,
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
+
+  async buildTx({ request }: BuildTxParams<DodoDexConfig, DodoDexData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
+  }
+
   isConfigAndContextValid(config: Partial<DodoDexConfig> | undefined): config is DodoDexConfig {
     return !!config?.apiKey;
   }

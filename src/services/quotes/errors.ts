@@ -8,18 +8,6 @@ export class SourceNotFoundError extends Error {
   }
 }
 
-export class SourceNotOnChainError extends Error {
-  constructor(sourceId: SourceId, chainId: ChainId) {
-    super(`Source with id '${sourceId}' does not support chain with id ${chainId}`);
-  }
-}
-
-export class SourceNoSwapAndTransferError extends Error {
-  constructor(sourceId: SourceId) {
-    super(`Source with id '${sourceId}' does not support swap & transfer, but a recipient different from the taker address was set`);
-  }
-}
-
 export class SourceNoBuyOrdersError extends Error {
   constructor(sourceId: SourceId) {
     super(`Source with id '${sourceId}' does not support buy orders`);

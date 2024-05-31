@@ -6,8 +6,9 @@ type AddedBuyOrderSupport<Support extends QuoteSourceSupport> = Pick<Support, 's
 export function buyToSellOrderWrapper<
   Support extends QuoteSourceSupport,
   CustomQuoteSourceConfig extends object,
-  Source extends IQuoteSource<Support, CustomQuoteSourceConfig>
->(source: Source): IQuoteSource<AddedBuyOrderSupport<Support>, CustomQuoteSourceConfig> {
+  CustomQuoteSourceData extends Record<string, any>,
+  Source extends IQuoteSource<Support, CustomQuoteSourceConfig, CustomQuoteSourceData>
+>(source: Source): IQuoteSource<AddedBuyOrderSupport<Support>, CustomQuoteSourceConfig, CustomQuoteSourceData> {
   return {
     getMetadata: () => {
       const { supports: originalSupport, ...originalMetadata } = source.getMetadata();
@@ -26,15 +27,18 @@ export function buyToSellOrderWrapper<
         return executeBuyOrderAsSellOrder(request, (request) => source.quote({ components, request, config }));
       }
     },
+    buildTx: (args) => {
+      return source.buildTx(args);
+    },
     isConfigAndContextValid: (config): config is CustomQuoteSourceConfig => {
       return source.isConfigAndContextValid(config);
     },
   };
 }
 
-async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport>(
+async function executeBuyOrderAsSellOrder<Support extends QuoteSourceSupport, CustomQuoteSourceData extends Record<string, any>>(
   request: SourceQuoteRequest<AddedBuyOrderSupport<Support>>,
-  quote: (request: SourceQuoteRequest<Support>) => Promise<SourceQuoteResponse>
+  quote: (request: SourceQuoteRequest<Support>) => Promise<SourceQuoteResponse<CustomQuoteSourceData>>
 ) {
   if (request.order.type === 'sell') {
     throw new Error('We should not be able to get here');

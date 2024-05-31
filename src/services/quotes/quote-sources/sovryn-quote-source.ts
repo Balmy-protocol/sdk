@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
@@ -13,7 +13,9 @@ const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
   logoURI: 'ipfs://QmUpdb1zxtB2kUSjR1Qs1QMFPsSeZNkL21fMzGUfdjkXQA',
 };
 type SovrynSupport = { buyOrders: false; swapAndTransfer: false };
-export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynSupport> {
+type SovrynConfig = {};
+type SovrynData = { tx: SourceQuoteTransaction };
+export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynSupport, SovrynConfig, SovrynData> {
   getMetadata() {
     return SOVRYN_METADATA;
   }
@@ -29,7 +31,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       ...request
     },
     config,
-  }: QuoteParams<SovrynSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<SovrynSupport>): Promise<SourceQuoteResponse<SovrynData>> {
     const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
     const body = {
       ...request,
@@ -67,11 +69,17 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       estimatedGas: estimatedGas ? BigInt(estimatedGas) : undefined,
       allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<SovrynConfig, SovrynData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }

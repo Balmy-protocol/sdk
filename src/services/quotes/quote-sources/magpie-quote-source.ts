@@ -1,8 +1,9 @@
 import qs from 'qs';
+import { parseUnits } from 'viem';
 import { Chains } from '@chains';
 import { ChainId, TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
@@ -29,7 +30,8 @@ const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
 };
 type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
 type MagpieConfig = { sourceAllowlist?: string[] };
-export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig> {
+type MagpieData = { quoteId: string };
+export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
   getMetadata() {
     return MAGPIE_METADATA;
   }
@@ -41,11 +43,10 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellToken,
       buyToken,
       order,
-      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<MagpieSupport, MagpieConfig>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<MagpieSupport, MagpieConfig>): Promise<SourceQuoteResponse<MagpieData>> {
     const quoteQueryParams = {
       network: SUPPORTED_CHAINS[chain.chainId],
       fromTokenAddress: mapToken(sellToken),
@@ -62,12 +63,36 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       failed(MAGPIE_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
+    const estimatedGasNum: `${number}` | undefined = fees.find((fee: { type: string; value: `${number}` }) => fee.type === 'gas')?.value;
+    const estimatedGas = estimatedGasNum ? parseUnits(estimatedGasNum, 9) : undefined;
 
+    const quote = {
+      sellAmount: order.sellAmount,
+      buyAmount: BigInt(amountOut),
+      estimatedGas,
+      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress),
+      customData: { quoteId },
+    };
+
+    return addQuoteSlippage(quote, order.type, slippagePercentage);
+  }
+
+  async buildTx({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      accounts: { takeFrom, recipient },
+      config: { timeout },
+      customData: { quoteId },
+    },
+  }: BuildTxParams<MagpieConfig, MagpieData>): Promise<SourceQuoteTransaction> {
     const transactionQueryParams = {
       quoteId,
-      toAddress: recipient ?? takeFrom,
+      toAddress: recipient,
       fromAddress: takeFrom,
-      estimateGas: !config.disableValidation,
+      estimateGas: false,
     };
     const transactionQueryString = qs.stringify(transactionQueryParams, { skipNulls: true, arrayFormat: 'comma' });
     const transactionUrl = `https://api.magpiefi.xyz/aggregator/transaction?${transactionQueryString}`;
@@ -75,19 +100,8 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     if (!transactionResponse.ok) {
       failed(MAGPIE_METADATA, chain, sellToken, buyToken, await transactionResponse.text());
     }
-    const { to, value, data, gasLimit } = await transactionResponse.json();
-
-    const gasLimitBI = gasLimit ? BigInt(gasLimit) : 0n;
-
-    const quote = {
-      sellAmount: order.sellAmount,
-      buyAmount: BigInt(amountOut),
-      estimatedGas: gasLimitBI > 0n ? gasLimitBI : undefined,
-      allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress ?? to), // We default to "to" in case "targetAddress" is not set
-      tx: { to, calldata: data, value: BigInt(value) },
-    };
-
-    return addQuoteSlippage(quote, order.type, slippagePercentage);
+    const { to, value, data } = await transactionResponse.json();
+    return { to, calldata: data, value: BigInt(value) };
   }
 }
 

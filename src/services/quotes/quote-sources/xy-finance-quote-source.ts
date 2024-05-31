@@ -1,6 +1,6 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
@@ -32,7 +32,9 @@ const XY_FINANCE_METADATA: QuoteSourceMetadata<XYFinanceSupport> = {
   logoURI: 'ipfs://Qmeuf9xMFE66UBeBNb9SneyyqSNAhsiNXiHES1vCvpyrFS',
 };
 type XYFinanceSupport = { buyOrders: false; swapAndTransfer: true };
-export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFinanceSupport> {
+type XYFinanceConfig = {};
+type XYFinanceData = { tx: SourceQuoteTransaction };
+export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFinanceSupport, XYFinanceConfig, XYFinanceData> {
   getMetadata() {
     return XY_FINANCE_METADATA;
   }
@@ -48,7 +50,7 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
       accounts: { takeFrom, recipient },
     },
     config,
-  }: QuoteParams<XYFinanceSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<XYFinanceSupport>): Promise<SourceQuoteResponse<XYFinanceData>> {
     const queryParams = {
       srcChainId: chain.chainId,
       srcQuoteTokenAddress: sellToken,
@@ -86,11 +88,17 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
       estimatedGas: estimatedGas ?? BigInt(estimatedGas),
       allowanceTarget: calculateAllowanceTarget(sellToken, contractAddress),
       type: 'sell',
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<XYFinanceConfig, XYFinanceData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }

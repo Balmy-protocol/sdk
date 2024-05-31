@@ -7,7 +7,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { TokenAddress, Address } from '@types';
-import { QuoteResponse } from '@services/quotes/types';
+import { QuoteResponseWithTx } from '@services/permit2/types';
 import {
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReducedAsExpected,
@@ -46,7 +46,6 @@ describe('Permit2 Quote Service [External Quotes]', () => {
       let nativeToken: TestToken, STABLE_ERC20: TestToken, wToken: TestToken;
       let initialBalances: Record<Address, Record<TokenAddress, bigint>>;
       let snapshot: SnapshotRestorer;
-
       beforeAll(async () => {
         await fork({ chain });
         const whale = NATIVE_WHALES[chainId];
@@ -61,13 +60,11 @@ describe('Permit2 Quote Service [External Quotes]', () => {
         });
         snapshot = await takeSnapshot();
       });
-
       afterEach(async () => {
         await snapshot.restore();
       });
-
       when('swapping 1 native token to stables', () => {
-        let quote: QuoteResponse;
+        let quote: QuoteResponseWithTx;
         let response: TransactionResponse;
         given(async () => {
           const estimatedQuotes = await permit2QuoteService.estimateAllQuotes({
@@ -85,7 +82,7 @@ describe('Permit2 Quote Service [External Quotes]', () => {
               timeout: '15s',
             },
           });
-          const quotes = await permit2QuoteService.verifyAndPrepareQuotes({
+          const quotes = await permit2QuoteService.buildAndSimulateQuotes({
             chainId,
             quotes: estimatedQuotes,
             takerAddress: user.address,
@@ -101,6 +98,7 @@ describe('Permit2 Quote Service [External Quotes]', () => {
             txs: [response],
             sellToken: nativeToken,
             quote,
+            tx: quote.tx,
             user,
             initialBalances,
           });

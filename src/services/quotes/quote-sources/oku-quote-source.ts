@@ -1,10 +1,10 @@
 import { Address as ViemAddress, encodeFunctionData, formatUnits, parseUnits } from 'viem';
-import { Address, ChainId, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { GasPrice } from '@services/gas';
 import { addPercentage, calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
@@ -36,13 +36,19 @@ const OKU_METADATA: QuoteSourceMetadata<OkuSupport> = {
   logoURI: 'ipfs://QmS2Kf7sZz7DrcwWU9nNG8eGt2126G2p2c9PTDFT774sW7',
 };
 type OkuSupport = { buyOrders: true; swapAndTransfer: false };
+type OkuConfig = {};
+type OkuData = {
+  coupon: any;
+  signingRequest: any;
+  txValidFor: TimeString | undefined;
+};
 // Note: Oku is actually an API that finds routes in Uniswap. The thing is that they have integrated with
 // the Universal Router, which required Permit2 to work. Our quote sources can't work directly with Permit2
 // so we've built a new contract called SwapProxy, that can be used to provide ERC20 approval features to
 // a contract. The way it works, the SwapProxy will take funds from the caller and send them to the
 // Permit2Adapter, which will execute the swap. Take into consideration that we are using this contract because
 // it allows arbitrary calls, not because we actually use anything related to Permit2.
-export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport> {
+export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport, OkuConfig, OkuData> {
   getMetadata() {
     return OKU_METADATA;
   }
@@ -58,7 +64,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       accounts: { takeFrom },
       external,
     },
-  }: QuoteParams<OkuSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<OkuSupport>): Promise<SourceQuoteResponse<OkuData>> {
     if (isSameAddress(chain.wToken, sellToken) && isSameAddress(Addresses.NATIVE_TOKEN, buyToken))
       throw new Error(`Native token unwrap not supported by this source`);
     if (isSameAddress(Addresses.NATIVE_TOKEN, sellToken) && isSameAddress(chain.wToken, buyToken))
@@ -77,17 +83,52 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
         ? { inTokenAmount: formatUnits(order.sellAmount, tokenData.sellToken.decimals) }
         : { outTokenAmount: formatUnits(order.buyAmount, tokenData.buyToken.decimals) }),
     };
-    const quoteResponse = await fetchService.fetch('https://oku-canoe.fly.dev/market/usor/swap_quote', {
+    const quoteResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/swap_quote', {
       method: 'POST',
       body: JSON.stringify(body),
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       timeout,
     });
     if (!quoteResponse.ok) {
       failed(OKU_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
     }
     const { coupon, inAmount, outAmount, signingRequest } = await quoteResponse.json();
-    const executionResponse = await fetchService.fetch('https://oku-canoe.fly.dev/market/usor/execution_information', {
+    const sellAmount = parseUnits(inAmount, tokenData.sellToken.decimals);
+    const buyAmount = parseUnits(outAmount, tokenData.buyToken.decimals);
+    const [maxSellAmount, minBuyAmount] =
+      order.type === 'sell'
+        ? [order.sellAmount, subtractPercentage(buyAmount, slippagePercentage, 'up')]
+        : [addPercentage(sellAmount, slippagePercentage, 'up'), order.buyAmount];
+
+    return {
+      sellAmount,
+      maxSellAmount,
+      buyAmount,
+      minBuyAmount,
+      type: order.type,
+      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_ADDRESS),
+      customData: {
+        coupon,
+        signingRequest,
+        txValidFor,
+      },
+    };
+  }
+
+  async buildTx({
+    components: { fetchService },
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      maxSellAmount,
+      type,
+      accounts: { takeFrom },
+      config: { timeout },
+      customData: { txValidFor, coupon, signingRequest },
+    },
+  }: BuildTxParams<OkuConfig, OkuData>): Promise<SourceQuoteTransaction> {
+    const executionResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/execution_information', {
       method: 'POST',
       body: JSON.stringify({
         coupon,
@@ -103,7 +144,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
             }
           : undefined,
       }),
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       timeout,
     });
     if (!executionResponse.ok) {
@@ -114,16 +155,9 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       approvals,
     } = await executionResponse.json();
 
-    const sellAmount = parseUnits(inAmount, tokenData.sellToken.decimals);
-    const buyAmount = parseUnits(outAmount, tokenData.buyToken.decimals);
-    const [maxSellAmount, minBuyAmount] =
-      order.type === 'sell'
-        ? [order.sellAmount, subtractPercentage(buyAmount, slippagePercentage, 'up')]
-        : [addPercentage(sellAmount, slippagePercentage, 'up'), order.buyAmount];
-
     const deadline = BigInt(calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
     const tokenOut =
-      order.type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_ADDRESS)
+      type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_ADDRESS)
         ? []
         : [{ token: mapToken(sellToken), distribution: [{ recipient: takeFrom as ViemAddress, shareBps: 0n }] }];
     const adapterData = encodeFunctionData({
@@ -147,17 +181,9 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     });
 
     return {
-      sellAmount,
-      maxSellAmount,
-      buyAmount,
-      minBuyAmount,
-      type: order.type,
-      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_ADDRESS),
-      tx: {
-        to: SWAP_PROXY_ADDRESS,
-        calldata: swapProxyData,
-        value: BigInt(value ?? 0),
-      },
+      to: SWAP_PROXY_ADDRESS,
+      calldata: swapProxyData,
+      value: BigInt(value ?? 0),
     };
   }
 }

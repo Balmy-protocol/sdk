@@ -1,7 +1,9 @@
 import { BigIntish } from '@types';
-import { SourceListResponse, StringifiedSourceListResponse } from './types';
+import { SourceListQuoteResponse } from './types';
+import { QuoteTransaction } from '../types';
+import { StringifyBigInt } from '@utility-types';
 
-export function bigintify(quote: StringifiedSourceListResponse): SourceListResponse {
+export function bigintifyQuote(quote: StringifyBigInt<SourceListQuoteResponse>): SourceListQuoteResponse {
   return {
     ...quote,
     sellAmount: BigInt(quote.sellAmount),
@@ -9,14 +11,17 @@ export function bigintify(quote: StringifiedSourceListResponse): SourceListRespo
     maxSellAmount: BigInt(quote.maxSellAmount),
     minBuyAmount: BigInt(quote.minBuyAmount),
     estimatedGas: toBigInt(quote.estimatedGas),
-    tx: {
-      ...quote.tx,
-      value: toBigInt(quote.tx.value),
-      maxPriorityFeePerGas: toBigInt(quote.tx.maxPriorityFeePerGas),
-      maxFeePerGas: toBigInt(quote.tx.maxFeePerGas),
-      gasPrice: toBigInt(quote.tx.gasPrice),
-      gasLimit: toBigInt(quote.tx.gasLimit),
-    },
+  };
+}
+
+export function bigintifyTx(tx: StringifyBigInt<QuoteTransaction>): QuoteTransaction {
+  return {
+    ...tx,
+    value: toBigInt(tx.value),
+    maxPriorityFeePerGas: toBigInt(tx.maxPriorityFeePerGas),
+    maxFeePerGas: toBigInt(tx.maxFeePerGas),
+    gasPrice: toBigInt(tx.gasPrice),
+    gasLimit: toBigInt(tx.gasLimit),
   };
 }
 

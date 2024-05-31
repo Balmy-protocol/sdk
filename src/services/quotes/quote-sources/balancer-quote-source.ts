@@ -1,5 +1,5 @@
 import { Chains } from '@chains';
-import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
+import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { formatUnits, parseUnits } from 'viem';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
@@ -28,7 +28,9 @@ const BALANCER_METADATA: QuoteSourceMetadata<BalancerSupport> = {
   logoURI: 'ipfs://QmSb9Lr6Jgi9Y3RUuShfWcuCaa9EYxpyZWgBTe8GbvsUL7',
 };
 type BalancerSupport = { buyOrders: true; swapAndTransfer: false };
-export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<BalancerSupport> {
+type BalancerConfig = {};
+type BalancerData = { tx: SourceQuoteTransaction };
+export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<BalancerSupport, BalancerConfig, BalancerData> {
   getMetadata() {
     return BALANCER_METADATA;
   }
@@ -44,7 +46,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
       external,
     },
     config,
-  }: QuoteParams<BalancerSupport>): Promise<SourceQuoteResponse> {
+  }: QuoteParams<BalancerSupport>): Promise<SourceQuoteResponse<BalancerData>> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await external.tokenData.request();
     const amount =
       order.type == 'sell'
@@ -75,7 +77,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     };
     const quoteResponse = await fetchService.fetch(`https://api-v3.balancer.fi/`, {
       method: 'POST',
-      headers: { ['Content-Type']: 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query),
     });
 
@@ -85,7 +87,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     const quoteResult = await quoteResponse.json();
 
     if (!quoteResult.data.sorGetSwapPaths.callData) {
-      failed(BALANCER_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(BALANCER_METADATA, chain, sellToken, buyToken, quoteResult);
     }
 
     const {
@@ -104,11 +106,17 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
       maxSellAmount,
       allowanceTarget: allowanceAddress,
       type: order.type,
-      tx: {
-        calldata: data,
-        to,
-        value: BigInt(value ?? 0),
+      customData: {
+        tx: {
+          calldata: data,
+          to,
+          value: BigInt(value ?? 0),
+        },
       },
     };
+  }
+
+  async buildTx({ request }: BuildTxParams<BalancerConfig, BalancerData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }

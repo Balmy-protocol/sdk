@@ -5,7 +5,7 @@ import { Chains } from '@chains';
 import { QuoteResponse } from '@services/quotes/types';
 import { buildSDK } from '@builder';
 import { CONFIG } from './quote-tests-config';
-import { FailedQuote } from '@services/quotes';
+import { FailedResponse } from '@services/quotes';
 import { ChainId, DefaultRequirements, FieldsRequirements, TimeString, TokenAddress } from '@types';
 import { IMetadataSource, MetadataInput, MetadataResult } from '@services/metadata';
 import { parseEther } from 'viem';
@@ -37,7 +37,7 @@ const { quoteService } = buildSDK({
 
 describe('Failing Quote', () => {
   when('executing a quote with invalid tokens', () => {
-    let responses: (QuoteResponse | FailedQuote)[];
+    let responses: (QuoteResponse | FailedResponse)[];
     given(async () => {
       responses = await quoteService.getAllQuotes({
         request: {

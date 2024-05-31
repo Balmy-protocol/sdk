@@ -8,19 +8,31 @@ import { SourceConfig } from '@services/quotes/source-registry';
 import { IQuoteSourceList } from '@services/quotes/source-lists/types';
 import { OverridableSourceList } from '@services/quotes/source-lists/overridable-source-list';
 import { ArrayOneOrMore } from '@utility-types';
-import { APISourceList, URIGenerator } from '@services/quotes/source-lists/api-source-list';
 import { IProviderService } from '@services/providers';
 import { IPriceService } from '@services/prices';
-import { BatchAPISourceList, URIGenerator as URIGeneratorBatch } from '@services/quotes/source-lists/batch-api-source-list';
+import {
+  BatchAPISourceList,
+  BatchAPISourceListBuildTxRequest,
+  BatchAPISourceListQuoteRequest,
+  URIGenerator,
+} from '@services/quotes/source-lists/batch-api-source-list';
 
 export type QuoteSourceListInput =
   | { type: 'custom'; instance: IQuoteSourceList }
   | { type: 'local' }
-  | { type: 'api'; baseUri: URIGenerator; sources: Record<SourceId, SourceMetadata> }
-  | { type: 'batch-api'; baseUri: URIGeneratorBatch; sources: Record<SourceId, SourceMetadata> }
+  | {
+      type: 'batch-api';
+      getQuotesURI: URIGenerator<BatchAPISourceListQuoteRequest>;
+      buildTxURI: URIGenerator<BatchAPISourceListBuildTxRequest>;
+      sources: Record<SourceId, SourceMetadata>;
+    }
   | {
       type: 'overridable-source-list';
-      lists: { default: QuoteSourceListInput; overrides: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }> };
+      lists: {
+        default: QuoteSourceListInput;
+        getQuotes?: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }>;
+        buildTxs?: ArrayOneOrMore<{ list: QuoteSourceListInput; sourceIds: SourceId[] }>;
+      };
     };
 
 export type BuildQuoteParams = { sourceList: QuoteSourceListInput; defaultConfig?: SourceConfig };
@@ -65,17 +77,19 @@ function buildList(
         providerService,
         fetchService,
       });
-    case 'api':
-      return new APISourceList({ fetchService, ...list });
     case 'batch-api':
       return new BatchAPISourceList({ fetchService, ...list });
     case 'overridable-source-list':
       const defaultList = buildList(list.lists.default, { providerService, fetchService });
-      const overrides = list.lists.overrides.map(({ list, sourceIds }) => ({
+      const getQuotesOverrides = list.lists.getQuotes?.map(({ list, sourceIds }) => ({
         list: buildList(list, { providerService, fetchService }),
         sourceIds,
       }));
-      return new OverridableSourceList({ default: defaultList, overrides });
+      const buildTxsOverrides = list.lists.buildTxs?.map(({ list, sourceIds }) => ({
+        list: buildList(list, { providerService, fetchService }),
+        sourceIds,
+      }));
+      return new OverridableSourceList({ default: defaultList, overrides: { getQuotes: getQuotesOverrides, buildTxs: buildTxsOverrides } });
   }
 }
 

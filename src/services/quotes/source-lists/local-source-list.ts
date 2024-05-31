@@ -1,8 +1,17 @@
-import { QuoteTransaction, SourceId } from '../types';
-import { IQuoteSourceList, SourceListRequest, SourceListResponse } from './types';
-import { BuyOrder, IQuoteSource, QuoteSourceSupport, SellOrder, SourceQuoteRequest, SourceQuoteResponse } from '../quote-sources/types';
+import { TimeString } from '@types';
+import { QuoteResponse, QuoteTransaction, SourceId } from '../types';
+import { IQuoteSourceList, SourceListBuildTxRequest, SourceListQuoteRequest, SourceListQuoteResponse } from './types';
+import {
+  BuyOrder,
+  IQuoteSource,
+  QuoteSourceSupport,
+  SellOrder,
+  SourceQuoteBuildTxRequest,
+  SourceQuoteRequest,
+  SourceQuoteResponse,
+} from '../quote-sources/types';
 import { getChainByKeyOrFail } from '@chains';
-import { QUOTE_SOURCES, SourceWithConfigId } from '../source-registry';
+import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
 import { IFetchService } from '@services/fetch/types';
@@ -29,31 +38,67 @@ export class LocalSourceList implements IQuoteSourceList {
     return Object.fromEntries(entries);
   }
 
-  getQuotes(request: SourceListRequest): Record<SourceId, Promise<SourceListResponse>> {
+  getQuotes(request: SourceListQuoteRequest): Record<SourceId, Promise<SourceListQuoteResponse>> {
     return Object.fromEntries(request.sources.map((sourceId) => [sourceId, this.getQuote(request, sourceId)]));
   }
 
-  private async getQuote(request: SourceListRequest, sourceId: SourceId): Promise<SourceListResponse> {
+  buildTxs(request: SourceListBuildTxRequest): Record<SourceId, Promise<QuoteTransaction>> {
+    const entries = Object.entries(request.quotes).map<[SourceId, Promise<QuoteTransaction>]>(([sourceId, quote]) => [
+      sourceId,
+      quote.then((response) => this.buildTx(sourceId, request.sourceConfig, response, request.quoteTimeout)),
+    ]);
+    return Object.fromEntries(entries);
+  }
+
+  private async buildTx(
+    sourceId: SourceId,
+    sourceConfig: SourceConfig | undefined,
+    quote: QuoteResponse,
+    timeout: TimeString | undefined
+  ): Promise<QuoteTransaction> {
+    const source = this.sources[sourceId];
+
+    if (!source) throw new SourceNotFoundError(sourceId);
+
+    // Check config is valid
+    const config = { ...sourceConfig?.global, ...sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
+    if (!source.isConfigAndContextValid(config)) {
+      throw new SourceInvalidConfigOrContextError(sourceId);
+    }
+
+    // Map request to source request
+    const sourceRequest = mapTxRequestToSourceRequest(quote, timeout);
+    const tx = source.buildTx({
+      components: { providerService: this.providerService, fetchService: this.fetchService },
+      config,
+      request: sourceRequest,
+    });
+
+    const { to, calldata, value } = await tx;
+    return { to, data: calldata, value, from: quote.accounts.takerAddress };
+  }
+
+  private async getQuote(request: SourceListQuoteRequest, sourceId: SourceId): Promise<SourceListQuoteResponse> {
     if (!(sourceId in this.sources)) {
       throw new SourceNotFoundError(sourceId);
     }
 
     // Map request to source request
-    const sourceRequest = mapRequestToSourceRequest(request);
+    const sourceRequest = mapQuoteRequestToSourceRequest(request);
 
     // Find and wrap source
     const source = this.getSourceForRequest(request, sourceId);
 
     // Check config is valid
-    const config = request.sourceConfig;
-    if (!source.isConfigAndContextValid({ ...config?.global, ...config?.custom?.[sourceId as SourceWithConfigId] })) {
+    const config = { ...request.sourceConfig?.global, ...request.sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
+    if (!source.isConfigAndContextValid(config)) {
       throw new SourceInvalidConfigOrContextError(sourceId);
     }
 
     // Ask for quote
     const response = await source.quote({
       components: { providerService: this.providerService, fetchService: this.fetchService },
-      config: { ...config?.global, ...config?.custom?.[sourceId as SourceWithConfigId] },
+      config,
       request: sourceRequest,
     });
 
@@ -61,7 +106,7 @@ export class LocalSourceList implements IQuoteSourceList {
     return mapSourceResponseToResponse({ request, source, response, sourceId });
   }
 
-  private getSourceForRequest(request: SourceListRequest, sourceId: SourceId) {
+  private getSourceForRequest(request: SourceListQuoteRequest, sourceId: SourceId) {
     let source = this.sources[sourceId];
 
     if (request.order.type === 'buy' && !source.getMetadata().supports.buyOrders) {
@@ -83,16 +128,10 @@ function mapSourceResponseToResponse({
   sourceId,
 }: {
   source: IQuoteSource<QuoteSourceSupport>;
-  request: SourceListRequest;
-  response: SourceQuoteResponse;
+  request: SourceListQuoteRequest;
+  response: SourceQuoteResponse<Record<string, any>>;
   sourceId: SourceId;
-}): SourceListResponse {
-  const tx: QuoteTransaction = {
-    to: response.tx.to,
-    value: response.tx.value,
-    data: response.tx.calldata,
-    from: request.takerAddress,
-  };
+}): SourceListQuoteResponse {
   const recipient = request.recipient && source.getMetadata().supports.swapAndTransfer ? request.recipient : request.takerAddress;
   return {
     sellAmount: response.sellAmount,
@@ -106,20 +145,35 @@ function mapSourceResponseToResponse({
       allowanceTarget: response.allowanceTarget,
       name: source.getMetadata().name,
       logoURI: source.getMetadata().logoURI,
-      customData: response.customData,
     },
     type: response.type,
-    tx,
+    customData: response.customData,
   };
 }
 
-function mapOrderToBigNumber(request: SourceListRequest): BuyOrder | SellOrder {
+function mapOrderToBigNumber(request: SourceListQuoteRequest): BuyOrder | SellOrder {
   return request.order.type === 'sell'
     ? { type: 'sell', sellAmount: BigInt(request.order.sellAmount) }
     : { type: 'buy', buyAmount: BigInt(request.order.buyAmount) };
 }
 
-function mapRequestToSourceRequest(request: SourceListRequest) {
+function mapTxRequestToSourceRequest(response: QuoteResponse, timeout: TimeString | undefined): SourceQuoteBuildTxRequest<Record<string, any>> {
+  return {
+    chain: getChainByKeyOrFail(response.chainId),
+    sellToken: response.sellToken.address,
+    buyToken: response.buyToken.address,
+    type: response.type,
+    sellAmount: response.sellAmount.amount,
+    maxSellAmount: response.maxSellAmount.amount,
+    buyAmount: response.buyAmount.amount,
+    minBuyAmount: response.minBuyAmount.amount,
+    accounts: { takeFrom: response.accounts.takerAddress, recipient: response.accounts.recipient },
+    customData: response.customData,
+    config: { timeout },
+  };
+}
+
+function mapQuoteRequestToSourceRequest(request: SourceListQuoteRequest) {
   return {
     chain: getChainByKeyOrFail(request.chainId),
     sellToken: request.sellToken,
