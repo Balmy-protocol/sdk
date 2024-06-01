@@ -9,6 +9,7 @@ export {
   FailedResponse,
   GlobalQuoteSourceConfig,
   QuoteTransaction,
+  QuoteResponseWithTx,
 } from './types';
 export {
   COMPARE_BY,

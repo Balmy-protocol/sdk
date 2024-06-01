@@ -10,14 +10,15 @@ import {
   QuoteTransaction,
   EstimatedQuoteRequest,
   EstimatedQuoteResponse,
+  QuoteResponseWithTx,
 } from './types';
 import { CompareQuotesBy, CompareQuotesUsing, sortQuotesBy } from './quote-compare';
 import { IQuoteSourceList, SourceListQuoteResponse } from './source-lists/types';
 import { chainsUnion, getChainByKeyOrFail } from '@chains';
 import { amountToUSD, toAmountsOfToken } from '@shared/utils';
-import { IGasService, IMetadataService, IPriceService, PriceResult } from '..';
-import { BaseTokenMetadata } from '@services/metadata/types';
-import { IQuickGasCostCalculator, DefaultGasValues } from '@services/gas/types';
+import { BaseTokenMetadata, IMetadataService } from '@services/metadata/types';
+import { IQuickGasCostCalculator, DefaultGasValues, IGasService } from '@services/gas/types';
+import { IPriceService, PriceResult } from '@services/prices/types';
 import { Addresses } from '@shared/constants';
 import { reduceTimeout } from '@shared/timeouts';
 import { formatUnits } from 'viem';
@@ -155,6 +156,30 @@ export class QuoteService implements IQuoteService {
       throw new FailedToGenerateAnyQuotesError(request.chainId, request.sellToken, request.buyToken);
     }
     return allQuotes[0];
+  }
+
+  async getAllQuotesWithTxs<IgnoreFailed extends boolean = true>({
+    request,
+    config,
+  }: {
+    request: QuoteRequest;
+    config?: { ignoredFailed?: IgnoreFailed; sort?: { by: CompareQuotesBy; using?: CompareQuotesUsing }; timeout?: TimeString };
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]> {
+    const quotes = this.getQuotes({ request, config });
+    const txs = this.buildTxs({ quotes, sourceConfig: request.sourceConfig, config });
+    const metadata = this.supportedSources();
+    const promises: Promise<QuoteResponseWithTx | FailedResponse>[] = Object.keys(quotes).map((sourceId) =>
+      handleResponseFailure(
+        sourceId,
+        Promise.all([quotes[sourceId], txs[sourceId]]).then(([quote, tx]) => ({ ...quote, tx })),
+        metadata
+      )
+    );
+    const responses = await Promise.all(promises);
+    const successfulQuotes = responses.filter((response): response is QuoteResponseWithTx => !('failed' in response));
+    const failedQuotes = config?.ignoredFailed === false ? responses.filter((response): response is FailedResponse => 'failed' in response) : [];
+    const sortedQuotes = sortQuotesBy(successfulQuotes, config?.sort?.by ?? 'most-swapped', config?.sort?.using ?? 'sell/buy amounts');
+    return [...sortedQuotes, ...failedQuotes] as IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[];
   }
 
   buildTxs({
@@ -361,7 +386,7 @@ export class QuoteService implements IQuoteService {
   }
 }
 
-export function ifNotFailed<T1 extends FailedResponse | object, T2>(
+function ifNotFailed<T1 extends FailedResponse | object, T2>(
   response: T1 | FailedResponse,
   mapped: (_: T1) => T2
 ): T1 extends FailedResponse ? FailedResponse : T2 {
@@ -382,7 +407,7 @@ function estimatedToQuoteRequest(request: EstimatedQuoteRequest): QuoteRequest {
   };
 }
 
-function quoteResponseToEstimated({ customData, accounts, ...response }: QuoteResponse): EstimatedQuoteResponse {
+function quoteResponseToEstimated({ accounts, ...response }: QuoteResponse): EstimatedQuoteResponse {
   return response;
 }
 
