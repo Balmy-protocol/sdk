@@ -11,11 +11,10 @@ import { TransactionResponse } from '@ethersproject/providers';
 import { SourceQuoteResponse, SourceQuoteTransaction } from '@services/quotes/quote-sources/types';
 import { CHAINS_WITH_KNOWN_ISSUES, calculateGasSpent } from './other';
 import { expect } from 'chai';
-import { QuoteResponse, QuoteTransaction } from '@services/quotes/types';
+import { QuoteResponse, QuoteResponseWithTx, QuoteTransaction } from '@services/quotes/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { DefiLlamaClient } from '@shared/defi-llama';
 import { parseEther } from 'viem';
-import { QuoteResponseWithTx } from '@services/permit2/types';
 
 type TokenData = { address: TokenAddress; whale: Address };
 type ChainTokens = { RANDOM_ERC20: TokenData; STABLE_ERC20: TokenData; wToken: TokenData };
