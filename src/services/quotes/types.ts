@@ -89,7 +89,7 @@ export type QuoteRequest = {
 };
 
 type TokenWithOptionalPrice = BaseTokenMetadata & { address: TokenAddress; price?: number };
-export type QuoteResponse = {
+export type QuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
   chainId: ChainId;
   sellToken: TokenWithOptionalPrice;
   buyToken: TokenWithOptionalPrice;
@@ -108,7 +108,7 @@ export type QuoteResponse = {
   accounts: { takerAddress: Address; recipient: Address };
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
   type: 'sell' | 'buy';
-  customData: Record<string, any>;
+  customData: CustomQuoteSourceData;
 };
 
 export type QuoteTransaction = BuiltTransaction & { from: Address };

@@ -6,6 +6,7 @@ import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { SourceListQuoteResponse } from '../source-lists/types';
 import { StringifyBigInt } from '@utility-types';
 import { QuoteTransaction } from '../types';
+import { bigintifyTx } from '../source-lists/utils';
 
 export const BALMY_SUPPORTED_CHAINS = [
   Chains.ETHEREUM,
@@ -82,8 +83,7 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
       estimatedGas,
       source: { allowanceTarget },
       customData,
-    }: StringifyBigInt<SourceListQuoteResponse> = await response.json();
-    const tx = customData.tx as any as StringifyBigInt<QuoteTransaction>;
+    }: StringifyBigInt<SourceListQuoteResponse<{ tx: QuoteTransaction }>> = await response.json();
 
     return {
       sellAmount: BigInt(sellAmount),
@@ -95,9 +95,9 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
       type: order.type,
       customData: {
         tx: {
-          calldata: tx.data,
-          to: tx.to,
-          value: BigInt(tx.value ?? 0),
+          to: customData.tx.to,
+          calldata: customData.tx.data,
+          value: customData.tx.value ? BigInt(customData.tx.value) : undefined,
         },
       },
     };
