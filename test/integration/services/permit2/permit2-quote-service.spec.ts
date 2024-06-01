@@ -7,7 +7,6 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { TokenAddress, Address } from '@types';
-import { QuoteResponseWithTx } from '@services/permit2/types';
 import {
   assertRecipientsBalanceIsIncreasedAsExpected,
   assertUsersBalanceIsReducedAsExpected,
@@ -19,6 +18,7 @@ import {
 import { buildSDK } from '@builder';
 import { parseEther } from 'viem';
 import { CONFIG } from '../quotes/quote-tests-config';
+import { QuoteResponseWithTx } from '@services/quotes';
 
 // Since trading tests can be a little bit flaky, we want to re-test before failing
 jest.retryTimes(3);
