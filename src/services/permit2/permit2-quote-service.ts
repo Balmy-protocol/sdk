@@ -1,20 +1,13 @@
-import {
-  EstimatedQuoteResponseWithTx,
-  IPermit2QuoteService,
-  IPermit2Service,
-  PermitData,
-  QuoteResponseWithTx,
-  SinglePermitParams,
-} from './types';
+import { EstimatedQuoteResponseWithTx, IPermit2QuoteService, IPermit2Service, PermitData, SinglePermitParams } from './types';
 import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CompareQuotesBy, CompareQuotesUsing, QuoteResponse, IQuoteService, sortQuotesBy } from '@services/quotes';
-import { calculateGasDetails, handleResponseFailure, ifNotFailed } from '@services/quotes/quote-service';
+import { calculateGasDetails, handleResponseFailure } from '@services/quotes/quote-service';
 import {
   EstimatedQuoteRequest,
-  EstimatedQuoteResponse,
   FailedResponse,
   IgnoreFailedResponses,
+  QuoteResponseWithTx,
   SourceId,
   SourceMetadata,
 } from '@services/quotes/types';
@@ -72,9 +65,12 @@ export class Permit2QuoteService implements IPermit2QuoteService {
 
     const result: Record<SourceId, Promise<EstimatedQuoteResponseWithTx>> = {};
     for (const sourceId in quotes) {
-      result[sourceId] = Promise.all([quotes[sourceId], txs[sourceId]]).then(([quote, estimatedTx]) => ({
-        ...mapToUnsigned(quote),
-        estimatedTx,
+      result[sourceId] = Promise.all([quotes[sourceId], txs[sourceId]]).then(([{ accounts, ...quote }, estimatedTx]) => ({
+        ...quote,
+        customData: {
+          ...quote.customData,
+          estimatedTx,
+        },
       }));
     }
     return result;
@@ -235,7 +231,7 @@ function buildRealQuote(
     permitData?: PermitData['permitData'] & { signature: string }; // Not needed in case of native token
     txValidFor?: TimeString;
   },
-  { estimatedTx, ...quote }: EstimatedQuoteResponseWithTx,
+  quote: EstimatedQuoteResponseWithTx,
   chainId: ChainId
 ): QuoteResponseWithTx | FailedResponse {
   try {
@@ -254,8 +250,8 @@ function buildRealQuote(
                 nonce: permitData ? BigInt(permitData.nonce) : 0n,
                 signature: (permitData?.signature as Hex) ?? '0x',
                 allowanceTarget: quote.source.allowanceTarget as ViemAddress,
-                swapper: estimatedTx.to as ViemAddress,
-                swapData: estimatedTx.data as Hex,
+                swapper: quote.customData.estimatedTx.to as ViemAddress,
+                swapData: quote.customData.estimatedTx.data as Hex,
                 tokenOut: mapIfNative(quote.buyToken.address),
                 minAmountOut: BigInt(quote.minBuyAmount.amount),
                 transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
@@ -274,8 +270,8 @@ function buildRealQuote(
                 nonce: permitData ? BigInt(permitData.nonce) : 0n,
                 signature: (permitData?.signature as Hex) ?? '0x',
                 allowanceTarget: quote.source.allowanceTarget as ViemAddress,
-                swapper: estimatedTx.to as ViemAddress,
-                swapData: estimatedTx.data as Hex,
+                swapper: quote.customData.estimatedTx.to as ViemAddress,
+                swapData: quote.customData.estimatedTx.data as Hex,
                 tokenOut: mapIfNative(quote.buyToken.address),
                 amountOut: BigInt(quote.minBuyAmount.amount),
                 transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
@@ -288,7 +284,7 @@ function buildRealQuote(
       ...quote,
       accounts: { takerAddress, recipient },
       tx: {
-        ...estimatedTx,
+        ...quote.customData.estimatedTx,
         from: takerAddress,
         to: PERMIT2_ADAPTER_ADDRESS(chainId),
         data,
@@ -301,10 +297,6 @@ function buildRealQuote(
       error: `Failed to encode params: ${e.message}`,
     };
   }
-}
-
-function mapToUnsigned({ accounts, customData, ...quote }: QuoteResponse): EstimatedQuoteResponse {
-  return { ...quote };
 }
 
 function mapIfNative(token: TokenAddress): ViemAddress {

@@ -57,6 +57,18 @@ export type IQuoteService = {
     };
   }): Promise<QuoteResponse>;
 
+  getAllQuotesWithTxs<IgnoreFailed extends boolean = true>(_: {
+    request: QuoteRequest;
+    config?: {
+      ignoredFailed?: IgnoreFailed;
+      sort?: {
+        by: CompareQuotesBy;
+        using?: CompareQuotesUsing;
+      };
+      timeout?: TimeString;
+    };
+  }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]>;
+
   buildTxs(_: {
     quotes: Record<SourceId, Promise<QuoteResponse>> | Record<SourceId, QuoteResponse>;
     sourceConfig?: SourceConfig;
@@ -111,10 +123,15 @@ export type QuoteResponse<CustomQuoteSourceData extends Record<string, any> = Re
   customData: CustomQuoteSourceData;
 };
 
+export type QuoteResponseWithTx<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> =
+  QuoteResponse<CustomQuoteSourceData> & { tx: QuoteTransaction };
 export type QuoteTransaction = BuiltTransaction & { from: Address };
 
 export type EstimatedQuoteRequest = Omit<QuoteRequest, 'takerAddress' | 'recipient' | 'txValidFor'>;
-export type EstimatedQuoteResponse = Omit<QuoteResponse, 'accounts' | 'customData'>;
+export type EstimatedQuoteResponse<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = Omit<
+  QuoteResponse<CustomQuoteSourceData>,
+  'accounts'
+>;
 
 export type IgnoreFailedResponses<IgnoredFailed extends boolean, Response> = IgnoredFailed extends true ? Response : Response | FailedResponse;
 

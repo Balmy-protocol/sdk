@@ -11,7 +11,7 @@ import {
   QuoteTransaction,
 } from '@services/quotes';
 import { SupportedGasValues } from '@services/gas/types';
-import { IgnoreFailedResponses } from '@services/quotes/types';
+import { IgnoreFailedResponses, QuoteResponseWithTx } from '@services/quotes/types';
 
 export type IPermit2Service = {
   permit2ContractAddress(chainId: ChainId): Address;
@@ -31,9 +31,7 @@ export type IPermit2ArbitraryService = {
   buildArbitraryCallWithoutPermit(params: ArbitraryCallWithoutPermitParams): BuiltTransaction;
 };
 
-export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse & { estimatedTx: QuoteTransaction };
-export type QuoteResponseWithTx = Omit<QuoteResponse, 'customData'> & { tx: QuoteTransaction };
-
+export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse<{ estimatedTx: QuoteTransaction }>;
 export type IPermit2QuoteService = {
   contractAddress(chainId: ChainId): Address;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
