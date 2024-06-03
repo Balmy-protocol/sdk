@@ -3,7 +3,7 @@ import { then, when } from '@test-utils/bdd';
 import { IMetadataSource, MergeMetadata, MetadataResult } from '@services/metadata/types';
 import { ChainId, FieldsRequirements, SupportInChain, TokenAddress } from '@types';
 import { FallbackMetadataSource } from '@services/metadata/metadata-sources/fallback-metadata-source';
-import { wait } from '@shared/utils';
+import { wait } from '@shared/wait';
 import chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 

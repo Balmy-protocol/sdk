@@ -5,7 +5,7 @@ import { ChainId, FieldRequirementOptions } from '@types';
 import chaiAsPromised from 'chai-as-promised';
 import { FastestGasPriceSourceCombinator } from '@services/gas/gas-price-sources/fastest-gas-price-source-combinator';
 import { GasPriceResult, IGasPriceSource, GasSpeed } from '@services/gas/types';
-import { wait } from '@shared/utils';
+import { wait } from '@shared/wait';
 chai.use(chaiAsPromised);
 
 describe('Fastest Gas Price Source Combinator', () => {

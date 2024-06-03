@@ -9,7 +9,7 @@ import { fork } from '@test-utils/evm';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { Addresses } from '@shared/constants';
-import { addPercentage, isSameAddress, subtractPercentage, wait } from '@shared/utils';
+import { addPercentage, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Chain, TokenAddress, Address, ChainId } from '@types';
 import {
   BuyOrder,
@@ -41,6 +41,7 @@ import { TriggerablePromise } from '@shared/triggerable-promise';
 import { ProviderService } from '@services/providers/provider-service';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
 import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sources/prioritized-gas-price-source-combinator';
+import { wait } from '@shared/wait';
 
 // Note: this test is quite flaky, since sources can sometimes fail or rate limit us. So the idea is to run this test
 // locally only for now, until we can come up with a solution. We will skip it until then
