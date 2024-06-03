@@ -3,7 +3,6 @@ export * from './triggerable-promise';
 export { ExpirationConfigOptions, ConcurrentLRUCacheWithContext, ConcurrentLRUCache } from './concurrent-lru-cache';
 export { timeoutPromise, reduceTimeout, TimeoutError } from './timeouts';
 export {
-  wait,
   isSameAddress,
   subtractPercentage,
   addPercentage,
@@ -17,3 +16,4 @@ export {
 export { AutoUpdateCache, AutoUpdateCacheConfig } from './auto-update-cache';
 export { toChainId as defiLlamaToChainId } from './defi-llama';
 export { Addresses, Uint } from './constants';
+export { wait, waitUntil } from './wait';

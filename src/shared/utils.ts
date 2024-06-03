@@ -2,10 +2,6 @@ import ms from 'ms';
 import { Address, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
 import { formatUnits, parseUnits, toHex, trim } from 'viem';
 
-export function wait(time: TimeString | number) {
-  return new Promise((resolve) => setTimeout(resolve, ms(`${time}`)));
-}
-
 export function isSameAddress(address1: Address | undefined, address2: Address | undefined) {
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
