@@ -10,6 +10,7 @@ import {
   SourceQuoteRequest,
   SourceQuoteResponse,
 } from '../quote-sources/types';
+import { timeoutPromise } from '@shared/timeouts';
 import { getChainByKeyOrFail } from '@chains';
 import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
@@ -45,7 +46,9 @@ export class LocalSourceList implements IQuoteSourceList {
   buildTxs(request: SourceListBuildTxRequest): Record<SourceId, Promise<QuoteTransaction>> {
     const entries = Object.entries(request.quotes).map<[SourceId, Promise<QuoteTransaction>]>(([sourceId, quote]) => [
       sourceId,
-      quote.then((response) => this.buildTx(sourceId, request.sourceConfig, response, request.quoteTimeout)),
+      quote.then((response) =>
+        timeoutPromise(this.buildTx(sourceId, request.sourceConfig, response, request.quoteTimeout), request.quoteTimeout)
+      ),
     ]);
     return Object.fromEntries(entries);
   }
