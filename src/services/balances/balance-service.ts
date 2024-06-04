@@ -25,7 +25,7 @@ export class BalanceService implements IBalanceService {
       tokens: tokens.map((token) => ({ chainId, token })),
       config,
     });
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 
   async getBalancesForAccount({
