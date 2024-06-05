@@ -55,7 +55,7 @@ export class BalanceService implements IBalanceService {
     config?: { timeout?: TimeString };
   }) {
     const result = await this.getBalances({ tokens: tokens.map((token) => ({ chainId, ...token })), config });
-    return result[chainId];
+    return result[chainId] ?? {};
   }
 
   getBalances({ tokens, config }: { tokens: BalanceInput[]; config?: { timeout?: TimeString } }) {
