@@ -33,6 +33,7 @@ type BalmyConfig = {
   alwaysUseTransformers?: boolean;
   swapperContract?: Address;
   leftoverRecipient?: Address;
+  url?: string;
 };
 type BalmySupport = { buyOrders: true; swapAndTransfer: true };
 type BalmyData = { tx: SourceQuoteTransaction };
@@ -53,7 +54,8 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
     },
     config,
   }: QuoteParams<BalmySupport, BalmyConfig>): Promise<SourceQuoteResponse<BalmyData>> {
-    const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/balmy`;
+    const balmyUrl = config.url ?? 'https://api.balmy.xyz';
+    const url = `${balmyUrl}/v1/swap/networks/${chain.chainId}/quotes/balmy`;
     const stringOrder =
       order.type === 'sell' ? { type: 'sell', sellAmount: order.sellAmount.toString() } : { type: 'buy', buyAmount: order.buyAmount.toString() };
     const body = {

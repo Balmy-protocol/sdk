@@ -16,7 +16,9 @@ const SOVRYN_METADATA: QuoteSourceMetadata<SovrynSupport> = {
   logoURI: 'ipfs://QmUpdb1zxtB2kUSjR1Qs1QMFPsSeZNkL21fMzGUfdjkXQA',
 };
 type SovrynSupport = { buyOrders: false; swapAndTransfer: false };
-type SovrynConfig = {};
+type SovrynConfig = {
+  url?: string;
+};
 type SovrynData = { tx: SourceQuoteTransaction };
 export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynSupport, SovrynConfig, SovrynData> {
   getMetadata() {
@@ -34,8 +36,9 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       ...request
     },
     config,
-  }: QuoteParams<SovrynSupport>): Promise<SourceQuoteResponse<SovrynData>> {
-    const url = `https://api.balmy.xyz/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
+  }: QuoteParams<SovrynSupport, SovrynConfig>): Promise<SourceQuoteResponse<SovrynData>> {
+    const balmyUrl = config.url ?? 'https://api.balmy.xyz';
+    const url = `${balmyUrl}/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
     const body = {
       ...request,
       order: { type: 'sell', sellAmount: order.sellAmount.toString() },
