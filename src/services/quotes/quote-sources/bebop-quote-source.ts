@@ -43,13 +43,15 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
   }: QuoteParams<BebopSupport, BebopConfig>): Promise<SourceQuoteResponse<BebopData>> {
     const checksummedSellToken = checksum(sellToken);
     const checksummedBuyToken = checksum(buyToken);
+    const checksummedTakerAddress = checksum(takeFrom);
+    const checksummedRecipient = recipient && checksum(recipient);
     const queryParams = {
       sell_tokens: [checksummedSellToken],
       buy_tokens: [checksummedBuyToken],
       sell_amounts: order.type === 'sell' ? [order.sellAmount.toString()] : undefined,
       buy_amounts: order.type === 'buy' ? [order.buyAmount.toString()] : undefined,
-      taker_address: takeFrom,
-      receiver_address: recipient && !isSameAddress(recipient, takeFrom) ? recipient : undefined,
+      taker_address: checksummedTakerAddress,
+      receiver_address: checksummedRecipient && !isSameAddress(checksummedRecipient, takeFrom) ? checksummedRecipient : undefined,
       source: config.referrer?.name,
       skip_validation: config.disableValidation,
       gasless: false,
