@@ -78,7 +78,7 @@ export type IQuoteService = {
     quotes:
       | Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>>
       | Promise<Record<SourceId, QuoteResponseRelevantForTxBuild>>
-      | Record<SourceId, QuoteResponse>;
+      | Record<SourceId, QuoteResponseRelevantForTxBuild>;
     sourceConfig?: SourceConfig;
     config?: {
       timeout?: TimeString;
