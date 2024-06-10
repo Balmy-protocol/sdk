@@ -1,6 +1,6 @@
 import { TimeString } from '@types';
 import { reduceTimeout } from '@shared/timeouts';
-import { QuoteResponseRelevant, QuoteTransaction, SourceId, SourceMetadata } from '../types';
+import { QuoteResponseRelevantForTxBuild, QuoteTransaction, SourceId, SourceMetadata } from '../types';
 import { IQuoteSourceList, SourceListBuildTxRequest, SourceListQuoteRequest, SourceListQuoteResponse } from './types';
 import { IFetchService } from '@services/fetch/types';
 import { StringifyBigInt } from '@utility-types';
@@ -56,7 +56,7 @@ export class BatchAPISourceList implements IQuoteSourceList {
 
   private async fetchTxs(request: SourceListBuildTxRequest): Promise<Record<SourceId, StringifyBigInt<QuoteTransaction>>> {
     const entries = await Promise.all(
-      Object.entries(request.quotes).map<Promise<[SourceId, QuoteResponseRelevant]>>(async ([sourceId, quotePromise]) => [
+      Object.entries(request.quotes).map<Promise<[SourceId, QuoteResponseRelevantForTxBuild]>>(async ([sourceId, quotePromise]) => [
         sourceId,
         await quotePromise,
       ])
@@ -83,6 +83,6 @@ export class BatchAPISourceList implements IQuoteSourceList {
 export type BatchAPISourceListQuoteRequest = Omit<SourceListQuoteRequest, 'external'>;
 export type BatchAPISourceListBuildTxRequest = {
   sourceConfig?: SourceConfig;
-  quotes: Record<SourceId, QuoteResponseRelevant>;
+  quotes: Record<SourceId, QuoteResponseRelevantForTxBuild>;
   quoteTimeout?: TimeString;
 };

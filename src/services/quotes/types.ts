@@ -70,14 +70,14 @@ export type IQuoteService = {
   }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]>;
 
   buildTxs(_: {
-    quotes: Record<SourceId, Promise<QuoteResponseRelevant>> | Record<SourceId, QuoteResponseRelevant>;
+    quotes: Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>> | Record<SourceId, QuoteResponseRelevantForTxBuild>;
     sourceConfig?: SourceConfig;
     config?: { timeout?: TimeString };
   }): Record<SourceId, Promise<QuoteTransaction>>;
   buildAllTxs<IgnoreFailed extends boolean = true>(_: {
     quotes:
-      | Record<SourceId, Promise<QuoteResponseRelevant>>
-      | Promise<Record<SourceId, QuoteResponseRelevant>>
+      | Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>>
+      | Promise<Record<SourceId, QuoteResponseRelevantForTxBuild>>
       | Record<SourceId, QuoteResponse>;
     sourceConfig?: SourceConfig;
     config?: {
@@ -126,7 +126,7 @@ export type QuoteResponse<CustomQuoteSourceData extends Record<string, any> = Re
   customData: CustomQuoteSourceData;
 };
 
-export type QuoteResponseRelevant<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
+export type QuoteResponseRelevantForTxBuild<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
   chainId: ChainId;
   sellToken: { address: Address };
   buyToken: { address: Address };
