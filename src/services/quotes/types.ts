@@ -70,12 +70,15 @@ export type IQuoteService = {
   }): Promise<IgnoreFailedResponses<IgnoreFailed, QuoteResponseWithTx>[]>;
 
   buildTxs(_: {
-    quotes: Record<SourceId, Promise<QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    quotes: Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>> | Record<SourceId, QuoteResponseRelevantForTxBuild>;
     sourceConfig?: SourceConfig;
     config?: { timeout?: TimeString };
   }): Record<SourceId, Promise<QuoteTransaction>>;
   buildAllTxs<IgnoreFailed extends boolean = true>(_: {
-    quotes: Record<SourceId, Promise<QuoteResponse>> | Promise<Record<SourceId, QuoteResponse>> | Record<SourceId, QuoteResponse>;
+    quotes:
+      | Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>>
+      | Promise<Record<SourceId, QuoteResponseRelevantForTxBuild>>
+      | Record<SourceId, QuoteResponse>;
     sourceConfig?: SourceConfig;
     config?: {
       timeout?: TimeString;
@@ -119,6 +122,20 @@ export type QuoteResponse<CustomQuoteSourceData extends Record<string, any> = Re
   };
   accounts: { takerAddress: Address; recipient: Address };
   source: { id: SourceId; allowanceTarget: Address; name: string; logoURI: string };
+  type: 'sell' | 'buy';
+  customData: CustomQuoteSourceData;
+};
+
+export type QuoteResponseRelevantForTxBuild<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
+  chainId: ChainId;
+  sellToken: { address: Address };
+  buyToken: { address: Address };
+  sellAmount: { amount: bigint };
+  buyAmount: { amount: bigint };
+  maxSellAmount: { amount: bigint };
+  minBuyAmount: { amount: bigint };
+  accounts: { takerAddress: Address; recipient: Address };
+  source: { id: SourceId };
   type: 'sell' | 'buy';
   customData: CustomQuoteSourceData;
 };

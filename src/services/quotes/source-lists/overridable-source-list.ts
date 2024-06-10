@@ -1,4 +1,4 @@
-import { QuoteResponse, QuoteTransaction, SourceId } from '../types';
+import { QuoteResponseRelevantForTxBuild, QuoteTransaction, SourceId } from '../types';
 import { IQuoteSourceList, SourceListBuildTxRequest, SourceListQuoteRequest, SourceListQuoteResponse } from './types';
 
 type ConstructorParameters = {
@@ -66,7 +66,7 @@ export class OverridableSourceList implements IQuoteSourceList {
 
   buildTxs(request: SourceListBuildTxRequest): Record<SourceId, Promise<QuoteTransaction>> {
     const result: Record<SourceId, Promise<QuoteTransaction>> = {};
-    const sourceListSourcesId: Map<IQuoteSourceList, Record<SourceId, Promise<QuoteResponse>>> = new Map();
+    const sourceListSourcesId: Map<IQuoteSourceList, Record<SourceId, Promise<QuoteResponseRelevantForTxBuild>>> = new Map();
 
     Object.entries(request.quotes).forEach(([sourceId, quote]) => {
       const sourceList = this.buildTxsOverrides[sourceId] ?? this.defaultSourceList;

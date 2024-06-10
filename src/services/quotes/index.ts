@@ -10,6 +10,7 @@ export {
   GlobalQuoteSourceConfig,
   QuoteTransaction,
   QuoteResponseWithTx,
+  QuoteResponseRelevantForTxBuild as QuoteResponseRelevant,
 } from './types';
 export {
   COMPARE_BY,
