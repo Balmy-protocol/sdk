@@ -160,10 +160,7 @@ function mapOrderToBigNumber(request: SourceListQuoteRequest): BuyOrder | SellOr
     : { type: 'buy', buyAmount: BigInt(request.order.buyAmount) };
 }
 
-function mapTxRequestToSourceRequest(
-  response: QuoteResponseRelevant,
-  timeout: TimeString | undefined
-): SourceQuoteBuildTxRequest<Record<string, any>> {
+function mapTxRequestToSourceRequest(response: QuoteResponseRelevant, timeout: TimeString | undefined): SourceQuoteBuildTxRequest {
   return {
     chain: getChainByKeyOrFail(response.chainId),
     sellToken: response.sellToken.address,
