@@ -2,7 +2,7 @@ import { GasPrice } from '@services/gas/types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
 import { Address, TimeString } from '@types';
-import { QuoteRequest, SourceMetadata, SourceId, QuoteTransaction, QuoteResponse } from '../types';
+import { QuoteRequest, SourceMetadata, SourceId, QuoteTransaction, QuoteResponseRelevant } from '../types';
 import { SourceConfig } from '../source-registry';
 
 export type IQuoteSourceList = {
@@ -13,7 +13,7 @@ export type IQuoteSourceList = {
 
 export type SourceListBuildTxRequest = {
   sourceConfig?: SourceConfig;
-  quotes: Record<SourceId, Promise<QuoteResponse>>;
+  quotes: Record<SourceId, Promise<QuoteResponseRelevant>>;
   quoteTimeout?: TimeString;
 };
 

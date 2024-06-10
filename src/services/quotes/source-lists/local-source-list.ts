@@ -1,5 +1,5 @@
 import { TimeString } from '@types';
-import { QuoteResponse, QuoteTransaction, SourceId } from '../types';
+import { QuoteResponseRelevant, QuoteTransaction, SourceId } from '../types';
 import { IQuoteSourceList, SourceListBuildTxRequest, SourceListQuoteRequest, SourceListQuoteResponse } from './types';
 import {
   BuyOrder,
@@ -56,7 +56,7 @@ export class LocalSourceList implements IQuoteSourceList {
   private async buildTx(
     sourceId: SourceId,
     sourceConfig: SourceConfig | undefined,
-    quote: QuoteResponse,
+    quote: QuoteResponseRelevant,
     timeout: TimeString | undefined
   ): Promise<QuoteTransaction> {
     const source = this.sources[sourceId];
@@ -160,7 +160,10 @@ function mapOrderToBigNumber(request: SourceListQuoteRequest): BuyOrder | SellOr
     : { type: 'buy', buyAmount: BigInt(request.order.buyAmount) };
 }
 
-function mapTxRequestToSourceRequest(response: QuoteResponse, timeout: TimeString | undefined): SourceQuoteBuildTxRequest<Record<string, any>> {
+function mapTxRequestToSourceRequest(
+  response: QuoteResponseRelevant,
+  timeout: TimeString | undefined
+): SourceQuoteBuildTxRequest<Record<string, any>> {
   return {
     chain: getChainByKeyOrFail(response.chainId),
     sellToken: response.sellToken.address,
