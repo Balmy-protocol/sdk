@@ -100,7 +100,11 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<SquidConfig> | undefined): config is SquidConfig {
+  isConfigAndContextValidForQuoting(config: Partial<SquidConfig> | undefined): config is SquidConfig {
     return !!config?.integratorId;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<SquidConfig> | undefined): config is SquidConfig {
+    return true;
   }
 }

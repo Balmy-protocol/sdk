@@ -96,7 +96,11 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<DodoDexConfig> | undefined): config is DodoDexConfig {
+  isConfigAndContextValidForQuoting(config: Partial<DodoDexConfig> | undefined): config is DodoDexConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<DodoDexConfig> | undefined): config is DodoDexConfig {
+    return true;
   }
 }

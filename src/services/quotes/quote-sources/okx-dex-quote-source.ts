@@ -78,8 +78,12 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<OKXDexConfig> | undefined): config is OKXDexConfig {
+  isConfigAndContextValidForQuoting(config: Partial<OKXDexConfig> | undefined): config is OKXDexConfig {
     return !!config?.apiKey && !!config?.passphrase && !!config?.secretKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<OKXDexConfig> | undefined): config is OKXDexConfig {
+    return true;
   }
 }
 

@@ -95,8 +95,12 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<PortalsFiConfig> | undefined): config is PortalsFiConfig {
+  isConfigAndContextValidForQuoting(config: Partial<PortalsFiConfig> | undefined): config is PortalsFiConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<PortalsFiConfig> | undefined): config is PortalsFiConfig {
+    return true;
   }
 }
 

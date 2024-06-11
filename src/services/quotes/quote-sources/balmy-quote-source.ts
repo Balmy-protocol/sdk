@@ -30,8 +30,6 @@ const BALMY_METADATA: QuoteSourceMetadata<BalmySupport> = {
   logoURI: 'ipfs://QmU3GnALKonFNwkv42LWNoXdquFskWXPAiq6sYH7DKQPGJ',
 };
 type BalmyConfig = {
-  alwaysUseTransformers?: boolean;
-  swapperContract?: Address;
   leftoverRecipient?: Address;
   url?: string;
 };

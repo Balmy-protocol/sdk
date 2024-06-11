@@ -65,7 +65,7 @@ export class LocalSourceList implements IQuoteSourceList {
 
     // Check config is valid
     const config = { ...sourceConfig?.global, ...sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
-    if (!source.isConfigAndContextValid(config)) {
+    if (!source.isConfigAndContextValidForTxBuilding(config)) {
       throw new SourceInvalidConfigOrContextError(sourceId);
     }
 
@@ -94,7 +94,7 @@ export class LocalSourceList implements IQuoteSourceList {
 
     // Check config is valid
     const config = { ...request.sourceConfig?.global, ...request.sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
-    if (!source.isConfigAndContextValid(config)) {
+    if (!source.isConfigAndContextValidForQuoting(config)) {
       throw new SourceInvalidConfigOrContextError(sourceId);
     }
 

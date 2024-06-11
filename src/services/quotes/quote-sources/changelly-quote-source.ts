@@ -76,7 +76,11 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<ChangellyConfig> | undefined): config is ChangellyConfig {
+  isConfigAndContextValidForQuoting(config: Partial<ChangellyConfig> | undefined): config is ChangellyConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<ChangellyConfig> | undefined): config is ChangellyConfig {
+    return true;
   }
 }

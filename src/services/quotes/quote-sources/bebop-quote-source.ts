@@ -104,8 +104,12 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<BebopConfig> | undefined): config is BebopConfig {
+  isConfigAndContextValidForQuoting(config: Partial<BebopConfig> | undefined): config is BebopConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<BebopConfig> | undefined): config is BebopConfig {
+    return true;
   }
 }
 

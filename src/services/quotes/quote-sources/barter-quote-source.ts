@@ -143,7 +143,11 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
     };
   }
 
-  isConfigAndContextValid(config: Partial<BarterConfig> | undefined): config is BarterConfig {
+  isConfigAndContextValidForQuoting(config: Partial<BarterConfig> | undefined): config is BarterConfig {
+    return !!config?.authHeader && !!config?.customSubdomain;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<BarterConfig> | undefined): config is BarterConfig {
     return !!config?.authHeader && !!config?.customSubdomain;
   }
 }

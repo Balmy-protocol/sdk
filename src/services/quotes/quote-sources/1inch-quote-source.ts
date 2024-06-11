@@ -96,8 +96,12 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
     return { dstAmount, to, data, value, gas };
   }
 
-  isConfigAndContextValid(config: Partial<OneInchConfig> | undefined): config is OneInchConfig {
+  isConfigAndContextValidForQuoting(config: Partial<OneInchConfig> | undefined): config is OneInchConfig {
     return !!config && (!!config.apiKey || !!config.customUrl);
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<OneInchConfig> | undefined): config is OneInchConfig {
+    return true;
   }
 }
 

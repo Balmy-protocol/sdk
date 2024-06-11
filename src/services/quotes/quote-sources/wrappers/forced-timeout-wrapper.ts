@@ -22,8 +22,11 @@ export function forcedTimeoutWrapper<
       }`;
       return timeoutPromise(source.buildTx({ components, request, config }), request.config.timeout, { description });
     },
-    isConfigAndContextValid: (config): config is CustomQuoteSourceConfig => {
-      return source.isConfigAndContextValid(config);
+    isConfigAndContextValidForQuoting: (config): config is CustomQuoteSourceConfig => {
+      return source.isConfigAndContextValidForQuoting(config);
+    },
+    isConfigAndContextValidForTxBuilding: (config): config is CustomQuoteSourceConfig => {
+      return source.isConfigAndContextValidForTxBuilding(config);
     },
   };
 }

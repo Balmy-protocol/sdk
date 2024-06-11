@@ -95,7 +95,11 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<ZRXConfig> | undefined): config is ZRXConfig {
+  isConfigAndContextValidForQuoting(config: Partial<ZRXConfig> | undefined): config is ZRXConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<ZRXConfig> | undefined): config is ZRXConfig {
+    return true;
   }
 }

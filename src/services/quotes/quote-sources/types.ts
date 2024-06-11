@@ -47,9 +47,10 @@ export type IQuoteSource<
   CustomQuoteSourceConfig extends object = {},
   CustomQuoteSourceData extends Record<string, any> = Record<string, any>
 > = {
-  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
   getMetadata(): QuoteSourceMetadata<Support>;
   quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse<CustomQuoteSourceData>>;
+  isConfigAndContextValidForQuoting(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
+  isConfigAndContextValidForTxBuilding(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig;
   buildTx(_: BuildTxParams<CustomQuoteSourceConfig, CustomQuoteSourceData>): Promise<SourceQuoteTransaction>;
 };
 

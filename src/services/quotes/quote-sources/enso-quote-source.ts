@@ -96,7 +96,11 @@ export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, En
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<EnsoConfig> | undefined): config is EnsoConfig {
+  isConfigAndContextValidForQuoting(config: Partial<EnsoConfig> | undefined): config is EnsoConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<EnsoConfig> | undefined): config is EnsoConfig {
+    return true;
   }
 }

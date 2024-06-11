@@ -118,8 +118,12 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig,
     return request.customData.tx;
   }
 
-  isConfigAndContextValid(config: Partial<RangoConfig> | undefined): config is RangoConfig {
+  isConfigAndContextValidForQuoting(config: Partial<RangoConfig> | undefined): config is RangoConfig {
     return !!config?.apiKey;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<RangoConfig> | undefined): config is RangoConfig {
+    return true;
   }
 }
 

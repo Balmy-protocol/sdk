@@ -30,8 +30,11 @@ export function buyToSellOrderWrapper<
     buildTx: (args) => {
       return source.buildTx(args);
     },
-    isConfigAndContextValid: (config): config is CustomQuoteSourceConfig => {
-      return source.isConfigAndContextValid(config);
+    isConfigAndContextValidForQuoting: (config): config is CustomQuoteSourceConfig => {
+      return source.isConfigAndContextValidForQuoting(config);
+    },
+    isConfigAndContextValidForTxBuilding: (config): config is CustomQuoteSourceConfig => {
+      return source.isConfigAndContextValidForTxBuilding(config);
     },
   };
 }

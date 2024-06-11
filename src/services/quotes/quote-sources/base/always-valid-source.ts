@@ -18,7 +18,11 @@ export abstract class AlwaysValidConfigAndContextSource<
   abstract quote(_: QuoteParams<Support, CustomQuoteSourceConfig>): Promise<SourceQuoteResponse<CustomQuoteSourceData>>;
   abstract buildTx(_: BuildTxParams<CustomQuoteSourceConfig, CustomQuoteSourceData>): Promise<SourceQuoteTransaction>;
 
-  isConfigAndContextValid(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig {
+  isConfigAndContextValidForQuoting(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig {
+    return true;
+  }
+
+  isConfigAndContextValidForTxBuilding(config: Partial<CustomQuoteSourceConfig> | undefined): config is CustomQuoteSourceConfig {
     return true;
   }
 }
