@@ -16,7 +16,7 @@ export const CHANGELLY_METADATA: QuoteSourceMetadata<ChangellySupport> = {
   },
   logoURI: 'ipfs://Qmbnnx5bD1wytBna4oY8DaL1cw5c5mTStwUMqLCoLt3yHR',
 };
-type ChangellyConfig = { apiKey: string };
+type ChangellyConfig = { apiKey: string; baseUri: string };
 type ChangellySupport = { buyOrders: false; swapAndTransfer: true };
 type ChangellyData = { tx: SourceQuoteTransaction };
 export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, ChangellyConfig, ChangellyData> {
@@ -47,7 +47,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       takerAddress: config.disableValidation ? undefined : takeFrom,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `https://dex-api.changelly.com/v1/${chain.chainId}/quote?${queryString}`;
+    const url = `${config.baseUri ?? 'https://dex-api.changelly.com'}/v1/${chain.chainId}/quote?${queryString}`;
 
     const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
