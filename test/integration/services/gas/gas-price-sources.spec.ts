@@ -6,7 +6,6 @@ import { PublicRPCsSource } from '@services/providers/provider-sources/public-pr
 import { AVAILABLE_GAS_SPEEDS, IGasPriceSource, GasPriceResult } from '@services/gas/types';
 import { isEIP1159Compatible } from '@services/gas/utils';
 import { OpenOceanGasPriceSource } from '@services/gas/gas-price-sources/open-ocean-gas-price-source';
-import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
@@ -29,7 +28,6 @@ const RPC_SOURCE = new RPCGasPriceSource(new ProviderService(new PublicRPCsSourc
 const PRIORITIZED_GAS_SOURCE = new PrioritizedGasPriceSourceCombinator([OPEN_OCEAN_SOURCE, RPC_SOURCE]);
 const FASTEST_GAS_SOURCE = new FastestGasPriceSourceCombinator([PARASWAP_SOURCE, RPC_SOURCE]);
 const AGGREGATOR_GAS_SOURCE = new AggregatorGasPriceSource(LOGS_SERVICE, [PARASWAP_SOURCE, RPC_SOURCE], 'median');
-const ETH_GAS_STATION_SOURCE = new EthGasStationGasPriceSource(FETCH_SERVICE);
 const OWLRACLE_SOURCE = new OwlracleGasPriceSource(FETCH_SERVICE, '7d7859c452d5419bae3d7666c8130c96');
 
 jest.retryTimes(3);
@@ -41,7 +39,6 @@ describe('Gas Price Sources', () => {
   // gasPriceSourceTest({ title: 'Owlracle Source', source: OWLRACLE_SOURCE }); We comment this out because of rate limiting
   gasPriceSourceTest({ title: 'Prioritized Gas Source', source: PRIORITIZED_GAS_SOURCE });
   gasPriceSourceTest({ title: 'Fastest Gas Source', source: FASTEST_GAS_SOURCE });
-  // gasPriceSourceTest({ title: 'ETH Gas Station Source', source: ETH_GAS_STATION_SOURCE }); We comment this out because the API is quite flaky
   // gasPriceSourceTest({ title: 'Polygon Gas Station Source', source: POLYGON_GAS_STATION_SOURCE }); We comment this out because the API seems to be down
   gasPriceSourceTest({ title: 'Etherscan Source', source: ETHERSCAN_SOURCE });
   gasPriceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_GAS_SOURCE });
