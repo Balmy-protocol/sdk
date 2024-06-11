@@ -30,7 +30,7 @@ const UNISWAP_METADATA: QuoteSourceMetadata<UniswapSupport> = {
   logoURI: 'ipfs://QmNa3YBYAYS5qSCLuXataV5XCbtxP9ZB4rHUfomRxrpRhJ',
 };
 type UniswapSupport = { buyOrders: true; swapAndTransfer: true };
-type UniswapConfig = {};
+type UniswapConfig = { baseUri: string };
 type UniswapData = { tx: SourceQuoteTransaction };
 export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<UniswapSupport, UniswapConfig, UniswapData> {
   getMetadata() {
@@ -47,7 +47,8 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom, recipient },
     },
-  }: QuoteParams<UniswapSupport>): Promise<SourceQuoteResponse<UniswapData>> {
+    config,
+  }: QuoteParams<UniswapSupport, UniswapConfig>): Promise<SourceQuoteResponse<UniswapData>> {
     const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
     const isSellTokenNativeToken = isSameAddress(sellToken, Addresses.NATIVE_TOKEN);
     const isBuyTokenNativeToken = isSameAddress(buyToken, Addresses.NATIVE_TOKEN);
@@ -59,7 +60,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
     const router = ROUTER_ADDRESS[chain.chainId];
     recipient = recipient ?? takeFrom;
     const url =
-      'https://api.uniswap.org/v1/quote' +
+      `${config.baseUri ?? 'https://api.uniswap.org'}/v1/quote` +
       '?protocols=v2,v3,mixed' +
       `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
       `&tokenInChainId=${chain.chainId}` +
