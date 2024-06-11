@@ -9,7 +9,6 @@ import { PrioritizedGasPriceSourceCombinator } from '@services/gas/gas-price-sou
 import { RPCGasPriceSource } from '@services/gas/gas-price-sources/rpc-gas-price-source';
 import { GasService } from '@services/gas/gas-service';
 import { OwlracleGasPriceSource } from '@services/gas/gas-price-sources/owlracle-gas-price-source';
-import { EthGasStationGasPriceSource } from '@services/gas/gas-price-sources/eth-gas-station-gas-price-source';
 import { EtherscanGasPriceSource } from '@services/gas/gas-price-sources/etherscan-gas-price-source';
 import { PolygonGasStationGasPriceSource } from '@services/gas/gas-price-sources/polygon-gas-station-gas-price-source';
 import { AggregatorGasPriceSource, GasPriceAggregationMethod } from '@services/gas/gas-price-sources/aggregator-gas-price-source';
@@ -24,7 +23,6 @@ export type GasSourceInput =
   | { type: 'open-ocean' }
   | { type: 'paraswap' }
   | { type: 'rpc' }
-  | { type: 'eth-gas-station' }
   | { type: 'polygon-gas-station' }
   | {
       type: 'cached';
@@ -56,8 +54,6 @@ type CalculateSourceFromInput<Input extends GasSourceInput | undefined> = undefi
   ? ParaswapGasPriceSource
   : Input extends { type: 'rpc' }
   ? RPCGasPriceSource
-  : Input extends { type: 'eth-gas-station' }
-  ? EthGasStationGasPriceSource
   : Input extends { type: 'polygon-gas-station' }
   ? PolygonGasStationGasPriceSource
   : Input extends { type: 'owlracle' }
@@ -113,8 +109,6 @@ function buildSource(
       return new ParaswapGasPriceSource(fetchService);
     case 'rpc':
       return new RPCGasPriceSource(providerService);
-    case 'eth-gas-station':
-      return new EthGasStationGasPriceSource(fetchService);
     case 'polygon-gas-station':
       return new PolygonGasStationGasPriceSource(fetchService);
     case 'etherscan':
@@ -141,7 +135,6 @@ function buildSource(
 type PublicSources = [
   OpenOceanGasPriceSource,
   RPCGasPriceSource,
-  EthGasStationGasPriceSource,
   PolygonGasStationGasPriceSource,
   EtherscanGasPriceSource,
   ParaswapGasPriceSource
@@ -163,9 +156,8 @@ function calculatePublicSources({
 }): PublicSources {
   const openOcean = new OpenOceanGasPriceSource(fetchService);
   const rpc = new RPCGasPriceSource(providerService);
-  const ethGasStation = new EthGasStationGasPriceSource(fetchService);
   const polygonGasStation = new PolygonGasStationGasPriceSource(fetchService);
   const etherscan = new EtherscanGasPriceSource(fetchService);
   const paraswap = new ParaswapGasPriceSource(fetchService);
-  return [openOcean, rpc, ethGasStation, polygonGasStation, etherscan, paraswap];
+  return [openOcean, rpc, polygonGasStation, etherscan, paraswap];
 }
