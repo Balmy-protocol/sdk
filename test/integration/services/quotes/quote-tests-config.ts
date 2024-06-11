@@ -52,16 +52,6 @@ if (process.env.OKX_DEX_API_KEY && process.env.OKX_DEX_SECRET_KEY && process.env
   };
 }
 
-export function supportedChains() {
-  const sources = QUOTE_SOURCES;
-  return chainsUnion(
-    Object.entries(sources)
-      .filter(([sourceId, source]) => source.isConfigAndContextValid({ ...CONFIG.global, ...CONFIG.custom?.[sourceId as SourceWithConfigId] }))
-      .map(([, source]) => source)
-      .map((source) => source.getMetadata().supports.chains)
-  );
-}
-
 export enum Test {
   SELL_RANDOM_ERC20_TO_STABLE,
   SELL_STABLE_TO_NATIVE,
