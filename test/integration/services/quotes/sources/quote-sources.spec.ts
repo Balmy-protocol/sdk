@@ -209,8 +209,10 @@ describe.skip('Quote Sources [External Quotes]', () => {
       }) {
         when(title, () => {
           for (const [sourceId, source] of Object.entries(sourcesPerChain[chain.chainId])) {
+            const config = getConfig(sourceId);
             if (
-              source.isConfigAndContextValid(getConfig(sourceId)) &&
+              source.isConfigAndContextValidForQuoting(config) &&
+              source.isConfigAndContextValidForTxBuilding(config) &&
               shouldExecute(sourceId, test) &&
               (!checkSupport || checkSupport(source.getMetadata().supports))
             ) {
