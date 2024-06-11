@@ -73,7 +73,7 @@ const amountThatDevilCanSpend =
 ### 🔄 Quoting all dex aggregators for a trade
 
 ```javascript
-const allQuotes = await sdk.quoteService.getAllQuotes({
+const allQuotes = await sdk.quoteService.getAllQuotesWithTxs({
   request: {
     chainId: Chains.ETHEREUM.chainId, // Ethereum
     sellToken: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
