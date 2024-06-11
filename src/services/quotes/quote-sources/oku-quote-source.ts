@@ -36,7 +36,7 @@ const OKU_METADATA: QuoteSourceMetadata<OkuSupport> = {
   logoURI: 'ipfs://QmS2Kf7sZz7DrcwWU9nNG8eGt2126G2p2c9PTDFT774sW7',
 };
 type OkuSupport = { buyOrders: true; swapAndTransfer: false };
-type OkuConfig = {};
+type OkuConfig = { baseUri: string };
 type OkuData = {
   coupon: any;
   signingRequest: any;
@@ -64,7 +64,8 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       accounts: { takeFrom },
       external,
     },
-  }: QuoteParams<OkuSupport>): Promise<SourceQuoteResponse<OkuData>> {
+    config,
+  }: QuoteParams<OkuSupport, OkuConfig>): Promise<SourceQuoteResponse<OkuData>> {
     if (isSameAddress(chain.wToken, sellToken) && isSameAddress(Addresses.NATIVE_TOKEN, buyToken))
       throw new Error(`Native token unwrap not supported by this source`);
     if (isSameAddress(Addresses.NATIVE_TOKEN, sellToken) && isSameAddress(chain.wToken, buyToken))
@@ -83,7 +84,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
         ? { inTokenAmount: formatUnits(order.sellAmount, tokenData.sellToken.decimals) }
         : { outTokenAmount: formatUnits(order.buyAmount, tokenData.buyToken.decimals) }),
     };
-    const quoteResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/swap_quote', {
+    const quoteResponse = await fetchService.fetch(`${config.baseUri ?? 'https://canoe.icarus.tools'}/market/usor/swap_quote`, {
       method: 'POST',
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
