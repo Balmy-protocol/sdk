@@ -10,6 +10,8 @@ const NETWORK_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.ARBITRUM.chainId]: 'arbitrum',
+  [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.BLAST.chainId]: 'blast',
 };
 
 const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
