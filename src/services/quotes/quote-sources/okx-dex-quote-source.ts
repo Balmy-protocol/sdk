@@ -20,6 +20,7 @@ const SUPPORTED_CHAINS = [
   Chains.LINEA,
   Chains.BASE,
   Chains.SCROLL,
+  Chains.BLAST,
 ];
 
 const OKX_DEX_METADATA: QuoteSourceMetadata<OKXDexSupport> = {
