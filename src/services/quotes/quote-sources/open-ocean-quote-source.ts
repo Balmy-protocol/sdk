@@ -33,6 +33,7 @@ const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Addres
   [Chains.opBNB.chainId]: { chainKey: 'opbnb' },
   [Chains.BLAST.chainId]: { chainKey: 'blast' },
   [Chains.ROOTSTOCK.chainId]: { chainKey: 'rootstock' },
+  [Chains.MODE.chainId]: { chainKey: 'mode' },
 };
 
 const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
