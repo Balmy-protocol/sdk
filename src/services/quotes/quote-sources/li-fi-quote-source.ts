@@ -30,6 +30,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.POLYGON_ZKEVM.chainId,
       Chains.BASE.chainId,
       Chains.ROOTSTOCK.chainId,
+      Chains.MODE.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
