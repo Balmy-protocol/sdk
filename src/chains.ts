@@ -469,6 +469,15 @@ export const Chains = {
     publicRPCs: ['https://scroll-mainnet.chainstacklabs.com', 'https://rpc.ankr.com/scroll', 'https://rpc.scroll.io', 'https://1rpc.io/scroll'],
     explorer: 'https://scrollscan.com/',
   },
+  MANTLE: {
+    chainId: 5000,
+    name: 'Mantle',
+    ids: ['mantle'],
+    nativeCurrency: { symbol: 'MNT', name: 'Mantle' },
+    wToken: '0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8',
+    publicRPCs: ['https://rpc.mantle.xyz', 'https://rpc.ankr.com/mantle', 'https://mantle.drpc.org'],
+    explorer: 'https://explorer.mantle.xyz/',
+  },
   ETHEREUM_GOERLI: {
     chainId: 5,
     name: 'Ethereum Goerli',
