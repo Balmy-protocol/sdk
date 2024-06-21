@@ -7,7 +7,6 @@ import {
   EstimatedQuoteResponse,
   SourceId,
   SourceMetadata,
-  QuoteResponse,
   QuoteTransaction,
 } from '@services/quotes';
 import { SupportedGasValues } from '@services/gas/types';

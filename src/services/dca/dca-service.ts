@@ -781,7 +781,7 @@ export class DCAService implements IDCAService {
       ? []
       : [{ token: bestQuote.sellToken.address, target: bestQuote.source.allowanceTarget }];
 
-    // Swap adapter uses the cero address as the native token
+    // Swap adapter uses the zero address as the native token
     const tokenOutDistribution = isSameAddress(bestQuote.buyToken.address, Addresses.NATIVE_TOKEN)
       ? Addresses.ZERO_ADDRESS
       : bestQuote.buyToken.address;
