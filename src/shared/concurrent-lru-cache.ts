@@ -144,7 +144,7 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
     // Try to calculate missing values
     const toCalculate = notInCache.filter((key) => !this.beingCalculated.has(storableKeys[key]));
     if (toCalculate.length > 0) {
-      const calculated = timeoutPromise(this.calculate(context, toCalculate), timeout);
+      const calculated = this.calculate(context, toCalculate);
       for (const key of toCalculate) {
         const storableKey = storableKeys[key];
         const promise = calculated
@@ -165,7 +165,9 @@ export class ConcurrentLRUCacheWithContext<Context, Key extends ValidKey, Value>
     // Wait for all calculations
     const calculationPromises = notInCache.map<Promise<[Key, Value | undefined]>>(async (key) => [
       key,
-      await this.beingCalculated.get(storableKeys[key]),
+      // Note: we add the timeout here so that even though this particular request might timeout, the result is still being made in the background
+      //       Once it's done, we'll fill the cache for the next time
+      await timeoutPromise(this.beingCalculated.get(storableKeys[key]) ?? Promise.resolve(undefined), timeout).catch(() => undefined),
     ]);
     const calculated = Object.fromEntries(await Promise.all(calculationPromises)) as Record<Key, Value | undefined>;
 
