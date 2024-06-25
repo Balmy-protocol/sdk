@@ -6,7 +6,7 @@ import { PriceResult, IPriceSource, PricesQueriesSupport, TokenPrice, PriceInput
 import { nowInSeconds } from './utils';
 
 export class BalmyPriceSource implements IPriceSource {
-  constructor(private readonly fetch: IFetchService) {}
+  constructor(private readonly fetch: IFetchService, private readonly apiKey: string) {}
 
   supportedQueries() {
     const support: PricesQueriesSupport = { getCurrentPrices: true, getHistoricalPrices: true, getBulkHistoricalPrices: true, getChart: false };
@@ -22,7 +22,7 @@ export class BalmyPriceSource implements IPriceSource {
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
     const tokensInChain = tokens.map(({ chainId, token }) => toTokenInChain(chainId, token));
-    const response = await this.fetch.fetch('https://api.balmy.xyz/v1/prices', {
+    const response = await this.fetch.fetch(`https://api.balmy.xyz/v1/prices?apiKey=${this.apiKey}`, {
       body: JSON.stringify({ tokens: tokensInChain }),
       method: 'POST',
       timeout: config?.timeout,
@@ -67,7 +67,7 @@ export class BalmyPriceSource implements IPriceSource {
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
     const tokensInput = tokens.map(({ chainId, token, timestamp }) => ({ chain: chainId, token, timestamp }));
-    const response = await this.fetch.fetch('https://api.balmy.xyz/v1/historical-prices', {
+    const response = await this.fetch.fetch(`https://api.balmy.xyz/v1/historical-prices?apiKey=${this.apiKey}`, {
       body: JSON.stringify({ tokens: tokensInput }),
       method: 'POST',
       timeout: config?.timeout,

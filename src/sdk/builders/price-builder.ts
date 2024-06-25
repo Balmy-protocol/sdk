@@ -15,7 +15,7 @@ export type PriceSourceInput =
   | { type: 'defi-llama' }
   | { type: 'odos' }
   | { type: 'coingecko' }
-  | { type: 'balmy' }
+  | { type: 'balmy'; apiKey: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
   | { type: 'fastest'; sources: PriceSourceInput[] }
   | { type: 'aggregate'; sources: PriceSourceInput[]; by: PriceAggregationMethod }
@@ -40,7 +40,7 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
     case 'odos':
       return new OdosPriceSource(fetchService);
     case 'balmy':
-      return new BalmyPriceSource(fetchService);
+      return new BalmyPriceSource(fetchService, source.apiKey);
     case 'coingecko':
       return coingecko;
     case 'cached':
