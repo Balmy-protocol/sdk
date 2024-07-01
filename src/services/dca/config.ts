@@ -1,4 +1,5 @@
 import { Chains } from '@chains';
+import { PERMIT2_ADAPTER_CONTRACT } from '@services/permit2/utils/config';
 import { Contract } from '@shared/contracts';
 
 export const DCA_HUB_CONTRACT = Contract.with({ defaultAddress: '0xA5AdC5484f9997fBF7D405b9AA62A7d88883C345' })
@@ -10,4 +11,4 @@ export const DCA_PERMISSION_MANAGER_CONTRACT = Contract.with({ defaultAddress: '
 export const COMPANION_CONTRACT = Contract.with({ defaultAddress: '0x6C615481E96806edBd9987B6E522A4Ea85d13659' })
   .and({ address: '0x5872E8D5Ec9Dbf67949FdD4B5e05707644D60876', onChain: Chains.ROOTSTOCK.chainId })
   .build();
-export const COMPANION_SWAPPER_CONTRACT = Contract.with({ defaultAddress: '0xED306e38BB930ec9646FF3D917B2e513a97530b1' }).build();
+export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
