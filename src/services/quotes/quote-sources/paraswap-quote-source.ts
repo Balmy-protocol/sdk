@@ -1,11 +1,8 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { IFetchService } from '@services/fetch/types';
-import { calculateDeadline, isSameAddress } from '@shared/utils';
-import { Chain, TimeString } from '@types';
-import { GlobalQuoteSourceConfig } from '../types';
+import { calculateDeadline } from '@shared/utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteRequest, SourceQuoteResponse, SourceQuoteTransaction } from './types';
+import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
@@ -29,7 +26,7 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
 };
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
 type ParaswapConfig = { sourceAllowlist?: string[] };
-type ParaswapData = { srcDecimals: number; destDecimals: number; route: any; txValidFor: TimeString | undefined };
+type ParaswapData = { tx: SourceQuoteTransaction };
 export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<ParaswapSupport, ParaswapConfig, ParaswapData> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
     return PARASWAP_METADATA;
@@ -37,109 +34,66 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
 
   async quote({
     components: { fetchService },
-    request,
+    request: {
+      chain,
+      sellToken,
+      buyToken,
+      order,
+      accounts: { takeFrom, recipient },
+      config: { timeout, slippagePercentage, txValidFor },
+      external,
+    },
     config,
   }: QuoteParams<ParaswapSupport, ParaswapConfig>): Promise<SourceQuoteResponse<ParaswapData>> {
     const {
       sellToken: { decimals: srcDecimals },
       buyToken: { decimals: destDecimals },
-    } = await request.external.tokenData.request();
-    const route = await this.getPrice(fetchService, request, config, srcDecimals, destDecimals);
-    const isWrapOrUnwrap = this.isWrappingOrUnwrappingWithWToken(request.chain, route);
-    const quote = {
-      sellAmount: BigInt(route.srcAmount),
-      buyAmount: BigInt(route.destAmount),
-      estimatedGas: BigInt(route.gasCost),
-      allowanceTarget: calculateAllowanceTarget(request.sellToken, route.tokenTransferProxy),
-      customData: { srcDecimals, destDecimals, route, txValidFor: request.config.txValidFor },
-    };
-    const usedSlippage = isWrapOrUnwrap ? 0 : request.config.slippagePercentage;
-    return addQuoteSlippage(quote, request.order.type, usedSlippage);
-  }
-
-  async buildTx({
-    components: { fetchService },
-    request: {
-      chain,
-      sellToken,
-      buyToken,
-      maxSellAmount,
-      minBuyAmount,
-      accounts: { takeFrom, recipient },
-      config: { timeout },
-      customData: { srcDecimals, destDecimals, route, txValidFor },
-    },
-    config,
-  }: BuildTxParams<ParaswapConfig, ParaswapData>): Promise<SourceQuoteTransaction> {
-    const url = `https://apiv5.paraswap.io/transactions/${chain.chainId}?ignoreChecks=true&ignoreGasEstimate=true`;
-    const receiver = takeFrom !== recipient ? recipient : undefined;
-    let body: any = {
-      srcToken: sellToken,
-      srcDecimals,
-      srcAmount: `${maxSellAmount}`,
-      destAmount: `${minBuyAmount}`,
-      destToken: buyToken,
-      destDecimals,
-      priceRoute: route,
-      userAddress: takeFrom,
-      receiver,
-      partner: config.referrer?.name,
-      partnerAddress: config.referrer?.address,
-      partnerFeeBps: 0,
-      deadline: calculateDeadline(txValidFor),
-    };
-
-    const response = await fetchService.fetch(url, {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      timeout,
-    });
-    if (!response.ok) {
-      failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
-    }
-    const { data, value } = await response.json();
-    return { calldata: data, value: BigInt(value ?? 0), to: route.contractAddress };
-  }
-
-  private async getPrice(
-    fetchService: IFetchService,
-    { chain, sellToken, buyToken, order, accounts: { takeFrom, recipient }, config: { timeout } }: SourceQuoteRequest<ParaswapSupport>,
-    config: ParaswapConfig & GlobalQuoteSourceConfig,
-    srcDecimals: number,
-    destDecimals: number
-  ) {
-    const amount = order.type === 'sell' ? order.sellAmount : order.buyAmount;
+    } = await external.tokenData.request();
     const queryParams = {
       network: chain.chainId,
       srcToken: sellToken,
       destToken: buyToken,
-      amount: amount,
+      amount: order.type === 'sell' ? order.sellAmount : order.buyAmount,
       side: order.type.toUpperCase(),
-      partner: config.referrer?.name,
       srcDecimals,
       destDecimals,
       includeDEXS: config.sourceAllowlist,
-      // Note: request will fail if we don't exclude these sources
-      excludeDEXS: ['ParaSwapPool', 'ParaSwapLimitOrders'],
-      // If is swap and transfer, then I need to whitelist methods
-      includeContractMethods: !!recipient && !isSameAddress(takeFrom, recipient) ? ['simpleSwap', 'multiSwap', 'megaSwap'] : undefined,
+      slippage: slippagePercentage * 100,
+      userAddress: takeFrom,
+      receiver: takeFrom !== recipient ? recipient : undefined,
+      partner: config.referrer?.name,
+      partnerAddress: config.referrer?.address,
+      partnerFeeBps: 0,
+      deadline: calculateDeadline(txValidFor),
+      version: '6.2',
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `https://apiv5.paraswap.io/prices?${queryString}`;
+    const url = `https://api.paraswap.io/swap?${queryString}`;
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
       failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
     }
-    const { priceRoute } = await response.json();
-    return priceRoute;
+    const {
+      priceRoute,
+      txParams: { to, data, value },
+    } = await response.json();
+    const quote = {
+      sellAmount: BigInt(priceRoute.srcAmount),
+      buyAmount: BigInt(priceRoute.destAmount),
+      estimatedGas: BigInt(priceRoute.gasCost),
+      allowanceTarget: calculateAllowanceTarget(sellToken, priceRoute.tokenTransferProxy),
+      customData: {
+        tx: {
+          to,
+          calldata: data,
+          value: BigInt(value ?? 0),
+        },
+      },
+    };
+    return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 
-  private isWrappingOrUnwrappingWithWToken(chain: Chain, priceRoute: any) {
-    return (
-      priceRoute.bestRoute?.[0]?.percent === 100 &&
-      priceRoute.bestRoute[0].swaps?.[0]?.swapExchanges?.[0]?.percent === 100 &&
-      isSameAddress(chain.wToken, priceRoute.bestRoute[0].swaps[0].swapExchanges[0].poolAddresses?.[0])
-    );
+  async buildTx({ request }: BuildTxParams<ParaswapConfig, ParaswapData>): Promise<SourceQuoteTransaction> {
+    return request.customData.tx;
   }
 }
