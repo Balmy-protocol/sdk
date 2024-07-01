@@ -33,6 +33,7 @@ describe('Permit2 Arbitrary Service', () => {
 
   beforeAll(async () => {
     await fork({ chain: CHAIN, blockNumber: 116816944 });
+    chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     [user] = await ethers.getSigners();
     ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(CHAIN));
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
@@ -40,7 +41,6 @@ describe('Permit2 Arbitrary Service', () => {
     await mint({ amount: ORIGINAL_AMOUNT_USDC, of: STABLE_ERC20, to: user });
     await approve({ amount: Uint.MAX_256, to: PERMIT2_CONTRACT.address(chainId), for: STABLE_ERC20, from: user });
     await approve({ amount: Uint.MAX_256, to: PERMIT2_CONTRACT.address(chainId), for: wToken, from: user });
-    chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     snapshot = await takeSnapshot();
     arbitrary = buildSDK().permit2Service.arbitrary;
   });
