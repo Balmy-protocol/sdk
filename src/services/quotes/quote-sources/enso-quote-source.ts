@@ -22,7 +22,7 @@ const ENSO_METADATA: QuoteSourceMetadata<EnsoSupport> = {
   logoURI: 'ipfs://QmWc9U7emJ7YvoLsxCvvJMxnEfMncJXrkqFpGoCP2LxZRJ',
 };
 type EnsoSupport = { buyOrders: false; swapAndTransfer: false };
-type EnsoConfig = { apiKey: string };
+type EnsoConfig = { apiKey: string; routingStrategy?: 'router' | 'delegate' | 'ensowallet' };
 type EnsoData = { tx: SourceQuoteTransaction };
 export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, EnsoData> {
   getMetadata() {
@@ -50,7 +50,7 @@ export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, En
       tokenIn: sellToken,
       amountIn: order.sellAmount.toString(),
       tokenOut: buyToken,
-      routingStrategy: 'router',
+      routingStrategy: config?.routingStrategy ?? 'router',
       priceImpact: false,
       chainId: chain.chainId,
       slippage: Math.floor(slippagePercentage * 100),
