@@ -7,7 +7,7 @@ import { fork } from '@test-utils/evm';
 import { SnapshotRestorer, takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { TestToken, approve, balance, loadTokens, mint } from '@test-utils/erc20';
-import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
+import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 import { Uint } from '@shared/constants';
 import { parseUnits } from 'viem';
 import { buildSDK } from '@builder';
@@ -33,14 +33,14 @@ describe('Permit2 Arbitrary Service', () => {
 
   beforeAll(async () => {
     await fork({ chain: CHAIN, blockNumber: 116816944 });
+    chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
     [user] = await ethers.getSigners();
     ({ nativeToken, STABLE_ERC20, wToken } = await loadTokens(CHAIN));
     await mint({ amount: ORIGINAL_AMOUNT_ETH, of: nativeToken, to: user });
     await mint({ amount: ORIGINAL_AMOUNT_WETH, of: wToken, to: user });
     await mint({ amount: ORIGINAL_AMOUNT_USDC, of: STABLE_ERC20, to: user });
-    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS(chainId), for: STABLE_ERC20, from: user });
-    await approve({ amount: Uint.MAX_256, to: PERMIT2_ADDRESS(chainId), for: wToken, from: user });
-    chainId = await ethers.provider.getNetwork().then(({ chainId }) => chainId);
+    await approve({ amount: Uint.MAX_256, to: PERMIT2_CONTRACT.address(chainId), for: STABLE_ERC20, from: user });
+    await approve({ amount: Uint.MAX_256, to: PERMIT2_CONTRACT.address(chainId), for: wToken, from: user });
     snapshot = await takeSnapshot();
     arbitrary = buildSDK().permit2Service.arbitrary;
   });
@@ -83,7 +83,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_USDC,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress(chainId)],
+          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.permit2AdapterContract.address(chainId)],
         },
       ],
 
@@ -128,7 +128,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress(chainId)],
+          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.permit2AdapterContract.address(chainId)],
         },
       ],
 
@@ -192,7 +192,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_USDC,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.contractAddress(chainId)],
+          args: [AMOUNT_TO_DEPOSIT_USDC, arbitrary.permit2AdapterContract.address(chainId)],
         },
 
         // Deposit into WETH vault
@@ -200,7 +200,7 @@ describe('Permit2 Arbitrary Service', () => {
           address: VAULT_WETH,
           abi: { humanReadable: ERC4626_ABI },
           functionName: 'deposit',
-          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.contractAddress(chainId)],
+          args: [AMOUNT_TO_DEPOSIT_WETH, arbitrary.permit2AdapterContract.address(chainId)],
         },
       ],
 

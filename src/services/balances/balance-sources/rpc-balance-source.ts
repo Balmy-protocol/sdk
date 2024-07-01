@@ -4,7 +4,7 @@ import { BalanceInput } from '../types';
 import { IProviderService } from '@services/providers/types';
 import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 import ERC20_ABI from '@shared/abis/erc20';
-import { MULTICALL_ADDRESS } from '@services/providers/utils';
+import { MULTICALL_CONTRACT } from '@services/providers/utils';
 
 export type RPCBalanceSourceConfig = {
   batching?: { maxSizeInBytes: number };
@@ -32,7 +32,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     const multicallResults = contracts.length
       ? await this.providerService.getViemPublicClient({ chainId }).multicall({
           contracts,
-          multicallAddress: MULTICALL_ADDRESS,
+          multicallAddress: MULTICALL_CONTRACT.address(chainId),
           batchSize: 0,
           ...this.config,
         })

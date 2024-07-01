@@ -12,8 +12,10 @@ export {
   ruleOfThree,
   splitInChunks,
   timeToSeconds,
+  toLower,
 } from './utils';
 export { AutoUpdateCache, AutoUpdateCacheConfig } from './auto-update-cache';
 export { toChainId as defiLlamaToChainId } from './defi-llama';
 export { Addresses, Uint } from './constants';
+export { Contract } from './contracts';
 export { wait, waitUntil } from './wait';

@@ -13,20 +13,20 @@ import {
   PermitData,
   SinglePermitParams,
 } from './types';
-import { PERMIT2_ADAPTER_ADDRESS } from './utils/config';
+import { PERMIT2_ADAPTER_CONTRACT } from './utils/config';
 import { BuiltTransaction } from '@types';
 
 export class Permit2ArbitraryService implements IPermit2ArbitraryService {
-  readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
+  readonly permit2AdapterContract = PERMIT2_ADAPTER_CONTRACT;
 
   constructor(private readonly permit2Service: IPermit2Service) {}
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
-    return this.permit2Service.preparePermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS(args.chainId) });
+    return this.permit2Service.preparePermitData({ ...args, spender: this.permit2AdapterContract.address(args.chainId) });
   }
 
   prepareBatchPermitData(args: BatchPermitParams): Promise<BatchPermitData> {
-    return this.permit2Service.prepareBatchPermitData({ ...args, spender: PERMIT2_ADAPTER_ADDRESS(args.chainId) });
+    return this.permit2Service.prepareBatchPermitData({ ...args, spender: this.permit2AdapterContract.address(args.chainId) });
   }
 
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams) {
@@ -98,7 +98,7 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     });
 
     return {
-      to: PERMIT2_ADAPTER_ADDRESS(chainId),
+      to: this.permit2AdapterContract.address(chainId),
       data,
       value: totalValue,
     };

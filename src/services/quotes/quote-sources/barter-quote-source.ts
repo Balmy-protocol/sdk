@@ -163,5 +163,5 @@ function calculateTypeFilters({ config, defaultFilters }: { config: BarterConfig
 }
 
 function checksumAndMapIfNecessary(address: Address) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : checksum(address);
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : checksum(address);
 }

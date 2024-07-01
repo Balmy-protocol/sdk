@@ -5,7 +5,7 @@ import { filterRejectedResults, groupByChain } from '@shared/utils';
 import ERC20_ABI from '@shared/abis/erc20';
 import { IProviderService } from '@services/providers';
 import { Address as ViemAddress } from 'viem';
-import { MULTICALL_ADDRESS } from '@services/providers/utils';
+import { MULTICALL_CONTRACT } from '@services/providers/utils';
 
 export class RPCAllowanceSource implements IAllowanceSource {
   constructor(private readonly providerService: IProviderService) {}
@@ -38,7 +38,9 @@ export class RPCAllowanceSource implements IAllowanceSource {
       args: [owner, spender],
     }));
     const multicallResults = contracts.length
-      ? await this.providerService.getViemPublicClient({ chainId }).multicall({ multicallAddress: MULTICALL_ADDRESS, contracts, batchSize: 0 })
+      ? await this.providerService
+          .getViemPublicClient({ chainId })
+          .multicall({ multicallAddress: MULTICALL_CONTRACT.address(chainId), contracts, batchSize: 0 })
       : [];
     const result: Record<TokenAddress, Record<OwnerAddress, Record<SpenderAddress, bigint>>> = {};
     for (let i = 0; i < multicallResults.length; i++) {

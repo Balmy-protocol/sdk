@@ -79,9 +79,8 @@ export class OdosPriceSource implements IPriceSource {
   }
 }
 
-const ODOS_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
 function mapToken(address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? ODOS_NATIVE_TOKEN : address;
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : address;
 }
 
 function toLowerCase(prices: Record<TokenAddress, TokenPrice>) {

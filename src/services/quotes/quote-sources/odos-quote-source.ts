@@ -156,7 +156,7 @@ async function getQuote({
 }
 
 function checksumAndMapIfNecessary(address: Address) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : checksum(address);
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : checksum(address);
 }
 
 type QuoteResponse = {
