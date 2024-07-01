@@ -4,7 +4,7 @@ import { Address, BigIntish, ChainId, TokenAddress, BuiltTransaction, TimeString
 import companionAbi from '@shared/abis/companion';
 import dcaHubAbi from '@shared/abis/dca-hub';
 import { SinglePermitParams, PermitData, IPermit2Service } from '@services/permit2';
-import { PERMIT2_ADDRESS } from '@services/permit2/utils/config';
+import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 import { isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
@@ -36,12 +36,13 @@ import {
   TokenVariantId,
   ActionTypeAction,
 } from './types';
-import { COMPANION_ADDRESS, COMPANION_SWAPPER_ADDRESS, DCA_HUB_ADDRESS, DCA_PERMISSION_MANAGER_ADDRESS } from './config';
+import { COMPANION_CONTRACT, COMPANION_SWAPPER_CONTRACT, DCA_HUB_CONTRACT, DCA_PERMISSION_MANAGER_CONTRACT } from './config';
 import ERC721_ABI from '@shared/abis/erc721';
 import { IFetchService } from '@services/fetch';
 import { IPriceService, PriceResult } from '@services/prices';
 import { IProviderService } from '..';
-import { MULTICALL_ADDRESS } from '@services/providers/utils';
+import { MULTICALL_CONTRACT } from '@services/providers/utils';
+import { Chains } from '@chains';
 
 export class DCAService implements IDCAService {
   constructor(
@@ -65,16 +66,16 @@ export class DCAService implements IDCAService {
     usePermit2?: boolean;
   }): Address {
     if (usePermit2) {
-      return PERMIT2_ADDRESS(chainId);
+      return PERMIT2_CONTRACT.address(chainId);
     } else if (isSameAddress(from, depositWith)) {
-      return DCA_HUB_ADDRESS;
+      return DCA_HUB_CONTRACT.address(chainId);
     } else {
-      return COMPANION_ADDRESS;
+      return COMPANION_CONTRACT.address(chainId);
     }
   }
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
-    return this.permit2Service.preparePermitData({ ...args, spender: COMPANION_ADDRESS });
+    return this.permit2Service.preparePermitData({ ...args, spender: COMPANION_CONTRACT.address(args.chainId) });
   }
 
   async buildCreatePositionTx({
@@ -99,7 +100,7 @@ export class DCAService implements IDCAService {
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the hub
       return {
-        to: DCA_HUB_ADDRESS,
+        to: DCA_HUB_CONTRACT.address(chainId),
         data: encodeFunctionData({
           abi: dcaHubAbi,
           functionName: 'deposit',
@@ -123,7 +124,7 @@ export class DCAService implements IDCAService {
     const calls: Call[] = [];
 
     // Handle take from caller (if necessary)
-    const recipient = needsSwap ? COMPANION_SWAPPER_ADDRESS : COMPANION_ADDRESS;
+    const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : COMPANION_CONTRACT.address(chainId);
     if ('permitData' in deposit) {
       calls.push(buildTakeFromCallerWithPermit(deposit.permitData, deposit.signature, recipient));
     } else if (!isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN)) {
@@ -151,7 +152,7 @@ export class DCAService implements IDCAService {
         abi: companionAbi,
         functionName: 'depositWithBalanceOnContract',
         args: [
-          DCA_HUB_ADDRESS,
+          DCA_HUB_CONTRACT.address(chainId),
           from.variantId as ViemAddress,
           to.variantId as ViemAddress,
           amountOfSwaps,
@@ -167,7 +168,7 @@ export class DCAService implements IDCAService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls, value: depositInfo.value });
+    return buildCompanionMulticall({ chainId, calls, value: depositInfo.value });
   }
 
   async buildIncreasePositionTx({
@@ -178,7 +179,7 @@ export class DCAService implements IDCAService {
     permissionPermit,
     dcaHub,
   }: IncreaseDCAPositionParams): Promise<BuiltTransaction> {
-    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const hubAddress = dcaHub ?? DCA_HUB_CONTRACT.address(chainId);
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
     if (!increase) {
       increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
@@ -192,11 +193,11 @@ export class DCAService implements IDCAService {
     const bigIntPositionId = BigInt(positionId);
     const [positionOwner, position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [
-        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_CONTRACT.address(chainId), functionName: 'ownerOf', args: [bigIntPositionId] },
         { abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
       allowFailure: false,
-      multicallAddress: MULTICALL_ADDRESS,
+      multicallAddress: MULTICALL_CONTRACT.address(chainId),
       batchSize: 0,
     });
 
@@ -218,7 +219,7 @@ export class DCAService implements IDCAService {
     // If we get to this point, then we'll use the Companion for the increase
     const calls: Call[] = [];
 
-    const recipient = needsSwap ? COMPANION_SWAPPER_ADDRESS : COMPANION_ADDRESS;
+    const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : COMPANION_CONTRACT.address(chainId);
     if ('permitData' in increase!) {
       // Handle take from caller (if necessary)
       calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature, recipient));
@@ -255,7 +256,7 @@ export class DCAService implements IDCAService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls, value: increaseInfo?.value });
+    return buildCompanionMulticall({ chainId, calls, value: increaseInfo?.value });
   }
 
   async buildReducePositionTx({
@@ -267,7 +268,7 @@ export class DCAService implements IDCAService {
     permissionPermit,
     dcaHub,
   }: ReduceDCAPositionParams): Promise<BuiltTransaction> {
-    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const hubAddress = dcaHub ?? DCA_HUB_CONTRACT.address(chainId);
     const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvert = reduce.convertTo && !isSameAddress(position.from, reduce.convertTo);
 
@@ -296,7 +297,7 @@ export class DCAService implements IDCAService {
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'reducePosition',
-        args: [hubAddress as ViemAddress, BigInt(positionId), BigInt(reduce.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
+        args: [hubAddress as ViemAddress, BigInt(positionId), BigInt(reduce.amount), amountOfSwaps, COMPANION_SWAPPER_CONTRACT.address(chainId)],
       })
     );
 
@@ -318,7 +319,7 @@ export class DCAService implements IDCAService {
     calls.push(buildSendAllBalance(outToken, recipient));
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls });
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async buildReduceToBuyPositionTx({
@@ -330,7 +331,7 @@ export class DCAService implements IDCAService {
     permissionPermit,
     dcaHub,
   }: ReduceToBuyDCAPositionParams): Promise<BuiltTransaction> {
-    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const hubAddress = dcaHub ?? DCA_HUB_CONTRACT.address(chainId);
     const calls: Call[] = [];
 
     const position = await this.getUserPosition(chainId, hubAddress, positionId);
@@ -380,7 +381,13 @@ export class DCAService implements IDCAService {
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'reducePosition',
-        args: [hubAddress as ViemAddress, BigInt(positionId), BigInt(buyQuote.maxSellAmount.amount), amountOfSwaps, COMPANION_SWAPPER_ADDRESS],
+        args: [
+          hubAddress as ViemAddress,
+          BigInt(positionId),
+          BigInt(buyQuote.maxSellAmount.amount),
+          amountOfSwaps,
+          COMPANION_SWAPPER_CONTRACT.address(chainId),
+        ],
       })
     );
 
@@ -391,7 +398,7 @@ export class DCAService implements IDCAService {
     calls.push(buildSendAllBalance(outToken, recipient));
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls });
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async buildWithdrawPositionTx({
@@ -402,7 +409,7 @@ export class DCAService implements IDCAService {
     permissionPermit,
     dcaHub,
   }: WithdrawDCAPositionParams): Promise<BuiltTransaction> {
-    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const hubAddress = dcaHub ?? DCA_HUB_CONTRACT.address(chainId);
     const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvert = withdraw.convertTo && !isSameAddress(position.to, withdraw.convertTo);
 
@@ -431,7 +438,7 @@ export class DCAService implements IDCAService {
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'withdrawSwapped',
-        args: [hubAddress as ViemAddress, BigInt(positionId), COMPANION_SWAPPER_ADDRESS],
+        args: [hubAddress as ViemAddress, BigInt(positionId), COMPANION_SWAPPER_CONTRACT.address(chainId)],
       })
     );
 
@@ -453,7 +460,7 @@ export class DCAService implements IDCAService {
     calls.push(buildSendAllBalance(outToken, recipient));
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls });
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async buildTerminatePositionTx({
@@ -464,7 +471,7 @@ export class DCAService implements IDCAService {
     permissionPermit,
     dcaHub,
   }: TerminateDCAPositionParams): Promise<BuiltTransaction> {
-    const hubAddress = dcaHub ?? DCA_HUB_ADDRESS;
+    const hubAddress = dcaHub ?? DCA_HUB_CONTRACT.address(chainId);
     const position = await this.getUserPosition(chainId, hubAddress, positionId);
     const shouldConvertUnswapped =
       position.remaining > 0 && !!withdraw.unswappedConvertTo && !isSameAddress(position.from, withdraw.unswappedConvertTo);
@@ -498,8 +505,8 @@ export class DCAService implements IDCAService {
         args: [
           hubAddress as ViemAddress,
           BigInt(positionId),
-          shouldConvertUnswapped ? COMPANION_SWAPPER_ADDRESS : (recipient as ViemAddress),
-          shouldConvertSwapped ? COMPANION_SWAPPER_ADDRESS : (recipient as ViemAddress),
+          shouldConvertUnswapped ? COMPANION_SWAPPER_CONTRACT.address(chainId) : (recipient as ViemAddress),
+          shouldConvertSwapped ? COMPANION_SWAPPER_CONTRACT.address(chainId) : (recipient as ViemAddress),
         ],
       })
     );
@@ -549,7 +556,7 @@ export class DCAService implements IDCAService {
     await Promise.all([unswappedPromise, swappedPromise]);
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls });
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async buildMigratePositionTx({
@@ -563,11 +570,11 @@ export class DCAService implements IDCAService {
     const bigIntPositionId = BigInt(positionId);
     const [positionOwner, position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [
-        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_ADDRESS, functionName: 'ownerOf', args: [bigIntPositionId] },
+        { abi: ERC721_ABI, address: DCA_PERMISSION_MANAGER_CONTRACT.address(chainId), functionName: 'ownerOf', args: [bigIntPositionId] },
         { abi: dcaHubAbi, address: sourceHub as ViemAddress, functionName: 'userPosition', args: [bigIntPositionId] },
       ],
       allowFailure: false,
-      multicallAddress: MULTICALL_ADDRESS,
+      multicallAddress: MULTICALL_CONTRACT.address(chainId),
       batchSize: 0,
     });
 
@@ -590,14 +597,14 @@ export class DCAService implements IDCAService {
           sourceHub as ViemAddress,
           bigIntPositionId,
           shouldConvertUnswapped
-            ? COMPANION_SWAPPER_ADDRESS
+            ? COMPANION_SWAPPER_CONTRACT.address(chainId)
             : migration.useFundsFrom !== 'swapped'
-            ? COMPANION_ADDRESS
+            ? COMPANION_CONTRACT.address(chainId)
             : (migration.sendUnusedFundsTo as ViemAddress),
           shouldConvertSwapped
-            ? COMPANION_SWAPPER_ADDRESS
+            ? COMPANION_SWAPPER_CONTRACT.address(chainId)
             : migration.useFundsFrom !== 'unswapped'
-            ? COMPANION_ADDRESS
+            ? COMPANION_CONTRACT.address(chainId)
             : (migration.sendUnusedFundsTo as ViemAddress),
         ],
       })
@@ -655,7 +662,7 @@ export class DCAService implements IDCAService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ calls });
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async getSupportedPairs(args?: { chains?: ChainId[]; config?: { timeout?: TimeString } }) {
@@ -761,8 +768,8 @@ export class DCAService implements IDCAService {
       request: {
         ...request,
         slippagePercentage: swapConfig?.slippagePercentage ?? 0.3,
-        takerAddress: COMPANION_SWAPPER_ADDRESS,
-        recipient: COMPANION_SWAPPER_ADDRESS,
+        takerAddress: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
+        recipient: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
         txValidFor,
         filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
         sourceConfig: { custom: { balmy: { leftoverRecipient } } },
@@ -789,7 +796,7 @@ export class DCAService implements IDCAService {
     const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
       allowanceTargets,
       calls: [{ to: tx.to, data: tx.data, value: tx.value ?? 0n }],
-      distribution: { [tokenOutDistribution]: [{ recipient: COMPANION_ADDRESS, shareBps: 0 }] },
+      distribution: { [tokenOutDistribution]: [{ recipient: COMPANION_CONTRACT.address(request.chainId), shareBps: 0 }] },
       txValidFor,
       chainId: request.chainId,
     });
@@ -816,7 +823,7 @@ export class DCAService implements IDCAService {
     const [position] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [{ abi: dcaHubAbi, address: hubAddress as ViemAddress, functionName: 'userPosition', args: [BigInt(positionId)] }],
       allowFailure: false,
-      multicallAddress: MULTICALL_ADDRESS,
+      multicallAddress: MULTICALL_CONTRACT.address(chainId),
       batchSize: 0,
     });
     return { ...position, remaining: BigInt(position.remaining), swapped: BigInt(position.swapped) };
@@ -884,13 +891,13 @@ function buildSendAllBalance(token: TokenAddress, recipient: Address): Hex {
   });
 }
 
-async function buildCompanionMulticall({ calls, value }: { calls: Call[]; value?: bigint }) {
+async function buildCompanionMulticall({ chainId, calls, value }: { chainId: ChainId; calls: Call[]; value?: bigint }) {
   const data = encodeFunctionData({
     abi: companionAbi,
     functionName: 'multicall',
     args: [calls],
   });
-  return { to: COMPANION_ADDRESS, data, value };
+  return { to: COMPANION_CONTRACT.address(chainId), data, value };
 }
 
 type Call = Hex;
@@ -1262,4 +1269,6 @@ const PERMISSION_MANAGER_FOR_HUB: Record<Lowercase<Address>, Address> = {
   '0x230c63702d1b5034461ab2ca889a30e343d81349': '0xb4edfb45446c6a207643ea846bfa42021ce5ae11',
   // Beta
   '0x24f85583faa9f8bd0b8aa7b1d1f4f53f0f450038': '0x09AdE44D2E60fCa2270fF32Af5a189f40D29837b',
+  // Yield (RSK)
+  [DCA_HUB_CONTRACT.address(Chains.ROOTSTOCK.chainId)]: DCA_PERMISSION_MANAGER_CONTRACT.address(Chains.ROOTSTOCK.chainId),
 };

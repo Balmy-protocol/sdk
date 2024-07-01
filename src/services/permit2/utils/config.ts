@@ -1,11 +1,8 @@
 import { Chains } from '@chains';
-import { Address, ChainId } from '@types';
+import { Contract } from '@shared/contracts';
 
-export function PERMIT2_ADDRESS(chainId: ChainId) {
-  return '0x000000000022d473030f116ddee9f6b43ac78ba3';
-}
-export const PERMIT2_ADAPTER_ADDRESS = (_: ChainId): Address => '0xED306e38BB930ec9646FF3D917B2e513a97530b1';
-
+export const PERMIT2_CONTRACT = Contract.with({ defaultAddress: '0x000000000022d473030f116ddee9f6b43ac78ba3' }).build();
+export const PERMIT2_ADAPTER_CONTRACT = Contract.with({ defaultAddress: '0xED306e38BB930ec9646FF3D917B2e513a97530b1' }).build();
 export const WORDS_FOR_NONCE_CALCULATION = 10;
 export const PERMIT2_SUPPORTED_CHAINS = [
   Chains.ETHEREUM,

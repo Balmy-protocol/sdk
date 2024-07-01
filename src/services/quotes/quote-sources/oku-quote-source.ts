@@ -7,9 +7,10 @@ import { addPercentage, calculateDeadline, isSameAddress, subtractPercentage } f
 import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
+import { PERMIT2_ADAPTER_CONTRACT } from '@services/permit2/utils/config';
+import { Contract } from '@shared/contracts';
 
-const SWAP_PROXY_ADDRESS = '0xaE382fb775c05130fED953DA2Ee00600470170Dc';
-const PERMIT2_ADAPTER_ADDRESS = '0xED306e38BB930ec9646FF3D917B2e513a97530b1';
+const SWAP_PROXY_CONTRACT = Contract.with({ defaultAddress: '0xaE382fb775c05130fED953DA2Ee00600470170Dc' }).build();
 
 const CHAINS: Record<ChainId, string> = {
   // [Chains.ARBITRUM.chainId]: 'arbitrum',
@@ -106,7 +107,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       buyAmount,
       minBuyAmount,
       type: order.type,
-      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_ADDRESS),
+      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_CONTRACT.address(chain.chainId)),
       customData: {
         coupon,
         signingRequest,
@@ -157,7 +158,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
 
     const deadline = BigInt(calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
     const tokenOut =
-      type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_ADDRESS)
+      type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_CONTRACT.address(chain.chainId))
         ? []
         : [{ token: mapToken(sellToken), distribution: [{ recipient: takeFrom as ViemAddress, shareBps: 0n }] }];
     const adapterData = encodeFunctionData({
@@ -181,7 +182,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     });
 
     return {
-      to: SWAP_PROXY_ADDRESS,
+      to: SWAP_PROXY_CONTRACT.address(chain.chainId),
       calldata: swapProxyData,
       value: BigInt(value ?? 0),
     };

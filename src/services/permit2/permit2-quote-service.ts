@@ -1,5 +1,5 @@
 import { EstimatedQuoteResponseWithTx, IPermit2QuoteService, IPermit2Service, PermitData, SinglePermitParams } from './types';
-import { PERMIT2_ADAPTER_ADDRESS, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
+import { PERMIT2_ADAPTER_CONTRACT, PERMIT2_SUPPORTED_CHAINS } from './utils/config';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { CompareQuotesBy, CompareQuotesUsing, QuoteResponse, IQuoteService, sortQuotesBy } from '@services/quotes';
 import { calculateGasDetails, handleResponseFailure } from '@services/quotes/quote-service';
@@ -20,7 +20,7 @@ import { Addresses } from '@shared/constants';
 import { IProviderService } from '..';
 
 export class Permit2QuoteService implements IPermit2QuoteService {
-  readonly contractAddress = PERMIT2_ADAPTER_ADDRESS;
+  readonly permit2AdapterContract = PERMIT2_ADAPTER_CONTRACT;
 
   constructor(
     private readonly permit2Service: IPermit2Service,
@@ -30,7 +30,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
   ) {}
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
-    return this.permit2Service.preparePermitData({ ...args, spender: this.contractAddress(args.chainId) });
+    return this.permit2Service.preparePermitData({ ...args, spender: this.permit2AdapterContract.address(args.chainId) });
   }
 
   supportedSources() {
@@ -58,7 +58,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
 
   estimateQuotes({ request, config }: { request: EstimatedQuoteRequest; config?: { timeout?: TimeString } }) {
     const quotes = this.quotesService.getQuotes({
-      request: { ...request, takerAddress: this.contractAddress(request.chainId) },
+      request: { ...request, takerAddress: this.permit2AdapterContract.address(request.chainId) },
       config: config,
     });
     const txs = this.quotesService.buildTxs({ quotes, config });
@@ -202,7 +202,7 @@ export class Permit2QuoteService implements IPermit2QuoteService {
     calls: string[];
   }): Promise<ReadonlyArray<SimulationResult>> {
     const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
-      address: this.contractAddress(chainId) as ViemAddress,
+      address: this.permit2AdapterContract.address(chainId) as ViemAddress,
       abi: permit2AdapterAbi,
       functionName: 'simulate',
       args: [calls as Hex[]],
@@ -286,7 +286,7 @@ function buildRealQuote(
       tx: {
         ...quote.customData.estimatedTx,
         from: takerAddress,
-        to: PERMIT2_ADAPTER_ADDRESS(chainId),
+        to: PERMIT2_ADAPTER_CONTRACT.address(chainId),
         data,
       },
     };

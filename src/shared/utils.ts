@@ -6,6 +6,10 @@ export function isSameAddress(address1: Address | undefined, address2: Address |
   return !!address1 && !!address2 && address1.toLowerCase() === address2.toLowerCase();
 }
 
+export function toLower(text: string): Lowercase<string> {
+  return text.toLowerCase() as Lowercase<string>;
+}
+
 export function subtractPercentage(amount: BigIntish, slippagePercentage: number, rounding: 'up' | 'down'): bigint {
   const percentage = mulDivByNumber(amount, slippagePercentage, 100, rounding);
   return BigInt(amount) - percentage;

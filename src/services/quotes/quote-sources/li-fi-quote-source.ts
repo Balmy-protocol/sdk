@@ -113,5 +113,5 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
 }
 
 function mapNativeToken(address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? '0x0000000000000000000000000000000000000000' : address;
+  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : address;
 }

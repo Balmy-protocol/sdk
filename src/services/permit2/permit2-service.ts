@@ -9,7 +9,7 @@ import {
   PermitData,
 } from './types';
 import { Permit2ArbitraryService } from './permit2-arbitrary-service';
-import { PERMIT2_ADDRESS, WORDS_FOR_NONCE_CALCULATION } from './utils/config';
+import { PERMIT2_CONTRACT, WORDS_FOR_NONCE_CALCULATION } from './utils/config';
 import { calculateDeadline } from '@shared/utils';
 import { PERMIT2_BATCH_TRANSFER_FROM_TYPES, PERMIT2_TRANSFER_FROM_TYPES } from './utils/eip712-types';
 import PERMIT2_ABI from '@shared/abis/permit2';
@@ -18,11 +18,10 @@ import { Permit2QuoteService } from './permit2-quote-service';
 import { IProviderService } from '@services/providers';
 import { IQuoteService } from '@services/quotes';
 import { IGasService } from '@services/gas';
-import { Address as ViemAddress } from 'viem';
-import { MULTICALL_ADDRESS } from '@services/providers/utils';
+import { MULTICALL_CONTRACT } from '@services/providers/utils';
 
 export class Permit2Service implements IPermit2Service {
-  readonly permit2ContractAddress = PERMIT2_ADDRESS;
+  readonly permit2Contract = PERMIT2_CONTRACT;
   readonly arbitrary: IPermit2ArbitraryService;
   readonly quotes: IPermit2QuoteService;
   readonly providerService: IProviderService;
@@ -39,7 +38,7 @@ export class Permit2Service implements IPermit2Service {
 
     // Fetch bitmaps for user's words
     const contracts = words.map((word) => ({
-      address: PERMIT2_ADDRESS(chainId) as ViemAddress,
+      address: this.permit2Contract.address(chainId),
       abi: PERMIT2_ABI,
       functionName: 'nonceBitmap',
       args: [user, word],
@@ -48,7 +47,7 @@ export class Permit2Service implements IPermit2Service {
     const results = contracts.length
       ? await this.providerService
           .getViemPublicClient({ chainId })
-          .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_ADDRESS, batchSize: 0 })
+          .multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL_CONTRACT.address(chainId), batchSize: 0 })
       : [];
 
     // Find nonce
@@ -79,7 +78,7 @@ export class Permit2Service implements IPermit2Service {
         domain: {
           name: 'Permit2',
           chainId,
-          verifyingContract: PERMIT2_ADDRESS(chainId),
+          verifyingContract: this.permit2Contract.address(chainId),
         },
         message: {
           permitted: { token, amount: BigInt(amount) },
@@ -114,7 +113,7 @@ export class Permit2Service implements IPermit2Service {
         domain: {
           name: 'Permit2',
           chainId,
-          verifyingContract: PERMIT2_ADDRESS(chainId),
+          verifyingContract: this.permit2Contract.address(chainId),
         },
         message: {
           permitted: Object.entries(tokens).map(([token, amount]) => ({ token, amount: BigInt(amount) })),

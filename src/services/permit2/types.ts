@@ -11,9 +11,10 @@ import {
 } from '@services/quotes';
 import { SupportedGasValues } from '@services/gas/types';
 import { IgnoreFailedResponses, QuoteResponseWithTx } from '@services/quotes/types';
+import { Contract } from '@shared/contracts';
 
 export type IPermit2Service = {
-  permit2ContractAddress(chainId: ChainId): Address;
+  permit2Contract: Contract;
   arbitrary: IPermit2ArbitraryService;
   quotes: IPermit2QuoteService;
   calculateNonce(params: { chainId: ChainId; appId: BigIntish; user: Address }): Promise<bigint>;
@@ -22,7 +23,7 @@ export type IPermit2Service = {
 };
 
 export type IPermit2ArbitraryService = {
-  contractAddress(chainId: ChainId): Address;
+  permit2AdapterContract: Contract;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   prepareBatchPermitData(params: BatchPermitParams): Promise<BatchPermitData>;
   buildArbitraryCallWithPermit(params: ArbitraryCallWithPermitParams): BuiltTransaction;
@@ -32,7 +33,7 @@ export type IPermit2ArbitraryService = {
 
 export type EstimatedQuoteResponseWithTx = EstimatedQuoteResponse<{ estimatedTx: QuoteTransaction }>;
 export type IPermit2QuoteService = {
-  contractAddress(chainId: ChainId): Address;
+  permit2AdapterContract: Contract;
   preparePermitData(params: SinglePermitParams): Promise<PermitData>;
   supportedSources(): Record<SourceId, SourceMetadata>;
   supportedChains(): ChainId[];
