@@ -17,6 +17,7 @@ import { BlastProviderSource } from '@services/providers/provider-sources/blast-
 import { OnFinalityProviderSource } from '@services/providers/provider-sources/on-finality-provider';
 import { OneRPCProviderSource } from '@services/providers/provider-sources/one-rpc-provider';
 import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
+import { MoralisProviderSource } from '@services/providers/provider-sources/moralis-provider';
 
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
@@ -27,6 +28,7 @@ export type ProviderSourceInput =
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
   | { type: 'alchemy'; key: string; onChains?: ChainId[] }
   | { type: 'blast'; key?: string; onChains?: ChainId[] }
+  | { type: 'moralis'; key?: string; site: 'site1' | 'site2'; onChains?: ChainId[] }
   | { type: '1rpc'; key?: string; onChains?: ChainId[] }
   | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
@@ -51,6 +53,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return source.instance;
     case 'public-rpcs':
       return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
+    case 'moralis':
+      return new MoralisProviderSource(source);
     case 'dRPC':
       return new dRPCProviderSource(source.key, source.onChains);
     case 'alchemy':
