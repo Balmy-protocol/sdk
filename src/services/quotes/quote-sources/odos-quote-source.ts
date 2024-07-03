@@ -34,7 +34,7 @@ const BALMY_REFERRAL_CODE = 1533410238;
 type SourcesConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
 type OdosSupport = { buyOrders: false; swapAndTransfer: true };
 type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
-type OdosData = { pathId: string };
+type OdosData = { pathId: string; userAddr: Address };
 export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig, OdosData> {
   getMetadata() {
     return ODOS_METADATA;
@@ -62,13 +62,13 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       chain,
       sellToken,
       buyToken,
-      accounts: { takeFrom, recipient },
+      accounts: { recipient },
       config: { timeout },
-      customData: { pathId },
+      customData: { pathId, userAddr },
     },
   }: BuildTxParams<OdosConfig, OdosData>): Promise<SourceQuoteTransaction> {
     const assembleResponse = await fetchService.fetch('https://api.odos.xyz/sor/assemble', {
-      body: JSON.stringify({ userAddr: takeFrom, pathId, receiver: recipient }),
+      body: JSON.stringify({ userAddr, pathId, receiver: recipient }),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       timeout,
@@ -149,7 +149,7 @@ async function getQuote({
     buyAmount: BigInt(outputTokenAmount),
     estimatedGas: BigInt(gasEstimate),
     allowanceTarget: calculateAllowanceTarget(sellToken, address),
-    customData: { pathId },
+    customData: { pathId, userAddr: checksum(takeFrom) },
   };
 
   return addQuoteSlippage(quote, 'sell', slippagePercentage);
