@@ -1,5 +1,5 @@
 import { BigIntish, ChainId, DefaultRequirements, FieldsRequirements, TimeString, InputTransaction } from '@types';
-import { chainsIntersection } from '@chains';
+import { Chains, chainsIntersection } from '@chains';
 import { IProviderService } from '@services/providers/types';
 import { IGasService, IQuickGasCostCalculator, SupportedGasValues, IGasPriceSource, GasEstimation, GasPrice } from './types';
 import { timeoutPromise } from '@shared/timeouts';
@@ -89,11 +89,18 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
     return gasCalculator.calculateGasCost({ gasEstimation, tx });
   }
 
-  private estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<bigint> {
+  private async estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<bigint> {
     const viemTx = mapTxToViemTx(tx);
-    return this.providerService.getViemPublicClient({ chainId }).estimateGas({
+    const client = this.providerService.getViemPublicClient({ chainId });
+    const estimateGasPromise = client.estimateGas({
       ...viemTx,
       account: viemTx.from,
     });
+    // Note: in most chains, calling `estimateGas` would reject if the transaction were to revert. However, in RSK
+    //       it doesn't work that way. In order to be consistent, when we are estimating gas for RSK, we also simulate
+    //       the transaction using `call` to make sure it doesn't revert.
+    const callPromise = chainId === Chains.ROOTSTOCK.chainId ? client.call(viemTx) : Promise.resolve();
+    const [estimatedGas] = await Promise.all([estimateGasPromise, callPromise]);
+    return estimatedGas;
   }
 }
