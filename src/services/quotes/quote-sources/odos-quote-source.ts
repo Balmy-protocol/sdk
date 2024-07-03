@@ -34,7 +34,7 @@ const BALMY_REFERRAL_CODE = 1533410238;
 type SourcesConfig = { sourceAllowlist?: string[]; sourceDenylist?: undefined } | { sourceAllowlist?: undefined; sourceDenylist?: string[] };
 type OdosSupport = { buyOrders: false; swapAndTransfer: true };
 type OdosConfig = { supportRFQs?: boolean; referralCode?: number } & SourcesConfig;
-type OdosData = { pathId: string; userAddr: Address };
+type OdosData = { pathId: string; userAddr: Address; recipient: Address };
 export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSupport, OdosConfig, OdosData> {
   getMetadata() {
     return ODOS_METADATA;
@@ -62,9 +62,8 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       chain,
       sellToken,
       buyToken,
-      accounts: { recipient },
       config: { timeout },
-      customData: { pathId, userAddr },
+      customData: { pathId, userAddr, recipient },
     },
   }: BuildTxParams<OdosConfig, OdosData>): Promise<SourceQuoteTransaction> {
     const assembleResponse = await fetchService.fetch('https://api.odos.xyz/sor/assemble', {
@@ -96,18 +95,19 @@ async function getQuote({
     sellToken,
     buyToken,
     order,
-    accounts: { takeFrom },
+    accounts: { takeFrom, recipient },
     config: { slippagePercentage, timeout },
   },
   config,
 }: QuoteParams<OdosSupport, OdosConfig> & { simple: boolean }): Promise<SourceQuoteResponse<OdosData>> {
   const checksummedSell = checksumAndMapIfNecessary(sellToken);
   const checksummedBuy = checksumAndMapIfNecessary(buyToken);
+  const userAddr = checksum(takeFrom);
   const quoteBody = {
     chainId: chain.chainId,
     inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
     outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
-    userAddr: checksum(takeFrom),
+    userAddr,
     slippageLimitPercent: slippagePercentage,
     sourceWhitelist: config?.sourceAllowlist,
     sourceBlacklist: config?.sourceDenylist,
@@ -149,7 +149,11 @@ async function getQuote({
     buyAmount: BigInt(outputTokenAmount),
     estimatedGas: BigInt(gasEstimate),
     allowanceTarget: calculateAllowanceTarget(sellToken, address),
-    customData: { pathId, userAddr: checksum(takeFrom) },
+    customData: {
+      pathId,
+      userAddr,
+      recipient: recipient ? checksum(recipient) : userAddr,
+    },
   };
 
   return addQuoteSlippage(quote, 'sell', slippagePercentage);
