@@ -28,7 +28,7 @@ export type ProviderSourceInput =
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
   | { type: 'alchemy'; key: string; onChains?: ChainId[] }
   | { type: 'blast'; key?: string; onChains?: ChainId[] }
-  | { type: 'moralis'; key?: string; site: 'site1' | 'site2'; onChains?: ChainId[] }
+  | ({ type: 'moralis'; site?: 'site1' | 'site2' } & ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }))
   | { type: '1rpc'; key?: string; onChains?: ChainId[] }
   | { type: 'get-block'; accessTokens: Record<ChainId, string> }
   | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }

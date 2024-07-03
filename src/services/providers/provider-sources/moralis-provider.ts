@@ -20,16 +20,23 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
 };
 
-export class MoralisProviderSource extends BaseHttpProvider {
-  private readonly key: string | undefined;
-  private readonly site: 'site1' | 'site2';
-  private readonly supported: ChainId[];
+type MoralisConfig = { onChains?: ChainId[]; site?: 'site1' | 'site2' } | { keys: Record<ChainId, string>; site?: 'site1' | 'site2' };
 
-  constructor({ key, onChains, site = 'site1' }: { key?: string; onChains?: ChainId[]; site: 'site1' | 'site2' }) {
+export class MoralisProviderSource extends BaseHttpProvider {
+  private readonly keys: Record<ChainId, string>;
+  private readonly supported: ChainId[];
+  private readonly site: 'site1' | 'site2';
+
+  constructor(config: MoralisConfig) {
     super();
-    this.supported = onChains ?? moralisSupportedChains();
-    this.key = key;
-    this.site = site;
+    if ('keys' in config) {
+      this.supported = Object.keys(config.keys).map(Number);
+      this.keys = config.keys;
+    } else {
+      this.supported = config.onChains ?? moralisSupportedChains();
+      this.keys = {};
+    }
+    this.site = config.site ?? 'site1';
   }
 
   supportedChains(): ChainId[] {
@@ -37,7 +44,7 @@ export class MoralisProviderSource extends BaseHttpProvider {
   }
 
   protected calculateUrl(chainId: ChainId): string {
-    return buildMoralisRPCUrl({ chainId, apiKey: this.key, site: this.site });
+    return buildMoralisRPCUrl({ chainId, apiKey: this.keys[chainId], site: this.site });
   }
 }
 
