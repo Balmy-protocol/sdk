@@ -42,6 +42,7 @@ type OkuData = {
   coupon: any;
   signingRequest: any;
   txValidFor: TimeString | undefined;
+  takeFrom: Address;
 };
 // Note: Oku is actually an API that finds routes in Uniswap. The thing is that they have integrated with
 // the Universal Router, which required Permit2 to work. Our quote sources can't work directly with Permit2
@@ -112,6 +113,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
         coupon,
         signingRequest,
         txValidFor,
+        takeFrom,
       },
     };
   }
@@ -124,9 +126,8 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       buyToken,
       maxSellAmount,
       type,
-      accounts: { takeFrom },
       config: { timeout },
-      customData: { txValidFor, coupon, signingRequest },
+      customData: { txValidFor, coupon, signingRequest, takeFrom },
     },
   }: BuildTxParams<OkuConfig, OkuData>): Promise<SourceQuoteTransaction> {
     const executionResponse = await fetchService.fetch('https://canoe.icarus.tools/market/usor/execution_information', {

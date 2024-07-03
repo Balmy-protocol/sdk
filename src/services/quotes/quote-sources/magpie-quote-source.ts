@@ -1,7 +1,7 @@
 import qs from 'qs';
 import { parseUnits } from 'viem';
 import { Chains } from '@chains';
-import { ChainId, TokenAddress } from '@types';
+import { Address, ChainId, TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
@@ -30,7 +30,7 @@ const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
 };
 type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
 type MagpieConfig = { sourceAllowlist?: string[] };
-type MagpieData = { quoteId: string };
+type MagpieData = { quoteId: string; takeFrom: Address; recipient: Address | undefined };
 export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
   getMetadata() {
     return MAGPIE_METADATA;
@@ -43,6 +43,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellToken,
       buyToken,
       order,
+      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout },
     },
     config,
@@ -71,7 +72,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       buyAmount: BigInt(amountOut),
       estimatedGas,
       allowanceTarget: calculateAllowanceTarget(sellToken, targetAddress),
-      customData: { quoteId },
+      customData: { quoteId, takeFrom, recipient },
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
@@ -83,14 +84,13 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       chain,
       sellToken,
       buyToken,
-      accounts: { takeFrom, recipient },
       config: { timeout },
-      customData: { quoteId },
+      customData: { quoteId, takeFrom, recipient },
     },
   }: BuildTxParams<MagpieConfig, MagpieData>): Promise<SourceQuoteTransaction> {
     const transactionQueryParams = {
       quoteId,
-      toAddress: recipient,
+      toAddress: recipient ?? takeFrom,
       fromAddress: takeFrom,
       estimateGas: false,
     };

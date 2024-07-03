@@ -37,7 +37,13 @@ const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
 };
 type KyberswapSupport = { buyOrders: false; swapAndTransfer: true };
 type KyberswapConfig = {};
-type KyberswapData = { routeSummary: RouteSummary; txValidFor: TimeString | undefined; slippagePercentage: number };
+type KyberswapData = {
+  routeSummary: RouteSummary;
+  txValidFor: TimeString | undefined;
+  slippagePercentage: number;
+  takeFrom: Address;
+  recipient: Address | undefined;
+};
 export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<KyberswapSupport, KyberswapConfig, KyberswapData> {
   getMetadata() {
     return KYBERSWAP_METADATA;
@@ -50,6 +56,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       sellToken,
       buyToken,
       order,
+      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
     },
     config,
@@ -78,7 +85,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       buyAmount: BigInt(routeSummary.amountOut),
       estimatedGas: BigInt(routeSummary.gas),
       allowanceTarget: calculateAllowanceTarget(sellToken, routerAddress),
-      customData: { routeSummary, slippagePercentage, txValidFor },
+      customData: { routeSummary, slippagePercentage, txValidFor, takeFrom, recipient },
     };
 
     return addQuoteSlippage(quote, order.type, slippagePercentage);
@@ -91,9 +98,8 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       sellToken,
       buyToken,
       sellAmount,
-      accounts: { takeFrom, recipient },
       config: { timeout },
-      customData: { routeSummary, txValidFor, slippagePercentage },
+      customData: { routeSummary, txValidFor, slippagePercentage, takeFrom, recipient },
     },
     config,
   }: BuildTxParams<KyberswapConfig, KyberswapData>): Promise<SourceQuoteTransaction> {
@@ -107,7 +113,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       body: JSON.stringify({
         routeSummary,
         slippageTolerance: slippagePercentage * 100,
-        recipient,
+        recipient: recipient ?? takeFrom,
         deadline: txValidFor ? calculateDeadline(txValidFor) : undefined,
         source: config.referrer?.name,
         sender: takeFrom,

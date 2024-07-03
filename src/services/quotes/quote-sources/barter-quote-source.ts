@@ -24,6 +24,7 @@ type BarterConfig = ({ sourceAllowlist?: string[]; sourceDenylist?: undefined } 
   customSubdomain: string;
 };
 type BarterData = {
+  recipient: Address;
   typeFilter: string[] | undefined;
   txValidFor: TimeString | undefined;
 };
@@ -39,6 +40,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       sellToken,
       buyToken,
       order,
+      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
     },
     config,
@@ -87,7 +89,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       minBuyAmount,
       estimatedGas: BigInt(gasEstimation),
       allowanceTarget: calculateAllowanceTarget(sellToken, facadeAddress),
-      customData: { typeFilter, txValidFor },
+      customData: { typeFilter, txValidFor, recipient: recipient ?? takeFrom },
     };
   }
 
@@ -100,8 +102,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       sellAmount,
       minBuyAmount,
       config: { timeout },
-      accounts: { recipient },
-      customData: { typeFilter, txValidFor },
+      customData: { typeFilter, txValidFor, recipient },
     },
     config,
   }: BuildTxParams<BarterConfig, BarterData>): Promise<SourceQuoteTransaction> {

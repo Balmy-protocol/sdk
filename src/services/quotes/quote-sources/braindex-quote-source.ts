@@ -23,7 +23,7 @@ const BRAINDEX_METADATA: QuoteSourceMetadata<BrainDexSupport> = {
 };
 type BrainDexSupport = { buyOrders: false; swapAndTransfer: true };
 type BrainDexConfig = {};
-type BrainDexData = { swapPaths: Hex; txValidFor: TimeString | undefined };
+type BrainDexData = { swapPaths: Hex; txValidFor: TimeString | undefined; recipient: Address };
 export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<BrainDexSupport, BrainDexConfig, BrainDexData> {
   getMetadata() {
     return BRAINDEX_METADATA;
@@ -36,6 +36,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       sellToken,
       buyToken,
       order,
+      accounts: { takeFrom, recipient },
       config: { slippagePercentage, timeout, txValidFor },
     },
   }: QuoteParams<BrainDexSupport>): Promise<SourceQuoteResponse<BrainDexData>> {
@@ -76,7 +77,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       minBuyAmount,
       type: 'sell',
       allowanceTarget: calculateAllowanceTarget(sellToken, router),
-      customData: { swapPaths: swap_paths, txValidFor },
+      customData: { swapPaths: swap_paths, txValidFor, recipient: recipient ?? takeFrom },
     };
   }
 
@@ -87,8 +88,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       buyToken,
       sellAmount,
       minBuyAmount,
-      accounts: { recipient },
-      customData: { swapPaths, txValidFor },
+      customData: { swapPaths, txValidFor, recipient },
     },
   }: BuildTxParams<BrainDexConfig, BrainDexData>): Promise<SourceQuoteTransaction> {
     const mappedSellToken = mapToken(sellToken, chain);
