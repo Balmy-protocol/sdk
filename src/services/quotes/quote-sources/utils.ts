@@ -30,7 +30,7 @@ export function addQuoteSlippage<CustomQuoteSourceData extends Record<string, an
     : {
         ...quote,
         type,
-        maxSellAmount: BigInt(addPercentage(quote.sellAmount, slippagePercentage, 'up')),
+        maxSellAmount: addPercentage(quote.sellAmount, slippagePercentage, 'up'),
         minBuyAmount: quote.buyAmount,
       };
 }

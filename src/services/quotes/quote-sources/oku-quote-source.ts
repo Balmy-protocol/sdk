@@ -3,9 +3,9 @@ import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { Chains } from '@chains';
 import { Addresses } from '@shared/constants';
 import { GasPrice } from '@services/gas';
-import { addPercentage, calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
+import { calculateDeadline, isSameAddress } from '@shared/utils';
 import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
-import { calculateAllowanceTarget, failed } from './utils';
+import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { PERMIT2_ADAPTER_CONTRACT } from '@services/permit2/utils/config';
 import { Contract } from '@shared/contracts';
@@ -97,16 +97,9 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     const { coupon, inAmount, outAmount, signingRequest } = await quoteResponse.json();
     const sellAmount = parseUnits(inAmount, tokenData.sellToken.decimals);
     const buyAmount = parseUnits(outAmount, tokenData.buyToken.decimals);
-    const [maxSellAmount, minBuyAmount] =
-      order.type === 'sell'
-        ? [order.sellAmount, subtractPercentage(buyAmount, slippagePercentage, 'up')]
-        : [addPercentage(sellAmount, slippagePercentage, 'up'), order.buyAmount];
-
-    return {
+    const quote = {
       sellAmount,
-      maxSellAmount,
       buyAmount,
-      minBuyAmount,
       type: order.type,
       allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_CONTRACT.address(chain.chainId)),
       customData: {
@@ -116,6 +109,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
         takeFrom,
       },
     };
+    return addQuoteSlippage(quote, order.type, slippagePercentage);
   }
 
   async buildTx({

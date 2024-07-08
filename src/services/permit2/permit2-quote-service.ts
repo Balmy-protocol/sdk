@@ -237,6 +237,10 @@ function buildRealQuote(
   try {
     recipient = recipient ?? takerAddress;
     const deadline = BigInt(permitData?.deadline ?? calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
+    // Note: when selling native, we can end up with issues if maxSellAmount != value. So the idea would be to simply use the value
+    const maxSellAmount = isSameAddress(quote.sellToken.address, Addresses.NATIVE_TOKEN)
+      ? quote.customData.estimatedTx.value ?? 0n
+      : quote.maxSellAmount.amount;
     const data =
       quote.type === 'sell'
         ? encodeFunctionData({
@@ -246,14 +250,14 @@ function buildRealQuote(
               {
                 deadline,
                 tokenIn: mapIfNative(quote.sellToken.address),
-                amountIn: BigInt(quote.maxSellAmount.amount),
-                nonce: permitData ? BigInt(permitData.nonce) : 0n,
+                amountIn: maxSellAmount,
+                nonce: permitData ? permitData.nonce : 0n,
                 signature: (permitData?.signature as Hex) ?? '0x',
                 allowanceTarget: quote.source.allowanceTarget as ViemAddress,
                 swapper: quote.customData.estimatedTx.to as ViemAddress,
                 swapData: quote.customData.estimatedTx.data as Hex,
                 tokenOut: mapIfNative(quote.buyToken.address),
-                minAmountOut: BigInt(quote.minBuyAmount.amount),
+                minAmountOut: quote.minBuyAmount.amount,
                 transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
                 misc: '0x',
               },
@@ -266,14 +270,14 @@ function buildRealQuote(
               {
                 deadline,
                 tokenIn: mapIfNative(quote.sellToken.address),
-                maxAmountIn: BigInt(quote.maxSellAmount.amount),
-                nonce: permitData ? BigInt(permitData.nonce) : 0n,
+                maxAmountIn: maxSellAmount,
+                nonce: permitData ? permitData.nonce : 0n,
                 signature: (permitData?.signature as Hex) ?? '0x',
                 allowanceTarget: quote.source.allowanceTarget as ViemAddress,
                 swapper: quote.customData.estimatedTx.to as ViemAddress,
                 swapData: quote.customData.estimatedTx.data as Hex,
                 tokenOut: mapIfNative(quote.buyToken.address),
-                amountOut: BigInt(quote.minBuyAmount.amount),
+                amountOut: quote.minBuyAmount.amount,
                 transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
                 unspentTokenInRecipient: takerAddress as ViemAddress,
                 misc: '0x',
