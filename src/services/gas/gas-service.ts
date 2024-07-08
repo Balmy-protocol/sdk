@@ -92,10 +92,7 @@ export class GasService<GasValues extends SupportedGasValues> implements IGasSer
   private async estimateGasInternal(chainId: ChainId, tx: InputTransaction): Promise<bigint> {
     const viemTx = mapTxToViemTx(tx);
     const client = this.providerService.getViemPublicClient({ chainId });
-    const estimateGasPromise = client.estimateGas({
-      ...viemTx,
-      account: viemTx.from,
-    });
+    const estimateGasPromise = client.estimateGas(viemTx);
     // Note: in most chains, calling `estimateGas` would reject if the transaction were to revert. However, in RSK
     //       it doesn't work that way. In order to be consistent, when we are estimating gas for RSK, we also simulate
     //       the transaction using `call` to make sure it doesn't revert.
