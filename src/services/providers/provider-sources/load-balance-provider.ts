@@ -51,8 +51,6 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceConfi
 
           // Get the best transport
           const { transport, index } = filteredTransports.reduce((best, current) => {
-            if (!current.metrics?.samples?.length && best.metrics?.samples?.length) return current;
-            if (!current.metrics.samples?.length || !best.metrics?.samples?.length) return best;
             return calculateScore(current.metrics) > calculateScore(best.metrics) ? current : best;
           });
 
@@ -72,7 +70,6 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceConfi
               // Save only the first error, it was thrown by the best transport
               noAvailableTransportsError = error;
             }
-            continue; // Continue with the next transport
           }
         }
         throw noAvailableTransportsError ?? new Error('Failed to find a transport to execute the request'); // No transports available
@@ -118,6 +115,7 @@ function calculateSuccessRate(metrics: RPCMetrics) {
 }
 
 function calculateScore(metrics: RPCMetrics) {
+  if (metrics.samples.length == 0) return Infinity;
   const avgProcessingTime = metrics.samples.reduce((acc, sample) => acc + sample.processingTime, 0) / metrics.samples.length;
   const successRate = calculateSuccessRate(metrics);
   return successRate * 0.7 + (1 - avgProcessingTime / 1000) * 0.3;
