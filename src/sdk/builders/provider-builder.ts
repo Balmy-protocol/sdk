@@ -2,6 +2,7 @@ import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
 import { FallbackProviderSourceConfig, FallbackSource } from '@services/providers/provider-sources/fallback-provider';
+import { LoadBalanceProviderSource, LoadBalanceSourceConfig } from '@services/providers/provider-sources/load-balance-provider';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
 import { HttpProviderSource } from '@services/providers/provider-sources/http-provider';
@@ -38,6 +39,7 @@ export type ProviderSourceInput =
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
+  | { type: 'load-balance'; sources: ProviderSourceInput[]; config?: LoadBalanceSourceConfig }
   | { type: 'prioritized'; sources: ProviderSourceInput[] };
 
 export function buildProviderService(params?: BuildProviderParams) {
@@ -83,6 +85,8 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
       return new WebSocketProviderSource(source.url, source.supportedChains);
     case 'fallback':
       return new FallbackSource(source.sources.map(buildSource), source.config);
+    case 'load-balance':
+      return new LoadBalanceProviderSource(source.sources.map(buildSource), source.config);
     case 'prioritized':
       return new PrioritizedProviderSourceCombinator(source.sources.map(buildSource));
   }
