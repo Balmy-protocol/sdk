@@ -10,5 +10,6 @@ export const DCA_PERMISSION_MANAGER_CONTRACT = Contract.with({ defaultAddress: '
   .build();
 export const COMPANION_CONTRACT = Contract.with({ defaultAddress: '0x6C615481E96806edBd9987B6E522A4Ea85d13659' })
   .and({ address: '0x5872E8D5Ec9Dbf67949FdD4B5e05707644D60876', onChain: Chains.ROOTSTOCK.chainId })
+  .and({ address: '0x73376120621b243bC59c988cf172d23D5093e9F9', onChain: Chains.AVALANCHE.chainId })
   .build();
 export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
