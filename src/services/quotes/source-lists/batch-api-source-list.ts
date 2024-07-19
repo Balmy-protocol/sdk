@@ -44,7 +44,16 @@ export class BatchAPISourceList implements IQuoteSourceList {
       timeout: request.quoteTimeout,
     });
     const result: Promise<Record<SourceId, StringifyBigInt<SourceListQuoteResponse>>> = response.then((result) => result.json());
-    return Object.fromEntries(request.sources.map((sourceId) => [sourceId, result.then((responses) => bigintifyQuote(responses[sourceId]))]));
+    return Object.fromEntries(
+      request.sources.map((sourceId) => [
+        sourceId,
+        result.then((responses) =>
+          sourceId in responses
+            ? bigintifyQuote(responses[sourceId])
+            : Promise.reject(new Error(`Failed to fins a quote for source ${sourceId}`))
+        ),
+      ])
+    );
   }
 
   buildTxs(request: SourceListBuildTxRequest): Record<SourceId, Promise<QuoteTransaction>> {
@@ -55,18 +64,17 @@ export class BatchAPISourceList implements IQuoteSourceList {
   }
 
   private async fetchTxs(request: SourceListBuildTxRequest): Promise<Record<SourceId, StringifyBigInt<QuoteTransaction>>> {
-    const entries = await Promise.all(
-      Object.entries(request.quotes).map<Promise<[SourceId, QuoteResponseRelevantForTxBuild]>>(async ([sourceId, quotePromise]) => [
-        sourceId,
-        await quotePromise,
-      ])
+    const quotes: Record<SourceId, QuoteResponseRelevantForTxBuild> = {};
+    const promises = Object.entries(request.quotes).map(
+      ([sourceId, quotePromise]) => quotePromise.then((quote) => (quotes[sourceId] = quote)).catch(() => {}) // If the quote fails, then do ignore it
     );
+    await Promise.all(promises);
 
     // We reduce the request a little bit so that the server tries to be faster that the timeout
     const reducedTimeout = reduceTimeout(request.quoteTimeout, '500');
     const apiRequest: BatchAPISourceListBuildTxRequest = {
       sourceConfig: request.sourceConfig,
-      quotes: Object.fromEntries(entries),
+      quotes,
       quoteTimeout: reducedTimeout,
     };
 
