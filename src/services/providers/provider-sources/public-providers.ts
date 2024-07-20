@@ -1,10 +1,10 @@
 import { getAllChains } from '@chains';
 import { ChainId, Chain } from '@types';
 import { HttpProviderSource } from './http-provider';
-import { LoadBalanceProviderSource, LoadBalanceSourceConfig } from './load-balance-provider';
+import { FallbackProviderSourceConfig, FallbackSource } from './fallback-provider';
 
-export class PublicRPCsSource extends LoadBalanceProviderSource {
-  constructor(params?: { publicRPCs?: Record<ChainId, string[]>; config?: LoadBalanceSourceConfig }) {
+export class PublicRPCsSource extends FallbackSource {
+  constructor(params?: { publicRPCs?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }) {
     super(buildSources(calculateRPCs(params?.publicRPCs)), params?.config);
   }
 }

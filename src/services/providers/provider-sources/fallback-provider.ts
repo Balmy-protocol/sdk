@@ -4,7 +4,7 @@ import { FallbackTransportConfig, fallback } from 'viem';
 import { chainsUnion } from '@chains';
 
 export type FallbackProviderSourceConfig = Pick<FallbackTransportConfig, 'rank' | 'retryCount' | 'retryDelay'>;
-export class FallbackProviderSource implements IProviderSource {
+export class FallbackSource implements IProviderSource {
   constructor(private readonly sources: IProviderSource[], private readonly config: FallbackProviderSourceConfig | undefined) {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
