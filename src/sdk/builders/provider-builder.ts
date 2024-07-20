@@ -1,7 +1,7 @@
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
 import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
-import { FallbackProviderSourceConfig, FallbackSource } from '@services/providers/provider-sources/fallback-provider';
+import { FallbackProviderSourceConfig, FallbackProviderSource } from '@services/providers/provider-sources/fallback-provider';
 import { LoadBalanceProviderSource, LoadBalanceSourceConfig } from '@services/providers/provider-sources/load-balance-provider';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
@@ -23,7 +23,7 @@ import { MoralisProviderSource } from '@services/providers/provider-sources/mora
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'custom'; instance: IProviderSource }
-  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: FallbackProviderSourceConfig }
+  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: LoadBalanceSourceConfig }
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
@@ -84,7 +84,7 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'web-socket':
       return new WebSocketProviderSource(source.url, source.supportedChains);
     case 'fallback':
-      return new FallbackSource(source.sources.map(buildSource), source.config);
+      return new FallbackProviderSource(source.sources.map(buildSource), source.config);
     case 'load-balance':
       return new LoadBalanceProviderSource(source.sources.map(buildSource), source.config);
     case 'prioritized':
