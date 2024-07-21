@@ -1,8 +1,8 @@
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource, PublicRPCsProviderSourceConfig } from '@services/providers/provider-sources/public-rpcs-provider';
 import { FallbackProviderSourceConfig, FallbackProviderSource } from '@services/providers/provider-sources/fallback-provider';
-import { LoadBalanceProviderSource, LoadBalanceSourceConfig } from '@services/providers/provider-sources/load-balance-provider';
+import { LoadBalanceProviderSource, LoadBalanceProviderSourceConfig } from '@services/providers/provider-sources/load-balance-provider';
 import { PrioritizedProviderSourceCombinator } from '@services/providers/provider-sources/prioritized-provider-source-combinator';
 import { InfuraProviderSource } from '@services/providers/provider-sources/infura-provider';
 import { HttpProviderSource } from '@services/providers/provider-sources/http-provider';
@@ -23,7 +23,7 @@ import { MoralisProviderSource } from '@services/providers/provider-sources/mora
 export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'custom'; instance: IProviderSource }
-  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: LoadBalanceSourceConfig }
+  | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: PublicRPCsProviderSourceConfig }
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
@@ -39,7 +39,7 @@ export type ProviderSourceInput =
   | { type: 'http'; url: string; supportedChains: ChainId[] }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
-  | { type: 'load-balance'; sources: ProviderSourceInput[]; config?: LoadBalanceSourceConfig }
+  | { type: 'load-balance'; sources: ProviderSourceInput[]; config?: LoadBalanceProviderSourceConfig }
   | { type: 'prioritized'; sources: ProviderSourceInput[] };
 
 export function buildProviderService(params?: BuildProviderParams) {
@@ -50,11 +50,11 @@ export function buildProviderService(params?: BuildProviderParams) {
 function buildSource(source?: ProviderSourceInput): IProviderSource {
   switch (source?.type) {
     case undefined:
-      return new PublicRPCsSource();
+      return new PublicRPCsProviderSource();
     case 'custom':
       return source.instance;
     case 'public-rpcs':
-      return new PublicRPCsSource({ publicRPCs: source.rpcsPerChain, config: source.config });
+      return new PublicRPCsProviderSource({ publicRPCs: source.rpcsPerChain, config: source.config });
     case 'moralis':
       return new MoralisProviderSource(source);
     case 'dRPC':

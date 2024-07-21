@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource } from '@services/providers/provider-sources/public-rpcs-provider';
 import { IAllowanceSource, OwnerAddress, SpenderAddress } from '@services/allowances/types';
 import { RPCAllowanceSource } from '@services/allowances/allowance-sources/rpc-allowance-source';
 import { CachedAllowanceSource } from '@services/allowances//allowance-sources/cached-allowance-source';
@@ -31,7 +31,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
     symbol: 'waUSDC',
   },
 };
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(PROVIDER_SERVICE);
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {

@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { expect } from 'chai';
 import { RPCMetadataProperties, RPCMetadataSource } from '@services/metadata/metadata-sources/rpc-metadata-source';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource } from '@services/providers/provider-sources/public-rpcs-provider';
 import { Addresses } from '@shared/constants';
 import { ChainId, FieldsRequirements, TokenAddress } from '@types';
 import { MetadataResult } from '@services/metadata/types';
@@ -10,7 +10,7 @@ import { ProviderService } from '@services/providers/provider-service';
 
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
 const RPC_METADATA_SOURCE = new RPCMetadataSource(PROVIDER_SERVICE);
 
 jest.retryTimes(2);

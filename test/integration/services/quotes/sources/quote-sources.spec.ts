@@ -35,7 +35,7 @@ import {
 } from '@test-utils/erc20';
 import { QUOTE_SOURCES, SOURCES_METADATA, SourceWithConfigId } from '@services/quotes/source-registry';
 import { SourceId } from '@services/quotes/types';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource } from '@services/providers/provider-sources/public-rpcs-provider';
 import { Deferred } from '@shared/deferred';
 import { TriggerablePromise } from '@shared/triggerable-promise';
 import { ProviderService } from '@services/providers/provider-service';
@@ -428,7 +428,7 @@ function getSources() {
   return result;
 }
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
 const FETCH_SERVICE = new FetchService();
 const OPEN_OCEAN_GAS_PRICE_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const RPC_GAS_PRICE_SOURCE = new RPCGasPriceSource(PROVIDER_SERVICE);
