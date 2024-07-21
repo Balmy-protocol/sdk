@@ -1,7 +1,7 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import { ProviderService } from '@services/providers/provider-service';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource } from '@services/providers/provider-sources/public-rpcs-provider';
 import { RPCBalanceSource } from '@services/balances/balance-sources/rpc-balance-source';
 import { CachedBalanceSource } from '@services/balances/balance-sources/cached-balance-source';
 import { FastestBalanceSource } from '@services/balances/balance-sources/fastest-balance-source';
@@ -53,7 +53,7 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
 const FETCH_SERVICE = new FetchService();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {

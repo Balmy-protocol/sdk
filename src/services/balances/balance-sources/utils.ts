@@ -18,13 +18,17 @@ export function fillResponseWithNewResult(
   }
 }
 
-export function doesResponseFulfilRequest(result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>, request: BalanceInput[]) {
+export function doesResponseFulfilRequest(
+  result: Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>,
+  request: BalanceInput[]
+): { ok: true } | { ok: false; missing: { chainId: ChainId; account: Address; token: TokenAddress }[] } {
+  const missing: { chainId: ChainId; account: Address; token: TokenAddress }[] = [];
   for (const { chainId, token, account } of request) {
     if (typeof result[chainId]?.[account]?.[token] === 'undefined') {
-      return false;
+      missing.push({ chainId, account, token });
     }
   }
-  return true;
+  return missing.length > 0 ? { ok: false, missing } : { ok: true };
 }
 
 export function filterRequestForSource(request: BalanceInput[], source: IBalanceSource) {

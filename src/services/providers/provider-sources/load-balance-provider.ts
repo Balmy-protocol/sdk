@@ -4,9 +4,14 @@ import { chainsUnion } from '@chains';
 import { createTransport, type Transport } from 'viem';
 import ms from 'ms';
 
-export type LoadBalanceSourceConfig = LoadBalanceConfig;
+export type LoadBalanceProviderSourceConfig = {
+  minSuccessRate?: number;
+  minSamples?: number;
+  maxAttempts?: number;
+  samplesTtl?: TimeString;
+};
 export class LoadBalanceProviderSource implements IProviderSource {
-  constructor(private readonly sources: IProviderSource[], private readonly config: LoadBalanceConfig | undefined) {
+  constructor(private readonly sources: IProviderSource[], private readonly config: LoadBalanceProviderSourceConfig | undefined) {
     if (sources.length === 0) throw new Error('Need at least one source to setup the provider source');
   }
 
@@ -23,7 +28,7 @@ export class LoadBalanceProviderSource implements IProviderSource {
   }
 }
 
-function loadBalance(transports_: readonly Transport[], config: LoadBalanceConfig = {}): Transport {
+function loadBalance(transports_: readonly Transport[], config: LoadBalanceProviderSourceConfig = {}): Transport {
   const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, samplesTtl = '30m' } = config;
 
   const rpcMetrics: MethodMetrics[] = transports_.map(() => ({}));
@@ -120,13 +125,6 @@ function calculateScore(metrics: RPCMetrics) {
   const successRate = calculateSuccessRate(metrics);
   return successRate * 0.7 + (1 - avgProcessingTime / 1000) * 0.3;
 }
-
-export type LoadBalanceConfig = {
-  minSuccessRate?: number;
-  minSamples?: number;
-  maxAttempts?: number;
-  samplesTtl?: TimeString;
-};
 
 type RPCMetrics = {
   pending: number;

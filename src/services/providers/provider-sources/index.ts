@@ -1,4 +1,6 @@
 export { FallbackProviderSourceConfig } from './fallback-provider';
+export { LoadBalanceProviderSourceConfig } from './load-balance-provider';
+export { PublicRPCsProviderSourceConfig } from './public-rpcs-provider';
 export { buildAlchemyRPCUrl, alchemySupportedChains } from './alchemy-provider';
 export { buildAnkrRPCUrl, ankrSupportedChains } from './ankr-provider';
 export { buildGetBlockRPCUrl } from './get-block-provider';

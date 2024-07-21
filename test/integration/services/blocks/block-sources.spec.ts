@@ -8,7 +8,7 @@ import { FetchService } from '@services/fetch/fetch-service';
 import { DefiLlamaBlockSource } from '@services/blocks/block-sources/defi-llama-block-source';
 import { BlockResult, IBlocksSource } from '@services/blocks';
 import { ProviderService } from '@services/providers/provider-service';
-import { PublicRPCsSource } from '@services/providers/provider-sources/public-providers';
+import { PublicRPCsProviderSource } from '@services/providers/provider-sources/public-rpcs-provider';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -17,7 +17,7 @@ const TESTS: Record<ChainId, Timestamp> = {
   [Chains.POLYGON.chainId]: 1651363200, // Sunday, May 1, 2022 12:00:00 AM
 };
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsSource());
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
 const FETCH_SERVICE = new FetchService();
 const DEFI_LLAMA_BLOCKS_SOURCE = new DefiLlamaBlockSource(FETCH_SERVICE, PROVIDER_SERVICE);
 

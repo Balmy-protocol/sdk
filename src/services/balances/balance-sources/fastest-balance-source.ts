@@ -35,16 +35,18 @@ export class FastestBalanceSource implements IBalanceSource {
           reducedTimeout
         ).then((response) => {
           fillResponseWithNewResult(result, response);
-          if (doesResponseFulfilRequest(result, tokens)) {
+          if (doesResponseFulfilRequest(result, tokens).ok) {
             resolve(result);
           }
         })
       );
 
       Promise.allSettled(allPromises).then(() => {
-        if (!doesResponseFulfilRequest(result, tokens)) {
+        const isOk = doesResponseFulfilRequest(result, tokens);
+        if (!isOk.ok) {
           // We couldn't fulfil the request, so we know we didn't resolve. We will revert then
-          reject(new Error('Failed to fulfil request'));
+          const missingText = isOk.missing.map(({ chainId, account, token }) => `${chainId}-${account}-${token}`).join(',');
+          reject(new Error(`Failed to fulfil request: missing: ${missingText}`));
         }
       });
     });
