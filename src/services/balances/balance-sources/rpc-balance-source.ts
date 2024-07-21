@@ -33,8 +33,7 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
       ? await this.providerService.getViemPublicClient({ chainId }).multicall({
           contracts,
           multicallAddress: MULTICALL_CONTRACT.address(chainId),
-          batchSize: 0,
-          ...this.config,
+          batchSize: this.config?.batching?.maxSizeInBytes ?? 0,
         })
       : [];
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
