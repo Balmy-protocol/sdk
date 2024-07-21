@@ -21,7 +21,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
 };
 
 const FETCH_SERVICE = new FetchService();
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
 const RPC_METADATA_SOURCE = new RPCMetadataSource(PROVIDER_SERVICE);
 const DEFI_LLAMA_METADATA_SOURCE = new DefiLlamaMetadataSource(FETCH_SERVICE);
 const FALLBACK_METADATA_SOURCE = new FallbackMetadataSource([RPC_METADATA_SOURCE, DEFI_LLAMA_METADATA_SOURCE]);
