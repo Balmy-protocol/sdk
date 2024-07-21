@@ -15,6 +15,7 @@ const ALCHEMY_NETWORKS: Record<ChainId, string> = {
   [Chains.BLAST.chainId]: 'blast-mainnet',
   [Chains.BNB_CHAIN.chainId]: 'bnb-mainnet',
   [Chains.AVALANCHE.chainId]: 'avax-mainnet',
+  [Chains.FANTOM.chainId]: 'fantom-mainnet',
   [Chains.METIS_ANDROMEDA.chainId]: 'metis-mainnet',
   [Chains.POLYGON_ZKEVM.chainId]: 'polygonzkevm-mainnet',
   // [Chains.POLYGON_ZKEVM_TESTNET.chainId]: 'polygonzkevm-testnet',
