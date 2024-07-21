@@ -53,7 +53,7 @@ describe('Gas Price Sources', () => {
         describe(chain?.name ?? `Chain with id ${chainId}`, () => {
           test(`Gas prices are valid values`, async () => {
             const supportedSpeeds = source.supportedSpeeds()[chainId];
-            const gasPrice = await source.getGasPrice({ chainId, config: { timeout: '10s' } });
+            const gasPrice = await source.getGasPrice({ chainId, config: { timeout: '15s' } });
             for (const speed of AVAILABLE_GAS_SPEEDS) {
               const expected = speed in supportedSpeeds ? (supportedSpeeds as any)[speed] : 'missing';
               if (expected === 'present') {
