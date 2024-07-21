@@ -8,6 +8,7 @@ export type LoadBalanceProviderSourceConfig = {
   minSuccessRate?: number;
   minSamples?: number;
   maxAttempts?: number;
+  maxConcurrent?: number;
   samplesTtl?: TimeString;
 };
 export class LoadBalanceProviderSource implements IProviderSource {
@@ -29,7 +30,7 @@ export class LoadBalanceProviderSource implements IProviderSource {
 }
 
 function loadBalance(transports_: readonly Transport[], config: LoadBalanceProviderSourceConfig = {}): Transport {
-  const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, samplesTtl = '30m' } = config;
+  const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, maxConcurrent, samplesTtl = '30m' } = config;
 
   return ({ chain, timeout, ...rest }) => {
     const transports = transports_
@@ -72,10 +73,11 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             toExecute = transportsWithoutSamples;
           }
 
-          if (maxAttempts) {
+          if (maxAttempts || maxConcurrent) {
             // If we have a limit on the number of attempts, we will execute only the number of transports that we can afford
-            const attemptsLeft = maxAttempts - attempts;
-            toExecute = toExecute.slice(0, attemptsLeft);
+            const attemptsLeft = maxAttempts ? maxAttempts - attempts : Infinity;
+            const concurrency = maxConcurrent ?? Infinity;
+            toExecute = toExecute.slice(0, Math.min(attemptsLeft, concurrency));
           }
 
           try {
