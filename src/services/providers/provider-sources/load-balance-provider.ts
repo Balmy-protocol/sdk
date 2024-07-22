@@ -1,13 +1,14 @@
 import { ChainId, Timestamp, TimeString } from '@types';
 import { IProviderSource } from '../types';
 import { chainsUnion } from '@chains';
-import { createTransport, type Transport } from 'viem';
+import { createTransport, EIP1193RequestFn, Transport } from 'viem';
 import ms from 'ms';
 
 export type LoadBalanceProviderSourceConfig = {
   minSuccessRate?: number;
   minSamples?: number;
   maxAttempts?: number;
+  maxConcurrent?: number;
   samplesTtl?: TimeString;
 };
 export class LoadBalanceProviderSource implements IProviderSource {
@@ -29,48 +30,65 @@ export class LoadBalanceProviderSource implements IProviderSource {
 }
 
 function loadBalance(transports_: readonly Transport[], config: LoadBalanceProviderSourceConfig = {}): Transport {
-  const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, samplesTtl = '30m' } = config;
-
-  const rpcMetrics: MethodMetrics[] = transports_.map(() => ({}));
+  const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, maxConcurrent, samplesTtl = '30m' } = config;
 
   return ({ chain, timeout, ...rest }) => {
-    const transports = transports_.map((t) => t({ chain, timeout, ...rest }));
+    const transports = transports_
+      .map((t) => t({ chain, timeout, ...rest }))
+      .map((transport) => new TransportInstance(transport, { samplesTtl }));
     return createTransport({
       key: 'load-balance',
       name: 'Load Balancing',
+      type: 'load-balance',
       async request({ method, params }): Promise<any> {
-        let availableTransports = transports.map((transport, index) => ({ transport, index }));
+        const availableTransports: Record<string, TransportInstance> = Object.fromEntries(
+          transports.map((transport, index) => [`${index}`, transport])
+        );
         let noAvailableTransportsError = undefined;
         let attempts = 0;
 
         while (!maxAttempts || attempts < maxAttempts) {
-          attempts++;
-          const filteredTransports = availableTransports
-            .map(({ transport, index }) => ({ transport, index, metrics: cleanupMetrics(rpcMetrics, index, method, samplesTtl) }))
-            .filter(({ metrics }) => {
-              return metrics.samples.length < minSamples || calculateSuccessRate(metrics) > minSuccessRate;
-            });
+          const filteredTransports = Object.entries(availableTransports)
+            .map(([id, transport]) => ({ transport, id, metrics: transport.metrics(method) }))
+            .filter(({ metrics }) => metrics.samples.length < minSamples || calculateSuccessRate(metrics) > minSuccessRate);
+
           if (filteredTransports.length === 0) {
             break; // No transports available
           }
 
-          // Get the best transport
-          const { transport, index } = filteredTransports.reduce((best, current) => {
-            return calculateScore(current.metrics) > calculateScore(best.metrics) ? current : best;
-          });
+          let toExecute: { transport: TransportInstance; id: string }[] = [];
+          const transportsWithSamples = filteredTransports.filter(({ metrics }) => metrics.samples.length > 0);
+          const transportsWithoutSamples = filteredTransports.filter(({ metrics }) => metrics.samples.length === 0);
 
-          // Mark the request as pending and start the timer
-          rpcMetrics[index][method].pending++;
-          const start = Date.now();
+          if (transportsWithSamples.length > 0) {
+            // If there are some transports with samples, then find the best among them
+            const bestTransport = transportsWithSamples.reduce((best, current) =>
+              calculateScore(current.metrics) > calculateScore(best.metrics) ? current : best
+            );
+            // We will execute the best transport together with all transports that have no samples. We do this because we don't know if those transports are good or bad
+            // and we will take this opportunity to gather some samples from them
+            toExecute = [bestTransport, ...transportsWithoutSamples];
+          } else {
+            // If there are no transports with samples, then we will execute all transports. We will return one that succeeds first and add some samples for the others at the same time
+            toExecute = transportsWithoutSamples;
+          }
+
+          if (maxAttempts || maxConcurrent) {
+            // If we have a limit on the number of attempts, we will execute only the number of transports that we can afford
+            const attemptsLeft = maxAttempts ? maxAttempts - attempts : Infinity;
+            const concurrency = maxConcurrent ?? Infinity;
+            toExecute = toExecute.slice(0, Math.min(attemptsLeft, concurrency));
+          }
+
           try {
-            const response = await transport.request({ method, params });
-            updateMetrics(start, rpcMetrics, index, method, true);
-
-            // The request was successful, return the response
-            return response;
+            return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, params })));
           } catch (error) {
-            updateMetrics(start, rpcMetrics, index, method, false);
-            availableTransports.splice(index, 1); // Remove the current transport
+            // Consider all transports used as attempts
+            attempts += toExecute.length;
+
+            // Remove executed transports from the list of available transports
+            toExecute.forEach(({ id }) => delete availableTransports[id]);
+
             if (!noAvailableTransportsError) {
               // Save only the first error, it was thrown by the best transport
               noAvailableTransportsError = error;
@@ -79,40 +97,60 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
         }
         throw noAvailableTransportsError ?? new Error('Failed to find a transport to execute the request'); // No transports available
       },
-      type: 'load-balance',
     });
   };
 }
 
-function initializeMetrics(): RPCMetrics {
-  return {
-    pending: 0,
-    samples: [],
-  };
-}
+class TransportInstance {
+  private readonly methodMetrics: MethodMetrics = {};
 
-function cleanupMetrics(rpcMetrics: MethodMetrics[], index: number, method: string, ttl: TimeString): RPCMetrics {
-  if (!rpcMetrics[index][method]) {
-    rpcMetrics[index][method] = initializeMetrics();
-  } else {
-    const cutoffTime = Date.now() - ms(ttl);
-    const validSampleIndex = rpcMetrics[index][method].samples.findIndex(({ timestamp }) => timestamp >= cutoffTime);
+  constructor(private readonly transport: { request: EIP1193RequestFn }, private readonly config: { samplesTtl: TimeString }) {}
 
-    if (validSampleIndex === -1) {
-      rpcMetrics[index][method] = initializeMetrics();
-    } else if (validSampleIndex > 0) {
-      rpcMetrics[index][method].samples = rpcMetrics[index][method].samples.slice(validSampleIndex);
+  async request(...args: Parameters<EIP1193RequestFn>) {
+    const start = Date.now();
+    const method = args[0].method;
+
+    this.initializeMetricsIfNecessary(method);
+    this.methodMetrics[method].pending++;
+
+    try {
+      const result = await this.transport.request(...args);
+      this.addSample({ method, start, success: true });
+      return result;
+    } catch (e) {
+      this.addSample({ method, start, success: false });
+      throw e;
     }
   }
 
-  return rpcMetrics[index][method];
-}
+  metrics(method: string) {
+    this.initializeMetricsIfNecessary(method);
 
-function updateMetrics(start: number, rpcMetrics: MethodMetrics[], index: number, method: string, isSuccess: boolean) {
-  const processingTime = Date.now() - start;
-  const sample = { timestamp: Date.now(), success: isSuccess, processingTime };
-  rpcMetrics[index][method].samples.push(sample);
-  rpcMetrics[index][method].pending--;
+    // Cleanup
+    const cutoffTime = Date.now() - ms(this.config.samplesTtl);
+    const validSampleIndex = this.methodMetrics[method].samples.findIndex(({ timestamp }) => timestamp >= cutoffTime);
+
+    if (validSampleIndex === -1) {
+      this.methodMetrics[method].samples.length = 0;
+    } else if (validSampleIndex > 0) {
+      this.methodMetrics[method].samples = this.methodMetrics[method].samples.slice(validSampleIndex);
+    }
+
+    return this.methodMetrics[method];
+  }
+
+  private initializeMetricsIfNecessary(method: string) {
+    if (!(method in this.methodMetrics)) {
+      this.methodMetrics[method] = { pending: 0, samples: [] };
+    }
+  }
+
+  private addSample({ method, start, success }: { method: string; start: number; success: boolean }) {
+    const processingTime = Date.now() - start;
+    const sample = { timestamp: Date.now(), success, processingTime };
+    this.methodMetrics[method].samples.push(sample);
+    this.methodMetrics[method].pending--;
+  }
 }
 
 function calculateSuccessRate(metrics: RPCMetrics) {

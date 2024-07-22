@@ -17,7 +17,7 @@ const TESTS: Record<ChainId, Timestamp> = {
   [Chains.POLYGON.chainId]: 1651363200, // Sunday, May 1, 2022 12:00:00 AM
 };
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource({ config: { type: 'fallback' } }));
+const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
 const FETCH_SERVICE = new FetchService();
 const DEFI_LLAMA_BLOCKS_SOURCE = new DefiLlamaBlockSource(FETCH_SERVICE, PROVIDER_SERVICE);
 
