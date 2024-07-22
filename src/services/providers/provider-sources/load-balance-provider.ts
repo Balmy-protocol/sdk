@@ -29,8 +29,15 @@ export class LoadBalanceProviderSource implements IProviderSource {
   }
 }
 
+const DEFAULT_CONFIG = {
+  minSuccessRate: 0.05,
+  minSamples: 3,
+  samplesTtl: '30m',
+  maxConcurrent: 2,
+} satisfies LoadBalanceProviderSourceConfig;
+
 function loadBalance(transports_: readonly Transport[], config: LoadBalanceProviderSourceConfig = {}): Transport {
-  const { minSuccessRate = 0.05, minSamples = 3, maxAttempts, maxConcurrent, samplesTtl = '30m' } = config;
+  const { minSuccessRate, minSamples, maxAttempts, maxConcurrent, samplesTtl } = { ...DEFAULT_CONFIG, ...config };
 
   return ({ chain, timeout, ...rest }) => {
     const transports = transports_
