@@ -65,7 +65,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       estimatedGas,
       source: { allowanceTarget },
       customData,
-    }: StringifyBigInt<SourceListQuoteResponse<{ tx: QuoteTransaction }>> = await response.json();
+    }: StringifyBigInt<SourceListQuoteResponse<{ tx: SourceQuoteTransaction }>> = await response.json();
 
     return {
       sellAmount: BigInt(sellAmount),
@@ -77,8 +77,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       type: order.type,
       customData: {
         tx: {
-          to: customData.tx.to,
-          calldata: customData.tx.data,
+          ...customData.tx,
           value: customData.tx.value ? BigInt(customData.tx.value) : undefined,
         },
       },
