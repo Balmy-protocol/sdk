@@ -1,14 +1,18 @@
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { chainsUnion } from '@chains';
+import { ILogger, ILogsService } from '@services/logs';
 import { filterRequestForSource, fillResponseWithNewResult, doesResponseFulfilRequest, getSourcesThatSupportRequestOrFail } from './utils';
 import { IBalanceSource, BalanceInput } from '../types';
 
 // This source will take a list of sources and combine the results of each one to try to fulfil
 // the request. As soon as there there is a response that is valid for the request, it will be returned
 export class FastestBalanceSource implements IBalanceSource {
-  constructor(private readonly sources: IBalanceSource[]) {
+  private readonly logger: ILogger;
+
+  constructor(private readonly sources: IBalanceSource[], logs: ILogsService) {
     if (sources.length === 0) throw new Error('No sources were specified');
+    this.logger = logs.getLogger({ name: 'FastestBalanceSource' });
   }
 
   supportedChains() {
@@ -33,12 +37,14 @@ export class FastestBalanceSource implements IBalanceSource {
             config: { timeout: reducedTimeout },
           }),
           reducedTimeout
-        ).then((response) => {
-          fillResponseWithNewResult(result, response);
-          if (doesResponseFulfilRequest(result, tokens).ok) {
-            resolve(result);
-          }
-        })
+        )
+          .then((response) => {
+            fillResponseWithNewResult(result, response);
+            if (doesResponseFulfilRequest(result, tokens).ok) {
+              resolve(result);
+            }
+          })
+          .catch((e) => this.logger.debug(e))
       );
 
       Promise.allSettled(allPromises).then(() => {

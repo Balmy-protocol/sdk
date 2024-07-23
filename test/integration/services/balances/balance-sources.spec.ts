@@ -14,6 +14,7 @@ import dotenv from 'dotenv';
 import { FetchService } from '@services/fetch/fetch-service';
 import { CHAINS_WITH_KNOWN_ISSUES } from '@test-utils/other';
 import { formatUnits, parseUnits } from 'viem';
+import { LogsService } from '@services/logs/logs-service';
 dotenv.config();
 chai.use(chaiAsPromised);
 
@@ -53,6 +54,7 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
+const LOGS_SERVICE = new LogsService('ALL');
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
 const FETCH_SERVICE = new FetchService();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE);
@@ -63,7 +65,7 @@ const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   },
   maxSize: 100,
 });
-const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE]);
+const FASTEST_BALANCE_SOURCE = new FastestBalanceSource([RPC_BALANCE_SOURCE], LOGS_SERVICE);
 
 jest.retryTimes(2);
 jest.setTimeout(ms('1m'));
