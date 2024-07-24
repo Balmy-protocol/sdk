@@ -51,7 +51,7 @@ export function amountToUSD<Price extends number | undefined>(
   decimals: number,
   amount: BigIntish,
   usdPrice: Price,
-  precision: number = 3
+  precision: number = 2
 ): undefined extends Price ? undefined : string {
   if (!!usdPrice) {
     const priceBN = parseUnits(`${usdPrice.toFixed(USD_PRECISION)}` as `${number}`, USD_PRECISION);
