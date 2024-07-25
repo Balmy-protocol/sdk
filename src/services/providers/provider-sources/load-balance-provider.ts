@@ -51,7 +51,7 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
         const availableTransports: Record<string, TransportInstance> = Object.fromEntries(
           transports.map((transport, index) => [`${index}`, transport])
         );
-        let noAvailableTransportsError = undefined;
+        const errors: any[] = [];
         let attempts = 0;
 
         while (!maxAttempts || attempts < maxAttempts) {
@@ -96,13 +96,12 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             // Remove executed transports from the list of available transports
             toExecute.forEach(({ id }) => delete availableTransports[id]);
 
-            if (!noAvailableTransportsError) {
-              // Save only the first error, it was thrown by the best transport
-              noAvailableTransportsError = error;
-            }
+            // Remember error
+            errors.push(error);
           }
         }
-        throw noAvailableTransportsError ?? new Error('Failed to find a transport to execute the request'); // No transports available
+
+        throw errors.length > 0 ? new AggregateError(errors) : new Error('Failed to find a transport to execute the request'); // No transports available
       },
     });
   };
