@@ -34,7 +34,7 @@ function buildSource(
     case undefined:
     case 'rpc-multicall':
       const provider = source?.customProvider ? buildProviderService(source.customProvider) : providerService;
-      return new RPCBalanceSource(provider, source?.config);
+      return new RPCBalanceSource(provider, logsService, source?.config);
     case 'cached':
       const underlying = buildSource(source.underlyingSource, { fetchService, providerService, logsService });
       return new CachedBalanceSource(underlying, source.config);

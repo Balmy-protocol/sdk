@@ -57,7 +57,7 @@ const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 const LOGS_SERVICE = new LogsService('ALL');
 const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
 const FETCH_SERVICE = new FetchService();
-const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE);
+const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, LOGS_SERVICE);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
   expiration: {
     useCachedValue: 'always',

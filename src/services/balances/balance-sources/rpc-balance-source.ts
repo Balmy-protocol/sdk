@@ -1,24 +1,91 @@
 import { Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { BalanceInput } from '../types';
+import { BalanceInput, IBalanceSource } from '../types';
 import { IProviderService } from '@services/providers/types';
-import { SingleChainBaseBalanceSource } from './base/single-chain-base-balance-source';
 import ERC20_ABI from '@shared/abis/erc20';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
+import { filterRejectedResults, groupByChain, isSameAddress } from '@shared/utils';
+import { Addresses } from '@shared/constants';
+import { timeoutPromise } from '@shared/timeouts';
+import { ILogger, ILogsService } from '@services/logs';
 
 export type RPCBalanceSourceConfig = {
   batching?: { maxSizeInBytes: number };
 };
-export class RPCBalanceSource extends SingleChainBaseBalanceSource {
-  constructor(private readonly providerService: IProviderService, private readonly config?: RPCBalanceSourceConfig | undefined) {
-    super();
+export class RPCBalanceSource implements IBalanceSource {
+  private readonly logger: ILogger;
+  constructor(
+    private readonly providerService: IProviderService,
+    logs: ILogsService,
+    private readonly config?: RPCBalanceSourceConfig | undefined
+  ) {
+    this.logger = logs.getLogger({ name: 'RPCBalanceSource' });
+  }
+
+  async getBalances({
+    tokens,
+    config,
+  }: {
+    tokens: BalanceInput[];
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, Record<Address, Record<TokenAddress, bigint>>>> {
+    const groupedByChain = groupByChain(tokens);
+    const promises = Object.entries(groupedByChain).map<Promise<[ChainId, Record<Address, Record<TokenAddress, bigint>>]>>(
+      async ([chainId, tokens]) => [
+        Number(chainId),
+        await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, { reduceBy: '100' }),
+      ]
+    );
+    return Object.fromEntries(await filterRejectedResults(promises));
   }
 
   supportedChains(): ChainId[] {
     return this.providerService.supportedChains();
   }
 
-  protected async fetchERC20BalancesInChain(
+  private async fetchBalancesInChain(
+    chainId: ChainId,
+    tokens: Omit<BalanceInput, 'chainId'>[],
+    config?: { timeout?: TimeString }
+  ): Promise<Record<Address, Record<TokenAddress, bigint>>> {
+    const accountsToFetchNativeToken: Address[] = [];
+    const nonNativeTokens: Omit<BalanceInput, 'chainId'>[] = [];
+
+    for (const { account, token } of tokens) {
+      if (isSameAddress(token, Addresses.NATIVE_TOKEN)) {
+        accountsToFetchNativeToken.push(account);
+      } else {
+        nonNativeTokens.push({ account, token });
+      }
+    }
+
+    const erc20Promise =
+      Object.keys(nonNativeTokens).length > 0
+        ? this.fetchERC20BalancesInChain(chainId, nonNativeTokens, config)
+        : Promise.resolve<Record<Address, Record<TokenAddress, bigint>>>({});
+
+    const nativePromise =
+      accountsToFetchNativeToken.length > 0
+        ? this.fetchNativeBalancesInChain(chainId, accountsToFetchNativeToken, config)
+        : Promise.resolve<Record<Address, bigint>>({});
+
+    const [erc20Result, nativeResult] = await Promise.all([erc20Promise, nativePromise]);
+
+    const result: Record<Address, Record<TokenAddress, bigint>> = {};
+
+    for (const { account, token } of tokens) {
+      const balance = isSameAddress(token, Addresses.NATIVE_TOKEN) ? nativeResult[account] : erc20Result[account]?.[token];
+
+      if (balance !== undefined) {
+        if (!(account in result)) result[account] = {};
+        result[account][token] = balance;
+      }
+    }
+
+    return result;
+  }
+
+  private async fetchERC20BalancesInChain(
     chainId: ChainId,
     tokens: Omit<BalanceInput, 'chainId'>[],
     config?: { timeout?: TimeString }
@@ -47,16 +114,30 @@ export class RPCBalanceSource extends SingleChainBaseBalanceSource {
     return result;
   }
 
-  protected async fetchNativeBalancesInChain(
+  private async fetchNativeBalancesInChain(
     chainId: ChainId,
     accounts: Address[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, bigint>> {
-    const entries = await Promise.all(accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]));
+    const entries = await Promise.all(
+      accounts.map(async (account) => [
+        account,
+        await this.fetchNativeBalanceInChain(chainId, account).catch((e) => {
+          this.logger.debug(e);
+          return Promise.reject(e);
+        }),
+      ])
+    );
     return Object.fromEntries(entries);
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }) {
-    return this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' });
+    return this.providerService
+      .getViemPublicClient({ chainId })
+      .getBalance({ address: account as ViemAddress, blockTag: 'latest' })
+      .catch((e) => {
+        this.logger.debug(e);
+        return Promise.reject(e);
+      });
   }
 }
