@@ -55,7 +55,9 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
 
 const LOGS_SERVICE = new LogsService('ALL');
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
+const PROVIDER_SERVICE = new ProviderService(
+  new PublicRPCsProviderSource({ config: { type: 'load-balance', config: { maxConcurrent: Infinity } } })
+);
 const FETCH_SERVICE = new FetchService();
 const RPC_BALANCE_SOURCE = new RPCBalanceSource(PROVIDER_SERVICE, LOGS_SERVICE);
 const CACHED_BALANCE_SOURCE = new CachedBalanceSource(RPC_BALANCE_SOURCE, {
