@@ -33,7 +33,10 @@ export class RPCBalanceSource implements IBalanceSource {
     const promises = Object.entries(groupedByChain).map<Promise<[ChainId, Record<Address, Record<TokenAddress, bigint>>]>>(
       async ([chainId, tokens]) => [
         Number(chainId),
-        await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, { reduceBy: '100' }),
+        await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, {
+          reduceBy: '100',
+          onTimeout: (timeout) => this.logger.debug(`Fetch balances in chain timeouted after ${timeout}`),
+        }),
       ]
     );
     return Object.fromEntries(await filterRejectedResults(promises));

@@ -10,13 +10,13 @@ export class TimeoutError extends Error {
 export function timeoutPromise<T>(
   promise: Promise<T>,
   timeout: TimeString | undefined,
-  options?: { reduceBy?: TimeString; description?: string; onTimeout?: () => void }
+  options?: { reduceBy?: TimeString; description?: string; onTimeout?: (timeout: TimeString) => void }
 ) {
   if (!timeout) return promise;
   const realTimeout = options?.reduceBy ? reduceTimeout(timeout, options.reduceBy) : timeout;
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      options?.onTimeout?.();
+      options?.onTimeout?.(realTimeout);
       reject(new TimeoutError(options?.description ?? 'Promise', timeout));
     }, ms(realTimeout));
     promise
