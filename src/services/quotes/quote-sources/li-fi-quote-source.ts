@@ -6,6 +6,7 @@ import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
+// Supported networks: https://li.quest/v1/chains
 const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
   name: 'LI.FI',
   supports: {
@@ -31,6 +32,11 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.BASE.chainId,
       Chains.ROOTSTOCK.chainId,
       Chains.MODE.chainId,
+      Chains.LINEA.chainId,
+      Chains.BOBA.chainId,
+      Chains.METIS_ANDROMEDA.chainId,
+      Chains.SCROLL.chainId,
+      Chains.BLAST.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
