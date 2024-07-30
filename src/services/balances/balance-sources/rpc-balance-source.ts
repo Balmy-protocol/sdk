@@ -100,17 +100,11 @@ export class RPCBalanceSource implements IBalanceSource {
       args: [account],
     }));
     const multicallResults = contracts.length
-      ? await this.providerService
-          .getViemPublicClient({ chainId })
-          .multicall({
-            contracts,
-            multicallAddress: MULTICALL_CONTRACT.address(chainId),
-            batchSize: this.config?.batching?.maxSizeInBytes ?? 0,
-          })
-          .catch((e) => {
-            this.logger.debug(e);
-            return Promise.reject(e);
-          })
+      ? await this.providerService.getViemPublicClient({ chainId }).multicall({
+          contracts,
+          multicallAddress: MULTICALL_CONTRACT.address(chainId),
+          batchSize: this.config?.batching?.maxSizeInBytes ?? 0,
+        })
       : [];
     const result: Record<Address, Record<TokenAddress, bigint>> = {};
     for (let i = 0; i < tokens.length; i++) {
@@ -128,15 +122,7 @@ export class RPCBalanceSource implements IBalanceSource {
     accounts: Address[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, bigint>> {
-    const entries = await Promise.all(
-      accounts.map(async (account) => [
-        account,
-        await this.fetchNativeBalanceInChain(chainId, account).catch((e) => {
-          this.logger.debug(e);
-          return Promise.reject(e);
-        }),
-      ])
-    );
+    const entries = await Promise.all(accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]));
     return Object.fromEntries(entries);
   }
 

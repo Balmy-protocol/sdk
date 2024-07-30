@@ -37,14 +37,12 @@ export class FastestBalanceSource implements IBalanceSource {
             config: { timeout: reducedTimeout },
           }),
           reducedTimeout
-        )
-          .then((response) => {
-            fillResponseWithNewResult(result, response);
-            if (doesResponseFulfilRequest(result, tokens).ok) {
-              resolve(result);
-            }
-          })
-          .catch((e) => this.logger.debug(e))
+        ).then((response) => {
+          fillResponseWithNewResult(result, response);
+          if (doesResponseFulfilRequest(result, tokens).ok) {
+            resolve(result);
+          }
+        })
       );
 
       Promise.allSettled(allPromises).then(() => {
