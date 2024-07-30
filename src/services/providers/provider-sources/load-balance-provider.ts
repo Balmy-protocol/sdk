@@ -87,14 +87,9 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             toExecute = toExecute.slice(0, Math.min(attemptsLeft, concurrency));
           }
 
-          const start = Date.now();
           try {
-            console.trace('Executing', method, JSON.stringify(toExecute));
-            const result = await Promise.any(toExecute.map(({ transport }) => transport.request({ method, ...params })));
-            console.log(`Managed to execute ${method} for ${JSON.stringify(toExecute)} in ${Date.now() - start}ms`);
-            return result;
+            return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, ...params })));
           } catch (error: any) {
-            console.log(`Failed to execute ${method} for ${JSON.stringify(toExecute)} in ${Date.now() - start}ms`);
             // Consider all transports used as attempts
             attempts += toExecute.length;
 
