@@ -35,7 +35,7 @@ export class RPCBalanceSource implements IBalanceSource {
         Number(chainId),
         await timeoutPromise(this.fetchBalancesInChain(Number(chainId), tokens), config?.timeout, {
           reduceBy: '100',
-          onTimeout: (timeout) => this.logger.debug(`Fetch balances in chain timeouted after ${timeout}`),
+          onTimeout: (timeout) => this.logger.debug(`Fetch balances in chain ${chainId} timeouted after ${timeout}`),
         }),
       ]
     );
