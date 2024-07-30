@@ -47,7 +47,7 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
       key: 'load-balance',
       name: 'Load Balancing',
       type: 'load-balance',
-      async request({ method, params }): Promise<any> {
+      async request({ method, ...params }): Promise<any> {
         const availableTransports: Record<string, TransportInstance> = Object.fromEntries(
           transports.map((transport, index) => [`${index}`, transport])
         );
@@ -63,7 +63,7 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             break; // No transports available
           }
 
-          let toExecute: { transport: TransportInstance; id: string }[] = [];
+          let toExecute: { transport: TransportInstance; id: string }[];
           const transportsWithSamples = filteredTransports.filter(({ metrics }) => metrics.samples.length > 0);
           const transportsWithoutSamples = filteredTransports.filter(({ metrics }) => metrics.samples.length === 0);
 
@@ -80,16 +80,15 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             toExecute = transportsWithoutSamples;
           }
 
-          if (maxAttempts || maxConcurrent) {
+          if (maxAttempts || maxConcurrent > 0) {
             // If we have a limit on the number of attempts, we will execute only the number of transports that we can afford
             const attemptsLeft = maxAttempts ? maxAttempts - attempts : Infinity;
-            const concurrency = maxConcurrent ?? Infinity;
-            toExecute = toExecute.slice(0, Math.min(attemptsLeft, concurrency));
+            toExecute = toExecute.slice(0, Math.min(attemptsLeft, maxConcurrent));
           }
 
           try {
-            return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, params })));
-          } catch (error) {
+            return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, ...params })));
+          } catch (error: any) {
             // Consider all transports used as attempts
             attempts += toExecute.length;
 
@@ -97,7 +96,11 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             toExecute.forEach(({ id }) => delete availableTransports[id]);
 
             // Remember error
-            errors.push(error);
+            if (error instanceof AggregateError) {
+              errors.push(...error.errors);
+            } else {
+              errors.push(error);
+            }
           }
         }
 
