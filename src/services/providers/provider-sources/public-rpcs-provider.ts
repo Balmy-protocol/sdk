@@ -7,8 +7,8 @@ import { FallbackProviderSource, FallbackProviderSourceConfig } from './fallback
 import { IProviderSource } from '../types';
 
 export type PublicRPCsProviderSourceConfig =
-  | { type: 'load-balance'; config?: LoadBalanceProviderSourceConfig }
-  | { type: 'fallback'; config?: FallbackProviderSourceConfig };
+  | ({ type: 'load-balance' } & LoadBalanceProviderSourceConfig)
+  | ({ type: 'fallback' } & FallbackProviderSourceConfig);
 
 export class PublicRPCsProviderSource implements IProviderSource {
   private readonly source: IProviderSource;
@@ -17,8 +17,8 @@ export class PublicRPCsProviderSource implements IProviderSource {
     const sources = buildSources(calculateRPCs(params?.publicRPCs));
     this.source =
       params?.config?.type === 'fallback'
-        ? new FallbackProviderSource(sources, params.config.config)
-        : new LoadBalanceProviderSource(sources, params?.config?.config);
+        ? new FallbackProviderSource(sources, params.config)
+        : new LoadBalanceProviderSource(sources, params?.config);
   }
 
   supportedChains(): ChainId[] {

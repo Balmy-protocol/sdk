@@ -80,11 +80,10 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
             toExecute = transportsWithoutSamples;
           }
 
-          if (maxAttempts || maxConcurrent) {
+          if (maxAttempts || maxConcurrent > 0) {
             // If we have a limit on the number of attempts, we will execute only the number of transports that we can afford
             const attemptsLeft = maxAttempts ? maxAttempts - attempts : Infinity;
-            const concurrency = maxConcurrent ?? Infinity;
-            toExecute = toExecute.slice(0, Math.min(attemptsLeft, concurrency));
+            toExecute = toExecute.slice(0, Math.min(attemptsLeft, maxConcurrent));
           }
 
           try {
