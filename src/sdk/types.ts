@@ -12,6 +12,7 @@ import { ILogsService } from '@services/logs';
 import { IPermit2Service } from '@services/permit2';
 import { IDCAService } from '@services/dca';
 import { IBlocksService } from '@services/blocks';
+import { IEarnService } from '@services/earn';
 
 export type ISDK<
   TokenMetadata extends object = CalculateMetadataFromSourceParams<undefined>,
@@ -28,5 +29,6 @@ export type ISDK<
   metadataService: IMetadataService<TokenMetadata>;
   permit2Service: IPermit2Service;
   dcaService: IDCAService;
+  earnService: IEarnService;
   blocksService: IBlocksService;
 };
