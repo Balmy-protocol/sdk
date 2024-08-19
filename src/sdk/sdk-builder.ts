@@ -28,7 +28,7 @@ export function buildSDK<Params extends BuildParams = {}>(
   const quoteService = buildQuoteService(params?.quotes, providerService, fetchService, gasService as any, metadataService as any, priceService);
   const permit2Service = buildPermit2Service(quoteService, providerService, gasService as any);
   const dcaService = buildDCAService(params?.dca, { providerService, permit2Service, quoteService, fetchService, priceService });
-  const earnService = buildEarnService({ permit2Service, quoteService });
+  const earnService = buildEarnService({ permit2Service, quoteService, providerService });
 
   return {
     providerService,

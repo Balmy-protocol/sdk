@@ -7,11 +7,10 @@ export type IEarnService = {};
 export type CreateEarnPositionParams = {
   chainId: ChainId;
   strategyId: bigint;
-  depositToken: TokenAddress;
   owner: Address;
   permissions: EarnPermissionSet[];
-  strategyValidationData: Hex;
-  misc: Hex;
+  strategyValidationData?: Hex;
+  misc?: Hex;
   deposit: AddFunds;
 };
 export type EarnPermissionSet = { operator: string; permissions: EarnPermission[] };

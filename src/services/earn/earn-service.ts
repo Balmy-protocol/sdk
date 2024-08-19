@@ -1,21 +1,28 @@
 import { Address, BigIntish, BuiltTransaction, ChainId, TokenAddress } from '@types';
 import { CreateEarnPositionParams, EarnActionSwapConfig, EarnPermission, IEarnService } from './types';
-import { COMPANION_SWAPPER_CONTRACT, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
+import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
 import { encodeFunctionData, Hex, maxUint256, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
+import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
+import strategyAbi from '@shared/abis/earn-strategy';
 import { isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { IPermit2Service, PermitData } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
+import { IProviderService } from '@services/providers';
+import { MULTICALL_CONTRACT } from '@services/providers/utils';
 
 export class EarnService implements IEarnService {
-  constructor(private readonly permit2Service: IPermit2Service, private readonly quoteService: IQuoteService) {}
+  constructor(
+    private readonly permit2Service: IPermit2Service,
+    private readonly quoteService: IQuoteService,
+    private readonly providerService: IProviderService
+  ) {}
 
   async buildCreatePositionTx({
     chainId,
     strategyId,
-    depositToken,
     owner,
     permissions,
     strategyValidationData,
@@ -30,7 +37,8 @@ export class EarnService implements IEarnService {
       depositInfo = { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
     }
 
-    const needsSwap = !isSameAddress(depositInfo.token, depositToken);
+    const { needsSwap, asset } = await this.checkIfNeedsSwap({ chainId, strategyId, depositToken: depositInfo.token });
+
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
       return {
@@ -47,14 +55,14 @@ export class EarnService implements IEarnService {
               operator: operator as ViemAddress,
               permissions: permissions.map(mapPermission),
             })),
-            strategyValidationData,
-            misc,
+            strategyValidationData ?? '0x',
+            misc ?? '0x',
           ],
         }),
       };
     }
     // If we get to this point, then we'll use the Companion for the deposit
-    const calls: Call[] = [];
+    const calls: Hex[] = [];
 
     // Handle take from caller (if necessary)
     const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : EARN_VAULT_COMPANION.address(chainId);
@@ -70,7 +78,7 @@ export class EarnService implements IEarnService {
         request: {
           chainId,
           sellToken: depositInfo.token,
-          buyToken: depositToken,
+          buyToken: asset,
           order: { type: 'sell', sellAmount: depositInfo.amount },
         },
         leftoverRecipient: owner,
@@ -87,15 +95,15 @@ export class EarnService implements IEarnService {
         args: [
           EARN_VAULT.address(chainId),
           strategyId,
-          depositToken as ViemAddress,
+          asset,
           maxUint256,
           owner as ViemAddress,
           permissions.map(({ operator, permissions }) => ({
             operator: operator as ViemAddress,
             permissions: permissions.map(mapPermission),
           })),
-          strategyValidationData,
-          misc,
+          strategyValidationData ?? '0x',
+          misc ?? '0x',
           deposit.maxApprove ?? false,
         ],
       })
@@ -163,6 +171,34 @@ export class EarnService implements IEarnService {
 
     return { bestQuote, swapData };
   }
+
+  private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: bigint; depositToken: Address }) {
+    // Get the strategy from the strategy registry
+    const strategy = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      abi: strategyRegistryAbi,
+      address: EARN_STRATEGY_REGISTRY.address(chainId),
+      functionName: 'getStrategy',
+      args: [strategyId],
+    });
+
+    // Check if the deposit token is supported by the strategy and get the asset
+    const [asset, isDepositTokenSupported] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: [
+        { abi: strategyAbi, address: strategy, functionName: 'asset' },
+        {
+          abi: strategyAbi,
+          address: strategy,
+          functionName: 'isDepositTokenSupported',
+          args: [depositToken as ViemAddress],
+        },
+      ],
+      allowFailure: false,
+      multicallAddress: MULTICALL_CONTRACT.address(chainId),
+      batchSize: 0,
+    });
+
+    return { needsSwap: !isDepositTokenSupported, asset };
+  }
 }
 
 function mapPermission(permission: EarnPermission) {
@@ -194,7 +230,7 @@ function buildTakeFromCaller(token: TokenAddress, amount: BigIntish, recipient: 
   });
 }
 
-async function buildCompanionMulticall({ chainId, calls, value }: { chainId: ChainId; calls: Call[]; value?: bigint }) {
+async function buildCompanionMulticall({ chainId, calls, value }: { chainId: ChainId; calls: Hex[]; value?: bigint }) {
   const data = encodeFunctionData({
     abi: companionAbi,
     functionName: 'multicall',
@@ -202,5 +238,3 @@ async function buildCompanionMulticall({ chainId, calls, value }: { chainId: Cha
   });
   return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
-
-type Call = Hex;
