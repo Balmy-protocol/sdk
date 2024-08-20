@@ -25,4 +25,22 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address', name: 'depositToken', type: 'address' },
+      { internalType: 'uint256', name: 'depositAmount', type: 'uint256' },
+    ],
+    name: 'increasePosition',
+    outputs: [{ internalType: 'uint256', name: 'assetsDeposited', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'tokenId', type: 'uint256' }],
+    name: 'ownerOf',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
