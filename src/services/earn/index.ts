@@ -5,6 +5,6 @@ export {
   EarnPermission,
   EarnPermissionSet,
   EarnPermissionPermit,
-  AddFunds,
+  AddFundsEarn,
   EarnActionSwapConfig,
 } from './types';

@@ -149,13 +149,15 @@ export class EarnService implements IEarnService {
     const vault = EARN_VAULT.address(chainId);
     const companion = EARN_VAULT_COMPANION.address(chainId);
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
-    if (!increase) {
-      increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
-    } else if ('token' in increase) {
+    if ('token' in increase) {
       const amount = BigInt(increase.amount);
       increaseInfo = { token: increase.token, amount, value: isSameAddress(increase.token, Addresses.NATIVE_TOKEN) ? amount : 0n };
     } else {
       increaseInfo = { token: increase.permitData.token, amount: BigInt(increase.permitData.amount), value: 0n };
+    }
+
+    if (increaseInfo.amount === 0n) {
+      throw new Error('Amount cannot be 0');
     }
 
     const bigIntPositionId = BigInt(positionId);
@@ -168,9 +170,8 @@ export class EarnService implements IEarnService {
       }),
       this.checkIfNeedsSwap({ chainId, strategyId: bigIntPositionId, depositToken: increaseInfo.token }),
     ]);
-    const callVaultDirectly = !increase || increaseInfo.amount === 0n || ('token' in increase && !needsSwap);
 
-    if (callVaultDirectly) {
+    if ('token' in increase && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
       return {
         to: vault,
@@ -187,7 +188,7 @@ export class EarnService implements IEarnService {
     const calls: Hex[] = [];
 
     const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : companion;
-    if ('permitData' in increase!) {
+    if ('permitData' in increase) {
       // Handle take from caller (if necessary)
       calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature, recipient));
     } else if (!isSameAddress(increaseInfo.token, Addresses.NATIVE_TOKEN)) {
@@ -231,7 +232,7 @@ export class EarnService implements IEarnService {
 
     // Handle permission permit
     if (permissionPermit && 'signature' in increase) {
-      calls.push(buildPermissionPermit(bigIntPositionId, increase.signature as Hex, permissionPermit, vault));
+      calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
     }
 
     // Handle increase
@@ -244,7 +245,7 @@ export class EarnService implements IEarnService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ chainId, calls, value: increaseInfo?.value });
+    return buildCompanionMulticall({ chainId, calls, value: increaseInfo.value });
   }
 
   private async getSwapData({
@@ -336,7 +337,7 @@ export class EarnService implements IEarnService {
   }
 }
 
-function buildPermissionPermit(positionId: bigint, signature: Hex, permit: EarnPermissionPermit, vault: Address): Hex {
+function buildPermissionPermit(positionId: bigint, permit: EarnPermissionPermit, vault: Address): Hex {
   return encodeFunctionData({
     abi: companionAbi,
     functionName: 'permissionPermit',
@@ -352,7 +353,7 @@ function buildPermissionPermit(positionId: bigint, signature: Hex, permit: EarnP
         ],
       })),
       BigInt(permit.deadline),
-      signature,
+      permit.signature,
     ],
   });
 }
