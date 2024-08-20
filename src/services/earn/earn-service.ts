@@ -1,5 +1,12 @@
 import { Address, BigIntish, BuiltTransaction, ChainId, TokenAddress } from '@types';
-import { CreateEarnPositionParams, EarnActionSwapConfig, EarnPermission, IEarnService } from './types';
+import {
+  CreateEarnPositionParams,
+  EarnActionSwapConfig,
+  EarnPermission,
+  EarnPermissionPermit,
+  IEarnService,
+  IncreaseEarnPositionParams,
+} from './types';
 import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
@@ -17,6 +24,7 @@ import { IAllowanceService } from '@services/allowances';
 export class EarnService implements IEarnService {
   constructor(
     private readonly permit2Service: IPermit2Service,
+
     private readonly quoteService: IQuoteService,
     private readonly providerService: IProviderService,
     private readonly allowanceService: IAllowanceService
@@ -137,6 +145,109 @@ export class EarnService implements IEarnService {
     // Build multicall and return tx
     return buildCompanionMulticall({ chainId, calls, value: depositInfo.value });
   }
+
+  async buildIncreasePositionTx({ chainId, positionId, increase, permissionPermit }: IncreaseEarnPositionParams): Promise<BuiltTransaction> {
+    const vault = EARN_VAULT.address(chainId);
+    const companion = EARN_VAULT_COMPANION.address(chainId);
+    let increaseInfo: { token: Address; amount: bigint; value: bigint };
+    if (!increase) {
+      increaseInfo = { token: Addresses.ZERO_ADDRESS, amount: 0n, value: 0n };
+    } else if ('token' in increase) {
+      const amount = BigInt(increase.amount);
+      increaseInfo = { token: increase.token, amount, value: isSameAddress(increase.token, Addresses.NATIVE_TOKEN) ? amount : 0n };
+    } else {
+      increaseInfo = { token: increase.permitData.token, amount: BigInt(increase.permitData.amount), value: 0n };
+    }
+
+    const bigIntPositionId = BigInt(positionId);
+    const [positionOwner, { needsSwap, asset }] = await Promise.all([
+      this.providerService.getViemPublicClient({ chainId }).readContract({
+        abi: vaultAbi,
+        address: vault,
+        functionName: 'ownerOf',
+        args: [bigIntPositionId],
+      }),
+      this.checkIfNeedsSwap({ chainId, strategyId: bigIntPositionId, depositToken: increaseInfo.token }),
+    ]);
+    const callVaultDirectly = !increase || increaseInfo.amount === 0n || ('token' in increase && !needsSwap);
+
+    if (callVaultDirectly) {
+      // If don't need to use Permit2, then just call the vault
+      return {
+        to: vault,
+        data: encodeFunctionData({
+          abi: vaultAbi,
+          functionName: 'increasePosition',
+          args: [BigInt(positionId), increaseInfo.token as ViemAddress, increaseInfo.amount],
+        }),
+        value: increaseInfo.value,
+      };
+    }
+
+    // If we get to this point, then we'll use the Companion for the increase
+    const calls: Hex[] = [];
+
+    const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : companion;
+    if ('permitData' in increase!) {
+      // Handle take from caller (if necessary)
+      calls.push(buildTakeFromCallerWithPermit(increase.permitData, increase.signature, recipient));
+    } else if (!isSameAddress(increaseInfo.token, Addresses.NATIVE_TOKEN)) {
+      calls.push(buildTakeFromCaller(increaseInfo.token, increaseInfo.amount, recipient));
+    }
+
+    const depositToken = (needsSwap ? asset : increaseInfo.token) as ViemAddress;
+    let maxApprove = false;
+    const promises = [];
+
+    if (needsSwap) {
+      const swapPromise = await this.getSwapData({
+        request: {
+          chainId,
+          sellToken: increaseInfo.token,
+          buyToken: asset,
+          order: { type: 'sell', sellAmount: increaseInfo.amount },
+        },
+        leftoverRecipient: positionOwner,
+        swapConfig: increase?.swapConfig,
+      }).then(({ swapData }) => calls.push(swapData));
+      promises.push(swapPromise);
+    }
+
+    if (!isSameAddress(depositToken, Addresses.NATIVE_TOKEN)) {
+      const allowancePromise = this.allowanceService
+        .getAllowanceInChain({
+          chainId,
+          owner: companion,
+          spender: vault,
+          token: depositToken,
+        })
+        .then((allowance) => {
+          // Only if the allowance is 0 we need to max approve the vault
+          maxApprove = allowance === 0n;
+        });
+      promises.push(allowancePromise);
+    }
+
+    await Promise.all(promises);
+
+    // Handle permission permit
+    if (permissionPermit && 'signature' in increase) {
+      calls.push(buildPermissionPermit(bigIntPositionId, increase.signature as Hex, permissionPermit, vault));
+    }
+
+    // Handle increase
+    calls.push(
+      encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'increasePosition',
+        args: [vault as ViemAddress, bigIntPositionId, asset, Uint.MAX_256, maxApprove],
+      })
+    );
+
+    // Build multicall and return tx
+    return buildCompanionMulticall({ chainId, calls, value: increaseInfo?.value });
+  }
+
   private async getSwapData({
     request,
     leftoverRecipient,
@@ -224,6 +335,27 @@ export class EarnService implements IEarnService {
 
     return { needsSwap: !isDepositTokenSupported, asset };
   }
+}
+
+function buildPermissionPermit(positionId: bigint, signature: Hex, permit: EarnPermissionPermit, vault: Address): Hex {
+  return encodeFunctionData({
+    abi: companionAbi,
+    functionName: 'permissionPermit',
+    args: [
+      vault as ViemAddress,
+      permit.permissions.map(({ operator, permissions }) => ({
+        positionId,
+        permissionSets: [
+          {
+            operator: operator as Hex,
+            permissions: permissions.map(mapPermission),
+          },
+        ],
+      })),
+      BigInt(permit.deadline),
+      signature,
+    ],
+  });
 }
 
 function mapPermission(permission: EarnPermission) {

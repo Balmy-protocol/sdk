@@ -4,6 +4,7 @@ import { Hex } from 'viem';
 
 export type IEarnService = {
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
+  buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
 };
 
 export type CreateEarnPositionParams = {
@@ -15,6 +16,23 @@ export type CreateEarnPositionParams = {
   misc?: Hex;
   deposit: AddFunds;
 };
+
+export type IncreaseEarnPositionParams = {
+  chainId: ChainId;
+  positionId: BigIntish;
+  increase: AddFunds;
+  permissionPermit?: EarnPermissionPermit;
+};
+
+export type EarnPermissionPermit = {
+  permissions: EarnPermissionSet[];
+  tokenId: string;
+  deadline: BigIntish;
+  v: BigIntish;
+  r: string;
+  s: string;
+};
+
 export type EarnPermissionSet = { operator: string; permissions: EarnPermission[] };
 
 export enum EarnPermission {
