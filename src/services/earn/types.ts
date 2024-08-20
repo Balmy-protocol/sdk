@@ -1,8 +1,10 @@
 import { PermitData } from '@services/permit2';
-import { Address, BigIntish, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress } from '@types';
 import { Hex } from 'viem';
 
-export type IEarnService = {};
+export type IEarnService = {
+  buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
+};
 
 export type CreateEarnPositionParams = {
   chainId: ChainId;

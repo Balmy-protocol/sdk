@@ -19,7 +19,7 @@ export class EarnService implements IEarnService {
     private readonly permit2Service: IPermit2Service,
     private readonly quoteService: IQuoteService,
     private readonly providerService: IProviderService,
-    private readonly allowanceservice: IAllowanceService
+    private readonly allowanceService: IAllowanceService
   ) {}
 
   async buildCreatePositionTx({
@@ -31,6 +31,8 @@ export class EarnService implements IEarnService {
     misc,
     deposit,
   }: CreateEarnPositionParams): Promise<BuiltTransaction> {
+    const vault = EARN_VAULT.address(chainId);
+    const companion = EARN_VAULT_COMPANION.address(chainId);
     let depositInfo: { token: Address; amount: bigint; value: bigint };
     if ('token' in deposit) {
       const amount = BigInt(deposit.amount);
@@ -44,7 +46,7 @@ export class EarnService implements IEarnService {
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
       return {
-        to: EARN_VAULT.address(chainId),
+        to: vault,
         data: encodeFunctionData({
           abi: vaultAbi,
           functionName: 'createPosition',
@@ -61,14 +63,14 @@ export class EarnService implements IEarnService {
             misc ?? '0x',
           ],
         }),
-        value: isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN) ? depositInfo.amount : undefined,
+        value: depositInfo.value,
       };
     }
     // If we get to this point, then we'll use the Companion for the deposit
     const calls: Hex[] = [];
 
     // Handle take from caller (if necessary)
-    const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : EARN_VAULT_COMPANION.address(chainId);
+    const recipient = needsSwap ? COMPANION_SWAPPER_CONTRACT.address(chainId) : companion;
     if ('permitData' in deposit) {
       calls.push(buildTakeFromCallerWithPermit(deposit.permitData, deposit.signature, recipient));
     } else if (!isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN)) {
@@ -76,38 +78,41 @@ export class EarnService implements IEarnService {
     }
 
     const depositToken = (needsSwap ? asset : depositInfo.token) as ViemAddress;
+    let maxApprove = false;
+    const promises = [];
 
-    const [, allowances] = await Promise.all([
-      async () => {
-        // Handle swap
-        if (needsSwap) {
-          const { swapData } = await this.getSwapData({
-            request: {
-              chainId,
-              sellToken: depositInfo.token,
-              buyToken: asset,
-              order: { type: 'sell', sellAmount: depositInfo.amount },
-            },
-            leftoverRecipient: owner,
-            swapConfig: deposit?.swapConfig,
-          });
-          calls.push(swapData);
-        }
-      },
-      this.allowanceservice.getAllowances({
+    if (needsSwap) {
+      const swapPromise = this.getSwapData({
+        request: {
+          chainId,
+          sellToken: depositInfo.token,
+          buyToken: asset,
+          order: { type: 'sell', sellAmount: depositInfo.amount },
+        },
+        leftoverRecipient: owner,
+        swapConfig: deposit?.swapConfig,
+      }).then(({ swapData }) => calls.push(swapData));
+      promises.push(swapPromise);
+    }
+    
+    if (!isSameAddress(depositToken, Addresses.NATIVE_TOKEN)) {
+      const allowancePromise = this.allowanceService.getAllowancesInChain({
+        chainId,
         allowances: [
           {
-            chainId,
-            owner,
-            spender: EARN_VAULT_COMPANION.address(chainId),
+            owner: companion,
+            spender: vault,
             token: depositToken,
           },
         ],
-      }),
-    ]);
-
-    // Only if the allowance is 0 we need to max approve the vault
-    const maxApprove = allowances[chainId]?.[owner]?.[depositToken]?.[EARN_VAULT_COMPANION.address(chainId)] != 0n;
+      }).then(allowances => {
+        // Only if the allowance is 0 we need to max approve the vault
+        maxApprove = allowances[companion]?.[depositToken]?.[vault] === 0n;
+      });
+      promises.push(allowancePromise);
+    }
+    
+    await Promise.all(promises);
 
     // Handle deposit
     calls.push(
@@ -115,7 +120,7 @@ export class EarnService implements IEarnService {
         abi: companionAbi,
         functionName: 'createPosition',
         args: [
-          EARN_VAULT.address(chainId),
+          vault,
           strategyId,
           depositToken,
           Uint.MAX_256,
