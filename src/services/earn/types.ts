@@ -3,13 +3,19 @@ import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress
 import { Hex } from 'viem';
 
 export type IEarnService = {
+  getAllowanceTarget(_: {
+    chainId: ChainId;
+    strategyId: BigIntish;
+    depositWith: TokenAddress;
+    usePermit2?: boolean;
+  }): Promise<Address | undefined>;
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
 };
 
 export type CreateEarnPositionParams = {
   chainId: ChainId;
-  strategyId: bigint;
+  strategyId: BigIntish;
   owner: Address;
   permissions: EarnPermissionSet[];
   strategyValidationData?: Hex;
