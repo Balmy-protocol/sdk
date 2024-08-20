@@ -71,4 +71,45 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'contract IEarnVault', name: 'vault', type: 'address' },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address', name: 'depositToken', type: 'address' },
+      { internalType: 'uint256', name: 'depositAmount', type: 'uint256' },
+      { internalType: 'bool', name: 'maxApprove', type: 'bool' },
+    ],
+    name: 'increasePosition',
+    outputs: [{ internalType: 'uint256', name: 'assetsDeposited', type: 'uint256' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'contract IEarnVault', name: 'vault', type: 'address' },
+      {
+        components: [
+          { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+          {
+            components: [
+              { internalType: 'address', name: 'operator', type: 'address' },
+              { internalType: 'INFTPermissions.Permission[]', name: 'permissions', type: 'uint8[]' },
+            ],
+            internalType: 'struct INFTPermissions.PermissionSet[]',
+            name: 'permissionSets',
+            type: 'tuple[]',
+          },
+        ],
+        internalType: 'struct INFTPermissions.PositionPermissions[]',
+        name: 'permissions',
+        type: 'tuple[]',
+      },
+      { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+      { internalType: 'bytes', name: 'signature', type: 'bytes' },
+    ],
+    name: 'permissionPermit',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
 ] as const;
