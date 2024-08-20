@@ -94,24 +94,22 @@ export class EarnService implements IEarnService {
       }).then(({ swapData }) => calls.push(swapData));
       promises.push(swapPromise);
     }
-    
+
     if (!isSameAddress(depositToken, Addresses.NATIVE_TOKEN)) {
-      const allowancePromise = this.allowanceService.getAllowancesInChain({
-        chainId,
-        allowances: [
-          {
-            owner: companion,
-            spender: vault,
-            token: depositToken,
-          },
-        ],
-      }).then(allowances => {
-        // Only if the allowance is 0 we need to max approve the vault
-        maxApprove = allowances[companion]?.[depositToken]?.[vault] === 0n;
-      });
+      const allowancePromise = this.allowanceService
+        .getAllowanceInChain({
+          chainId,
+          owner: companion,
+          spender: vault,
+          token: depositToken,
+        })
+        .then((allowance) => {
+          // Only if the allowance is 0 we need to max approve the vault
+          maxApprove = allowance === 0n;
+        });
       promises.push(allowancePromise);
     }
-    
+
     await Promise.all(promises);
 
     // Handle deposit
