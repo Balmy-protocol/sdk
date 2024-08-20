@@ -24,7 +24,6 @@ import { IAllowanceService } from '@services/allowances';
 export class EarnService implements IEarnService {
   constructor(
     private readonly permit2Service: IPermit2Service,
-
     private readonly quoteService: IQuoteService,
     private readonly providerService: IProviderService,
     private readonly allowanceService: IAllowanceService
