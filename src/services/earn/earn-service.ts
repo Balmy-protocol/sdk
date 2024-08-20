@@ -13,6 +13,7 @@ import { IQuoteService, QuoteRequest } from '@services/quotes';
 import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
 import { IAllowanceService } from '@services/allowances';
+import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 
 export class EarnService implements IEarnService {
   constructor(
@@ -21,6 +22,31 @@ export class EarnService implements IEarnService {
     private readonly providerService: IProviderService,
     private readonly allowanceService: IAllowanceService
   ) {}
+
+  async getAllowanceTarget({
+    chainId,
+    strategyId,
+    depositWith,
+    usePermit2,
+  }: {
+    chainId: ChainId;
+    strategyId: BigIntish;
+    depositWith: TokenAddress;
+    usePermit2?: boolean;
+  }): Promise<Address | undefined> {
+    if (isSameAddress(depositWith, Addresses.NATIVE_TOKEN)) {
+      return undefined;
+    } else if (usePermit2) {
+      return PERMIT2_CONTRACT.address(chainId);
+    }
+
+    const { needsSwap } = await this.checkIfNeedsSwap({ chainId, strategyId, depositToken: depositWith });
+    if (needsSwap) {
+      return EARN_VAULT_COMPANION.address(chainId);
+    } else {
+      return EARN_VAULT.address(chainId);
+    }
+  }
 
   async buildCreatePositionTx({
     chainId,
@@ -51,7 +77,7 @@ export class EarnService implements IEarnService {
           abi: vaultAbi,
           functionName: 'createPosition',
           args: [
-            strategyId,
+            BigInt(strategyId),
             depositInfo.token as ViemAddress,
             depositInfo.amount,
             owner as ViemAddress,
@@ -119,7 +145,7 @@ export class EarnService implements IEarnService {
         functionName: 'createPosition',
         args: [
           vault,
-          strategyId,
+          BigInt(strategyId),
           depositToken,
           Uint.MAX_256,
           owner as ViemAddress,
@@ -197,13 +223,13 @@ export class EarnService implements IEarnService {
     return { bestQuote, swapData };
   }
 
-  private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: bigint; depositToken: Address }) {
+  private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: BigIntish; depositToken: Address }) {
     // Get the strategy from the strategy registry
     const strategy = await this.providerService.getViemPublicClient({ chainId }).readContract({
       abi: strategyRegistryAbi,
       address: EARN_STRATEGY_REGISTRY.address(chainId),
       functionName: 'getStrategy',
-      args: [strategyId],
+      args: [BigInt(strategyId)],
     });
 
     // Check if the deposit token is supported by the strategy and get the asset
