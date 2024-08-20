@@ -231,7 +231,7 @@ export class EarnService implements IEarnService {
     await Promise.all(promises);
 
     // Handle permission permit
-    if (permissionPermit && 'signature' in increase) {
+    if (permissionPermit) {
       calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
     }
 
