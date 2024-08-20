@@ -21,7 +21,7 @@ export enum EarnPermission {
 }
 export type EarnActionSwapConfig = { slippagePercentage?: number; txValidFor?: TimeString };
 
-export type AddFunds = { swapConfig?: EarnActionSwapConfig; maxApprove?: boolean } & (
+export type AddFunds = { swapConfig?: EarnActionSwapConfig } & (
   | { permitData: PermitData['permitData']; signature: string }
   | { token: TokenAddress; amount: BigIntish }
 );

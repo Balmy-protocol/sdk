@@ -1,23 +1,25 @@
 import { Address, BigIntish, BuiltTransaction, ChainId, TokenAddress } from '@types';
 import { CreateEarnPositionParams, EarnActionSwapConfig, EarnPermission, IEarnService } from './types';
 import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
-import { encodeFunctionData, Hex, maxUint256, Address as ViemAddress } from 'viem';
+import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
 import { isSameAddress } from '@shared/utils';
-import { Addresses } from '@shared/constants';
+import { Addresses, Uint } from '@shared/constants';
 import { IPermit2Service, PermitData } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
 import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
+import { IAllowanceService } from '@services/allowances';
 
 export class EarnService implements IEarnService {
   constructor(
     private readonly permit2Service: IPermit2Service,
     private readonly quoteService: IQuoteService,
-    private readonly providerService: IProviderService
+    private readonly providerService: IProviderService,
+    private readonly allowanceservice: IAllowanceService
   ) {}
 
   async buildCreatePositionTx({
@@ -59,6 +61,7 @@ export class EarnService implements IEarnService {
             misc ?? '0x',
           ],
         }),
+        value: isSameAddress(depositInfo.token, Addresses.NATIVE_TOKEN) ? depositInfo.amount : undefined,
       };
     }
     // If we get to this point, then we'll use the Companion for the deposit
@@ -72,20 +75,39 @@ export class EarnService implements IEarnService {
       calls.push(buildTakeFromCaller(depositInfo.token, depositInfo.amount, recipient));
     }
 
-    // Handle swap
-    if (needsSwap) {
-      const { swapData } = await this.getSwapData({
-        request: {
-          chainId,
-          sellToken: depositInfo.token,
-          buyToken: asset,
-          order: { type: 'sell', sellAmount: depositInfo.amount },
-        },
-        leftoverRecipient: owner,
-        swapConfig: deposit?.swapConfig,
-      });
-      calls.push(swapData);
-    }
+    const depositToken = (needsSwap ? asset : depositInfo.token) as ViemAddress;
+
+    const [, allowances] = await Promise.all([
+      async () => {
+        // Handle swap
+        if (needsSwap) {
+          const { swapData } = await this.getSwapData({
+            request: {
+              chainId,
+              sellToken: depositInfo.token,
+              buyToken: asset,
+              order: { type: 'sell', sellAmount: depositInfo.amount },
+            },
+            leftoverRecipient: owner,
+            swapConfig: deposit?.swapConfig,
+          });
+          calls.push(swapData);
+        }
+      },
+      this.allowanceservice.getAllowances({
+        allowances: [
+          {
+            chainId,
+            owner,
+            spender: EARN_VAULT_COMPANION.address(chainId),
+            token: depositToken,
+          },
+        ],
+      }),
+    ]);
+
+    // Only if the allowance is 0 we need to max approve the vault
+    const maxApprove = allowances[chainId]?.[owner]?.[depositToken]?.[EARN_VAULT_COMPANION.address(chainId)] != 0n;
 
     // Handle deposit
     calls.push(
@@ -95,8 +117,8 @@ export class EarnService implements IEarnService {
         args: [
           EARN_VAULT.address(chainId),
           strategyId,
-          asset,
-          maxUint256,
+          depositToken,
+          Uint.MAX_256,
           owner as ViemAddress,
           permissions.map(({ operator, permissions }) => ({
             operator: operator as ViemAddress,
@@ -104,7 +126,7 @@ export class EarnService implements IEarnService {
           })),
           strategyValidationData ?? '0x',
           misc ?? '0x',
-          deposit.maxApprove ?? false,
+          maxApprove,
         ],
       })
     );
