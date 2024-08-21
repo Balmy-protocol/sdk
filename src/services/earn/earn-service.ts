@@ -15,7 +15,7 @@ import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
 import { isSameAddress } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
-import { IPermit2Service, PermitData } from '@services/permit2';
+import { IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
 import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
@@ -29,6 +29,10 @@ export class EarnService implements IEarnService {
     private readonly providerService: IProviderService,
     private readonly allowanceService: IAllowanceService
   ) {}
+
+  preparePermitData(args: SinglePermitParams): Promise<PermitData> {
+    return this.permit2Service.preparePermitData({ ...args, spender: EARN_VAULT_COMPANION.address(args.chainId) });
+  }
 
   async getAllowanceTarget({
     chainId,

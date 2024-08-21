@@ -1,4 +1,4 @@
-import { PermitData } from '@services/permit2';
+import { PermitData, SinglePermitParams } from '@services/permit2';
 import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress } from '@types';
 import { Hex } from 'viem';
 
@@ -9,6 +9,7 @@ export type IEarnService = {
     depositWith: TokenAddress;
     usePermit2?: boolean;
   }): Promise<Address | undefined>;
+  preparePermitData(_: SinglePermitParams): Promise<PermitData>;
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
 };
