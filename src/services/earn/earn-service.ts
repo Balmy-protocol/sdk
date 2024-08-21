@@ -1,4 +1,4 @@
-import { Address, BigIntish, BuiltTransaction, ChainId, TokenAddress } from '@types';
+import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress } from '@types';
 import {
   CreateEarnPositionParams,
   EarnActionSwapConfig,
@@ -6,6 +6,7 @@ import {
   EarnPermissionPermit,
   IEarnService,
   IncreaseEarnPositionParams,
+  WithdrawEarnPositionParams,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
@@ -15,11 +16,12 @@ import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
 import { isSameAddress } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
-import { IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
+import { GenericContractCall, IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
 import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
 import { IAllowanceService } from '@services/allowances';
+import ms from 'ms';
 import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 
 export class EarnService implements IEarnService {
@@ -278,6 +280,75 @@ export class EarnService implements IEarnService {
     return buildCompanionMulticall({ chainId, calls, value: increaseInfo.value });
   }
 
+  async buildWithdrawPositionTx({
+    chainId,
+    positionId,
+    withdraw,
+    recipient,
+    permissionPermit,
+  }: WithdrawEarnPositionParams): Promise<BuiltTransaction> {
+    const vault = EARN_VAULT.address(chainId);
+    const bigIntPositionId = BigInt(positionId);
+    const tokensToWithdraw = withdraw.map(({ token }) => token as ViemAddress);
+    const intendedWithdraw = withdraw.map(({ amount }) => BigInt(amount));
+    const shouldConvertAnyToken = withdraw.some(({ convertTo }) => !!convertTo);
+    if (!shouldConvertAnyToken) {
+      // If don't need to convert anything, then just call the vault
+      return {
+        to: vault,
+        data: encodeFunctionData({
+          abi: vaultAbi,
+          functionName: 'withdraw',
+          args: [BigInt(positionId), tokensToWithdraw, intendedWithdraw, recipient as ViemAddress],
+        }),
+      };
+    }
+
+    // If we get to this point, then we'll use the Companion for swap & transfer
+    const calls: Hex[] = [];
+
+    // Handle permission permit
+    if (permissionPermit) {
+      calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
+    }
+
+    // Handle reduce
+    calls.push(
+      encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'withdraw',
+        args: [vault as ViemAddress, bigIntPositionId, tokensToWithdraw, intendedWithdraw, COMPANION_SWAPPER_CONTRACT.address(chainId)],
+      })
+    );
+
+    // Handle swaps
+    const withdrawsToConvert = withdraw
+      .filter(({ convertTo }) => !!convertTo)
+      .map(({ token, amount, convertTo, swapConfig }) => ({
+        request: {
+          chainId,
+          sellToken: token,
+          buyToken: convertTo!,
+          order: { type: 'sell' as const, sellAmount: amount },
+        },
+        swapConfig,
+      }));
+
+    const withdrawsToTransfer = withdraw.filter(({ convertTo }) => !convertTo).map(({ token, amount }) => ({ token, amount }));
+
+    const swapAndTransferData = await this.getSwapAndTransferData({
+      chainId,
+      swaps: withdrawsToConvert,
+      transfers: withdrawsToTransfer,
+      recipient,
+    });
+
+    calls.push(swapAndTransferData);
+
+    // Build multicall and return tx
+    return buildCompanionMulticall({ chainId, calls });
+  }
+
   private async getSwapData({
     request,
     leftoverRecipient,
@@ -336,6 +407,100 @@ export class EarnService implements IEarnService {
     });
 
     return { bestQuote, swapData };
+  }
+
+  private async getSwapAndTransferData({
+    chainId,
+    swaps,
+    transfers,
+    recipient,
+  }: {
+    chainId: ChainId;
+    swaps: { request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>; swapConfig?: EarnActionSwapConfig }[];
+    transfers: { token: Address; amount: BigIntish }[];
+    recipient: Address;
+  }) {
+    const allowanceTargets: Record<TokenAddress, Address> = {};
+    const distributions: Record<TokenAddress, { recipient: Address; shareBps: number }[]> = {};
+    const calls: GenericContractCall[] = [];
+    let value = 0n;
+    let txValidFor: TimeString = '1w';
+    const promises = [];
+    for (const swap of swaps) {
+      const promise = (async () => {
+        const bestQuote = await this.quoteService.getBestQuote({
+          request: {
+            ...swap.request,
+            slippagePercentage: swap.swapConfig?.slippagePercentage ?? 0.3,
+            takerAddress: COMPANION_SWAPPER_CONTRACT.address(swap.request.chainId),
+            recipient: COMPANION_SWAPPER_CONTRACT.address(swap.request.chainId),
+            txValidFor: swap.swapConfig?.txValidFor ?? '1w',
+            filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
+            sourceConfig: { custom: { balmy: { leftoverRecipient: recipient } } },
+          },
+          config: {
+            timeout: '5s',
+          },
+        });
+        const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
+          config: { timeout: '5s' },
+          quotes: { [bestQuote.source.id]: bestQuote },
+          sourceConfig: { custom: { balmy: { leftoverRecipient: recipient } } },
+        });
+
+        if (!isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)) {
+          allowanceTargets[bestQuote.sellToken.address] = bestQuote.source.allowanceTarget;
+        }
+
+        // Swap adapter uses the zero address as the native token
+        const tokenOutDistribution = isSameAddress(bestQuote.buyToken.address, Addresses.NATIVE_TOKEN)
+          ? Addresses.ZERO_ADDRESS
+          : bestQuote.buyToken.address;
+        distributions[tokenOutDistribution] = [{ recipient, shareBps: 0 }];
+
+        calls.push({
+          to: tx.to,
+          data: tx.data,
+          value: tx.value ?? 0n,
+        });
+
+        // Accumulate the value
+        value += tx.value ?? 0n;
+
+        // Set the lowest txValidFor
+        if (swap.swapConfig?.txValidFor && ms(swap.swapConfig.txValidFor) < ms(txValidFor)) {
+          txValidFor = swap.swapConfig.txValidFor;
+        }
+      })();
+      promises.push(promise);
+    }
+
+    await Promise.all(promises);
+
+    // Handle transfers
+    for (const transfer of transfers) {
+      distributions[transfer.token] = [{ recipient, shareBps: 0 }];
+    }
+
+    const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
+      allowanceTargets: Object.entries(allowanceTargets).map(([token, target]) => ({ token, target })),
+      calls,
+      distribution: distributions,
+      txValidFor,
+      chainId,
+    });
+
+    const swapData = encodeFunctionData({
+      abi: companionAbi,
+      functionName: 'runSwap',
+      args: [
+        Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
+        value,
+        arbitraryCall.data as Hex,
+      ],
+    });
+
+    return swapData;
   }
 
   private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: BigIntish; depositToken: Address }) {

@@ -12,6 +12,7 @@ export type IEarnService = {
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
+  buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
 };
 
 export type CreateEarnPositionParams = {
@@ -28,6 +29,14 @@ export type IncreaseEarnPositionParams = {
   chainId: ChainId;
   positionId: BigIntish;
   increase: AddFundsEarn;
+  permissionPermit?: EarnPermissionPermit;
+};
+
+export type WithdrawEarnPositionParams = {
+  chainId: ChainId;
+  positionId: BigIntish;
+  withdraw: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; swapConfig?: EarnActionSwapConfig }[];
+  recipient: Address;
   permissionPermit?: EarnPermissionPermit;
 };
 
