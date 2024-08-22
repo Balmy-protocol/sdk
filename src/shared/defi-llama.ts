@@ -112,7 +112,7 @@ export class DefiLlamaClient {
       span: span.toString(),
       period: period.toString(),
       ...('from' in bound && { start: bound.from.toString() }),
-      ...('upTo' in bound && { end: bound.upTo === 'now' ? Date.now().toString() : bound.upTo.toString() }),
+      ...('upTo' in bound && { end: bound.upTo === 'now' ? Math.floor(Date.now() / 1000).toString() : bound.upTo.toString() }),
       ...(searchWidth && { searchWidth }),
     };
 
