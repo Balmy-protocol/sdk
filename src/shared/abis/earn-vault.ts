@@ -59,4 +59,15 @@ export default [
     type: 'function',
   },
   { stateMutability: 'payable', type: 'receive' },
+  {
+    inputs: [{ internalType: 'uint256', name: 'positionId', type: 'uint256' }],
+    name: 'position',
+    outputs: [
+      { internalType: 'address[]', name: '', type: 'address[]' },
+      { internalType: 'uint256[]', name: '', type: 'uint256[]' },
+      { internalType: 'contract IEarnStrategy', name: '', type: 'address' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;

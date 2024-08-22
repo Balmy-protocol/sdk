@@ -21,7 +21,6 @@ import { IQuoteService, QuoteRequest } from '@services/quotes';
 import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
 import { IAllowanceService } from '@services/allowances';
-import ms from 'ms';
 import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 
 export class EarnService implements IEarnService {
@@ -289,9 +288,9 @@ export class EarnService implements IEarnService {
   }: WithdrawEarnPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const bigIntPositionId = BigInt(positionId);
-    const tokensToWithdraw = withdraw.map(({ token }) => token as ViemAddress);
-    const intendedWithdraw = withdraw.map(({ amount }) => BigInt(amount));
-    const shouldConvertAnyToken = withdraw.some(({ convertTo }) => !!convertTo);
+    const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
+    const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
+    const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
     if (!shouldConvertAnyToken) {
       // If don't need to convert anything, then just call the vault
       return {
@@ -321,24 +320,34 @@ export class EarnService implements IEarnService {
       })
     );
 
+    let balancesFromVault: Record<TokenAddress, bigint> = {};
+    // If any token amount to convert is MAX_UINT256, then we need to check vault balance
+    if (withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
+      // position = [ tokens, balances, strategy ]
+      const position = await this.providerService.getViemPublicClient({ chainId }).readContract({
+        abi: vaultAbi,
+        address: vault,
+        functionName: 'position',
+        args: [bigIntPositionId],
+      });
+      balancesFromVault = Object.fromEntries(position[0].map((token, index) => [token, position[1][index]]));
+    }
+
     // Handle swaps
-    const withdrawsToConvert = withdraw
+    const withdrawsToConvert = withdraw.amounts
       .filter(({ convertTo }) => !!convertTo)
-      .map(({ token, amount, convertTo, swapConfig }) => ({
-        request: {
-          chainId,
-          sellToken: token,
-          buyToken: convertTo!,
-          order: { type: 'sell' as const, sellAmount: amount },
-        },
-        swapConfig,
+      .map(({ token, amount, convertTo }) => ({
+        chainId,
+        sellToken: token,
+        buyToken: convertTo!,
+        order: { type: 'sell' as const, sellAmount: amount != Uint.MAX_256 ? amount : balancesFromVault[token] },
       }));
 
-    const withdrawsToTransfer = withdraw.filter(({ convertTo }) => !convertTo).map(({ token, amount }) => ({ token, amount }));
+    const withdrawsToTransfer = withdraw.amounts.filter(({ convertTo }) => !convertTo).map(({ token }) => token);
 
     const swapAndTransferData = await this.getSwapAndTransferData({
       chainId,
-      swaps: withdrawsToConvert,
+      swaps: { requests: withdrawsToConvert, swapConfig: withdraw.swapConfig },
       transfers: withdrawsToTransfer,
       recipient,
     });
@@ -359,25 +368,7 @@ export class EarnService implements IEarnService {
     swapConfig: EarnActionSwapConfig | undefined;
   }) {
     const txValidFor = swapConfig?.txValidFor ?? '1w';
-    const bestQuote = await this.quoteService.getBestQuote({
-      request: {
-        ...request,
-        slippagePercentage: swapConfig?.slippagePercentage ?? 0.3,
-        takerAddress: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
-        recipient: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
-        txValidFor,
-        filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
-        sourceConfig: { custom: { balmy: { leftoverRecipient } } },
-      },
-      config: {
-        timeout: '5s',
-      },
-    });
-    const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
-      config: { timeout: '5s' },
-      quotes: { [bestQuote.source.id]: bestQuote },
-      sourceConfig: { custom: { balmy: { leftoverRecipient } } },
-    });
+    const { bestQuote, tx } = await this.buildBestQuoteTx({ request, leftoverRecipient, swapConfig });
 
     const allowanceTargets = isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)
       ? []
@@ -411,82 +402,50 @@ export class EarnService implements IEarnService {
 
   private async getSwapAndTransferData({
     chainId,
-    swaps,
+    swaps: { requests, swapConfig },
     transfers,
     recipient,
   }: {
     chainId: ChainId;
-    swaps: { request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>; swapConfig?: EarnActionSwapConfig }[];
-    transfers: { token: Address; amount: BigIntish }[];
+    swaps: { requests: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>[]; swapConfig?: EarnActionSwapConfig };
+    transfers: Address[];
     recipient: Address;
   }) {
     const allowanceTargets: Record<TokenAddress, Address> = {};
     const distributions: Record<TokenAddress, { recipient: Address; shareBps: number }[]> = {};
-    const calls: GenericContractCall[] = [];
-    let value = 0n;
-    let txValidFor: TimeString = '1w';
-    const promises = [];
-    for (const swap of swaps) {
-      const promise = (async () => {
-        const bestQuote = await this.quoteService.getBestQuote({
-          request: {
-            ...swap.request,
-            slippagePercentage: swap.swapConfig?.slippagePercentage ?? 0.3,
-            takerAddress: COMPANION_SWAPPER_CONTRACT.address(swap.request.chainId),
-            recipient: COMPANION_SWAPPER_CONTRACT.address(swap.request.chainId),
-            txValidFor: swap.swapConfig?.txValidFor ?? '1w',
-            filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
-            sourceConfig: { custom: { balmy: { leftoverRecipient: recipient } } },
-          },
-          config: {
-            timeout: '5s',
-          },
-        });
-        const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
-          config: { timeout: '5s' },
-          quotes: { [bestQuote.source.id]: bestQuote },
-          sourceConfig: { custom: { balmy: { leftoverRecipient: recipient } } },
-        });
 
-        if (!isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)) {
-          allowanceTargets[bestQuote.sellToken.address] = bestQuote.source.allowanceTarget;
-        }
+    const promises: Promise<GenericContractCall>[] = requests.map(async (request) => {
+      const { bestQuote, tx } = await this.buildBestQuoteTx({ request, leftoverRecipient: recipient, swapConfig });
 
-        // Swap adapter uses the zero address as the native token
-        const tokenOutDistribution = isSameAddress(bestQuote.buyToken.address, Addresses.NATIVE_TOKEN)
-          ? Addresses.ZERO_ADDRESS
-          : bestQuote.buyToken.address;
-        distributions[tokenOutDistribution] = [{ recipient, shareBps: 0 }];
+      if (!isSameAddress(bestQuote.source.allowanceTarget, Addresses.ZERO_ADDRESS)) {
+        allowanceTargets[bestQuote.sellToken.address] = bestQuote.source.allowanceTarget;
+      }
 
-        calls.push({
-          to: tx.to,
-          data: tx.data,
-          value: tx.value ?? 0n,
-        });
+      // Swap adapter uses the zero address as the native token
+      const tokenOutDistribution = isSameAddress(bestQuote.buyToken.address, Addresses.NATIVE_TOKEN)
+        ? Addresses.ZERO_ADDRESS
+        : bestQuote.buyToken.address;
+      distributions[tokenOutDistribution] = [{ recipient, shareBps: 0 }];
 
-        // Accumulate the value
-        value += tx.value ?? 0n;
+      return {
+        to: tx.to,
+        data: tx.data,
+        value: tx.value ?? 0n,
+      };
+    });
 
-        // Set the lowest txValidFor
-        if (swap.swapConfig?.txValidFor && ms(swap.swapConfig.txValidFor) < ms(txValidFor)) {
-          txValidFor = swap.swapConfig.txValidFor;
-        }
-      })();
-      promises.push(promise);
-    }
-
-    await Promise.all(promises);
+    const calls = await Promise.all(promises);
 
     // Handle transfers
     for (const transfer of transfers) {
-      distributions[transfer.token] = [{ recipient, shareBps: 0 }];
+      distributions[transfer] = [{ recipient, shareBps: 0 }];
     }
 
     const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
       allowanceTargets: Object.entries(allowanceTargets).map(([token, target]) => ({ token, target })),
       calls,
       distribution: distributions,
-      txValidFor,
+      txValidFor: swapConfig?.txValidFor ?? '1w',
       chainId,
     });
 
@@ -495,12 +454,43 @@ export class EarnService implements IEarnService {
       functionName: 'runSwap',
       args: [
         Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
-        value,
+        0n,
         arbitraryCall.data as Hex,
       ],
     });
 
     return swapData;
+  }
+
+  private async buildBestQuoteTx({
+    request,
+    leftoverRecipient,
+    swapConfig,
+  }: {
+    request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>;
+    leftoverRecipient: Address;
+    swapConfig?: EarnActionSwapConfig;
+  }) {
+    const bestQuote = await this.quoteService.getBestQuote({
+      request: {
+        ...request,
+        slippagePercentage: swapConfig?.slippagePercentage ?? 0.3,
+        takerAddress: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
+        recipient: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
+        txValidFor: swapConfig?.txValidFor ?? '1w',
+        filters: { includeSources: ['balmy'] }, // TODO: allow more sources and simulate to find the best one
+        sourceConfig: { custom: { balmy: { leftoverRecipient } } },
+      },
+      config: {
+        timeout: '5s',
+      },
+    });
+    const { [bestQuote.source.id]: tx } = await this.quoteService.buildAllTxs({
+      config: { timeout: '5s' },
+      quotes: { [bestQuote.source.id]: bestQuote },
+      sourceConfig: { custom: { balmy: { leftoverRecipient } } },
+    });
+    return { bestQuote, tx };
   }
 
   private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: BigIntish; depositToken: Address }) {

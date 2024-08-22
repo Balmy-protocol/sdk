@@ -35,7 +35,10 @@ export type IncreaseEarnPositionParams = {
 export type WithdrawEarnPositionParams = {
   chainId: ChainId;
   positionId: BigIntish;
-  withdraw: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; swapConfig?: EarnActionSwapConfig }[];
+  withdraw: {
+    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress }[];
+    swapConfig?: EarnActionSwapConfig;
+  };
   recipient: Address;
   permissionPermit?: EarnPermissionPermit;
 };
