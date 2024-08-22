@@ -112,4 +112,20 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'contract IEarnVault', name: 'vault', type: 'address' },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address[]', name: 'tokensToWithdraw', type: 'address[]' },
+      { internalType: 'uint256[]', name: 'intendedWithdraw', type: 'uint256[]' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+    ],
+    name: 'withdraw',
+    outputs: [
+      { internalType: 'uint256[]', name: '', type: 'uint256[]' },
+      { internalType: 'enum IEarnStrategy.WithdrawalType[]', name: '', type: 'uint8[]' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
 ] as const;
