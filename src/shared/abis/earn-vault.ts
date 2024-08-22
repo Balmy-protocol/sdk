@@ -43,4 +43,31 @@ export default [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address[]', name: 'tokensToWithdraw', type: 'address[]' },
+      { internalType: 'uint256[]', name: 'intendedWithdraw', type: 'uint256[]' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+    ],
+    name: 'withdraw',
+    outputs: [
+      { internalType: 'uint256[]', name: 'withdrawn', type: 'uint256[]' },
+      { internalType: 'enum IEarnStrategy.WithdrawalType[]', name: 'withdrawalTypes', type: 'uint8[]' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  { stateMutability: 'payable', type: 'receive' },
+  {
+    inputs: [{ internalType: 'uint256', name: 'positionId', type: 'uint256' }],
+    name: 'position',
+    outputs: [
+      { internalType: 'address[]', name: '', type: 'address[]' },
+      { internalType: 'uint256[]', name: '', type: 'uint256[]' },
+      { internalType: 'contract IEarnStrategy', name: '', type: 'address' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
