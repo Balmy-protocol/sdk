@@ -13,6 +13,7 @@ export type IEarnService = {
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
+  getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
 };
 
 export type CreateEarnPositionParams = {
@@ -62,3 +63,57 @@ export type AddFundsEarn = { swapConfig?: EarnActionSwapConfig } & (
   | { permitData: PermitData['permitData']; signature: string }
   | { token: TokenAddress; amount: BigIntish }
 );
+
+export type Strategy = {
+  id: StrategyId;
+  farm: StrategyFarm;
+  guardian?: StrategyGuardian;
+};
+
+type StrategyFarm = {
+  id: FarmId;
+  name: string;
+  chainId: ChainId;
+  asset: Token;
+  rewards?: { tokens: Token[]; apy: number };
+  tvl: number;
+  type: StrategyYieldType;
+  apy: number;
+};
+
+type StrategyGuardian = {
+  id: GuardianId;
+  name: string;
+  description: string;
+  logo: string;
+  fees: GuardianFee[];
+};
+
+export type Guardian = {
+  name: string;
+  description: string;
+  logo: string;
+};
+
+export type Token = {
+  symbol: string;
+  name: string;
+  decimals: number;
+  price?: number;
+};
+
+type GuardianFee = {
+  type: 'deposit' | 'withdraw' | 'performance' | 'rescue';
+  percentage: number;
+};
+
+type StrategyIdNumber = number;
+type StrategyRegistryAddress = Lowercase<Address>;
+export type StrategyId = `${ChainId}-${StrategyRegistryAddress}-${StrategyIdNumber}`;
+type FarmId = string;
+export type GuardianId = string;
+enum StrategyYieldType {
+  LENDING = 'LENDING',
+  STAKING = 'STAKING',
+  AGGREAGATOR = 'AGGREGATOR',
+}
