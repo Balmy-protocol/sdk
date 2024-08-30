@@ -66,14 +66,16 @@ export type AddFundsEarn = { swapConfig?: EarnActionSwapConfig } & (
 
 export type Strategy = {
   id: StrategyId;
+  chainId: ChainId;
+  depositTokens: TokenAddress[];
   farm: StrategyFarm;
   guardian?: StrategyGuardian;
+  tos?: string;
 };
 
 type StrategyFarm = {
   id: FarmId;
   name: string;
-  chainId: ChainId;
   asset: Token;
   rewards?: { tokens: Token[]; apy: number };
   tvl: number;
@@ -81,7 +83,7 @@ type StrategyFarm = {
   apy: number;
 };
 
-type StrategyGuardian = {
+export type StrategyGuardian = {
   id: GuardianId;
   name: string;
   description: string;
@@ -110,9 +112,9 @@ type GuardianFee = {
 type StrategyIdNumber = number;
 type StrategyRegistryAddress = Lowercase<Address>;
 export type StrategyId = `${ChainId}-${StrategyRegistryAddress}-${StrategyIdNumber}`;
-type FarmId = string;
+export type FarmId = `${ChainId}-${Lowercase<Address>}`;
 export type GuardianId = string;
-enum StrategyYieldType {
+export enum StrategyYieldType {
   LENDING = 'LENDING',
   STAKING = 'STAKING',
   AGGREAGATOR = 'AGGREGATOR',

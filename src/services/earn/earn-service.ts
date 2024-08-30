@@ -4,11 +4,15 @@ import {
   EarnActionSwapConfig,
   EarnPermission,
   EarnPermissionPermit,
+  FarmId,
   Guardian,
   GuardianId,
   IEarnService,
   IncreaseEarnPositionParams,
   Strategy,
+  StrategyGuardian,
+  StrategyId,
+  StrategyYieldType,
   Token,
   WithdrawEarnPositionParams,
 } from './types';
@@ -45,9 +49,27 @@ export class EarnService implements IEarnService {
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
     const body: SupportedStrategiesResponse = await response.json();
     const result: Record<ChainId, Strategy[]> = {};
-    Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies }]) => {
+    Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
-      result[chainId] = strategies;
+      result[chainId] = strategies.map((strategyResponse) => {
+        const strategy = {
+          ...{
+            ...strategyResponse,
+            farm: {
+              ...strategyResponse.farm,
+              asset: tokens[strategyResponse.farm.asset],
+              rewards: {
+                tokens: strategyResponse.farm.rewards ? strategyResponse.farm.rewards?.tokens.map((token) => tokens[token]) : [],
+                apy: strategyResponse.farm.rewards?.apy ?? 0,
+              },
+            },
+          },
+        };
+        if (strategyResponse.guardian) {
+          strategy.guardian = { ...body.guardians[strategyResponse.guardian.id], ...strategyResponse.guardian };
+        }
+        return strategy;
+      });
     });
     return result;
   }
@@ -607,6 +629,25 @@ type SupportedStrategiesResponse = {
 };
 
 type StrategiesResponse = {
-  strategies: Strategy[];
+  strategies: StrategyResponse[];
   tokens: Record<TokenAddress, Token>;
+};
+
+type StrategyResponse = {
+  id: StrategyId;
+  chainId: ChainId;
+  farm: StrategyFarmResponse;
+  depositTokens: TokenAddress[];
+  guardian?: StrategyGuardian;
+  tos?: string;
+};
+
+type StrategyFarmResponse = {
+  id: FarmId;
+  name: string;
+  asset: TokenAddress;
+  rewards?: { tokens: TokenAddress[]; apy: number };
+  tvl: number;
+  type: StrategyYieldType;
+  apy: number;
 };
