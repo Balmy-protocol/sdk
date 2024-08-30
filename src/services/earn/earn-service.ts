@@ -51,22 +51,24 @@ export class EarnService implements IEarnService {
     const result: Record<ChainId, Strategy[]> = {};
     Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
-      result[chainId] = strategies.map((strategyResponse) => {
-        const strategy = {
+      result[chainId] = strategies.map(({ farm: { rewards, asset, ...restFarm }, guardian, ...strategyResponse }) => {
+        const strategy: Strategy = {
           ...{
             ...strategyResponse,
             farm: {
-              ...strategyResponse.farm,
-              asset: tokens[strategyResponse.farm.asset],
-              rewards: {
-                tokens: strategyResponse.farm.rewards ? strategyResponse.farm.rewards?.tokens.map((token) => tokens[token]) : [],
-                apy: strategyResponse.farm.rewards?.apy ?? 0,
-              },
+              ...restFarm,
+              asset: tokens[asset],
             },
           },
         };
-        if (strategyResponse.guardian) {
-          strategy.guardian = { ...body.guardians[strategyResponse.guardian.id], ...strategyResponse.guardian };
+        if (rewards) {
+          strategy.farm.rewards = {
+            tokens: rewards ? rewards?.tokens.map((token) => tokens[token]) : [],
+            apy: rewards?.apy ?? 0,
+          };
+        }
+        if (guardian) {
+          strategy.guardian = { ...body.guardians[guardian.id], ...guardian };
         }
         return strategy;
       });
