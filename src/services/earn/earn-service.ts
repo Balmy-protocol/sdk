@@ -51,10 +51,11 @@ export class EarnService implements IEarnService {
     const result: Record<ChainId, Strategy[]> = {};
     Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
-      result[chainId] = strategies.map(({ farm: { rewards, asset, ...restFarm }, guardian, ...strategyResponse }) => {
+      result[chainId] = strategies.map(({ farm: { rewards, asset, ...restFarm }, guardian, depositTokens, ...strategyResponse }) => {
         const strategy: Strategy = {
           ...{
             ...strategyResponse,
+            depositTokens: depositTokens.map((token) => tokens[token]),
             farm: {
               ...restFarm,
               asset: tokens[asset],
@@ -63,8 +64,8 @@ export class EarnService implements IEarnService {
         };
         if (rewards) {
           strategy.farm.rewards = {
-            tokens: rewards ? rewards?.tokens.map((token) => tokens[token]) : [],
-            apy: rewards?.apy ?? 0,
+            tokens: rewards.tokens.map((token) => tokens[token]),
+            apy: rewards.apy,
           };
         }
         if (guardian) {

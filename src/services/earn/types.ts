@@ -13,7 +13,7 @@ export type IEarnService = {
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
-  getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
+  getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
 };
 
 export type CreateEarnPositionParams = {
@@ -67,7 +67,7 @@ export type AddFundsEarn = { swapConfig?: EarnActionSwapConfig } & (
 export type Strategy = {
   id: StrategyId;
   chainId: ChainId;
-  depositTokens: TokenAddress[];
+  depositTokens: Token[];
   farm: StrategyFarm;
   guardian?: StrategyGuardian;
   tos?: string;
