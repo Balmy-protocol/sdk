@@ -4,8 +4,16 @@ import {
   EarnActionSwapConfig,
   EarnPermission,
   EarnPermissionPermit,
+  FarmId,
+  Guardian,
+  GuardianId,
   IEarnService,
   IncreaseEarnPositionParams,
+  Strategy,
+  StrategyGuardian,
+  StrategyId,
+  StrategyYieldType,
+  Token,
   WithdrawEarnPositionParams,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
@@ -22,14 +30,52 @@ import { IProviderService } from '@services/providers';
 import { MULTICALL_CONTRACT } from '@services/providers/utils';
 import { IAllowanceService } from '@services/allowances';
 import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
+import qs from 'qs';
+import { IFetchService } from '@services/fetch';
 
 export class EarnService implements IEarnService {
   constructor(
+    private readonly apiUrl: string,
     private readonly permit2Service: IPermit2Service,
     private readonly quoteService: IQuoteService,
     private readonly providerService: IProviderService,
-    private readonly allowanceService: IAllowanceService
+    private readonly allowanceService: IAllowanceService,
+    private readonly fetchService: IFetchService
   ) {}
+
+  async getSupportedStrategies(args?: { chains?: ChainId[]; config?: { timeout: TimeString } }) {
+    const params = qs.stringify({ chains: args?.chains }, { arrayFormat: 'comma', skipNulls: true });
+    const url = `${this.apiUrl}/v1/earn/strategies/supported?${params}`;
+    const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
+    const body: SupportedStrategiesResponse = await response.json();
+    const result: Record<ChainId, Strategy[]> = {};
+    Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
+      const chainId = Number(stringChainId) as ChainId;
+      result[chainId] = strategies.map(({ farm: { rewards, asset, ...restFarm }, guardian, depositTokens, ...strategyResponse }) => {
+        const strategy: Strategy = {
+          ...{
+            ...strategyResponse,
+            depositTokens: depositTokens.map((token) => tokens[token]),
+            farm: {
+              ...restFarm,
+              asset: tokens[asset],
+            },
+          },
+        };
+        if (rewards) {
+          strategy.farm.rewards = {
+            tokens: rewards.tokens.map((token) => tokens[token]),
+            apy: rewards.apy,
+          };
+        }
+        if (guardian) {
+          strategy.guardian = { ...body.guardians[guardian.id], ...guardian };
+        }
+        return strategy;
+      });
+    });
+    return result;
+  }
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
     return this.permit2Service.preparePermitData({ ...args, spender: EARN_VAULT_COMPANION.address(args.chainId) });
@@ -579,3 +625,32 @@ async function buildCompanionMulticall({ chainId, calls, value }: { chainId: Cha
   });
   return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
+
+type SupportedStrategiesResponse = {
+  strategiesByNetwork: Record<ChainId, StrategiesResponse>;
+  guardians: Record<GuardianId, Guardian>;
+};
+
+type StrategiesResponse = {
+  strategies: StrategyResponse[];
+  tokens: Record<TokenAddress, Token>;
+};
+
+type StrategyResponse = {
+  id: StrategyId;
+  chainId: ChainId;
+  farm: StrategyFarmResponse;
+  depositTokens: TokenAddress[];
+  guardian?: StrategyGuardian;
+  tos?: string;
+};
+
+type StrategyFarmResponse = {
+  id: FarmId;
+  name: string;
+  asset: TokenAddress;
+  rewards?: { tokens: TokenAddress[]; apy: number };
+  tvl: number;
+  type: StrategyYieldType;
+  apy: number;
+};
