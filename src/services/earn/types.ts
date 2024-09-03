@@ -1,5 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import { Hex } from 'viem';
 
 export type IEarnService = {
@@ -14,6 +14,7 @@ export type IEarnService = {
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
   getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
+  getStrategy(_?: { strategy: StrategyId; config?: { timeout?: TimeString } }): Promise<DetailedStrategy>;
 };
 
 export type CreateEarnPositionParams = {
@@ -63,6 +64,17 @@ export type AddFundsEarn = { swapConfig?: EarnActionSwapConfig } & (
   | { permitData: PermitData['permitData']; signature: string }
   | { token: TokenAddress; amount: BigIntish }
 );
+
+type DetailedStrategy = Strategy & HistoricalData;
+
+export type HistoricalData = {
+  historicalAPY: {
+    timestamp: Timestamp;
+    apy: number;
+  }[];
+
+  historicalTVL: { timestamp: Timestamp; tvl: number }[];
+};
 
 export type Strategy = {
   id: StrategyId;
