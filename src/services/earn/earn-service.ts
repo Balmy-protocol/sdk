@@ -1,4 +1,4 @@
-import { Address, BigIntish, BuiltTransaction, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import {
   CreateEarnPositionParams,
   EarnActionSwapConfig,
@@ -7,6 +7,7 @@ import {
   FarmId,
   Guardian,
   GuardianId,
+  HistoricalData,
   IEarnService,
   IncreaseEarnPositionParams,
   Strategy,
@@ -47,7 +48,7 @@ export class EarnService implements IEarnService {
     const params = qs.stringify({ chains: args?.chains }, { arrayFormat: 'comma', skipNulls: true });
     const url = `${this.apiUrl}/v1/earn/strategies/supported?${params}`;
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
-    const body: SupportedStrategiesResponse = await response.json();
+    const body: GetSupportedStrategiesResponse = await response.json();
     const result: Record<ChainId, Strategy[]> = {};
     Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
@@ -75,6 +76,35 @@ export class EarnService implements IEarnService {
       });
     });
     return result;
+  }
+
+  async getStrategy(args?: { strategy: StrategyId; config?: { timeout?: TimeString } }) {
+    const url = `${this.apiUrl}/v1/earn/strategies/${args?.strategy}`;
+    const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
+    const body: GetStrategyResponse = await response.json();
+    const {
+      farm: { rewards, asset, ...restFarm },
+      depositTokens,
+      ...strategyResponse
+    } = body.strategy;
+    const strategy: Strategy & HistoricalData = {
+      ...{
+        ...strategyResponse,
+        depositTokens: depositTokens.map((token) => body.tokens[token]),
+        farm: {
+          ...restFarm,
+          asset: body.tokens[asset],
+        },
+      },
+    };
+    if (rewards) {
+      strategy.farm.rewards = {
+        tokens: rewards.tokens.map((token) => body.tokens[token]),
+        apy: rewards.apy,
+      };
+    }
+
+    return strategy;
   }
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
@@ -626,7 +656,12 @@ async function buildCompanionMulticall({ chainId, calls, value }: { chainId: Cha
   return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
 
-type SupportedStrategiesResponse = {
+type GetStrategyResponse = {
+  strategy: StrategyResponse & HistoricalData;
+  tokens: Record<TokenAddress, Token>;
+};
+
+type GetSupportedStrategiesResponse = {
   strategiesByNetwork: Record<ChainId, StrategiesResponse>;
   guardians: Record<GuardianId, Guardian>;
 };
