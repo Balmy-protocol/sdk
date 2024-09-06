@@ -13,6 +13,7 @@ import {
   Strategy,
   StrategyGuardian,
   StrategyId,
+  StrategyRiskLevel,
   StrategyYieldType,
   Token,
   WithdrawEarnPositionParams,
@@ -56,16 +57,16 @@ export class EarnService implements IEarnService {
         const strategy: Strategy = {
           ...{
             ...strategyResponse,
-            depositTokens: depositTokens.map((token) => tokens[token]),
+            depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
             farm: {
               ...restFarm,
-              asset: tokens[asset],
+              asset: { ...tokens[asset], address: asset },
             },
           },
         };
         if (rewards) {
           strategy.farm.rewards = {
-            tokens: rewards.tokens.map((token) => tokens[token]),
+            tokens: rewards.tokens.map((token) => ({ ...tokens[token], address: token })),
             apy: rewards.apy,
           };
         }
@@ -90,16 +91,16 @@ export class EarnService implements IEarnService {
     const strategy: Strategy & HistoricalData = {
       ...{
         ...strategyResponse,
-        depositTokens: depositTokens.map((token) => body.tokens[token]),
+        depositTokens: depositTokens.map((token) => ({ ...body.tokens[token], address: token })),
         farm: {
           ...restFarm,
-          asset: body.tokens[asset],
+          asset: { ...body.tokens[asset], address: asset },
         },
       },
     };
     if (rewards) {
       strategy.farm.rewards = {
-        tokens: rewards.tokens.map((token) => body.tokens[token]),
+        tokens: rewards.tokens.map((token) => ({ ...body.tokens[token], address: token })),
         apy: rewards.apy,
       };
     }
@@ -673,15 +674,16 @@ type StrategiesResponse = {
 
 type StrategyResponse = {
   id: StrategyId;
-  chainId: ChainId;
   farm: StrategyFarmResponse;
   depositTokens: TokenAddress[];
   guardian?: StrategyGuardian;
   tos?: string;
+  riskLevel?: StrategyRiskLevel;
 };
 
 type StrategyFarmResponse = {
   id: FarmId;
+  chainId: ChainId;
   name: string;
   asset: TokenAddress;
   rewards?: { tokens: TokenAddress[]; apy: number };

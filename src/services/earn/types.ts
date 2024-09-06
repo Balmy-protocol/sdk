@@ -78,15 +78,16 @@ export type HistoricalData = {
 
 export type Strategy = {
   id: StrategyId;
-  chainId: ChainId;
   depositTokens: Token[];
   farm: StrategyFarm;
   guardian?: StrategyGuardian;
   tos?: string;
+  riskLevel?: StrategyRiskLevel;
 };
 
 type StrategyFarm = {
   id: FarmId;
+  chainId: ChainId;
   name: string;
   asset: Token;
   rewards?: { tokens: Token[]; apy: number };
@@ -101,15 +102,26 @@ export type StrategyGuardian = {
   description: string;
   logo: string;
   fees: GuardianFee[];
+  links?: {
+    website?: string;
+    twitter?: string;
+    discord?: string;
+  };
 };
 
 export type Guardian = {
   name: string;
   description: string;
   logo: string;
+  links?: {
+    website?: string;
+    twitter?: string;
+    discord?: string;
+  };
 };
 
 export type Token = {
+  address: TokenAddress;
   symbol: string;
   name: string;
   decimals: number;
@@ -117,17 +129,30 @@ export type Token = {
 };
 
 type GuardianFee = {
-  type: 'deposit' | 'withdraw' | 'performance' | 'rescue';
+  type: GuardianFeeType;
   percentage: number;
 };
+
+enum GuardianFeeType {
+  DEPOSIT = 'deposit',
+  WITHDRAW = 'withdraw',
+  PERFORMANCE = 'performance',
+  RESCUE = 'rescue',
+}
 
 type StrategyIdNumber = number;
 type StrategyRegistryAddress = Lowercase<Address>;
 export type StrategyId = `${ChainId}-${StrategyRegistryAddress}-${StrategyIdNumber}`;
 export type FarmId = `${ChainId}-${Lowercase<Address>}`;
 export type GuardianId = string;
+
 export enum StrategyYieldType {
   LENDING = 'LENDING',
   STAKING = 'STAKING',
   AGGREAGATOR = 'AGGREGATOR',
+}
+export enum StrategyRiskLevel {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
 }
