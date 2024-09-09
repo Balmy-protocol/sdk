@@ -65,7 +65,7 @@ export type AddFundsEarn = { swapConfig?: EarnActionSwapConfig } & (
   | { token: TokenAddress; amount: BigIntish }
 );
 
-type DetailedStrategy = Strategy & HistoricalData;
+export type DetailedStrategy = Strategy & HistoricalData;
 
 export type HistoricalData = {
   historicalAPY: {
@@ -85,7 +85,7 @@ export type Strategy = {
   riskLevel?: StrategyRiskLevel;
 };
 
-type StrategyFarm = {
+export type StrategyFarm = {
   id: FarmId;
   chainId: ChainId;
   name: string;
@@ -128,20 +128,20 @@ export type Token = {
   price?: number;
 };
 
-type GuardianFee = {
+export type GuardianFee = {
   type: GuardianFeeType;
   percentage: number;
 };
 
-enum GuardianFeeType {
+export enum GuardianFeeType {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
   PERFORMANCE = 'performance',
   RESCUE = 'rescue',
 }
 
-type StrategyIdNumber = number;
-type StrategyRegistryAddress = Lowercase<Address>;
+export type StrategyIdNumber = number;
+export type StrategyRegistryAddress = Lowercase<Address>;
 export type StrategyId = `${ChainId}-${StrategyRegistryAddress}-${StrategyIdNumber}`;
 export type FarmId = `${ChainId}-${Lowercase<Address>}`;
 export type GuardianId = string;
