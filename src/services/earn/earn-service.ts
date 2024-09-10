@@ -128,8 +128,8 @@ export class EarnService implements IEarnService {
     } else if (usePermit2) {
       return PERMIT2_CONTRACT.address(chainId);
     }
-    const [, , tokenId] = strategyId.split('-');
-    const { needsSwap } = await this.checkIfNeedsSwap({ chainId, strategyId: BigInt(tokenId), depositToken: depositWith });
+    const [, , numericStrategyId] = strategyId.split('-');
+    const { needsSwap } = await this.checkIfNeedsSwap({ chainId, strategyId: BigInt(numericStrategyId), depositToken: depositWith });
     if (needsSwap) {
       return EARN_VAULT_COMPANION.address(chainId);
     } else {
@@ -155,8 +155,12 @@ export class EarnService implements IEarnService {
     } else {
       depositInfo = { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
     }
-    const [, , tokenId] = strategyId.split('-');
-    const { needsSwap, asset } = await this.checkIfNeedsSwap({ chainId, strategyId: BigInt(tokenId), depositToken: depositInfo.token });
+    const [, , numericStrategyId] = strategyId.split('-');
+    const { needsSwap, asset } = await this.checkIfNeedsSwap({
+      chainId,
+      strategyId: BigInt(numericStrategyId),
+      depositToken: depositInfo.token,
+    });
 
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
@@ -166,7 +170,7 @@ export class EarnService implements IEarnService {
           abi: vaultAbi,
           functionName: 'createPosition',
           args: [
-            BigInt(tokenId),
+            BigInt(numericStrategyId),
             depositInfo.token as ViemAddress,
             depositInfo.amount,
             owner as ViemAddress,
@@ -234,7 +238,7 @@ export class EarnService implements IEarnService {
         functionName: 'createPosition',
         args: [
           vault,
-          BigInt(tokenId),
+          BigInt(numericStrategyId),
           depositToken,
           Uint.MAX_256,
           owner as ViemAddress,
