@@ -110,19 +110,7 @@ export class EarnService implements IEarnService {
         const strategyResponse = positionsInThisNetwork.strategies[strategyId];
         return {
           ...restPosition,
-          balances: balances.map(({ token, amount, profit }) => ({
-            token: positionsInThisNetwork.tokens[token],
-            amount: toAmountsOfToken({
-              price: positionsInThisNetwork.tokens[token].price,
-              amount,
-              decimals: positionsInThisNetwork.tokens[token].decimals,
-            }),
-            profit: toAmountsOfToken({
-              price: positionsInThisNetwork.tokens[token].price,
-              amount: profit,
-              decimals: positionsInThisNetwork.tokens[token].decimals,
-            }),
-          })),
+          balances: fullfillBalance(balances, positionsInThisNetwork.tokens),
           strategy: fullfillStrategy(strategyResponse, positionsInThisNetwork.tokens, body.guardians),
           history:
             includeHistory && position.history
@@ -789,20 +777,24 @@ function fullfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens
 function fullfillHistoricalBalance({ timestamp, balances }: HistoricalBalance, tokens: Record<TokenAddress, Token>) {
   return {
     timestamp,
-    balances: balances.map(({ token, amount, profit }) => ({
-      token: tokens[token],
-      amount: toAmountsOfToken({
-        price: tokens[token].price,
-        amount,
-        decimals: tokens[token].decimals,
-      }),
-      profit: toAmountsOfToken({
-        price: tokens[token].price,
-        amount: profit,
-        decimals: tokens[token].decimals,
-      }),
-    })),
+    balances: fullfillBalance(balances, tokens),
   };
+}
+
+function fullfillBalance(balances: { token: TokenAddress; amount: bigint; profit: bigint }[], tokens: Record<TokenAddress, Token>) {
+  return balances.map(({ token, amount, profit }) => ({
+    token: tokens[token],
+    amount: toAmountsOfToken({
+      price: tokens[token].price,
+      amount,
+      decimals: tokens[token].decimals,
+    }),
+    profit: toAmountsOfToken({
+      price: tokens[token].price,
+      amount: profit,
+      decimals: tokens[token].decimals,
+    }),
+  }));
 }
 
 type GetStrategyResponse = {
