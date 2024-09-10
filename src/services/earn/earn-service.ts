@@ -119,7 +119,7 @@ export class EarnService implements IEarnService {
     usePermit2,
   }: {
     chainId: ChainId;
-    strategyId: BigIntish;
+    strategyId: StrategyId;
     depositWith: TokenAddress;
     usePermit2?: boolean;
   }): Promise<Address | undefined> {
@@ -128,8 +128,8 @@ export class EarnService implements IEarnService {
     } else if (usePermit2) {
       return PERMIT2_CONTRACT.address(chainId);
     }
-
-    const { needsSwap } = await this.checkIfNeedsSwap({ chainId, strategyId, depositToken: depositWith });
+    const [, , numericStrategyId] = strategyId.split('-');
+    const { needsSwap } = await this.checkIfNeedsSwap({ chainId, strategyId: BigInt(numericStrategyId), depositToken: depositWith });
     if (needsSwap) {
       return EARN_VAULT_COMPANION.address(chainId);
     } else {
@@ -155,8 +155,12 @@ export class EarnService implements IEarnService {
     } else {
       depositInfo = { token: deposit.permitData.token, amount: BigInt(deposit.permitData.amount), value: 0n };
     }
-
-    const { needsSwap, asset } = await this.checkIfNeedsSwap({ chainId, strategyId, depositToken: depositInfo.token });
+    const [, , numericStrategyId] = strategyId.split('-');
+    const { needsSwap, asset } = await this.checkIfNeedsSwap({
+      chainId,
+      strategyId: BigInt(numericStrategyId),
+      depositToken: depositInfo.token,
+    });
 
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
@@ -166,7 +170,7 @@ export class EarnService implements IEarnService {
           abi: vaultAbi,
           functionName: 'createPosition',
           args: [
-            BigInt(strategyId),
+            BigInt(numericStrategyId),
             depositInfo.token as ViemAddress,
             depositInfo.amount,
             owner as ViemAddress,
@@ -234,7 +238,7 @@ export class EarnService implements IEarnService {
         functionName: 'createPosition',
         args: [
           vault,
-          BigInt(strategyId),
+          BigInt(numericStrategyId),
           depositToken,
           Uint.MAX_256,
           owner as ViemAddress,
@@ -268,16 +272,26 @@ export class EarnService implements IEarnService {
       throw new Error('Amount cannot be 0');
     }
 
-    const bigIntPositionId = BigInt(positionId);
-    const [positionOwner, { needsSwap, asset }] = await Promise.all([
-      this.providerService.getViemPublicClient({ chainId }).readContract({
-        abi: vaultAbi,
-        address: vault,
-        functionName: 'ownerOf',
-        args: [bigIntPositionId],
-      }),
-      this.checkIfNeedsSwap({ chainId, strategyId: bigIntPositionId, depositToken: increaseInfo.token }),
-    ]);
+    const [, , tokenId] = positionId.split('-');
+    const bigIntPositionId = BigInt(tokenId);
+    const [positionOwner, strategyId] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: [
+        {
+          abi: vaultAbi,
+          address: vault,
+          functionName: 'ownerOf',
+          args: [bigIntPositionId],
+        },
+        {
+          abi: vaultAbi,
+          address: vault,
+          functionName: 'positionsStrategy',
+          args: [bigIntPositionId],
+        },
+      ],
+      allowFailure: false,
+    });
+    const { needsSwap, asset } = await this.checkIfNeedsSwap({ chainId, strategyId, depositToken: increaseInfo.token });
 
     if ('token' in increase && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
@@ -286,7 +300,7 @@ export class EarnService implements IEarnService {
         data: encodeFunctionData({
           abi: vaultAbi,
           functionName: 'increasePosition',
-          args: [BigInt(positionId), increaseInfo.token as ViemAddress, increaseInfo.amount],
+          args: [bigIntPositionId, increaseInfo.token as ViemAddress, increaseInfo.amount],
         }),
         value: increaseInfo.value,
       };
@@ -364,7 +378,8 @@ export class EarnService implements IEarnService {
     permissionPermit,
   }: WithdrawEarnPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
-    const bigIntPositionId = BigInt(positionId);
+    const [, , tokenId] = positionId.split('-');
+    const bigIntPositionId = BigInt(tokenId);
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
@@ -569,13 +584,13 @@ export class EarnService implements IEarnService {
     return { bestQuote, tx };
   }
 
-  private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: BigIntish; depositToken: Address }) {
+  private async checkIfNeedsSwap({ chainId, strategyId, depositToken }: { chainId: ChainId; strategyId: bigint; depositToken: Address }) {
     // Get the strategy from the strategy registry
     const strategy = await this.providerService.getViemPublicClient({ chainId }).readContract({
       abi: strategyRegistryAbi,
       address: EARN_STRATEGY_REGISTRY.address(chainId),
       functionName: 'getStrategy',
-      args: [BigInt(strategyId)],
+      args: [strategyId],
     });
 
     // Check if the deposit token is supported by the strategy and get the asset

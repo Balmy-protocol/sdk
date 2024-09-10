@@ -70,4 +70,11 @@ export default [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'uint256', name: 'positionId', type: 'uint256' }],
+    name: 'positionsStrategy',
+    outputs: [{ internalType: 'StrategyId', name: 'strategyId', type: 'uint96' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
