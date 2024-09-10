@@ -1,15 +1,19 @@
 import { Address, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import {
   CreateEarnPositionParams,
+  DetailedStrategy,
   EarnActionSwapConfig,
   EarnPermission,
   EarnPermissionPermit,
+  EarnPermissions,
+  EarnPosition,
   FarmId,
   Guardian,
   GuardianId,
   HistoricalData,
   IEarnService,
   IncreaseEarnPositionParams,
+  PositionId,
   Strategy,
   StrategyGuardian,
   StrategyId,
@@ -24,7 +28,7 @@ import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
-import { isSameAddress } from '@shared/utils';
+import { isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { GenericContractCall, IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
@@ -34,6 +38,7 @@ import { IAllowanceService } from '@services/allowances';
 import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 import qs from 'qs';
 import { IFetchService } from '@services/fetch';
+import { ArrayOneOrMore } from '@utility-types';
 
 export class EarnService implements IEarnService {
   constructor(
@@ -45,6 +50,84 @@ export class EarnService implements IEarnService {
     private readonly fetchService: IFetchService
   ) {}
 
+  async getPositionsByAccount({
+    accounts,
+    chains,
+    includeHistory,
+    includeHistoricalBalancesFrom,
+    config,
+  }: {
+    accounts: ArrayOneOrMore<Address>;
+    chains?: ChainId[];
+    includeHistory?: boolean;
+    includeHistoricalBalancesFrom?: Timestamp;
+    config?: { timeout?: TimeString };
+  }) {
+    return await this.getPositions({ accounts, chains, includeHistory, includeHistoricalBalancesFrom, config });
+  }
+
+  async getPositionsById({
+    ids,
+    chains,
+    includeHistory,
+    includeHistoricalBalancesFrom,
+    config,
+  }: {
+    ids: ArrayOneOrMore<PositionId>;
+    chains?: ChainId[];
+    includeHistory?: boolean;
+    includeHistoricalBalancesFrom?: Timestamp;
+    config?: { timeout?: TimeString };
+  }) {
+    return await this.getPositions({ ids, chains, includeHistory, includeHistoricalBalancesFrom, config });
+  }
+
+  private async getPositions(args: GetPositionsParams) {
+    const { chains, includeHistory, includeHistoricalBalancesFrom, config } = args;
+
+    const baseQueryParams = {
+      chains,
+      includeHistory,
+      includeHistoricalBalancesFrom,
+    };
+
+    let queryParams;
+    if ('accounts' in args) {
+      queryParams = { ...baseQueryParams, accounts: args.accounts };
+    } else if ('ids' in args) {
+      queryParams = { ...baseQueryParams, ids: args.ids };
+    }
+
+    const params = qs.stringify(queryParams, { arrayFormat: 'comma', skipNulls: true });
+    const url = `${this.apiUrl}/v1/earn/positions?${params}`;
+    const response = await this.fetchService.fetch(url, { timeout: config?.timeout });
+    const body: GetPositionsResponse = await response.json();
+    const result: Record<ChainId, EarnPosition[]> = {};
+    Object.entries(body.positionsByNetwork).forEach(([stringChainId, positionsInThisNetwork]) => {
+      const chainId = Number(stringChainId) as ChainId;
+      result[chainId] = positionsInThisNetwork.positions.map((position) => {
+        const { strategyId, balances, ...restPosition } = position;
+        const strategyResponse = positionsInThisNetwork.strategies[strategyId];
+        return {
+          ...restPosition,
+          balances: fulfillBalance(balances, positionsInThisNetwork.tokens),
+          strategy: fulfillStrategy(strategyResponse, positionsInThisNetwork.tokens, body.guardians),
+          history:
+            includeHistory && position.history
+              ? position.history.map((history) => fulfillHistory(history, strategyResponse.farm.asset, positionsInThisNetwork.tokens))
+              : undefined,
+          historicalBalances:
+            includeHistoricalBalancesFrom && position.historicalBalances
+              ? position.historicalBalances.map((historicalBalance) =>
+                  fulfillHistoricalBalance(historicalBalance, positionsInThisNetwork.tokens)
+                )
+              : undefined,
+        };
+      });
+    });
+    return result;
+  }
+
   async getSupportedStrategies(args?: { chains?: ChainId[]; config?: { timeout: TimeString } }) {
     const params = qs.stringify({ chains: args?.chains }, { arrayFormat: 'comma', skipNulls: true });
     const url = `${this.apiUrl}/v1/earn/strategies/supported?${params}`;
@@ -53,28 +136,7 @@ export class EarnService implements IEarnService {
     const result: Record<ChainId, Strategy[]> = {};
     Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
-      result[chainId] = strategies.map(({ farm: { rewards, asset, ...restFarm }, guardian, depositTokens, ...strategyResponse }) => {
-        const strategy: Strategy = {
-          ...{
-            ...strategyResponse,
-            depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
-            farm: {
-              ...restFarm,
-              asset: { ...tokens[asset], address: asset },
-            },
-          },
-        };
-        if (rewards) {
-          strategy.farm.rewards = {
-            tokens: rewards.tokens.map((token) => ({ ...tokens[token], address: token })),
-            apy: rewards.apy,
-          };
-        }
-        if (guardian) {
-          strategy.guardian = { ...body.guardians[guardian.id], ...guardian };
-        }
-        return strategy;
-      });
+      result[chainId] = strategies.map((strategyResponse) => fulfillStrategy(strategyResponse, tokens, body.guardians));
     });
     return result;
   }
@@ -83,29 +145,7 @@ export class EarnService implements IEarnService {
     const url = `${this.apiUrl}/v1/earn/strategies/${args?.strategy}`;
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
     const body: GetStrategyResponse = await response.json();
-    const {
-      farm: { rewards, asset, ...restFarm },
-      depositTokens,
-      ...strategyResponse
-    } = body.strategy;
-    const strategy: Strategy & HistoricalData = {
-      ...{
-        ...strategyResponse,
-        depositTokens: depositTokens.map((token) => ({ ...body.tokens[token], address: token })),
-        farm: {
-          ...restFarm,
-          asset: { ...body.tokens[asset], address: asset },
-        },
-      },
-    };
-    if (rewards) {
-      strategy.farm.rewards = {
-        tokens: rewards.tokens.map((token) => ({ ...body.tokens[token], address: token })),
-        apy: rewards.apy,
-      };
-    }
-
-    return strategy;
+    return fulfillStrategy(body.strategy, body.tokens, {}) as DetailedStrategy;
   }
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
@@ -672,6 +712,91 @@ async function buildCompanionMulticall({ chainId, calls, value }: { chainId: Cha
   return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
 
+function fulfillStrategy(
+  strategyResponse: StrategyResponse | (StrategyResponse & HistoricalData),
+  tokens: Record<TokenAddress, Token>,
+  guardians: Record<GuardianId, Guardian>
+) {
+  const {
+    farm: { rewards, asset, ...restFarm },
+    guardian,
+    depositTokens,
+    ...restStrategyResponse
+  } = strategyResponse;
+  const strategy = {
+    ...{
+      ...restStrategyResponse,
+      depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
+      farm: {
+        ...restFarm,
+        asset: { ...tokens[asset], address: asset },
+        rewards: rewards
+          ? {
+              tokens: rewards.tokens.map((token) => ({ ...tokens[token], address: token })),
+              apy: rewards.apy,
+            }
+          : undefined,
+      },
+      guardian: guardian ? { ...guardians[guardian.id], ...guardian } : undefined,
+    },
+  };
+
+  return strategy;
+}
+
+function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens: Record<TokenAddress, Token>) {
+  switch (action.action) {
+    case 'created':
+    case 'increased':
+      return {
+        ...action,
+        deposited: toAmountsOfToken({
+          price: action.assetPrice,
+          amount: action.deposited,
+          decimals: tokens[asset].decimals,
+        }),
+      };
+    case 'withdrew':
+      return {
+        ...action,
+        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice }) => ({
+          token: { ...tokens[token], price: tokenPrice },
+          amount: toAmountsOfToken({
+            price: tokenPrice,
+            amount,
+            decimals: tokens[token].decimals,
+          }),
+        })),
+      };
+    case 'transferred':
+    case 'modified permissions':
+      return action;
+  }
+}
+
+function fulfillHistoricalBalance({ timestamp, balances }: HistoricalBalance, tokens: Record<TokenAddress, Token>) {
+  return {
+    timestamp,
+    balances: fulfillBalance(balances, tokens),
+  };
+}
+
+function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit: bigint }[], tokens: Record<TokenAddress, Token>) {
+  return balances.map(({ token, amount, profit }) => ({
+    token: tokens[token],
+    amount: toAmountsOfToken({
+      price: tokens[token].price,
+      amount,
+      decimals: tokens[token].decimals,
+    }),
+    profit: toAmountsOfToken({
+      price: tokens[token].price,
+      amount: profit,
+      decimals: tokens[token].decimals,
+    }),
+  }));
+}
+
 type GetStrategyResponse = {
   strategy: StrategyResponse & HistoricalData;
   tokens: Record<TokenAddress, Token>;
@@ -706,3 +831,91 @@ type StrategyFarmResponse = {
   type: StrategyYieldType;
   apy: number;
 };
+
+type GetPositionsResponse = {
+  positionsByNetwork: Record<ChainId, PositionsResponse>;
+  guardians: Record<GuardianId, Guardian>;
+};
+
+type PositionsResponse = {
+  positions: EarnPositionResponse[];
+  tokens: Record<TokenAddress, Token>;
+  strategies: Record<StrategyId, StrategyResponse>;
+};
+
+type EarnPositionResponse = {
+  id: PositionId;
+  createdAt: Timestamp;
+  owner: Address;
+  permissions: EarnPermissions;
+  strategyId: StrategyId;
+  balances: { token: TokenAddress; amount: bigint; profit: bigint }[];
+  history?: EarnPositionAction[];
+  historicalBalances?: HistoricalBalance[];
+};
+
+type HistoricalBalance = {
+  timestamp: Timestamp;
+  balances: { token: TokenAddress; amount: bigint; profit: bigint }[];
+};
+
+type EarnPositionAction = { tx: Transaction } & ActionType;
+type Transaction = {
+  hash: string;
+  timestamp: Timestamp;
+};
+
+type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
+
+type CreatedAction = {
+  action: 'created';
+  owner: Address;
+  strategyId: StrategyId;
+  permissions: EarnPermissions;
+  deposited: bigint;
+  assetPrice?: number;
+};
+
+type IncreasedAction = {
+  action: 'increased';
+  deposited: bigint;
+  assetPrice?: number;
+};
+
+type WithdrewAction = {
+  action: 'withdrew';
+  withdrawn: {
+    token: TokenAddress;
+    amount: bigint;
+    tokenPrice?: number;
+  }[];
+  recipient: Address;
+};
+
+type TransferredAction = {
+  action: 'transferred';
+  from: Address;
+  to: Address;
+};
+
+type PermissionsModifiedAction = {
+  action: 'modified permissions';
+  permissions: EarnPermissions;
+};
+
+type BaseGetPositionsParams = {
+  chains?: ChainId[];
+  includeHistory?: boolean;
+  includeHistoricalBalancesFrom?: Timestamp;
+  config?: { timeout?: TimeString };
+};
+
+type GetPositionsParams = BaseGetPositionsParams &
+  (
+    | {
+        ids: ArrayOneOrMore<PositionId>;
+      }
+    | {
+        accounts: ArrayOneOrMore<Address>;
+      }
+  );

@@ -1,5 +1,6 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { Address, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
+import { Address, AmountsOfToken, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
+import { ArrayOneOrMore } from '@utility-types';
 import { Hex } from 'viem';
 
 export type IEarnService = {
@@ -15,6 +16,19 @@ export type IEarnService = {
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
   getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
   getStrategy(_?: { strategy: StrategyId; config?: { timeout?: TimeString } }): Promise<DetailedStrategy>;
+  getPositionsByAccount(_: {
+    accounts: ArrayOneOrMore<Address>;
+    chains?: ChainId[];
+    includeHistory?: boolean;
+    includeHistoricalBalancesFrom?: Timestamp;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, EarnPosition[]>>;
+  getPositionsById(_: {
+    ids: ArrayOneOrMore<PositionId>;
+    includeHistory?: boolean;
+    includeHistoricalBalancesFrom?: Timestamp;
+    config?: { timeout?: TimeString };
+  }): Promise<Record<ChainId, EarnPosition[]>>;
 };
 
 export type CreateEarnPositionParams = {
@@ -98,16 +112,8 @@ export type StrategyFarm = {
 
 export type StrategyGuardian = {
   id: GuardianId;
-  name: string;
-  description: string;
-  logo: string;
   fees: GuardianFee[];
-  links?: {
-    website?: string;
-    twitter?: string;
-    discord?: string;
-  };
-};
+} & Guardian;
 
 export type Guardian = {
   name: string;
@@ -156,6 +162,67 @@ export enum StrategyRiskLevel {
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
 }
+
+export type EarnPosition = {
+  id: PositionId;
+  createdAt: Timestamp;
+  owner: Address;
+  permissions: EarnPermissions;
+  strategy: Strategy;
+  balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
+  history?: EarnPositionAction[];
+  historicalBalances?: HistoricalBalance[];
+};
+
+export type HistoricalBalance = {
+  timestamp: Timestamp;
+  balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
+};
+
+type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
+
+type CreatedAction = {
+  action: 'created';
+  owner: Address;
+  permissions: EarnPermissions;
+  deposited: AmountsOfToken;
+  assetPrice?: number;
+};
+
+type IncreasedAction = {
+  action: 'increased';
+  deposited: AmountsOfToken;
+  assetPrice?: number;
+};
+
+type WithdrewAction = {
+  action: 'withdrew';
+  withdrawn: {
+    token: Token; // With price
+    amount: AmountsOfToken;
+  }[];
+  recipient: Address;
+};
+
+type TransferredAction = {
+  action: 'transferred';
+  from: Address;
+  to: Address;
+};
+
+type PermissionsModifiedAction = {
+  action: 'modified permissions';
+  permissions: EarnPermissions;
+};
+
+type EarnPositionAction = { tx: Transaction } & ActionType;
+type Transaction = {
+  hash: string;
+  timestamp: Timestamp;
+};
+
+type Permission = 'WITHDRAW' | 'INCREASE';
+export type EarnPermissions = Record<Address, Permission[]>;
 
 export type PositionId = `${ChainId}-${VaultAddress}-${PositionIdNumber}`;
 export type PositionIdNumber = number;
