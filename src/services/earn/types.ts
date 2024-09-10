@@ -5,7 +5,7 @@ import { Hex } from 'viem';
 export type IEarnService = {
   getAllowanceTarget(_: {
     chainId: ChainId;
-    strategyId: BigIntish;
+    strategyId: StrategyId;
     depositWith: TokenAddress;
     usePermit2?: boolean;
   }): Promise<Address | undefined>;
@@ -19,7 +19,7 @@ export type IEarnService = {
 
 export type CreateEarnPositionParams = {
   chainId: ChainId;
-  strategyId: BigIntish;
+  strategyId: StrategyId;
   owner: Address;
   permissions: EarnPermissionSet[];
   strategyValidationData?: Hex;
@@ -29,14 +29,14 @@ export type CreateEarnPositionParams = {
 
 export type IncreaseEarnPositionParams = {
   chainId: ChainId;
-  positionId: BigIntish;
+  positionId: PositionId;
   increase: AddFundsEarn;
   permissionPermit?: EarnPermissionPermit;
 };
 
 export type WithdrawEarnPositionParams = {
   chainId: ChainId;
-  positionId: BigIntish;
+  positionId: PositionId;
   withdraw: {
     amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress }[];
     swapConfig?: EarnActionSwapConfig;
@@ -156,3 +156,7 @@ export enum StrategyRiskLevel {
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
 }
+
+export type PositionId = `${ChainId}-${VaultAddress}-${PositionIdNumber}`;
+export type PositionIdNumber = number;
+export type VaultAddress = Lowercase<Address>;
