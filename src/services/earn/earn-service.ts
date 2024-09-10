@@ -3,9 +3,13 @@ import {
   CreateEarnPositionParams,
   DetailedStrategy,
   EarnActionSwapConfig,
+  EarnDomain,
   EarnPermission,
+  EarnPermissionData,
+  EarnPermissionDataMessage,
   EarnPermissionPermit,
   EarnPermissions,
+  EarnPermissionSet,
   EarnPosition,
   FarmId,
   Guardian,
@@ -20,6 +24,7 @@ import {
   StrategyRiskLevel,
   StrategyYieldType,
   Token,
+  TYPES,
   WithdrawEarnPositionParams,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
@@ -28,7 +33,7 @@ import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
-import { isSameAddress, toAmountsOfToken } from '@shared/utils';
+import { calculateDeadline, isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { GenericContractCall, IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
@@ -150,6 +155,66 @@ export class EarnService implements IEarnService {
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
     return this.permit2Service.preparePermitData({ ...args, spender: EARN_VAULT_COMPANION.address(args.chainId) });
+  }
+
+  async preparePermissionData({
+    chainId,
+    positionId,
+    permissions,
+    signerAddress,
+    signatureValidFor,
+  }: {
+    chainId: ChainId;
+    positionId: PositionId;
+    permissions: EarnPermissionSet[];
+    signerAddress: Address;
+    signatureValidFor: TimeString;
+  }): Promise<EarnPermissionData> {
+    const [, , stringPositionId] = positionId.split('-');
+    const bigIntPositionId = BigInt(stringPositionId);
+
+    const deadline = BigInt(calculateDeadline(signatureValidFor));
+    const domain: EarnDomain = {
+      name: 'Balmy Earn NFT Position',
+      verifyingContract: EARN_VAULT.address(chainId),
+      chainId,
+      version: '1.0',
+    };
+
+    const nonce = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      address: EARN_VAULT.address(chainId),
+      abi: vaultAbi,
+      functionName: 'nextNonce',
+      args: [signerAddress as ViemAddress],
+    });
+
+    const message: EarnPermissionDataMessage = {
+      positions: [
+        {
+          positionId: bigIntPositionId,
+          permissionSets: permissions.map(({ operator, permissions }) => ({
+            operator: operator as ViemAddress,
+            permissions: permissions.map(mapPermission),
+          })),
+        },
+      ],
+      nonce,
+      deadline,
+    };
+
+    return {
+      dataToSign: {
+        types: TYPES,
+        domain,
+        message,
+        primaryType: 'PermissionPermit',
+      },
+      permitData: {
+        permissions,
+        tokenId: bigIntPositionId.toString(),
+        deadline,
+      },
+    };
   }
 
   async getAllowanceTarget({

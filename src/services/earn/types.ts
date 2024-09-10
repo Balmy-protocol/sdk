@@ -11,6 +11,13 @@ export type IEarnService = {
     usePermit2?: boolean;
   }): Promise<Address | undefined>;
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
+  preparePermissionData(_: {
+    chainId: ChainId;
+    positionId: PositionId;
+    permissions: EarnPermissionSet[];
+    signerAddress: Address;
+    signatureValidFor: TimeString;
+  }): Promise<EarnPermissionData>;
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
@@ -227,3 +234,47 @@ export type EarnPermissions = Record<Address, Permission[]>;
 export type PositionId = `${ChainId}-${VaultAddress}-${PositionIdNumber}`;
 export type PositionIdNumber = number;
 export type VaultAddress = Lowercase<Address>;
+
+export type EarnPermissionData = {
+  dataToSign: {
+    types: typeof TYPES;
+    domain: EarnDomain;
+    message: EarnPermissionDataMessage;
+    primaryType: 'PermissionPermit';
+  };
+  permitData: {
+    permissions: EarnPermissionSet[];
+    tokenId: string;
+    deadline: bigint;
+  };
+};
+export type EarnDomain = {
+  name: 'Balmy Earn NFT Position';
+  verifyingContract: Address;
+  chainId: ChainId;
+  version: '1.0';
+};
+export const TYPES = {
+  PermissionSet: [
+    { name: 'operator', type: 'address' },
+    { name: 'permissions', type: 'uint8[]' },
+  ],
+  PositionPermissions: [
+    { name: 'positionId', type: 'uint256' },
+    { name: 'permissionSets', type: 'PermissionSet[]' },
+  ],
+  PermissionPermit: [
+    { name: 'positions', type: 'PositionPermissions[]' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+};
+
+export type EarnPermissionDataMessage = {
+  positions: {
+    positionId: bigint;
+    permissionSets: { operator: string; permissions: number[] }[];
+  }[];
+  nonce: bigint;
+  deadline: bigint;
+};

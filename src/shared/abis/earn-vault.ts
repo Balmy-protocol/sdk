@@ -77,4 +77,11 @@ export default [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'address', name: 'owner', type: 'address' }],
+    name: 'nextNonce',
+    outputs: [{ internalType: 'uint256', name: 'nextNonce', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
