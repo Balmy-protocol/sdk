@@ -110,16 +110,16 @@ export class EarnService implements IEarnService {
         const strategyResponse = positionsInThisNetwork.strategies[strategyId];
         return {
           ...restPosition,
-          balances: fullfillBalance(balances, positionsInThisNetwork.tokens),
-          strategy: fullfillStrategy(strategyResponse, positionsInThisNetwork.tokens, body.guardians),
+          balances: fulfillBalance(balances, positionsInThisNetwork.tokens),
+          strategy: fulfillStrategy(strategyResponse, positionsInThisNetwork.tokens, body.guardians),
           history:
             includeHistory && position.history
-              ? position.history.map((history) => fullfillHistory(history, strategyResponse.farm.asset, positionsInThisNetwork.tokens))
+              ? position.history.map((history) => fulfillHistory(history, strategyResponse.farm.asset, positionsInThisNetwork.tokens))
               : undefined,
           historicalBalances:
             includeHistoricalBalancesFrom && position.historicalBalances
               ? position.historicalBalances.map((historicalBalance) =>
-                  fullfillHistoricalBalance(historicalBalance, positionsInThisNetwork.tokens)
+                  fulfillHistoricalBalance(historicalBalance, positionsInThisNetwork.tokens)
                 )
               : undefined,
         };
@@ -136,7 +136,7 @@ export class EarnService implements IEarnService {
     const result: Record<ChainId, Strategy[]> = {};
     Object.entries(body.strategiesByNetwork).forEach(([stringChainId, { strategies, tokens }]) => {
       const chainId = Number(stringChainId) as ChainId;
-      result[chainId] = strategies.map((strategyResponse) => fullfillStrategy(strategyResponse, tokens, body.guardians));
+      result[chainId] = strategies.map((strategyResponse) => fulfillStrategy(strategyResponse, tokens, body.guardians));
     });
     return result;
   }
@@ -145,7 +145,7 @@ export class EarnService implements IEarnService {
     const url = `${this.apiUrl}/v1/earn/strategies/${args?.strategy}`;
     const response = await this.fetchService.fetch(url, { timeout: args?.config?.timeout });
     const body: GetStrategyResponse = await response.json();
-    return fullfillStrategy(body.strategy, body.tokens, {}) as DetailedStrategy;
+    return fulfillStrategy(body.strategy, body.tokens, {}) as DetailedStrategy;
   }
 
   preparePermitData(args: SinglePermitParams): Promise<PermitData> {
@@ -712,7 +712,7 @@ async function buildCompanionMulticall({ chainId, calls, value }: { chainId: Cha
   return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
 
-function fullfillStrategy(
+function fulfillStrategy(
   strategyResponse: StrategyResponse | (StrategyResponse & HistoricalData),
   tokens: Record<TokenAddress, Token>,
   guardians: Record<GuardianId, Guardian>
@@ -744,7 +744,7 @@ function fullfillStrategy(
   return strategy;
 }
 
-function fullfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens: Record<TokenAddress, Token>) {
+function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens: Record<TokenAddress, Token>) {
   switch (action.action) {
     case 'created':
     case 'increased':
@@ -774,14 +774,14 @@ function fullfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens
   }
 }
 
-function fullfillHistoricalBalance({ timestamp, balances }: HistoricalBalance, tokens: Record<TokenAddress, Token>) {
+function fulfillHistoricalBalance({ timestamp, balances }: HistoricalBalance, tokens: Record<TokenAddress, Token>) {
   return {
     timestamp,
-    balances: fullfillBalance(balances, tokens),
+    balances: fulfillBalance(balances, tokens),
   };
 }
 
-function fullfillBalance(balances: { token: TokenAddress; amount: bigint; profit: bigint }[], tokens: Record<TokenAddress, Token>) {
+function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit: bigint }[], tokens: Record<TokenAddress, Token>) {
   return balances.map(({ token, amount, profit }) => ({
     token: tokens[token],
     amount: toAmountsOfToken({
