@@ -903,18 +903,19 @@ type PermissionsModifiedAction = {
   permissions: EarnPermissions;
 };
 
-type BaseParams = {
+type BaseGetPositionsParams = {
   chains?: ChainId[];
   includeHistory?: boolean;
   includeHistoricalBalancesFrom?: Timestamp;
   config?: { timeout?: TimeString };
 };
 
-type ByAccountsParams = BaseParams & {
-  accounts: ArrayOneOrMore<Address>;
-};
-
-type ByIdsParams = BaseParams & {
-  ids: ArrayOneOrMore<PositionId>;
-};
-type GetPositionsParams = ByAccountsParams | ByIdsParams;
+type GetPositionsParams = BaseGetPositionsParams &
+  (
+    | {
+        ids: ArrayOneOrMore<PositionId>;
+      }
+    | {
+        accounts: ArrayOneOrMore<Address>;
+      }
+  );
