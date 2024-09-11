@@ -1,5 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
-import { AmountsOfToken, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
+import { Address, AmountsOfToken, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
 import { Hex, Address as ViemAddress } from 'viem';
 
@@ -15,7 +15,7 @@ export type IEarnService = {
     chainId: ChainId;
     positionId: PositionId;
     permissions: EarnPermissionSet[];
-    signerAddress: ViemAddress;
+    signerAddress: Address;
     signatureValidFor: TimeString;
   }): Promise<EarnPermissionData>;
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
@@ -24,7 +24,7 @@ export type IEarnService = {
   getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
   getStrategy(_?: { strategy: StrategyId; config?: { timeout?: TimeString } }): Promise<DetailedStrategy>;
   getPositionsByAccount(_: {
-    accounts: ArrayOneOrMore<ViemAddress>;
+    accounts: ArrayOneOrMore<Address>;
     chains?: ChainId[];
     includeHistory?: boolean;
     includeHistoricalBalancesFrom?: Timestamp;
@@ -41,7 +41,7 @@ export type IEarnService = {
 export type CreateEarnPositionParams = {
   chainId: ChainId;
   strategyId: StrategyId;
-  owner: ViemAddress;
+  owner: Address;
   permissions: EarnPermissionSet[];
   strategyValidationData?: Hex;
   misc?: Hex;
@@ -62,7 +62,7 @@ export type WithdrawEarnPositionParams = {
     amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress }[];
     swapConfig?: EarnActionSwapConfig;
   };
-  recipient: ViemAddress;
+  recipient: Address;
   permissionPermit?: EarnPermissionPermit;
 };
 
@@ -154,9 +154,9 @@ export enum GuardianFeeType {
 }
 
 export type StrategyIdNumber = number;
-export type StrategyRegistryAddress = Lowercase<ViemAddress>;
+export type StrategyRegistryAddress = Lowercase<Address>;
 export type StrategyId = `${ChainId}-${StrategyRegistryAddress}-${StrategyIdNumber}`;
-export type FarmId = `${ChainId}-${Lowercase<ViemAddress>}`;
+export type FarmId = `${ChainId}-${Lowercase<Address>}`;
 export type GuardianId = string;
 
 export enum StrategyYieldType {
