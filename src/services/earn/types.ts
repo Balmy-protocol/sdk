@@ -186,9 +186,9 @@ export type HistoricalBalance = {
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
 };
 
-type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
+export type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
 
-type CreatedAction = {
+export type CreatedAction = {
   action: 'created';
   owner: Address;
   permissions: EarnPermissions;
@@ -196,13 +196,13 @@ type CreatedAction = {
   assetPrice?: number;
 };
 
-type IncreasedAction = {
+export type IncreasedAction = {
   action: 'increased';
   deposited: AmountsOfToken;
   assetPrice?: number;
 };
 
-type WithdrewAction = {
+export type WithdrewAction = {
   action: 'withdrew';
   withdrawn: {
     token: Token; // With price
@@ -211,24 +211,24 @@ type WithdrewAction = {
   recipient: Address;
 };
 
-type TransferredAction = {
+export type TransferredAction = {
   action: 'transferred';
   from: Address;
   to: Address;
 };
 
-type PermissionsModifiedAction = {
+export type PermissionsModifiedAction = {
   action: 'modified permissions';
   permissions: EarnPermissions;
 };
 
-type EarnPositionAction = { tx: Transaction } & ActionType;
-type Transaction = {
+export type EarnPositionAction = { tx: Transaction } & ActionType;
+export type Transaction = {
   hash: string;
   timestamp: Timestamp;
 };
 
-type Permission = 'WITHDRAW' | 'INCREASE';
+export type Permission = 'WITHDRAW' | 'INCREASE';
 export type EarnPermissions = Record<Address, Permission[]>;
 
 export type PositionId = `${ChainId}-${VaultAddress}-${PositionIdNumber}`;
