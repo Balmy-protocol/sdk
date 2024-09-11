@@ -227,7 +227,7 @@ export class EarnService implements IEarnService {
     strategyId: StrategyId;
     depositWith: TokenAddress;
     usePermit2?: boolean;
-  }): Promise<Address | undefined> {
+  }): Promise<ViemAddress | undefined> {
     if (isSameAddress(depositWith, Addresses.NATIVE_TOKEN)) {
       return undefined;
     } else if (usePermit2) {
@@ -864,7 +864,7 @@ function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit:
 
 type GetStrategyResponse = {
   strategy: StrategyResponse & HistoricalData;
-  tokens: Record<TokenAddress, Token>;
+  tokens: Record<ViemAddress, Token>;
 };
 
 type GetSupportedStrategiesResponse = {
@@ -874,13 +874,13 @@ type GetSupportedStrategiesResponse = {
 
 type StrategiesResponse = {
   strategies: StrategyResponse[];
-  tokens: Record<TokenAddress, Token>;
+  tokens: Record<ViemAddress, Token>;
 };
 
 type StrategyResponse = {
   id: StrategyId;
   farm: StrategyFarmResponse;
-  depositTokens: TokenAddress[];
+  depositTokens: ViemAddress[];
   guardian?: StrategyGuardian;
   tos?: string;
   riskLevel?: StrategyRiskLevel;
@@ -890,8 +890,8 @@ type StrategyFarmResponse = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: TokenAddress;
-  rewards?: { tokens: TokenAddress[]; apy: number };
+  asset: ViemAddress;
+  rewards?: { tokens: ViemAddress[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -904,24 +904,24 @@ type GetPositionsResponse = {
 
 type PositionsResponse = {
   positions: EarnPositionResponse[];
-  tokens: Record<TokenAddress, Token>;
+  tokens: Record<ViemAddress, Token>;
   strategies: Record<StrategyId, StrategyResponse>;
 };
 
 type EarnPositionResponse = {
   id: PositionId;
   createdAt: Timestamp;
-  owner: Address;
+  owner: ViemAddress;
   permissions: EarnPermissions;
   strategyId: StrategyId;
-  balances: { token: TokenAddress; amount: bigint; profit: bigint }[];
+  balances: { token: ViemAddress; amount: bigint; profit: bigint }[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
 };
 
 type HistoricalBalance = {
   timestamp: Timestamp;
-  balances: { token: TokenAddress; amount: bigint; profit: bigint }[];
+  balances: { token: ViemAddress; amount: bigint; profit: bigint }[];
 };
 
 type EarnPositionAction = { tx: Transaction } & ActionType;
@@ -934,7 +934,7 @@ type ActionType = CreatedAction | IncreasedAction | WithdrewAction | Transferred
 
 type CreatedAction = {
   action: 'created';
-  owner: Address;
+  owner: ViemAddress;
   strategyId: StrategyId;
   permissions: EarnPermissions;
   deposited: bigint;
@@ -950,17 +950,17 @@ type IncreasedAction = {
 type WithdrewAction = {
   action: 'withdrew';
   withdrawn: {
-    token: TokenAddress;
+    token: ViemAddress;
     amount: bigint;
     tokenPrice?: number;
   }[];
-  recipient: Address;
+  recipient: ViemAddress;
 };
 
 type TransferredAction = {
   action: 'transferred';
-  from: Address;
-  to: Address;
+  from: ViemAddress;
+  to: ViemAddress;
 };
 
 type PermissionsModifiedAction = {

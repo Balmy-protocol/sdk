@@ -1,7 +1,7 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
 import { Address, AmountsOfToken, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
-import { Hex } from 'viem';
+import { Hex, Address as ViemAddress } from 'viem';
 
 export type IEarnService = {
   getAllowanceTarget(_: {
@@ -9,7 +9,7 @@ export type IEarnService = {
     strategyId: StrategyId;
     depositWith: TokenAddress;
     usePermit2?: boolean;
-  }): Promise<Address | undefined>;
+  }): Promise<ViemAddress | undefined>;
   preparePermitData(_: SinglePermitParams): Promise<PermitData>;
   preparePermissionData(_: {
     chainId: ChainId;
@@ -173,7 +173,7 @@ export enum StrategyRiskLevel {
 export type EarnPosition = {
   id: PositionId;
   createdAt: Timestamp;
-  owner: Address;
+  owner: ViemAddress;
   permissions: EarnPermissions;
   strategy: Strategy;
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
@@ -190,7 +190,7 @@ export type ActionType = CreatedAction | IncreasedAction | WithdrewAction | Tran
 
 export type CreatedAction = {
   action: 'created';
-  owner: Address;
+  owner: ViemAddress;
   permissions: EarnPermissions;
   deposited: AmountsOfToken;
   assetPrice?: number;
@@ -208,13 +208,13 @@ export type WithdrewAction = {
     token: Token; // With price
     amount: AmountsOfToken;
   }[];
-  recipient: Address;
+  recipient: ViemAddress;
 };
 
 export type TransferredAction = {
   action: 'transferred';
-  from: Address;
-  to: Address;
+  from: ViemAddress;
+  to: ViemAddress;
 };
 
 export type PermissionsModifiedAction = {
@@ -229,11 +229,11 @@ export type Transaction = {
 };
 
 export type Permission = 'WITHDRAW' | 'INCREASE';
-export type EarnPermissions = Record<Address, Permission[]>;
+export type EarnPermissions = Record<ViemAddress, Permission[]>;
 
 export type PositionId = `${ChainId}-${VaultAddress}-${PositionIdNumber}`;
 export type PositionIdNumber = number;
-export type VaultAddress = Lowercase<Address>;
+export type VaultAddress = Lowercase<ViemAddress>;
 
 export type EarnPermissionData = {
   dataToSign: {
@@ -250,7 +250,7 @@ export type EarnPermissionData = {
 };
 export type EarnDomain = {
   name: 'Balmy Earn NFT Position';
-  verifyingContract: Address;
+  verifyingContract: ViemAddress;
   chainId: ChainId;
   version: '1.0';
 };
