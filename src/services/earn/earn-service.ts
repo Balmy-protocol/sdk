@@ -98,7 +98,7 @@ export class EarnService implements IEarnService {
 
     let queryParams;
     if ('accounts' in args) {
-      queryParams = { ...baseQueryParams, accounts: args.accounts };
+      queryParams = { ...baseQueryParams, users: args.accounts };
     } else if ('ids' in args) {
       queryParams = { ...baseQueryParams, ids: args.ids };
     }
