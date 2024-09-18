@@ -186,7 +186,7 @@ export type HistoricalBalance = {
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
 };
 
-export type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
+export type ActionType = CreatedAction | IncreasedAction | WithdrawnAction | TransferredAction | PermissionsModifiedAction;
 
 export type CreatedAction = {
   action: 'created';
@@ -202,8 +202,8 @@ export type IncreasedAction = {
   assetPrice?: number;
 };
 
-export type WithdrewAction = {
-  action: 'withdrew';
+export type WithdrawnAction = {
+  action: 'withdrawn';
   withdrawn: {
     token: Token; // With price
     amount: AmountsOfToken;

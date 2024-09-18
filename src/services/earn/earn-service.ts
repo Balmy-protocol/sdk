@@ -495,7 +495,7 @@ export class EarnService implements IEarnService {
         data: encodeFunctionData({
           abi: vaultAbi,
           functionName: 'withdraw',
-          args: [BigInt(positionId), tokensToWithdraw, intendedWithdraw, recipient as ViemAddress],
+          args: [BigInt(bigIntPositionId), tokensToWithdraw, intendedWithdraw, recipient as ViemAddress],
         }),
       };
     }
@@ -739,7 +739,7 @@ function buildPermissionPermit(positionId: bigint, permit: EarnPermissionPermit,
   });
 }
 
-function mapPermission(permission: EarnPermission) {
+export function mapPermission(permission: EarnPermission) {
   switch (permission) {
     case EarnPermission.INCREASE:
       return 0;
@@ -821,11 +821,11 @@ function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens:
           decimals: tokens[asset].decimals,
         }),
       };
-    case 'withdrew':
+    case 'withdrawn':
       return {
         ...action,
         withdrawn: action.withdrawn.map(({ token, amount, tokenPrice }) => ({
-          token: { ...tokens[token], price: tokenPrice },
+          token: { ...tokens[token], address: token, price: tokenPrice },
           amount: toAmountsOfToken({
             price: tokenPrice,
             amount,
@@ -848,7 +848,7 @@ function fulfillHistoricalBalance({ timestamp, balances }: HistoricalBalance, to
 
 function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit: bigint }[], tokens: Record<TokenAddress, Token>) {
   return balances.map(({ token, amount, profit }) => ({
-    token: tokens[token],
+    token: { ...tokens[token], address: token },
     amount: toAmountsOfToken({
       price: tokens[token].price,
       amount,
@@ -930,7 +930,7 @@ type Transaction = {
   timestamp: Timestamp;
 };
 
-type ActionType = CreatedAction | IncreasedAction | WithdrewAction | TransferredAction | PermissionsModifiedAction;
+type ActionType = CreatedAction | IncreasedAction | WithdrawnAction | TransferredAction | PermissionsModifiedAction;
 
 type CreatedAction = {
   action: 'created';
@@ -947,8 +947,8 @@ type IncreasedAction = {
   assetPrice?: number;
 };
 
-type WithdrewAction = {
-  action: 'withdrew';
+type WithdrawnAction = {
+  action: 'withdrawn';
   withdrawn: {
     token: ViemAddress;
     amount: bigint;
