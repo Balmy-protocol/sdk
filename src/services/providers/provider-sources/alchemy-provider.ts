@@ -45,7 +45,7 @@ export class AlchemyProviderSource extends BaseHttpProvider {
   }
 }
 
-export function alchemySupportedChains(args?: { onlyFree: true }): ChainId[] {
+export function alchemySupportedChains(args?: { onlyFree?: boolean }): ChainId[] {
   return Object.entries(ALCHEMY_NETWORKS)
     .filter(([_, { onlyPaid }]) => !onlyPaid || !args?.onlyFree)
     .map(([chainId]) => Number(chainId));
