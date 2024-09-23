@@ -479,29 +479,38 @@ export class EarnService implements IEarnService {
   async buildClaimDelayedWithdrawPositionTx({
     chainId,
     positionId,
-    claim,
     recipient,
     permissionPermit,
+    claim,
   }: {
     chainId: ChainId;
     positionId: PositionId;
-    claim: { token: TokenAddress; convertTo?: TokenAddress; swapConfig?: EarnActionSwapConfig };
     recipient: Address;
     permissionPermit?: EarnPermissionPermit;
+    claim: { tokens: { token: TokenAddress; convertTo?: TokenAddress }[]; swapConfig?: EarnActionSwapConfig };
   }): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
+    const shouldConvertAnyToken = claim.tokens.some(({ convertTo }) => !!convertTo);
 
-    if (!claim.convertTo) {
+    if (shouldConvertAnyToken) {
       // If don't need to convert anything, then just call the delayer withdrawal manager
+      const calls = claim.tokens.map(({ token }) =>
+        encodeFunctionData({
+          abi: delayerWithdrawalManagerAbi,
+          functionName: 'withdraw',
+          args: [bigIntPositionId, token as ViemAddress, recipient as ViemAddress],
+        })
+      );
+
       return {
         to: manager,
         data: encodeFunctionData({
           abi: delayerWithdrawalManagerAbi,
-          functionName: 'withdraw',
-          args: [bigIntPositionId, claim.token as ViemAddress, recipient as ViemAddress],
+          functionName: 'multicall',
+          args: [calls],
         }),
       };
     } else {
@@ -515,25 +524,45 @@ export class EarnService implements IEarnService {
 
       // Handle claim
       calls.push(
-        encodeFunctionData({
-          abi: companionAbi,
-          functionName: 'claimDelayedWithdraw',
-          args: [manager, bigIntPositionId, claim.token as ViemAddress, COMPANION_SWAPPER_CONTRACT.address(chainId)],
-        })
+        ...claim.tokens.map(({ token, convertTo }) =>
+          encodeFunctionData({
+            abi: companionAbi,
+            functionName: 'claimDelayedWithdraw',
+            args: [
+              manager,
+              bigIntPositionId,
+              token as ViemAddress,
+              !!convertTo ? COMPANION_SWAPPER_CONTRACT.address(chainId) : (recipient as ViemAddress),
+            ],
+          })
+        )
       );
 
-      const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).readContract({
-        abi: delayerWithdrawalManagerAbi,
-        address: manager,
-        functionName: 'withdrawableFunds',
-        args: [bigIntPositionId, claim.token as ViemAddress],
+      const claimsToConvert = claim.tokens.filter(({ convertTo }) => !!convertTo);
+
+      // Get withdrawable funds for each token to convert
+      const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
+        contracts: claimsToConvert.map(({ token }) => ({
+          address: manager,
+          abi: delayerWithdrawalManagerAbi,
+          functionName: 'withdrawableFunds',
+          args: [bigIntPositionId, token as ViemAddress],
+        })),
+        allowFailure: false,
       });
+
+      const withdrawsToConvert = claimsToConvert.map(({ token, convertTo }, index) => ({
+        chainId,
+        sellToken: token,
+        buyToken: convertTo!,
+        order: { type: 'sell' as const, sellAmount: withdrawableFunds[index] as bigint },
+      }));
 
       // Handle swaps
       const swapAndTransferData = await this.getSwapAndTransferData({
         chainId,
         swaps: {
-          requests: [{ chainId, sellToken: claim.token, buyToken: claim.convertTo!, order: { type: 'sell', sellAmount: withdrawableFunds } }],
+          requests: withdrawsToConvert,
           swapConfig: claim.swapConfig,
         },
         recipient,
