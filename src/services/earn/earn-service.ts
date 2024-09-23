@@ -495,7 +495,7 @@ export class EarnService implements IEarnService {
     const bigIntPositionId = BigInt(tokenId);
     const shouldConvertAnyToken = claim.tokens.some(({ convertTo }) => !!convertTo);
 
-    if (shouldConvertAnyToken) {
+    if (!shouldConvertAnyToken) {
       // If don't need to convert anything, then just call the delayer withdrawal manager
       const calls = claim.tokens.map(({ token }) =>
         encodeFunctionData({
