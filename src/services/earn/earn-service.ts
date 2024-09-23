@@ -493,7 +493,22 @@ export class EarnService implements IEarnService {
     const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
-    const claimsToConvert = claim.tokens.filter(({ convertTo }) => !!convertTo);
+    const potentialClaimsToConvert = claim.tokens.filter(({ convertTo }) => !!convertTo);
+
+    // Get withdrawable funds for each token to convert
+    const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
+      contracts: potentialClaimsToConvert.map(({ token }) => ({
+        address: manager,
+        abi: delayerWithdrawalManagerAbi,
+        functionName: 'withdrawableFunds',
+        args: [bigIntPositionId, token as ViemAddress],
+      })),
+      allowFailure: false,
+    });
+
+    const claimsToConvert = potentialClaimsToConvert
+      .map((token, index) => ({ ...token, amount: withdrawableFunds[index] as bigint }))
+      .filter(({ amount }) => amount > 0n);
 
     if (claimsToConvert.length == 0) {
       // If don't need to convert anything, then just call the delayer withdrawal manager
@@ -538,22 +553,11 @@ export class EarnService implements IEarnService {
         )
       );
 
-      // Get withdrawable funds for each token to convert
-      const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
-        contracts: claimsToConvert.map(({ token }) => ({
-          address: manager,
-          abi: delayerWithdrawalManagerAbi,
-          functionName: 'withdrawableFunds',
-          args: [bigIntPositionId, token as ViemAddress],
-        })),
-        allowFailure: false,
-      });
-
-      const withdrawsToConvert = claimsToConvert.map(({ token, convertTo }, index) => ({
+      const withdrawsToConvert = claimsToConvert.map(({ token, convertTo, amount }) => ({
         chainId,
         sellToken: token,
         buyToken: convertTo!,
-        order: { type: 'sell' as const, sellAmount: withdrawableFunds[index] as bigint },
+        order: { type: 'sell' as const, sellAmount: amount },
       }));
 
       // Handle swaps
