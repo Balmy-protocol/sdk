@@ -528,53 +528,53 @@ export class EarnService implements IEarnService {
           args: [calls],
         }),
       };
-    } else {
-      // If we get to this point, then we'll use the Companion for swap & transfer
-      const calls: Hex[] = [];
-
-      // Handle permission permit
-      if (permissionPermit) {
-        calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
-      }
-
-      // Handle claim
-      calls.push(
-        ...claim.tokens.map(({ token, convertTo }) =>
-          encodeFunctionData({
-            abi: companionAbi,
-            functionName: 'claimDelayedWithdraw',
-            args: [
-              manager,
-              bigIntPositionId,
-              token as ViemAddress,
-              !!convertTo ? COMPANION_SWAPPER_CONTRACT.address(chainId) : (recipient as ViemAddress),
-            ],
-          })
-        )
-      );
-
-      const withdrawsToConvert = claimsToConvert.map(({ token, convertTo, amount }) => ({
-        chainId,
-        sellToken: token,
-        buyToken: convertTo!,
-        order: { type: 'sell' as const, sellAmount: amount },
-      }));
-
-      // Handle swaps
-      const swapAndTransferData = await this.getSwapAndTransferData({
-        chainId,
-        swaps: {
-          requests: withdrawsToConvert,
-          swapConfig: claim.swapConfig,
-        },
-        recipient,
-      });
-
-      calls.push(swapAndTransferData);
-
-      // Build multicall and return tx
-      return buildCompanionMulticall({ chainId, calls });
     }
+
+    // If we get to this point, then we'll use the Companion for swap & transfer
+    const calls: Hex[] = [];
+
+    // Handle permission permit
+    if (permissionPermit) {
+      calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
+    }
+
+    // Handle claim
+    calls.push(
+      ...claim.tokens.map(({ token, convertTo }) =>
+        encodeFunctionData({
+          abi: companionAbi,
+          functionName: 'claimDelayedWithdraw',
+          args: [
+            manager,
+            bigIntPositionId,
+            token as ViemAddress,
+            !!convertTo ? COMPANION_SWAPPER_CONTRACT.address(chainId) : (recipient as ViemAddress),
+          ],
+        })
+      )
+    );
+
+    const withdrawsToConvert = claimsToConvert.map(({ token, convertTo, amount }) => ({
+      chainId,
+      sellToken: token,
+      buyToken: convertTo!,
+      order: { type: 'sell' as const, sellAmount: amount },
+    }));
+
+    // Handle swaps
+    const swapAndTransferData = await this.getSwapAndTransferData({
+      chainId,
+      swaps: {
+        requests: withdrawsToConvert,
+        swapConfig: claim.swapConfig,
+      },
+      recipient,
+    });
+
+    calls.push(swapAndTransferData);
+
+    // Build multicall and return tx
+    return buildCompanionMulticall({ chainId, calls });
   }
 
   async buildWithdrawPositionTx({
