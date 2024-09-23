@@ -27,12 +27,13 @@ import {
   TYPES,
   WithdrawEarnPositionParams,
 } from './types';
-import { COMPANION_SWAPPER_CONTRACT, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
+import { COMPANION_SWAPPER_CONTRACT, DELAYED_WITHDRAWAL_MANAGER, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
+import delayerWithdrawalManagerAbi from '@shared/abis/earn-delayed-withdrawal-manager';
 import { calculateDeadline, isSameAddress, toAmountsOfToken } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { GenericContractCall, IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
@@ -475,6 +476,76 @@ export class EarnService implements IEarnService {
     return buildCompanionMulticall({ chainId, calls, value: increaseInfo.value });
   }
 
+  async buildClaimDelayedWithdrawPositionTx({
+    chainId,
+    positionId,
+    claim,
+    recipient,
+    permissionPermit,
+  }: {
+    chainId: ChainId;
+    positionId: PositionId;
+    claim: { token: TokenAddress; convertTo?: TokenAddress; swapConfig?: EarnActionSwapConfig };
+    recipient: Address;
+    permissionPermit?: EarnPermissionPermit;
+  }): Promise<BuiltTransaction> {
+    const vault = EARN_VAULT.address(chainId);
+    const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
+    const [, , tokenId] = positionId.split('-');
+    const bigIntPositionId = BigInt(tokenId);
+
+    if (!claim.convertTo) {
+      // If don't need to convert anything, then just call the delayer withdrawal manager
+      return {
+        to: manager,
+        data: encodeFunctionData({
+          abi: delayerWithdrawalManagerAbi,
+          functionName: 'withdraw',
+          args: [bigIntPositionId, claim.token as ViemAddress, recipient as ViemAddress],
+        }),
+      };
+    } else {
+      // If we get to this point, then we'll use the Companion for swap & transfer
+      const calls: Hex[] = [];
+
+      // Handle permission permit
+      if (permissionPermit) {
+        calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
+      }
+
+      // Handle claim
+      calls.push(
+        encodeFunctionData({
+          abi: companionAbi,
+          functionName: 'claimDelayedWithdraw',
+          args: [manager, bigIntPositionId, claim.token as ViemAddress, COMPANION_SWAPPER_CONTRACT.address(chainId)],
+        })
+      );
+
+      const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).readContract({
+        abi: delayerWithdrawalManagerAbi,
+        address: manager,
+        functionName: 'withdrawableFunds',
+        args: [bigIntPositionId, claim.token as ViemAddress],
+      });
+
+      // Handle swaps
+      const swapAndTransferData = await this.getSwapAndTransferData({
+        chainId,
+        swaps: {
+          requests: [{ chainId, sellToken: claim.token, buyToken: claim.convertTo!, order: { type: 'sell', sellAmount: withdrawableFunds } }],
+          swapConfig: claim.swapConfig,
+        },
+        recipient,
+      });
+
+      calls.push(swapAndTransferData);
+
+      // Build multicall and return tx
+      return buildCompanionMulticall({ chainId, calls });
+    }
+  }
+
   async buildWithdrawPositionTx({
     chainId,
     positionId,
@@ -605,7 +676,7 @@ export class EarnService implements IEarnService {
   }: {
     chainId: ChainId;
     swaps: { requests: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>[]; swapConfig?: EarnActionSwapConfig };
-    transfers: Address[];
+    transfers?: Address[];
     recipient: Address;
   }) {
     const allowanceTargets: Record<TokenAddress, Address> = {};
@@ -634,8 +705,10 @@ export class EarnService implements IEarnService {
     const calls = await Promise.all(promises);
 
     // Handle transfers
-    for (const transfer of transfers) {
-      distributions[transfer] = [{ recipient, shareBps: 0 }];
+    if (transfers) {
+      for (const transfer of transfers) {
+        distributions[transfer] = [{ recipient, shareBps: 0 }];
+      }
     }
 
     const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
