@@ -128,4 +128,43 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    type: 'function',
+    name: 'claimDelayedWithdraw',
+    inputs: [
+      {
+        name: 'manager',
+        type: 'address',
+        internalType: 'contract IDelayedWithdrawalManager',
+      },
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'payable',
+  },
 ] as const;

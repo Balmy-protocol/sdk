@@ -8,3 +8,5 @@ export const EARN_VAULT_COMPANION = Contract.with({ defaultAddress: '0xCBb386756
 export const EARN_STRATEGY_REGISTRY = Contract.with({ defaultAddress: '0xa169bbf65675524C498bA6aFD4Eed48cF467f3F0' }).build();
 
 export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
+
+export const DELAYED_WITHDRAWAL_MANAGER = Contract.with({ defaultAddress: '0x' }).build(); // TO BE DEPLOYED
