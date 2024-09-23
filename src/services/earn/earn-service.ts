@@ -495,7 +495,6 @@ export class EarnService implements IEarnService {
     const bigIntPositionId = BigInt(tokenId);
     const claimsToConvert = claim.tokens.filter(({ convertTo }) => !!convertTo);
 
-
     if (claimsToConvert.length == 0) {
       // If don't need to convert anything, then just call the delayer withdrawal manager
       const calls = claim.tokens.map(({ token }) =>
@@ -538,7 +537,6 @@ export class EarnService implements IEarnService {
           })
         )
       );
-
 
       // Get withdrawable funds for each token to convert
       const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
