@@ -543,7 +543,7 @@ export class EarnService implements IEarnService {
 
     // Handle claim
     calls.push(
-      ...claim.tokens.map(({ token, convertTo }) =>
+      ...claimWithFunds.map(({ token, convertTo }) =>
         encodeFunctionData({
           abi: companionAbi,
           functionName: 'claimDelayedWithdraw',
