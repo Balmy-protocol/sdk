@@ -493,11 +493,10 @@ export class EarnService implements IEarnService {
     const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
-    const potentialClaimsToConvert = claim.tokens.filter(({ convertTo }) => !!convertTo);
 
     // Get withdrawable funds for each token to convert
     const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
-      contracts: potentialClaimsToConvert.map(({ token }) => ({
+      contracts: claim.tokens.map(({ token }) => ({
         address: manager,
         abi: delayerWithdrawalManagerAbi,
         functionName: 'withdrawableFunds',
@@ -506,13 +505,17 @@ export class EarnService implements IEarnService {
       allowFailure: false,
     });
 
-    const claimsToConvert = potentialClaimsToConvert
+    const claimWithFunds = claim.tokens
       .map((token, index) => ({ ...token, amount: withdrawableFunds[index] as bigint }))
       .filter(({ amount }) => amount > 0n);
+    if (claimWithFunds.length == 0) {
+      throw new Error('No funds to claim');
+    }
+    const claimsToConvert = claimWithFunds.filter(({ convertTo }) => !!convertTo);
 
     if (claimsToConvert.length == 0) {
       // If don't need to convert anything, then just call the delayer withdrawal manager
-      const calls = claim.tokens.map(({ token }) =>
+      const calls = claimWithFunds.map(({ token }) =>
         encodeFunctionData({
           abi: delayerWithdrawalManagerAbi,
           functionName: 'withdraw',
