@@ -497,16 +497,16 @@ export class EarnService implements IEarnService {
     // Get withdrawable funds for each token to convert
     const withdrawableFunds = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: claim.tokens.map(({ token }) => ({
-        address: manager,
+        address: manager as ViemAddress,
         abi: delayerWithdrawalManagerAbi,
-        functionName: 'withdrawableFunds',
+        functionName: 'withdrawableFunds' as const,
         args: [bigIntPositionId, token as ViemAddress],
       })),
       allowFailure: false,
     });
 
     const claimWithFunds = claim.tokens
-      .map((token, index) => ({ ...token, amount: withdrawableFunds[index] as bigint }))
+      .map((token, index) => ({ ...token, amount: withdrawableFunds[index] }))
       .filter(({ amount }) => amount > 0n);
     if (claimWithFunds.length == 0) {
       throw new Error('No funds to claim');
