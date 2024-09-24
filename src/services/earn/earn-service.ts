@@ -651,15 +651,13 @@ export class EarnService implements IEarnService {
       );
     }
 
-    let balancesFromVault: Record<TokenAddress, bigint> = {};
-
     const [positionTokens, positionBalances, strategyAddress] = await this.providerService.getViemPublicClient({ chainId }).readContract({
       abi: vaultAbi,
       address: vault,
       functionName: 'position',
       args: [bigIntPositionId],
     });
-    balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [token, positionBalances[index]]));
+    const balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [token, positionBalances[index]]));
 
     // Handle swaps
     const withdrawsToConvert = withdraw.amounts
