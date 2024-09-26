@@ -955,10 +955,10 @@ function fulfillStrategy(
       depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
       farm: {
         ...restFarm,
-        asset: { ...tokens[asset.address], address: asset.address, withdrawType: asset.withdrawType },
+        asset: { ...tokens[asset.address], address: asset.address, withdrawTypes: asset.withdrawTypes },
         rewards: rewards
           ? {
-              tokens: rewards.tokens.map((token) => ({ ...tokens[token.address], address: token.address, withdrawType: token.withdrawType })),
+              tokens: rewards.tokens.map((token) => ({ ...tokens[token.address], address: token.address, withdrawTypes: token.withdrawTypes })),
               apy: rewards.apy,
             }
           : undefined,
@@ -985,23 +985,19 @@ function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens:
     case 'withdrawn':
       return {
         ...action,
-        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice }) => ({
+        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice, withdrawType }) => ({
           token: { ...tokens[token], address: token, price: tokenPrice },
           amount: toAmountsOfToken({
             price: tokenPrice,
             amount,
             decimals: tokens[token].decimals,
           }),
+          withdrawType,
         })),
       };
     case 'transferred':
     case 'modified permissions':
       return action;
-    case 'delayed withdrawal registered':
-      return {
-        ...action,
-        token: { ...tokens[action.token], address: action.token },
-      };
     case 'delayed withdrawal claimed':
       return {
         ...action,
@@ -1066,8 +1062,8 @@ type StrategyFarmResponse = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: { address: ViemAddress; withdrawType: WithdrawTypes };
-  rewards?: { tokens: { address: ViemAddress; withdrawType: WithdrawTypes }[]; apy: number };
+  asset: { address: ViemAddress; withdrawTypes: WithdrawTypes[] };
+  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawTypes[] }[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -1114,7 +1110,6 @@ type ActionType =
   | WithdrawnAction
   | TransferredAction
   | PermissionsModifiedAction
-  | DelayedWithdrawalRegistered
   | DelayedWithdrawalClaimedAction;
 
 type CreatedAction = {
@@ -1138,6 +1133,7 @@ type WithdrawnAction = {
     token: ViemAddress;
     amount: bigint;
     tokenPrice?: number;
+    withdrawType: WithdrawTypes;
   }[];
   recipient: ViemAddress;
 };
@@ -1151,12 +1147,6 @@ type TransferredAction = {
 type PermissionsModifiedAction = {
   action: 'modified permissions';
   permissions: EarnPermissions;
-};
-
-type DelayedWithdrawalRegistered = {
-  action: 'delayed withdrawal registered';
-  token: ViemAddress;
-  tokenPrice?: number;
 };
 
 type DelayedWithdrawalClaimedAction = {
