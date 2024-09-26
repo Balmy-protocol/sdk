@@ -18,17 +18,21 @@ import {
   IEarnService,
   IncreaseEarnPositionParams,
   PositionId,
+  SpecialWithdrawalCode,
   Strategy,
   StrategyGuardian,
   StrategyId,
+  StrategyIdNumber,
+  StrategyRegistryAddress,
   StrategyRiskLevel,
   StrategyYieldType,
   Token,
   TYPES,
   WithdrawEarnPositionParams,
+  WithdrawType,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, DELAYED_WITHDRAWAL_MANAGER, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
-import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
+import { encodeFunctionData, Hex, toBytes, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
@@ -45,6 +49,7 @@ import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 import qs from 'qs';
 import { IFetchService } from '@services/fetch';
 import { ArrayOneOrMore } from '@utility-types';
+import companion from '@shared/abis/companion';
 
 export class EarnService implements IEarnService {
   constructor(
@@ -593,7 +598,12 @@ export class EarnService implements IEarnService {
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
-    if (!shouldConvertAnyToken) {
+    const marketWithdrawsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
+    const shouldWithdrawFarmToken = marketWithdrawsTypes.length > 0;
+    if (marketWithdrawsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
+      throw new Error('Only one withdraw type MARKET is allowed, and it should be the first one');
+    }
+    if (!shouldConvertAnyToken && !shouldWithdrawFarmToken) {
       // If don't need to convert anything, then just call the vault
       return {
         to: vault,
@@ -613,28 +623,31 @@ export class EarnService implements IEarnService {
       calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
     }
 
-    // Handle reduce
+    // Handle withdraw
     calls.push(
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'withdraw',
-        args: [vault as ViemAddress, bigIntPositionId, tokensToWithdraw, intendedWithdraw, COMPANION_SWAPPER_CONTRACT.address(chainId)],
+        args: [
+          vault as ViemAddress,
+          bigIntPositionId,
+          tokensToWithdraw,
+          intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
+          COMPANION_SWAPPER_CONTRACT.address(chainId),
+        ],
       })
     );
-
     let balancesFromVault: Record<TokenAddress, bigint> = {};
     // If any token amount to convert is MAX_UINT256, then we need to check vault balance
     if (withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
-      // position = [ tokens, balances, strategy ]
-      const position = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      const [positionTokens, positionBalances] = await this.providerService.getViemPublicClient({ chainId }).readContract({
         abi: vaultAbi,
         address: vault,
         functionName: 'position',
         args: [bigIntPositionId],
       });
-      balancesFromVault = Object.fromEntries(position[0].map((token, index) => [token, position[1][index]]));
+      balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [token, positionBalances[index]]));
     }
-
     // Handle swaps
     const withdrawsToConvert = withdraw.amounts
       .filter(({ convertTo }) => !!convertTo)
@@ -644,6 +657,37 @@ export class EarnService implements IEarnService {
         buyToken: convertTo!,
         order: { type: 'sell' as const, sellAmount: amount != Uint.MAX_256 ? amount : balancesFromVault[token] },
       }));
+
+    // Handle special withdraw
+    if (shouldWithdrawFarmToken) {
+      const specialWithdrawTx = {
+        abi: companionAbi,
+        functionName: 'specialWithdraw',
+        args: [
+          vault as ViemAddress,
+          bigIntPositionId,
+          BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
+          [intendedWithdraw[0]],
+          '0x',
+          COMPANION_SWAPPER_CONTRACT.address(chainId),
+        ],
+      } as const;
+
+      const { result } = await this.providerService
+        .getViemPublicClient({ chainId })
+        .simulateContract({ ...specialWithdrawTx, address: EARN_VAULT_COMPANION.address(chainId) });
+      const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
+
+      calls.push(encodeFunctionData(specialWithdrawTx));
+
+      // Convert farm token to asset or specified token
+      withdrawsToConvert.push({
+        chainId,
+        sellToken: actualWithdrawnTokens[0], // Farm token
+        buyToken: withdraw.amounts[0].convertTo ?? withdraw.amounts[0].token, // Asset or token to convert to
+        order: { type: 'sell' as const, sellAmount: actualWithdrawnAmounts[0] }, // Amount of farm token to convert
+      });
+    }
 
     const withdrawsToTransfer = withdraw.amounts.filter(({ convertTo }) => !convertTo).map(({ token }) => token);
 
