@@ -22,8 +22,6 @@ import {
   Strategy,
   StrategyGuardian,
   StrategyId,
-  StrategyIdNumber,
-  StrategyRegistryAddress,
   StrategyRiskLevel,
   StrategyYieldType,
   Token,
@@ -32,7 +30,7 @@ import {
   WithdrawType,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, DELAYED_WITHDRAWAL_MANAGER, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
-import { encodeFunctionData, Hex, toBytes, Address as ViemAddress } from 'viem';
+import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
@@ -49,7 +47,6 @@ import { PERMIT2_CONTRACT } from '@services/permit2/utils/config';
 import qs from 'qs';
 import { IFetchService } from '@services/fetch';
 import { ArrayOneOrMore } from '@utility-types';
-import companion from '@shared/abis/companion';
 
 export class EarnService implements IEarnService {
   constructor(
@@ -123,9 +120,22 @@ export class EarnService implements IEarnService {
           ...restPosition,
           balances: fulfillBalance(balances, positionsInThisNetwork.tokens),
           strategy: fulfillStrategy(strategyResponse, positionsInThisNetwork.tokens, body.guardians),
+          delayed: position.delayed?.map(({ token, pending, ready }) => ({
+            token: { ...positionsInThisNetwork.tokens[token], address: token },
+            pending: toAmountsOfToken({
+              decimals: positionsInThisNetwork.tokens[token].decimals,
+              price: positionsInThisNetwork.tokens[token].price,
+              amount: pending,
+            }),
+            ready: toAmountsOfToken({
+              decimals: positionsInThisNetwork.tokens[token].decimals,
+              price: positionsInThisNetwork.tokens[token].price,
+              amount: ready,
+            }),
+          })),
           history:
             includeHistory && position.history
-              ? position.history.map((history) => fulfillHistory(history, strategyResponse.farm.asset, positionsInThisNetwork.tokens))
+              ? position.history.map((history) => fulfillHistory(history, strategyResponse.farm.asset.address, positionsInThisNetwork.tokens))
               : undefined,
           historicalBalances:
             includeHistoricalBalancesFrom && position.historicalBalances
@@ -598,9 +608,9 @@ export class EarnService implements IEarnService {
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
-    const marketWithdrawsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
-    const shouldWithdrawFarmToken = marketWithdrawsTypes.length > 0;
-    if (marketWithdrawsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
+    const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
+    const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
+    if (marketWithdrawalsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
       throw new Error('Only one withdraw type MARKET is allowed, and it should be the first one');
     }
     if (!shouldConvertAnyToken && !shouldWithdrawFarmToken) {
@@ -945,10 +955,10 @@ function fulfillStrategy(
       depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
       farm: {
         ...restFarm,
-        asset: { ...tokens[asset], address: asset },
+        asset: { ...tokens[asset.address], address: asset.address, withdrawTypes: asset.withdrawTypes },
         rewards: rewards
           ? {
-              tokens: rewards.tokens.map((token) => ({ ...tokens[token], address: token })),
+              tokens: rewards.tokens.map((token) => ({ ...tokens[token.address], address: token.address, withdrawTypes: token.withdrawTypes })),
               apy: rewards.apy,
             }
           : undefined,
@@ -975,18 +985,29 @@ function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens:
     case 'withdrawn':
       return {
         ...action,
-        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice }) => ({
+        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice, withdrawType }) => ({
           token: { ...tokens[token], address: token, price: tokenPrice },
           amount: toAmountsOfToken({
             price: tokenPrice,
             amount,
             decimals: tokens[token].decimals,
           }),
+          withdrawType,
         })),
       };
     case 'transferred':
     case 'modified permissions':
       return action;
+    case 'delayed withdrawal claimed':
+      return {
+        ...action,
+        token: { ...tokens[action.token], address: action.token },
+        withdrawn: toAmountsOfToken({
+          price: action.tokenPrice,
+          amount: action.withdrawn,
+          decimals: tokens[action.token].decimals,
+        }),
+      };
   }
 }
 
@@ -1041,8 +1062,8 @@ type StrategyFarmResponse = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: ViemAddress;
-  rewards?: { tokens: ViemAddress[]; apy: number };
+  asset: { address: ViemAddress; withdrawTypes: WithdrawType[] };
+  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawType[] }[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -1066,9 +1087,11 @@ type EarnPositionResponse = {
   permissions: EarnPermissions;
   strategyId: StrategyId;
   balances: { token: ViemAddress; amount: bigint; profit: bigint }[];
+  delayed?: DelayedWithdrawalResponse[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
 };
+type DelayedWithdrawalResponse = { token: ViemAddress; pending: bigint; ready: bigint };
 
 type HistoricalBalance = {
   timestamp: Timestamp;
@@ -1081,7 +1104,13 @@ type Transaction = {
   timestamp: Timestamp;
 };
 
-type ActionType = CreatedAction | IncreasedAction | WithdrawnAction | TransferredAction | PermissionsModifiedAction;
+type ActionType =
+  | CreatedAction
+  | IncreasedAction
+  | WithdrawnAction
+  | TransferredAction
+  | PermissionsModifiedAction
+  | DelayedWithdrawalClaimedAction;
 
 type CreatedAction = {
   action: 'created';
@@ -1104,6 +1133,7 @@ type WithdrawnAction = {
     token: ViemAddress;
     amount: bigint;
     tokenPrice?: number;
+    withdrawType: WithdrawType;
   }[];
   recipient: ViemAddress;
 };
@@ -1117,6 +1147,14 @@ type TransferredAction = {
 type PermissionsModifiedAction = {
   action: 'modified permissions';
   permissions: EarnPermissions;
+};
+
+type DelayedWithdrawalClaimedAction = {
+  action: 'delayed withdrawal claimed';
+  token: ViemAddress;
+  withdrawn: bigint;
+  tokenPrice?: number;
+  recipient: ViemAddress;
 };
 
 type BaseGetPositionsParams = {

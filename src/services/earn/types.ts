@@ -110,8 +110,8 @@ export type StrategyFarm = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: Token;
-  rewards?: { tokens: Token[]; apy: number };
+  asset: TokenWithWithdrawTypes;
+  rewards?: { tokens: TokenWithWithdrawTypes[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -140,6 +140,8 @@ export type Token = {
   decimals: number;
   price?: number;
 };
+
+export type TokenWithWithdrawTypes = Token & { withdrawTypes: WithdrawType[] };
 
 export type GuardianFee = {
   type: GuardianFeeType;
@@ -177,6 +179,7 @@ export type EarnPosition = {
   permissions: EarnPermissions;
   strategy: Strategy;
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
+  delayed?: { token: Token; pending: AmountsOfToken; ready: AmountsOfToken }[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
 };
@@ -186,7 +189,13 @@ export type HistoricalBalance = {
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
 };
 
-export type ActionType = CreatedAction | IncreasedAction | WithdrawnAction | TransferredAction | PermissionsModifiedAction;
+export type ActionType =
+  | CreatedAction
+  | IncreasedAction
+  | WithdrawnAction
+  | TransferredAction
+  | PermissionsModifiedAction
+  | DelayedWithdrawalClaimedAction;
 
 export type CreatedAction = {
   action: 'created';
@@ -207,6 +216,7 @@ export type WithdrawnAction = {
   withdrawn: {
     token: Token; // With price
     amount: AmountsOfToken;
+    withdrawType: WithdrawType;
   }[];
   recipient: ViemAddress;
 };
@@ -220,6 +230,13 @@ export type TransferredAction = {
 export type PermissionsModifiedAction = {
   action: 'modified permissions';
   permissions: EarnPermissions;
+};
+
+export type DelayedWithdrawalClaimedAction = {
+  action: 'delayed withdrawal claimed';
+  token: Token;
+  withdrawn: AmountsOfToken;
+  recipient: ViemAddress;
 };
 
 export type EarnPositionAction = { tx: Transaction } & ActionType;
