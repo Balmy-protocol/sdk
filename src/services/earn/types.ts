@@ -59,7 +59,7 @@ export type WithdrawEarnPositionParams = {
   chainId: ChainId;
   positionId: PositionId;
   withdraw: {
-    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawType }[];
+    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawTypes }[];
     swapConfig?: EarnActionSwapConfig;
   };
   recipient: Address;
@@ -110,8 +110,8 @@ export type StrategyFarm = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: Token;
-  rewards?: { tokens: Token[]; apy: number };
+  asset: TokenWithWithdrawType;
+  rewards?: { tokens: TokenWithWithdrawType[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -140,6 +140,8 @@ export type Token = {
   decimals: number;
   price?: number;
 };
+
+export type TokenWithWithdrawType = Token & { withdrawType: WithdrawTypes };
 
 export type GuardianFee = {
   type: GuardianFeeType;
@@ -177,6 +179,7 @@ export type EarnPosition = {
   permissions: EarnPermissions;
   strategy: Strategy;
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
+  delayed?: { token: Token; pending: AmountsOfToken; ready: AmountsOfToken }[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
 };
@@ -186,7 +189,14 @@ export type HistoricalBalance = {
   balances: { token: Token; amount: AmountsOfToken; profit: AmountsOfToken }[];
 };
 
-export type ActionType = CreatedAction | IncreasedAction | WithdrawnAction | TransferredAction | PermissionsModifiedAction;
+export type ActionType =
+  | CreatedAction
+  | IncreasedAction
+  | WithdrawnAction
+  | TransferredAction
+  | PermissionsModifiedAction
+  | DelayedWithdrawalRegistered
+  | DelayedWithdrawalClaimedAction;
 
 export type CreatedAction = {
   action: 'created';
@@ -220,6 +230,18 @@ export type TransferredAction = {
 export type PermissionsModifiedAction = {
   action: 'modified permissions';
   permissions: EarnPermissions;
+};
+
+export type DelayedWithdrawalRegistered = {
+  action: 'delayed withdrawal registered';
+  token: Token;
+};
+
+export type DelayedWithdrawalClaimedAction = {
+  action: 'delayed withdrawal claimed';
+  token: Token;
+  withdrawn: AmountsOfToken;
+  recipient: ViemAddress;
 };
 
 export type EarnPositionAction = { tx: Transaction } & ActionType;
@@ -279,7 +301,7 @@ export type EarnPermissionDataMessage = {
   deadline: bigint;
 };
 
-export enum WithdrawType {
+export enum WithdrawTypes {
   IMMEDIATE = 'IMMEDIATE',
   DELAYED = 'DELAYED',
   MARKET = 'MARKET',
