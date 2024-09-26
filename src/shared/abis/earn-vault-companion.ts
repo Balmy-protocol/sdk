@@ -167,4 +167,68 @@ export default [
     ],
     stateMutability: 'payable',
   },
+  {
+    type: 'function',
+    name: 'specialWithdraw',
+    inputs: [
+      {
+        name: 'vault',
+        type: 'address',
+        internalType: 'contract IEarnVault',
+      },
+      {
+        name: 'positionId',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'withdrawalCode',
+        type: 'uint256',
+        internalType: 'SpecialWithdrawalCode',
+      },
+      {
+        name: 'toWithdraw',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+      {
+        name: 'withdrawalData',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: 'tokens',
+        type: 'address[]',
+        internalType: 'address[]',
+      },
+      {
+        name: 'balanceChanges',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+      {
+        name: 'actualWithdrawnTokens',
+        type: 'address[]',
+        internalType: 'address[]',
+      },
+      {
+        name: 'actualWithdrawnAmounts',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
+      },
+      {
+        name: 'result',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    stateMutability: 'payable',
+  },
 ] as const;

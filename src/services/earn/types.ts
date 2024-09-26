@@ -59,7 +59,7 @@ export type WithdrawEarnPositionParams = {
   chainId: ChainId;
   positionId: PositionId;
   withdraw: {
-    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress }[];
+    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawType }[];
     swapConfig?: EarnActionSwapConfig;
   };
   recipient: Address;
@@ -278,3 +278,14 @@ export type EarnPermissionDataMessage = {
   nonce: bigint;
   deadline: bigint;
 };
+
+export enum WithdrawType {
+  IMMEDIATE = 'IMMEDIATE',
+  DELAYED = 'DELAYED',
+  MARKET = 'MARKET',
+}
+
+export enum SpecialWithdrawalCode {
+  WITHDRAW_ASSET_FARM_TOKEN_BY_AMOUNT = 0,
+  WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT = 1,
+}
