@@ -1,5 +1,6 @@
 import { Address, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import {
+  ClaimDelayedWithdrawPositionParams,
   CreateEarnPositionParams,
   DetailedStrategy,
   EarnActionSwapConfig,
@@ -497,13 +498,7 @@ export class EarnService implements IEarnService {
     recipient,
     permissionPermit,
     claim,
-  }: {
-    chainId: ChainId;
-    positionId: PositionId;
-    recipient: Address;
-    permissionPermit?: EarnPermissionPermit;
-    claim: { tokens: { token: TokenAddress; convertTo?: TokenAddress }[]; swapConfig?: EarnActionSwapConfig };
-  }): Promise<BuiltTransaction> {
+  }: ClaimDelayedWithdrawPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
     const [, , tokenId] = positionId.split('-');
@@ -593,6 +588,64 @@ export class EarnService implements IEarnService {
 
     // Build multicall and return tx
     return buildCompanionMulticall({ chainId, calls });
+  }
+  async estimateMarketWithdraw({
+    chainId,
+    positionId,
+    token,
+    amount,
+    swapConfig,
+  }: {
+    chainId: ChainId;
+    positionId: PositionId;
+    token: TokenAddress;
+    amount: BigIntish;
+    swapConfig?: EarnActionSwapConfig;
+  }) {
+    const vault = EARN_VAULT.address(chainId);
+    const [, , tokenId] = positionId.split('-');
+    const bigIntPositionId = BigInt(tokenId);
+    const strategyId = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      address: vault,
+      abi: vaultAbi,
+      functionName: 'positionsStrategy',
+      args: [bigIntPositionId],
+    });
+
+    const [strategyAddress, { result }] = await Promise.all([
+      this.providerService.getViemPublicClient({ chainId }).readContract({
+        address: EARN_STRATEGY_REGISTRY.address(chainId),
+        abi: strategyRegistryAbi,
+        functionName: 'getStrategy',
+        args: [strategyId],
+      }),
+      this.providerService.getViemPublicClient({ chainId }).simulateContract({
+        address: EARN_VAULT_COMPANION.address(chainId),
+        abi: companionAbi,
+        functionName: 'specialWithdraw',
+        args: [
+          vault as ViemAddress,
+          bigIntPositionId,
+          BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
+          [BigInt(amount)],
+          '0x',
+          COMPANION_SWAPPER_CONTRACT.address(chainId),
+        ],
+      }),
+    ]);
+
+    const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
+    const estimateQuote = await this.quoteService.getBestQuote({
+      request: {
+        chainId,
+        sellToken: actualWithdrawnTokens[0], // Farm token
+        buyToken: token,
+        order: { type: 'sell', sellAmount: actualWithdrawnAmounts[0] }, // Amount of farm token to convert
+        slippagePercentage: swapConfig?.slippagePercentage ?? 0.3,
+        takerAddress: strategyAddress,
+      },
+    });
+    return estimateQuote.buyAmount;
   }
 
   async buildWithdrawPositionTx({
