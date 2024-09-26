@@ -21,6 +21,14 @@ export type IEarnService = {
   buildCreatePositionTx(_: CreateEarnPositionParams): Promise<BuiltTransaction>;
   buildIncreasePositionTx(_: IncreaseEarnPositionParams): Promise<BuiltTransaction>;
   buildWithdrawPositionTx(_: WithdrawEarnPositionParams): Promise<BuiltTransaction>;
+  buildClaimDelayedWithdrawPositionTx(_: ClaimDelayedWithdrawPositionParams): Promise<BuiltTransaction>;
+  estimateMarketWithdraw(_: {
+    chainId: ChainId;
+    positionId: PositionId;
+    token: TokenAddress;
+    amount: BigIntish;
+    swapConfig?: EarnActionSwapConfig;
+  }): Promise<AmountsOfToken>;
   getSupportedStrategies(_?: { chains?: ChainId[]; config?: { timeout?: TimeString } }): Promise<Record<ChainId, Strategy[]>>;
   getStrategy(_?: { strategy: StrategyId; config?: { timeout?: TimeString } }): Promise<DetailedStrategy>;
   getPositionsByAccount(_: {
@@ -64,6 +72,14 @@ export type WithdrawEarnPositionParams = {
   };
   recipient: Address;
   permissionPermit?: EarnPermissionPermit;
+};
+
+export type ClaimDelayedWithdrawPositionParams = {
+  chainId: ChainId;
+  positionId: PositionId;
+  recipient: Address;
+  permissionPermit?: EarnPermissionPermit;
+  claim: { tokens: { token: TokenAddress; convertTo?: TokenAddress }[]; swapConfig?: EarnActionSwapConfig };
 };
 
 export type EarnPermissionPermit = {
