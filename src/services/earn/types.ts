@@ -59,7 +59,7 @@ export type WithdrawEarnPositionParams = {
   chainId: ChainId;
   positionId: PositionId;
   withdraw: {
-    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawTypes }[];
+    amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawType }[];
     swapConfig?: EarnActionSwapConfig;
   };
   recipient: Address;
@@ -141,7 +141,7 @@ export type Token = {
   price?: number;
 };
 
-export type TokenWithWithdrawTypes = Token & { withdrawTypes: WithdrawTypes[] };
+export type TokenWithWithdrawTypes = Token & { withdrawTypes: WithdrawType[] };
 
 export type GuardianFee = {
   type: GuardianFeeType;
@@ -216,7 +216,7 @@ export type WithdrawnAction = {
   withdrawn: {
     token: Token; // With price
     amount: AmountsOfToken;
-    withdrawType: WithdrawTypes;
+    withdrawType: WithdrawType;
   }[];
   recipient: ViemAddress;
 };
@@ -296,7 +296,7 @@ export type EarnPermissionDataMessage = {
   deadline: bigint;
 };
 
-export enum WithdrawTypes {
+export enum WithdrawType {
   IMMEDIATE = 'IMMEDIATE',
   DELAYED = 'DELAYED',
   MARKET = 'MARKET',

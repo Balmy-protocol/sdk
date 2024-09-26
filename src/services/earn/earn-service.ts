@@ -27,7 +27,7 @@ import {
   Token,
   TYPES,
   WithdrawEarnPositionParams,
-  WithdrawTypes,
+  WithdrawType,
 } from './types';
 import { COMPANION_SWAPPER_CONTRACT, DELAYED_WITHDRAWAL_MANAGER, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
 import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
@@ -608,9 +608,9 @@ export class EarnService implements IEarnService {
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
-    const marketWithdrawsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawTypes.MARKET);
-    const shouldWithdrawFarmToken = marketWithdrawsTypes.length > 0;
-    if (marketWithdrawsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawTypes.MARKET)) {
+    const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
+    const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
+    if (marketWithdrawalsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
       throw new Error('Only one withdraw type MARKET is allowed, and it should be the first one');
     }
     if (!shouldConvertAnyToken && !shouldWithdrawFarmToken) {
@@ -642,7 +642,7 @@ export class EarnService implements IEarnService {
           vault as ViemAddress,
           bigIntPositionId,
           tokensToWithdraw,
-          intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawTypes.MARKET ? amount : 0n)),
+          intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
           COMPANION_SWAPPER_CONTRACT.address(chainId),
         ],
       })
@@ -1062,8 +1062,8 @@ type StrategyFarmResponse = {
   id: FarmId;
   chainId: ChainId;
   name: string;
-  asset: { address: ViemAddress; withdrawTypes: WithdrawTypes[] };
-  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawTypes[] }[]; apy: number };
+  asset: { address: ViemAddress; withdrawTypes: WithdrawType[] };
+  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawType[] }[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
@@ -1133,7 +1133,7 @@ type WithdrawnAction = {
     token: ViemAddress;
     amount: bigint;
     tokenPrice?: number;
-    withdrawType: WithdrawTypes;
+    withdrawType: WithdrawType;
   }[];
   recipient: ViemAddress;
 };
