@@ -1013,10 +1013,6 @@ function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit:
   }));
 }
 
-function toStrategyId(chainId: ChainId, strategyRegistry: StrategyRegistryAddress, tokenId: StrategyIdNumber) {
-  return `${chainId}-${strategyRegistry}-${tokenId}` satisfies StrategyId;
-}
-
 type GetStrategyResponse = {
   strategy: StrategyResponse & HistoricalData;
   tokens: Record<ViemAddress, Token>;
