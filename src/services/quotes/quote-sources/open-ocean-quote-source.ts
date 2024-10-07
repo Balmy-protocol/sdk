@@ -46,7 +46,7 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-type OpenOceanConfig = { sourceAllowlist?: string[]; apiKey: string };
+type OpenOceanConfig = { sourceAllowlist?: string[]; apiKey?: string };
 type OpenOceanData = { tx: SourceQuoteTransaction };
 export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig, OpenOceanData> {
   getMetadata() {
