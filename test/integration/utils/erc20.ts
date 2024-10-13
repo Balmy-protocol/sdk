@@ -24,7 +24,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
   [Chains.ETHEREUM.chainId]: {
     STABLE_ERC20: {
       address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      whale: '0x0a59649758aa4d66e25f08dd01271e891fe52199',
+      whale: '0x40ec5b33f54e0e8a33a975908c5ba1c14e5bbbdf',
     },
     RANDOM_ERC20: {
       address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',

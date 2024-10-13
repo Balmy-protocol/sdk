@@ -46,7 +46,7 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-type OpenOceanConfig = { sourceAllowlist?: string[] };
+type OpenOceanConfig = { sourceAllowlist?: string[]; apiKey?: string };
 type OpenOceanData = { tx: SourceQuoteTransaction };
 export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig, OpenOceanData> {
   getMetadata() {
@@ -84,7 +84,11 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://open-api.openocean.finance/v3/${chainKey}/swap_quote?${queryString}`;
-    const response = await fetchService.fetch(url, { timeout });
+    const headers: Record<string, string> = {};
+    if (config.apiKey) {
+      headers['apikey'] = config.apiKey;
+    }
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(OPEN_OCEAN_METADATA, chain, sellToken, buyToken, await response.text());
     }
