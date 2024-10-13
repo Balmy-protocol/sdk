@@ -1,36 +1,34 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { ChainId } from '@types';
 import { isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 
 // Supported Networks: https://0x.org/docs/0x-swap-api/introduction#supported-networks
-const ZRX_API: Record<ChainId, string> = {
-  [Chains.ETHEREUM.chainId]: 'https://api.0x.org',
-  [Chains.OPTIMISM.chainId]: 'https://optimism.api.0x.org',
-  [Chains.POLYGON.chainId]: 'https://polygon.api.0x.org',
-  [Chains.BNB_CHAIN.chainId]: 'https://bsc.api.0x.org',
-  [Chains.FANTOM.chainId]: 'https://fantom.api.0x.org',
-  [Chains.CELO.chainId]: 'https://celo.api.0x.org',
-  [Chains.AVALANCHE.chainId]: 'https://avalanche.api.0x.org',
-  [Chains.ARBITRUM.chainId]: 'https://arbitrum.api.0x.org',
-  [Chains.BASE.chainId]: 'https://base.api.0x.org',
-  [Chains.ETHEREUM_GOERLI.chainId]: 'https://goerli.api.0x.org',
-  [Chains.POLYGON_MUMBAI.chainId]: 'https://mumbai.api.0x.org',
-};
+const SUPPORTED_CHAINS = [
+  Chains.ETHEREUM,
+  Chains.ARBITRUM,
+  Chains.AVALANCHE,
+  Chains.BASE,
+  Chains.BLAST,
+  Chains.BNB_CHAIN,
+  Chains.LINEA,
+  Chains.OPTIMISM,
+  Chains.POLYGON,
+  Chains.SCROLL,
+].map((chain) => chain.chainId);
 
 const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   name: '0x/Matcha',
   supports: {
-    chains: Object.keys(ZRX_API).map(Number),
+    chains: SUPPORTED_CHAINS,
     swapAndTransfer: false,
-    buyOrders: true,
+    buyOrders: false,
   },
   logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
 };
 type ZRXConfig = { apiKey: string };
-type ZRXSupport = { buyOrders: true; swapAndTransfer: false };
+type ZRXSupport = { buyOrders: false; swapAndTransfer: false };
 type ZRXData = { tx: SourceQuoteTransaction };
 export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXData> {
   getMetadata() {
@@ -49,30 +47,29 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
     },
     config,
   }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse<ZRXData>> {
-    const api = ZRX_API[chain.chainId];
     const queryParams = {
+      chainId: chain.chainId,
       sellToken,
       buyToken,
-      takerAddress: takeFrom,
-      skipValidation: config.disableValidation,
-      slippagePercentage: slippagePercentage / 100,
-      enableSlippageProtection: false,
+      taker: takeFrom,
+      slippageBps: slippagePercentage * 100,
       affiliateAddress: config.referrer?.address,
       sellAmount: order.type === 'sell' ? order.sellAmount.toString() : undefined,
-      buyAmount: order.type === 'buy' ? order.buyAmount.toString() : undefined,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `${api}/swap/v1/quote?${queryString}`;
+    const url = `https://api.0x.org/swap/allowance-holder/quote?${queryString}`;
 
     const headers: HeadersInit = {
-      ['0x-api-key']: config.apiKey,
+      '0x-api-key': config.apiKey,
+      '0x-version': 'v2',
     };
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
       failed(ZRX_METADATA, chain, sellToken, buyToken, await response.text());
     }
-    const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = await response.json();
+    const lala = await response.json();
+    const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = lala;
 
     const quote = {
       sellAmount: BigInt(sellAmount),
