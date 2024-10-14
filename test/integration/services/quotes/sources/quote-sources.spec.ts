@@ -78,7 +78,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
 
       beforeAll(async () => {
         await fork({ chain });
-        const [userSigner, recipientSigner] = await ethers.getSigners();
+        const [, , , , , userSigner, recipientSigner] = await ethers.getSigners();
         const tokens = await loadTokens(chain);
 
         await mintMany({
