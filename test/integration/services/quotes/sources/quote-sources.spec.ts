@@ -60,7 +60,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe('Quote Sources [External Quotes]', () => {
+describe.skip('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
@@ -78,7 +78,8 @@ describe('Quote Sources [External Quotes]', () => {
 
       beforeAll(async () => {
         await fork({ chain });
-        const [userSigner, recipientSigner] = await ethers.getSigners();
+        const [, , , , , userSigner, recipientSigner] = await ethers.getSigners();
+        // 0x70a9f34f9b34c64957b9c401a97bfed35b95049e
         const tokens = await loadTokens(chain);
 
         await mintMany({

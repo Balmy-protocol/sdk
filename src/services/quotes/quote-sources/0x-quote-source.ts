@@ -1,8 +1,8 @@
 import qs from 'qs';
 import { Chains } from '@chains';
-import { isSameAddress } from '@shared/utils';
+import { Addresses } from '@shared/constants';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
-import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
+import { calculateAllowanceTarget, failed } from './utils';
 
 // Supported Networks: https://0x.org/docs/0x-swap-api/introduction#supported-networks
 const SUPPORTED_CHAINS = [
@@ -69,12 +69,21 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
       failed(ZRX_METADATA, chain, sellToken, buyToken, await response.text());
     }
     const lala = await response.json();
-    const { data, buyAmount, sellAmount, to, allowanceTarget, estimatedGas, value } = lala;
+    const {
+      transaction: { data, gas, to, value },
+      buyAmount,
+      minBuyAmount,
+      issues,
+    } = lala;
 
-    const quote = {
-      sellAmount: BigInt(sellAmount),
+    const allowanceTarget = issues?.allowance?.spender ?? Addresses.ZERO_ADDRESS;
+
+    return {
+      sellAmount: order.sellAmount,
+      maxSellAmount: order.sellAmount,
       buyAmount: BigInt(buyAmount),
-      estimatedGas: BigInt(estimatedGas),
+      minBuyAmount: BigInt(minBuyAmount),
+      estimatedGas: BigInt(gas ?? 0),
       allowanceTarget: calculateAllowanceTarget(sellToken, allowanceTarget),
       customData: {
         tx: {
@@ -83,9 +92,8 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
           value: BigInt(value ?? 0),
         },
       },
+      type: order.type,
     };
-
-    return addQuoteSlippage(quote, order.type, isSameAddress(to, chain.wToken) ? 0 : slippagePercentage);
   }
 
   async buildTx({ request }: BuildTxParams<ZRXConfig, ZRXData>): Promise<SourceQuoteTransaction> {
