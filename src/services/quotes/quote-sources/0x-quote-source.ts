@@ -16,12 +16,12 @@ const SUPPORTED_CHAINS = [
   Chains.OPTIMISM,
   Chains.POLYGON,
   Chains.SCROLL,
-].map((chain) => chain.chainId);
+];
 
 const ZRX_METADATA: QuoteSourceMetadata<ZRXSupport> = {
   name: '0x/Matcha',
   supports: {
-    chains: SUPPORTED_CHAINS,
+    chains: SUPPORTED_CHAINS.map((chain) => chain.chainId),
     swapAndTransfer: false,
     buyOrders: false,
   },
@@ -54,7 +54,7 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
       taker: takeFrom,
       slippageBps: slippagePercentage * 100,
       affiliateAddress: config.referrer?.address,
-      sellAmount: order.type === 'sell' ? order.sellAmount.toString() : undefined,
+      sellAmount: order.sellAmount.toString(),
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://api.0x.org/swap/allowance-holder/quote?${queryString}`;
@@ -68,13 +68,12 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
     if (!response.ok) {
       failed(ZRX_METADATA, chain, sellToken, buyToken, await response.text());
     }
-    const lala = await response.json();
     const {
       transaction: { data, gas, to, value },
       buyAmount,
       minBuyAmount,
       issues,
-    } = lala;
+    } = await response.json();
 
     const allowanceTarget = issues?.allowance?.spender ?? Addresses.ZERO_ADDRESS;
 

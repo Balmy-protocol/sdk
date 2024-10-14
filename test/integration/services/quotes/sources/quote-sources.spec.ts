@@ -48,7 +48,7 @@ import { wait } from '@shared/wait';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: '0x',
+  source: 'barter',
   chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
@@ -79,7 +79,6 @@ describe.skip('Quote Sources [External Quotes]', () => {
       beforeAll(async () => {
         await fork({ chain });
         const [, , , , , userSigner, recipientSigner] = await ethers.getSigners();
-        // 0x70a9f34f9b34c64957b9c401a97bfed35b95049e
         const tokens = await loadTokens(chain);
 
         await mintMany({
