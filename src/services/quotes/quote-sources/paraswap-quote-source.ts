@@ -25,7 +25,7 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
   logoURI: 'ipfs://QmVtj4RwZ5MMfKpbfv8qXksb5WYBJsQXkaZXLq7ipvMNW5',
 };
 type ParaswapSupport = { buyOrders: true; swapAndTransfer: true };
-type ParaswapConfig = { sourceAllowlist?: string[] };
+type ParaswapConfig = { sourceAllowlist?: string[]; sourceDenylist?: string[] };
 type ParaswapData = { tx: SourceQuoteTransaction };
 export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<ParaswapSupport, ParaswapConfig, ParaswapData> {
   getMetadata(): QuoteSourceMetadata<ParaswapSupport> {
@@ -58,6 +58,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       srcDecimals,
       destDecimals,
       includeDEXS: config.sourceAllowlist,
+      excludeDEXS: config.sourceDenylist,
       slippage: slippagePercentage * 100,
       userAddress: takeFrom,
       receiver: takeFrom !== recipient ? recipient : undefined,
