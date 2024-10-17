@@ -96,8 +96,8 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
       tokenOutAmount,
     } = quoteResult.data.sorGetSwapPaths;
     const allowanceAddress = calculateAllowanceTarget(sellToken, to);
-    const minBuyAmount = order.type === 'sell' ? parseUnits(minAmountOutRaw, buyTokenDataResult.decimals) : BigInt(tokenOutAmount);
-    const maxSellAmount = order.type === 'sell' ? BigInt(tokenInAmount) : parseUnits(maxAmountInRaw, sellTokenDataResult.decimals);
+    const minBuyAmount = order.type === 'sell' ? BigInt(minAmountOutRaw) : BigInt(tokenOutAmount);
+    const maxSellAmount = order.type === 'sell' ? BigInt(tokenInAmount) : BigInt(maxAmountInRaw);
     return {
       sellAmount: BigInt(tokenInAmount),
       buyAmount: BigInt(tokenOutAmount),
