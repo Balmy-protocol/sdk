@@ -40,7 +40,7 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -50,8 +50,8 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
     config,
   }: QuoteParams<SquidSupport, SquidConfig>): Promise<SourceQuoteResponse<SquidData>> {
     const params = {
-      fromChain: `${chain.chainId}`,
-      toChain: `${chain.chainId}`,
+      fromChain: `${chainId}`,
+      toChain: `${chainId}`,
       fromToken: sellToken,
       toToken: buyToken,
       fromAmount: order.sellAmount.toString(),
@@ -70,7 +70,7 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
       headers,
     });
     if (!response.ok) {
-      failed(SQUID_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(SQUID_METADATA, chainId, sellToken, buyToken, await response.text());
     }
 
     const {

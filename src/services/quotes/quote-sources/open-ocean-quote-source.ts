@@ -56,7 +56,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -70,7 +70,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
     const amount = formatUnits(order.sellAmount, sellTokenDataResult.decimals);
-    const { chainKey, nativeAsset } = SUPPORTED_CHAINS[chain.chainId];
+    const { chainKey, nativeAsset } = SUPPORTED_CHAINS[chainId];
     const native = nativeAsset ?? Addresses.NATIVE_TOKEN;
     const queryParams = {
       inTokenAddress: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? native : sellToken,
@@ -90,7 +90,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     }
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(OPEN_OCEAN_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(OPEN_OCEAN_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       data: { outAmount, estimatedGas, minOutAmount, to, value, data },

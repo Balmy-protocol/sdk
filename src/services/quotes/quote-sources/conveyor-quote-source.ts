@@ -41,7 +41,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -52,7 +52,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
   }: QuoteParams<ConveyorSupport, ConveyorConfig>): Promise<SourceQuoteResponse<ConveyorData>> {
     let referrer = '0';
     if (config.referrerCodes !== 'disable') {
-      referrer = `${config.referrerCodes?.[chain.chainId] ?? DEFAULT_REFERRERS[chain.chainId] ?? 0}`;
+      referrer = `${config.referrerCodes?.[chainId] ?? DEFAULT_REFERRERS[chainId] ?? 0}`;
     }
 
     const body = {
@@ -62,7 +62,7 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       slippage: slippagePercentage * 100,
       // Note: Conveyor doesn't support swap & transfer, so the recipient must be the same as the taker address
       recipient: takeFrom,
-      chainId: chain.chainId,
+      chainId,
       referrer,
       partner: config.referrer?.name,
       forceCalldata: true,
@@ -74,16 +74,16 @@ export class ConveyorQuoteSource extends AlwaysValidConfigAndContextSource<Conve
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      failed(CONVEYOR_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(CONVEYOR_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const { body: result } = await response.json();
     if ('errorStatus' in result && !config.disableValidation) {
       // We don't have a way to disable Conveyor's validation, but we can work around it. So we will only fail
       // when the validation fails, and the config didn't mark it as disabled
-      failed(CONVEYOR_METADATA, chain, sellToken, buyToken, JSON.stringify(result.errorStatus));
+      failed(CONVEYOR_METADATA, chainId, sellToken, buyToken, JSON.stringify(result.errorStatus));
     }
     if (!('tx' in result) && 'message' in result) {
-      failed(CONVEYOR_METADATA, chain, sellToken, buyToken, result.message);
+      failed(CONVEYOR_METADATA, chainId, sellToken, buyToken, result.message);
     }
 
     const {

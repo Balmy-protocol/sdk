@@ -38,7 +38,7 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -48,7 +48,7 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
     config,
   }: QuoteParams<ZRXSupport, ZRXConfig>): Promise<SourceQuoteResponse<ZRXData>> {
     const queryParams = {
-      chainId: chain.chainId,
+      chainId,
       sellToken,
       buyToken,
       taker: takeFrom,
@@ -66,7 +66,7 @@ export class ZRXQuoteSource implements IQuoteSource<ZRXSupport, ZRXConfig, ZRXDa
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(ZRX_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(ZRX_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       transaction: { data, gas, to, value },

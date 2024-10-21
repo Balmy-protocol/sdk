@@ -13,11 +13,13 @@ export function forcedTimeoutWrapper<
   return {
     getMetadata: () => source.getMetadata(),
     quote: ({ components, request, config }) => {
-      const description = `Quote ${request.sellToken} => ${request.buyToken} on ${request.chain.name} for source ${source.getMetadata().name}`;
+      const description = `Quote ${request.sellToken} => ${request.buyToken} on chain with id ${request.chainId} for source ${
+        source.getMetadata().name
+      }`;
       return timeoutPromise(source.quote({ components, request, config }), request.config.timeout, { description });
     },
     buildTx: ({ components, request, config }) => {
-      const description = `Tx build ${request.sellToken} => ${request.buyToken} on ${request.chain.name} for source ${
+      const description = `Tx build ${request.sellToken} => ${request.buyToken} on chain with id ${request.chainId} for source ${
         source.getMetadata().name
       }`;
       return timeoutPromise(source.buildTx({ components, request, config }), request.config.timeout, { description });

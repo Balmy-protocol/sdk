@@ -11,7 +11,6 @@ import {
   SourceQuoteResponse,
 } from '../quote-sources/types';
 import { timeoutPromise } from '@shared/timeouts';
-import { getChainByKeyOrFail } from '@chains';
 import { QUOTE_SOURCES, SourceConfig, SourceWithConfigId } from '../source-registry';
 import { buyToSellOrderWrapper } from '@services/quotes/quote-sources/wrappers/buy-to-sell-order-wrapper';
 import { forcedTimeoutWrapper } from '@services/quotes/quote-sources/wrappers/forced-timeout-wrapper';
@@ -162,7 +161,7 @@ function mapOrderToBigNumber(request: SourceListQuoteRequest): BuyOrder | SellOr
 
 function mapTxRequestToSourceRequest(response: QuoteResponseRelevantForTxBuild, timeout: TimeString | undefined): SourceQuoteBuildTxRequest {
   return {
-    chain: getChainByKeyOrFail(response.chainId),
+    chainId: response.chainId,
     sellToken: response.sellToken.address,
     buyToken: response.buyToken.address,
     type: response.type,
@@ -178,7 +177,7 @@ function mapTxRequestToSourceRequest(response: QuoteResponseRelevantForTxBuild, 
 
 function mapQuoteRequestToSourceRequest(request: SourceListQuoteRequest) {
   return {
-    chain: getChainByKeyOrFail(request.chainId),
+    chainId: request.chainId,
     sellToken: request.sellToken,
     buyToken: request.buyToken,
     order: mapOrderToBigNumber(request),

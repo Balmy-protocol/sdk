@@ -1,7 +1,7 @@
 import qs from 'qs';
 import { Addresses } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
-import { Chain, ChainId, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { Chains } from '@chains';
@@ -37,7 +37,7 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -46,8 +46,8 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
     },
     config,
   }: QuoteParams<PortalsFiSupport, PortalsFiConfig>): Promise<SourceQuoteResponse<PortalsFiData>> {
-    const mappedSellToken = mapToken(chain, sellToken);
-    const mappedBuyToken = mapToken(chain, buyToken);
+    const mappedSellToken = mapToken(chainId, sellToken);
+    const mappedBuyToken = mapToken(chainId, buyToken);
     const queryParams = {
       sender: takeFrom,
       inputToken: mappedSellToken,
@@ -66,7 +66,7 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
       headers: { Authorization: key },
     });
     if (!response.ok) {
-      failed(PORTALS_FI_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(PORTALS_FI_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       context: { outputAmount, minOutputAmount, value },
@@ -104,8 +104,8 @@ export class PortalsFiQuoteSource implements IQuoteSource<PortalsFiSupport, Port
   }
 }
 
-function mapToken(chain: Chain, address: TokenAddress) {
-  const chainKey = PORTALS_FI_CHAIN_ID_TO_KEY[chain.chainId];
+function mapToken(chainId: ChainId, address: TokenAddress) {
+  const chainKey = PORTALS_FI_CHAIN_ID_TO_KEY[chainId];
   const mapped = isSameAddress(address, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : address;
   return `${chainKey}:${mapped}`;
 }

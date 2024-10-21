@@ -39,7 +39,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -49,7 +49,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     config,
   }: QuoteParams<MagpieSupport, MagpieConfig>): Promise<SourceQuoteResponse<MagpieData>> {
     const quoteQueryParams = {
-      network: SUPPORTED_CHAINS[chain.chainId],
+      network: SUPPORTED_CHAINS[chainId],
       fromTokenAddress: mapToken(sellToken),
       toTokenAddress: mapToken(buyToken),
       sellAmount: order.sellAmount.toString(),
@@ -61,7 +61,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     const quoteUrl = `https://api.magpiefi.xyz/aggregator/quote?${quoteQueryString}`;
     const quoteResponse = await fetchService.fetch(quoteUrl, { timeout });
     if (!quoteResponse.ok) {
-      failed(MAGPIE_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(MAGPIE_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
     const estimatedGasNum: `${number}` | undefined = fees.find((fee: { type: string; value: `${number}` }) => fee.type === 'gas')?.value;
@@ -81,7 +81,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
   async buildTx({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       config: { timeout },
@@ -98,7 +98,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     const transactionUrl = `https://api.magpiefi.xyz/aggregator/transaction?${transactionQueryString}`;
     const transactionResponse = await fetchService.fetch(transactionUrl, { timeout });
     if (!transactionResponse.ok) {
-      failed(MAGPIE_METADATA, chain, sellToken, buyToken, await transactionResponse.text());
+      failed(MAGPIE_METADATA, chainId, sellToken, buyToken, await transactionResponse.text());
     }
     const { to, value, data } = await transactionResponse.json();
     return { to, calldata: data, value: BigInt(value) };

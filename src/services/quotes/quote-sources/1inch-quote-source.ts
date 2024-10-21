@@ -62,7 +62,7 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
   private async getQuote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -84,10 +84,10 @@ export class OneInchQuoteSource implements IQuoteSource<OneInchSupport, OneInchC
       includeGas: true,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `${getUrl(config)}/${chain.chainId}/swap?${queryString}`;
+    const url = `${getUrl(config)}/${chainId}/swap?${queryString}`;
     const response = await fetchService.fetch(url, { timeout, headers: getHeaders(config) });
     if (!response.ok) {
-      failed(ONE_INCH_METADATA, chain, sellToken, buyToken, (await response.text()) || `Failed with status ${response.status}`);
+      failed(ONE_INCH_METADATA, chainId, sellToken, buyToken, (await response.text()) || `Failed with status ${response.status}`);
     }
     const {
       dstAmount,
