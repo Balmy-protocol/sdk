@@ -44,7 +44,7 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom, recipient },
       order,
@@ -54,7 +54,7 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
     config,
   }: QuoteParams<BalmySupport, BalmyConfig>): Promise<SourceQuoteResponse<BalmyData>> {
     const balmyUrl = config.url ?? 'https://api.balmy.xyz';
-    const url = `${balmyUrl}/v1/swap/networks/${chain.chainId}/quotes/balmy`;
+    const url = `${balmyUrl}/v1/swap/networks/${chainId}/quotes/balmy`;
     const stringOrder =
       order.type === 'sell' ? { type: 'sell', sellAmount: order.sellAmount.toString() } : { type: 'buy', buyAmount: order.buyAmount.toString() };
     const body = {
@@ -74,7 +74,7 @@ export class BalmyQuoteSource extends AlwaysValidConfigAndContextSource<BalmySup
       timeout,
     });
     if (!response.ok) {
-      failed(BALMY_METADATA, chain, request.sellToken, request.buyToken, await response.text());
+      failed(BALMY_METADATA, chainId, request.sellToken, request.buyToken, await response.text());
     }
     const {
       sellAmount,

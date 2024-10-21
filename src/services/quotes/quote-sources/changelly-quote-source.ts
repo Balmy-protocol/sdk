@@ -27,7 +27,7 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -47,12 +47,12 @@ export class ChangellyQuoteSource implements IQuoteSource<ChangellySupport, Chan
       takerAddress: config.disableValidation ? undefined : takeFrom,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `https://dex-api.changelly.com/v1/${chain.chainId}/quote?${queryString}`;
+    const url = `https://dex-api.changelly.com/v1/${chainId}/quote?${queryString}`;
 
     const headers = { 'X-Api-Key': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(CHANGELLY_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(CHANGELLY_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const { amount_out_total, estimate_gas_total, calldata, to } = await response.json();
 

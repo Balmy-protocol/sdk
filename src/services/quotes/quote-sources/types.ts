@@ -1,7 +1,7 @@
 import { IFetchService } from '@services/fetch/types';
 import { GasPrice } from '@services/gas/types';
 import { GlobalQuoteSourceConfig } from '@services/quotes/types';
-import { Address, Chain, ChainId, TimeString, TokenAddress } from '@types';
+import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { BaseTokenMetadata } from '@services/metadata/types';
 import { IProviderService } from '@services/providers';
 import { ITriggerablePromise } from '@shared/triggerable-promise';
@@ -27,7 +27,7 @@ export type BuildTxParams<
 };
 
 export type SourceQuoteBuildTxRequest<CustomQuoteSourceData extends Record<string, any> = Record<string, any>> = {
-  chain: Chain;
+  chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
   type: 'sell' | 'buy';
@@ -64,7 +64,7 @@ export type BuyOrder = { type: 'buy'; buyAmount: bigint };
 type BaseOrder = SellOrder | BuyOrder;
 type BaseSwapAccounts = { takeFrom: Address };
 type BaseSwapQuoteRequest<Order extends BaseOrder, Accounts extends BaseSwapAccounts> = {
-  chain: Chain;
+  chainId: ChainId;
   sellToken: TokenAddress;
   buyToken: TokenAddress;
   order: Order;

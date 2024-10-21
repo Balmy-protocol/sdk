@@ -35,7 +35,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -50,7 +50,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
       buyToken: { decimals: destDecimals },
     } = await external.tokenData.request();
     const queryParams = {
-      network: chain.chainId,
+      network: chainId,
       srcToken: sellToken,
       destToken: buyToken,
       amount: order.type === 'sell' ? order.sellAmount : order.buyAmount,
@@ -72,7 +72,7 @@ export class ParaswapQuoteSource extends AlwaysValidConfigAndContextSource<Paras
     const url = `https://api.paraswap.io/swap?${queryString}`;
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(PARASWAP_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(PARASWAP_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       priceRoute,

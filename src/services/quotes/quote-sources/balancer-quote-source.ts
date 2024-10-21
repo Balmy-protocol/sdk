@@ -37,7 +37,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -55,7 +55,7 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     const query = {
       query: `query {
         sorGetSwapPaths( 
-          chain: ${SUPPORTED_CHAINS[chain.chainId]}
+          chain: ${SUPPORTED_CHAINS[chainId]}
           swapAmount: "${amount}"
           swapType: ${order.type == 'sell' ? 'EXACT_IN' : 'EXACT_OUT'}
           tokenIn: "${sellToken}"
@@ -82,12 +82,12 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     });
 
     if (!quoteResponse.ok) {
-      failed(BALANCER_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(BALANCER_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const quoteResult = await quoteResponse.json();
 
     if (!quoteResult.data.sorGetSwapPaths.callData) {
-      failed(BALANCER_METADATA, chain, sellToken, buyToken, quoteResult);
+      failed(BALANCER_METADATA, chainId, sellToken, buyToken, quoteResult);
     }
 
     const {

@@ -32,7 +32,7 @@ export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, En
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -52,7 +52,7 @@ export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, En
       tokenOut: buyToken,
       routingStrategy: config?.routingStrategy ?? 'router',
       priceImpact: false,
-      chainId: chain.chainId,
+      chainId,
       slippage: Math.floor(slippagePercentage * 100),
       tokenInAmountToApprove: order.sellAmount.toString(),
       tokenInAmountToTransfer: order.sellAmount.toString(),
@@ -67,7 +67,7 @@ export class EnsoQuoteSource implements IQuoteSource<EnsoSupport, EnsoConfig, En
 
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(ENSO_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(ENSO_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       amountOut,

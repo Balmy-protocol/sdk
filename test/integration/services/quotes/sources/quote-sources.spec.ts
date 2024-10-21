@@ -48,7 +48,7 @@ import { wait } from '@shared/wait';
 
 // This is meant to be used for local testing. On the CI, we will do something different
 const RUN_FOR: { source: keyof typeof SOURCES_METADATA; chains: Chain[] | 'all' } = {
-  source: 'barter',
+  source: 'balancer',
   chains: [Chains.ETHEREUM],
 };
 const ROUNDING_ISSUES: SourceId[] = ['rango', 'wido'];
@@ -60,7 +60,7 @@ const AVOID_DURING_CI: SourceId[] = [
 jest.retryTimes(3);
 jest.setTimeout(ms('5m'));
 
-describe.skip('Quote Sources [External Quotes]', () => {
+describe('Quote Sources [External Quotes]', () => {
   const sourcesPerChain = getSources();
   for (const chainId of Object.keys(sourcesPerChain)) {
     const chain = getChainByKeyOrFail(chainId);
@@ -352,7 +352,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
             order,
             sellToken: sellToken.address,
             buyToken: buyToken.address,
-            chain,
+            chainId: chain.chainId,
             config: {
               slippagePercentage: SLIPPAGE_PERCENTAGE,
               txValidFor: '5m',
@@ -370,7 +370,7 @@ describe.skip('Quote Sources [External Quotes]', () => {
           components: { providerService: PROVIDER_SERVICE, fetchService: FETCH_SERVICE },
           config: getConfig(sourceId),
           request: {
-            chain,
+            chainId: chain.chainId,
             sellToken: sellToken.address,
             buyToken: buyToken.address,
             ...quoteResponse,

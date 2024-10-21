@@ -1,4 +1,4 @@
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { ChainId, Chain, TokenAddress } from '@types';
 import { Addresses } from '@shared/constants';
 import { isSameAddress, subtractPercentage, timeToSeconds } from '@shared/utils';
@@ -40,7 +40,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -56,15 +56,15 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
       // some of it and then return the extra native token to the caller
       throw new Error(`Uniswap does not support buy orders with native token`);
     }
-    const router = ROUTER_ADDRESS[chain.chainId];
+    const router = ROUTER_ADDRESS[chainId];
     recipient = recipient ?? takeFrom;
     const url =
       'https://api.uniswap.org/v1/quote' +
       '?protocols=v2,v3,mixed' +
-      `&tokenInAddress=${mapToWTokenIfNecessary(chain, sellToken)}` +
-      `&tokenInChainId=${chain.chainId}` +
-      `&tokenOutAddress=${mapToWTokenIfNecessary(chain, buyToken)}` +
-      `&tokenOutChainId=${chain.chainId}` +
+      `&tokenInAddress=${mapToWTokenIfNecessary(chainId, sellToken)}` +
+      `&tokenInChainId=${chainId}` +
+      `&tokenOutAddress=${mapToWTokenIfNecessary(chainId, buyToken)}` +
+      `&tokenOutChainId=${chainId}` +
       `&amount=${amount.toString()}` +
       `&type=${order.type === 'sell' ? 'exactIn' : 'exactOut'}` +
       `&recipient=${isBuyTokenNativeToken ? router : recipient}` +
@@ -78,7 +78,7 @@ export class UniswapQuoteSource extends AlwaysValidConfigAndContextSource<Uniswa
     };
     const response = await fetchService.fetch(url, { headers, timeout });
     if (!response.ok) {
-      failed(UNISWAP_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(UNISWAP_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     let {
       quote: quoteAmount,
@@ -133,8 +133,9 @@ function calculateMinBuyAmount(type: 'sell' | 'buy', buyAmount: bigint, slippage
   return type === 'sell' ? BigInt(subtractPercentage(buyAmount, slippagePercentage, 'up')) : buyAmount;
 }
 
-function mapToWTokenIfNecessary(chain: Chain, address: TokenAddress) {
-  return isSameAddress(address, Addresses.NATIVE_TOKEN) ? chain.wToken : address;
+function mapToWTokenIfNecessary(chainId: ChainId, address: TokenAddress) {
+  const chain = getChainByKey(chainId);
+  return chain && isSameAddress(address, Addresses.NATIVE_TOKEN) ? chain.wToken : address;
 }
 
 const ROUTER_HUMAN_READABLE_ABI = [

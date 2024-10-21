@@ -42,7 +42,7 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -52,10 +52,10 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
     config,
   }: QuoteParams<XYFinanceSupport>): Promise<SourceQuoteResponse<XYFinanceData>> {
     const queryParams = {
-      srcChainId: chain.chainId,
+      srcChainId: chainId,
       srcQuoteTokenAddress: sellToken,
       srcQuoteTokenAmount: order.sellAmount.toString(),
-      dstChainId: chain.chainId,
+      dstChainId: chainId,
       dstQuoteTokenAddress: buyToken,
       slippage: slippagePercentage,
       receiver: recipient ?? takeFrom,
@@ -67,12 +67,12 @@ export class XYFinanceQuoteSource extends AlwaysValidConfigAndContextSource<XYFi
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(XY_FINANCE_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(XY_FINANCE_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const { success, ...result } = await response.json();
     if (!success) {
       const { errorCode, errorMsg } = result;
-      failed(XY_FINANCE_METADATA, chain, sellToken, buyToken, `Failed with code ${errorCode} and message '${errorMsg}'`);
+      failed(XY_FINANCE_METADATA, chainId, sellToken, buyToken, `Failed with code ${errorCode} and message '${errorMsg}'`);
     }
 
     const {

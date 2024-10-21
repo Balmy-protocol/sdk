@@ -28,7 +28,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom },
       order,
@@ -38,7 +38,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
     config,
   }: QuoteParams<SovrynSupport, SovrynConfig>): Promise<SourceQuoteResponse<SovrynData>> {
     const balmyUrl = config.url ?? 'https://api.balmy.xyz';
-    const url = `${balmyUrl}/v1/swap/networks/${chain.chainId}/quotes/sovryn`;
+    const url = `${balmyUrl}/v1/swap/networks/${chainId}/quotes/sovryn`;
     const body = {
       ...request,
       order: { type: 'sell', sellAmount: order.sellAmount.toString() },
@@ -55,7 +55,7 @@ export class SovrynQuoteSource extends AlwaysValidConfigAndContextSource<SovrynS
       timeout,
     });
     if (!response.ok) {
-      failed(SOVRYN_METADATA, chain, request.sellToken, request.buyToken, await response.text());
+      failed(SOVRYN_METADATA, chainId, request.sellToken, request.buyToken, await response.text());
     }
     const {
       sellAmount,

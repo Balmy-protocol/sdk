@@ -1,6 +1,6 @@
 import { encodeFunctionData, toHex, Address as ViemAddress, Hex } from 'viem';
-import { Address, Chain, ChainId, TimeString } from '@types';
-import { Chains } from '@chains';
+import { Address, ChainId, TimeString } from '@types';
+import { Chains, getChainByKey } from '@chains';
 import { calculateDeadline, isSameAddress, subtractPercentage } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
@@ -32,7 +32,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -40,12 +40,12 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       config: { slippagePercentage, timeout, txValidFor },
     },
   }: QuoteParams<BrainDexSupport>): Promise<SourceQuoteResponse<BrainDexData>> {
-    const mappedSellToken = mapToken(sellToken, chain);
-    const mappedBuyToken = mapToken(buyToken, chain);
+    const mappedSellToken = mapToken(sellToken, chainId);
+    const mappedBuyToken = mapToken(buyToken, chainId);
     if (isSameAddress(mappedSellToken, mappedBuyToken)) throw new Error(`Not supported`);
 
     const body = {
-      chain_id: chain.chainId,
+      chain_id: chainId,
       amount_in: toHex(order.sellAmount),
       token_in: mappedSellToken,
       token_out: mappedBuyToken,
@@ -62,11 +62,11 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       timeout,
     });
     if (!response.ok) {
-      failed(BRAINDEX_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(BRAINDEX_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const { amount_out, swap_paths } = await response.json();
 
-    const router = ROUTER_ADDRESS[chain.chainId];
+    const router = ROUTER_ADDRESS[chainId];
     const buyAmount = BigInt(amount_out);
     const minBuyAmount = subtractPercentage(buyAmount, slippagePercentage, 'up');
 
@@ -83,7 +83,7 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
 
   async buildTx({
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       sellAmount,
@@ -91,8 +91,8 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       customData: { swapPaths, txValidFor, recipient },
     },
   }: BuildTxParams<BrainDexConfig, BrainDexData>): Promise<SourceQuoteTransaction> {
-    const mappedSellToken = mapToken(sellToken, chain);
-    const mappedBuyToken = mapToken(buyToken, chain);
+    const mappedSellToken = mapToken(sellToken, chainId);
+    const mappedBuyToken = mapToken(buyToken, chainId);
     const deadline = BigInt(calculateDeadline(txValidFor) ?? Uint.MAX_256);
 
     let calldata: string;
@@ -118,15 +118,16 @@ export class BrainDexQuoteSource extends AlwaysValidConfigAndContextSource<Brain
       });
     }
     return {
-      to: ROUTER_ADDRESS[chain.chainId],
+      to: ROUTER_ADDRESS[chainId],
       calldata,
       value,
     };
   }
 }
 
-function mapToken(token: Address, chain: Chain): ViemAddress {
-  return isSameAddress(token, Addresses.NATIVE_TOKEN) ? checksum(chain.wToken) : checksum(token);
+function mapToken(token: Address, chainId: ChainId): ViemAddress {
+  const chain = getChainByKey(chainId);
+  return chain && isSameAddress(token, Addresses.NATIVE_TOKEN) ? checksum(chain.wToken) : checksum(token);
 }
 
 const ROUTER_ABI = [

@@ -52,7 +52,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -61,7 +61,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
     },
     config,
   }: QuoteParams<KyberswapSupport>): Promise<SourceQuoteResponse<KyberswapData>> {
-    const chainKey = SUPPORTED_CHAINS[chain.chainId];
+    const chainKey = SUPPORTED_CHAINS[chainId];
     const headers = config.referrer?.name ? { 'x-client-id': config.referrer?.name } : undefined;
 
     const url =
@@ -74,7 +74,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
 
     const routeResponse = await fetchService.fetch(url, { timeout, headers });
     if (!routeResponse.ok) {
-      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await routeResponse.text());
+      failed(KYBERSWAP_METADATA, chainId, sellToken, buyToken, await routeResponse.text());
     }
     const {
       data: { routeSummary, routerAddress },
@@ -94,7 +94,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
   async buildTx({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       sellAmount,
@@ -103,7 +103,7 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
     },
     config,
   }: BuildTxParams<KyberswapConfig, KyberswapData>): Promise<SourceQuoteTransaction> {
-    const chainKey = SUPPORTED_CHAINS[chain.chainId];
+    const chainKey = SUPPORTED_CHAINS[chainId];
     const headers = config.referrer?.name ? { 'x-client-id': config.referrer?.name } : undefined;
 
     const buildResponse = await fetchService.fetch(`https://aggregator-api.kyberswap.com/${chainKey}/api/v1/route/build`, {
@@ -121,14 +121,14 @@ export class KyberswapQuoteSource extends AlwaysValidConfigAndContextSource<Kybe
       }),
     });
     if (!buildResponse.ok) {
-      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, await buildResponse.text());
+      failed(KYBERSWAP_METADATA, chainId, sellToken, buyToken, await buildResponse.text());
     }
     const {
       data: { data, routerAddress },
     } = await buildResponse.json();
 
     if (!data) {
-      failed(KYBERSWAP_METADATA, chain, sellToken, buyToken, 'Failed to calculate a quote');
+      failed(KYBERSWAP_METADATA, chainId, sellToken, buyToken, 'Failed to calculate a quote');
     }
 
     const value = isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? sellAmount : 0n;
