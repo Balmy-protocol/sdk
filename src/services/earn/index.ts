@@ -8,4 +8,6 @@ export {
   EarnPermissionPermit,
   AddFundsEarn,
   EarnActionSwapConfig,
+  Token,
+  DepositToken,
 } from './types';
