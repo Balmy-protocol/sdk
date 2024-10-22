@@ -995,17 +995,21 @@ function fulfillStrategy(
   strategyResponse: StrategyResponse | (StrategyResponse & HistoricalData),
   tokens: Record<TokenAddress, Token>,
   guardians: Record<GuardianId, Guardian>
-) {
+): Strategy {
   const {
     farm: { rewards, asset, ...restFarm },
     guardian,
     depositTokens,
     ...restStrategyResponse
   } = strategyResponse;
-  const strategy = {
+  return {
     ...{
       ...restStrategyResponse,
-      depositTokens: depositTokens.map((token) => ({ ...tokens[token], address: token })),
+      depositTokens: depositTokens.map((token) => ({
+        ...tokens[token],
+        address: token,
+        type: isSameAddress(token, asset.address) ? 'asset' : 'farm',
+      })),
       farm: {
         ...restFarm,
         asset: { ...tokens[asset.address], address: asset.address, withdrawTypes: asset.withdrawTypes },
@@ -1019,8 +1023,6 @@ function fulfillStrategy(
       guardian: guardian ? { ...guardians[guardian.id], ...guardian } : undefined,
     },
   };
-
-  return strategy;
 }
 
 function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens: Record<TokenAddress, Token>) {

@@ -113,9 +113,13 @@ export type HistoricalData = {
   historicalTVL: { timestamp: Timestamp; tvl: number }[];
 };
 
+export type DepositToken = Token & {
+  type: 'asset' | 'farm';
+};
+
 export type Strategy = {
   id: StrategyId;
-  depositTokens: Token[];
+  depositTokens: DepositToken[];
   farm: StrategyFarm;
   guardian?: StrategyGuardian;
   tos?: string;
