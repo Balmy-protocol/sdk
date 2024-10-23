@@ -36,7 +36,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -54,19 +54,19 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       headers['X-From'] = config.referrer.name;
     }
 
-    const responseEnv = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/env`, {
+    const responseEnv = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chainId]}.barterswap.xyz/env`, {
       headers,
       timeout,
     });
     if (!responseEnv.ok) {
-      failed(BARTER_METADATA, chain, sellToken, buyToken, await responseEnv.text());
+      failed(BARTER_METADATA, chainId, sellToken, buyToken, await responseEnv.text());
     }
 
     const { defaultFilters, facadeAddress } = await responseEnv.json();
     const typeFilter = calculateTypeFilters({ config, defaultFilters });
 
     const responseSwapRoute = await fetchService.fetch(
-      `https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/getSwapRoute`,
+      `https://${config.customSubdomain}.${BARTER_NETWORKS[chainId]}.barterswap.xyz/getSwapRoute`,
       {
         method: 'POST',
         body: JSON.stringify({ source, target, amount, typeFilter }),
@@ -76,7 +76,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
     );
 
     if (!responseSwapRoute.ok) {
-      failed(BARTER_METADATA, chain, sellToken, buyToken, await responseSwapRoute.text());
+      failed(BARTER_METADATA, chainId, sellToken, buyToken, await responseSwapRoute.text());
     }
     const { outputAmount, gasEstimation } = await responseSwapRoute.json();
     const minBuyAmount = subtractPercentage(outputAmount, slippagePercentage, 'up');
@@ -96,7 +96,7 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
   async buildTx({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       sellAmount,
@@ -125,14 +125,14 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
       typeFilter,
     };
 
-    const responseSwap = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chain.chainId]}.barterswap.xyz/swap`, {
+    const responseSwap = await fetchService.fetch(`https://${config.customSubdomain}.${BARTER_NETWORKS[chainId]}.barterswap.xyz/swap`, {
       method: 'POST',
       body: JSON.stringify(bodySwap),
       timeout,
       headers,
     });
     if (!responseSwap.ok) {
-      failed(BARTER_METADATA, chain, sellToken, buyToken, await responseSwap.text());
+      failed(BARTER_METADATA, chainId, sellToken, buyToken, await responseSwap.text());
     }
     const resultSwap = await responseSwap.json();
     const { data, to, value } = resultSwap;

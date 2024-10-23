@@ -4,7 +4,7 @@ import { Chains } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { failed } from './utils';
 import { IFetchService } from '@services/fetch';
-import { Address, Chain, TimeString } from '@types';
+import { Address, ChainId, TimeString } from '@types';
 import { Addresses, Uint } from '@shared/constants';
 import { isSameAddress } from '@shared/utils';
 
@@ -91,7 +91,7 @@ export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConf
 async function calculateApprovalTarget({
   components: { fetchService },
   request: {
-    chain,
+    chainId,
     sellToken,
     buyToken,
     config: { timeout },
@@ -102,7 +102,7 @@ async function calculateApprovalTarget({
     return { data: [{ dexContractAddress: Addresses.ZERO_ADDRESS }] };
   }
   const queryParams = {
-    chainId: chain.chainId,
+    chainId,
     tokenContractAddress: sellToken,
     approveAmount: Uint.MAX_256,
   };
@@ -111,7 +111,7 @@ async function calculateApprovalTarget({
   return fetch({
     sellToken,
     buyToken,
-    chain,
+    chainId,
     path,
     timeout,
     config,
@@ -122,7 +122,7 @@ async function calculateApprovalTarget({
 async function calculateQuote({
   components: { fetchService },
   request: {
-    chain,
+    chainId,
     sellToken,
     buyToken,
     order,
@@ -132,7 +132,7 @@ async function calculateQuote({
   config,
 }: QuoteParams<OKXDexSupport, OKXDexConfig>) {
   const queryParams = {
-    chainId: chain.chainId,
+    chainId,
     amount: order.sellAmount.toString(),
     fromTokenAddress: sellToken,
     toTokenAddress: buyToken,
@@ -146,7 +146,7 @@ async function calculateQuote({
   return fetch({
     sellToken,
     buyToken,
-    chain,
+    chainId,
     path,
     timeout,
     config,
@@ -157,7 +157,7 @@ async function calculateQuote({
 async function fetch({
   sellToken,
   buyToken,
-  chain,
+  chainId,
   path,
   fetchService,
   config,
@@ -165,7 +165,7 @@ async function fetch({
 }: {
   sellToken: Address;
   buyToken: Address;
-  chain: Chain;
+  chainId: ChainId;
   path: string;
   timeout?: TimeString;
   config: OKXDexConfig;
@@ -186,7 +186,7 @@ async function fetch({
   const url = `https://www.okx.com${path}`;
   const response = await fetchService.fetch(url, { timeout, headers });
   if (!response.ok) {
-    failed(OKX_DEX_METADATA, chain, sellToken, buyToken, await response.text());
+    failed(OKX_DEX_METADATA, chainId, sellToken, buyToken, await response.text());
   }
   return response.json();
 }

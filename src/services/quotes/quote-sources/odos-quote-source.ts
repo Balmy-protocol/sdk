@@ -59,7 +59,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
   async buildTx({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       config: { timeout },
@@ -73,7 +73,7 @@ export class OdosQuoteSource extends AlwaysValidConfigAndContextSource<OdosSuppo
       timeout,
     });
     if (!assembleResponse.ok) {
-      failed(ODOS_METADATA, chain, sellToken, buyToken, await assembleResponse.text());
+      failed(ODOS_METADATA, chainId, sellToken, buyToken, await assembleResponse.text());
     }
     const {
       transaction: { data, to, value },
@@ -91,7 +91,7 @@ async function getQuote({
   simple,
   components: { fetchService },
   request: {
-    chain,
+    chainId,
     sellToken,
     buyToken,
     order,
@@ -104,7 +104,7 @@ async function getQuote({
   const checksummedBuy = checksumAndMapIfNecessary(buyToken);
   const userAddr = checksum(takeFrom);
   const quoteBody = {
-    chainId: chain.chainId,
+    chainId,
     inputTokens: [{ tokenAddress: checksummedSell, amount: order.sellAmount.toString() }],
     outputTokens: [{ tokenAddress: checksummedBuy, proportion: 1 }],
     userAddr,
@@ -125,16 +125,16 @@ async function getQuote({
       headers: { 'Content-Type': 'application/json' },
       timeout,
     }),
-    fetchService.fetch(`https://api.odos.xyz/info/router/v2/${chain.chainId}`, {
+    fetchService.fetch(`https://api.odos.xyz/info/router/v2/${chainId}`, {
       headers: { 'Content-Type': 'application/json' },
       timeout,
     }),
   ]);
   if (!quoteResponse.ok) {
-    failed(ODOS_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+    failed(ODOS_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
   }
   if (!routerResponse.ok) {
-    failed(ODOS_METADATA, chain, sellToken, buyToken, await routerResponse.text());
+    failed(ODOS_METADATA, chainId, sellToken, buyToken, await routerResponse.text());
   }
   const {
     pathId,

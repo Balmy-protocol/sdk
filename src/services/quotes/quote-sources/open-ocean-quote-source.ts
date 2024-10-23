@@ -46,7 +46,7 @@ const OPEN_OCEAN_METADATA: QuoteSourceMetadata<OpenOceanSupport> = {
   logoURI: 'ipfs://QmP7bVENjMmobmjJcPFX6VbFTmj6pKmFNqv7Qkyqui44dT',
 };
 type OpenOceanSupport = { buyOrders: false; swapAndTransfer: true };
-type OpenOceanConfig = { sourceAllowlist?: string[] };
+type OpenOceanConfig = { sourceAllowlist?: string[]; apiKey?: string };
 type OpenOceanData = { tx: SourceQuoteTransaction };
 export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<OpenOceanSupport, OpenOceanConfig, OpenOceanData> {
   getMetadata() {
@@ -56,7 +56,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -70,7 +70,7 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     const legacyGasPrice = eip1159ToLegacy(gasPriceResult);
     const gasPrice = parseFloat(formatUnits(legacyGasPrice, 9));
     const amount = formatUnits(order.sellAmount, sellTokenDataResult.decimals);
-    const { chainKey, nativeAsset } = SUPPORTED_CHAINS[chain.chainId];
+    const { chainKey, nativeAsset } = SUPPORTED_CHAINS[chainId];
     const native = nativeAsset ?? Addresses.NATIVE_TOKEN;
     const queryParams = {
       inTokenAddress: isSameAddress(sellToken, Addresses.NATIVE_TOKEN) ? native : sellToken,
@@ -84,9 +84,13 @@ export class OpenOceanQuoteSource extends AlwaysValidConfigAndContextSource<Open
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
     const url = `https://open-api.openocean.finance/v3/${chainKey}/swap_quote?${queryString}`;
-    const response = await fetchService.fetch(url, { timeout });
+    const headers: Record<string, string> = {};
+    if (config.apiKey) {
+      headers['apikey'] = config.apiKey;
+    }
+    const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(OPEN_OCEAN_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(OPEN_OCEAN_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       data: { outAmount, estimatedGas, minOutAmount, to, value, data },

@@ -1,6 +1,6 @@
 import { ChainId, TimeString, TokenAddress, Timestamp } from '@types';
 import { Addresses } from '@shared/constants';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { IFetchService } from '@services/fetch/types';
 import { isSameAddress, splitInChunks, timeToSeconds } from '@shared/utils';
 import { PriceResult } from '@services/prices';
@@ -112,7 +112,7 @@ export class DefiLlamaClient {
       span: span.toString(),
       period: period.toString(),
       ...('from' in bound && { start: bound.from.toString() }),
-      ...('upTo' in bound && { end: bound.upTo === 'now' ? Date.now().toString() : bound.upTo.toString() }),
+      ...('upTo' in bound && { end: bound.upTo === 'now' ? Math.floor(Date.now() / 1000).toString() : bound.upTo.toString() }),
       ...(searchWidth && { searchWidth }),
     };
 
@@ -217,6 +217,13 @@ export class DefiLlamaClient {
       const coin = coins[tokenId];
       if (coin) {
         result[chainId][token] = { decimals: 18, ...coin };
+        if (isSameAddress(token, Addresses.NATIVE_TOKEN)) {
+          // We'll try to overwrite the symbol for the native token, for consistency
+          const chain = getChainByKey(chainId);
+          if (chain) {
+            result[chainId][token].symbol = chain.nativeCurrency.symbol;
+          }
+        }
       }
     }
     return result;

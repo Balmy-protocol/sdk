@@ -38,10 +38,9 @@ export class BalanceService implements IBalanceService {
     config?: { timeout?: TimeString };
   }): Promise<Record<ChainId, Record<TokenAddress, bigint>>> {
     const result = await this.getBalances({ tokens: tokens.map((token) => ({ account, ...token })), config });
-    const entries = Object.entries(result).map<[ChainId, Record<TokenAddress, bigint>]>(([chainId, result]) => [
-      Number(chainId),
-      result[account],
-    ]);
+    const entries = Object.entries(result)
+      .map<[ChainId, Record<TokenAddress, bigint> | undefined]>(([chainId, result]) => [Number(chainId), result[account]])
+      .filter((entry): entry is [ChainId, Record<TokenAddress, bigint>] => entry[1] !== undefined);
     return Object.fromEntries(entries);
   }
 

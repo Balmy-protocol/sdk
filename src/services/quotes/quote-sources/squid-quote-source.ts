@@ -19,6 +19,10 @@ const SQUID_METADATA: QuoteSourceMetadata<SquidSupport> = {
       Chains.MOONBEAM.chainId,
       Chains.CELO.chainId,
       Chains.KAVA.chainId,
+      Chains.SCROLL.chainId,
+      Chains.FANTOM.chainId,
+      Chains.EVMOS.chainId,
+      Chains.BLAST.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
@@ -36,7 +40,7 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -46,29 +50,27 @@ export class SquidQuoteSource implements IQuoteSource<SquidSupport, SquidConfig,
     config,
   }: QuoteParams<SquidSupport, SquidConfig>): Promise<SourceQuoteResponse<SquidData>> {
     const params = {
-      fromChain: `${chain.chainId}`,
-      toChain: `${chain.chainId}`,
+      fromChain: `${chainId}`,
+      toChain: `${chainId}`,
       fromToken: sellToken,
       toToken: buyToken,
       fromAmount: order.sellAmount.toString(),
       fromAddress: takeFrom,
       toAddress: recipient ?? takeFrom,
-      slippageConfig: {
-        slippage: slippagePercentage,
-      },
+      slippage: slippagePercentage,
     };
     const headers = {
       'Content-Type': 'application/json',
       'x-integrator-id': config.integratorId,
     };
-    const response = await fetchService.fetch('https://v2.api.squidrouter.com/v2/route', {
+    const response = await fetchService.fetch('https://apiplus.squidrouter.com/v2/route', {
       method: 'POST',
       body: JSON.stringify(params),
       timeout,
       headers,
     });
     if (!response.ok) {
-      failed(SQUID_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(SQUID_METADATA, chainId, sellToken, buyToken, await response.text());
     }
 
     const {

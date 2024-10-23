@@ -54,7 +54,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -67,8 +67,8 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
     const mappedBuyToken = mapNativeToken(buyToken);
     let url =
       `https://li.quest/v1/quote` +
-      `?fromChain=${chain.chainId}` +
-      `&toChain=${chain.chainId}` +
+      `?fromChain=${chainId}` +
+      `&toChain=${chainId}` +
       `&fromToken=${mappedSellToken}` +
       `&toToken=${mappedBuyToken}` +
       `&fromAddress=${takeFrom}` +
@@ -86,7 +86,7 @@ export class LiFiQuoteSource extends AlwaysValidConfigAndContextSource<LiFiSuppo
     }
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(LI_FI_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(LI_FI_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       estimate: { approvalAddress, toAmountMin, toAmount, gasCosts },

@@ -1,4 +1,4 @@
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import qs from 'qs';
 import { addQuoteSlippage, failed } from './utils';
@@ -40,7 +40,7 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -49,8 +49,10 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
     },
     config,
   }: QuoteParams<DodoDexSupport, DodoDexConfig>): Promise<SourceQuoteResponse<DodoDexData>> {
+    const chain = getChainByKey(chainId);
+    if (!chain) throw new Error(`Chain with id ${chainId} not found`);
     const queryParams = {
-      chainId: chain.chainId,
+      chainId,
       fromAmount: order.sellAmount,
       fromTokenAddress: sellToken,
       toTokenAddress: buyToken,
@@ -67,11 +69,11 @@ export class DodoDexQuoteSource implements IQuoteSource<DodoDexSupport, DodoDexC
     });
 
     if (!quoteResponse.ok) {
-      failed(DODO_DEX_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(DODO_DEX_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const quoteResult = await quoteResponse.json();
     if (quoteResult.status < 0) {
-      failed(DODO_DEX_METADATA, chain, sellToken, buyToken, quoteResult.data);
+      failed(DODO_DEX_METADATA, chainId, sellToken, buyToken, quoteResult.data);
     }
     const buyAmount = parseUnits(quoteResult.data.resAmount.toString(), quoteResult.data.targetDecimals);
     const { targetApproveAddr, data, to, value } = quoteResult.data;

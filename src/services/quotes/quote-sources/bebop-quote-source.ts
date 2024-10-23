@@ -34,7 +34,7 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -60,16 +60,16 @@ export class BebopQuoteSource implements IQuoteSource<BebopSupport, BebopConfig,
       slippage: slippagePercentage,
     };
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
-    const url = `https://api.bebop.xyz/router/${NETWORK_KEY[chain.chainId]}/v1/quote?${queryString}`;
+    const url = `https://api.bebop.xyz/router/${NETWORK_KEY[chainId]}/v1/quote?${queryString}`;
 
     const headers = { 'source-auth': config.apiKey };
     const response = await fetchService.fetch(url, { timeout, headers });
     if (!response.ok) {
-      failed(BEBOP_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(BEBOP_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const result: BebopResult = await response.json();
     if ('error' in result) {
-      failed(BEBOP_METADATA, chain, sellToken, buyToken, result.error.message);
+      failed(BEBOP_METADATA, chainId, sellToken, buyToken, result.error.message);
     }
     const {
       sellTokens: {

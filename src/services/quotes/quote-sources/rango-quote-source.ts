@@ -51,7 +51,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig,
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -62,7 +62,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig,
     config,
   }: QuoteParams<RangoSupport, RangoConfig>): Promise<SourceQuoteResponse<RangoData>> {
     const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await tokenData.request();
-    const chainKey = SUPPORTED_CHAINS[chain.chainId];
+    const chainKey = SUPPORTED_CHAINS[chainId];
     const queryParams = {
       apiKey: config.apiKey,
       from: mapToChainId(chainKey, sellToken, sellTokenDataResult),
@@ -79,7 +79,7 @@ export class RangoQuoteSource implements IQuoteSource<RangoSupport, RangoConfig,
 
     const response = await fetchService.fetch(url, { timeout });
     if (!response.ok) {
-      failed(RANGO_METADATA, chain, sellToken, buyToken, await response.text());
+      failed(RANGO_METADATA, chainId, sellToken, buyToken, await response.text());
     }
     const {
       requestId,

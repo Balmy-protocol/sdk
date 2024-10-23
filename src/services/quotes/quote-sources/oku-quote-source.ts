@@ -1,6 +1,6 @@
 import { Address as ViemAddress, encodeFunctionData, formatUnits, parseUnits } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
-import { Chains } from '@chains';
+import { Chains, getChainByKey } from '@chains';
 import { Addresses } from '@shared/constants';
 import { GasPrice } from '@services/gas';
 import { calculateDeadline, isSameAddress } from '@shared/utils';
@@ -58,7 +58,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
   async quote({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       order,
@@ -67,14 +67,15 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       external,
     },
   }: QuoteParams<OkuSupport>): Promise<SourceQuoteResponse<OkuData>> {
-    if (isSameAddress(chain.wToken, sellToken) && isSameAddress(Addresses.NATIVE_TOKEN, buyToken))
+    const chain = getChainByKey(chainId);
+    if (chain && isSameAddress(chain.wToken, sellToken) && isSameAddress(Addresses.NATIVE_TOKEN, buyToken))
       throw new Error(`Native token unwrap not supported by this source`);
-    if (isSameAddress(Addresses.NATIVE_TOKEN, sellToken) && isSameAddress(chain.wToken, buyToken))
+    if (chain && isSameAddress(Addresses.NATIVE_TOKEN, sellToken) && isSameAddress(chain.wToken, buyToken))
       throw new Error(`Native token wrap not supported by this source`);
 
     const [gasPrice, tokenData] = await Promise.all([external.gasPrice.request(), external.tokenData.request()]);
     const body = {
-      chain: CHAINS[chain.chainId],
+      chain: CHAINS[chainId],
       account: takeFrom,
       gasPrice: Number(eip1159ToLegacy(gasPrice)),
       isExactIn: order.type === 'sell',
@@ -92,7 +93,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       timeout,
     });
     if (!quoteResponse.ok) {
-      failed(OKU_METADATA, chain, sellToken, buyToken, await quoteResponse.text());
+      failed(OKU_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const { coupon, inAmount, outAmount, signingRequest } = await quoteResponse.json();
     const sellAmount = parseUnits(inAmount, tokenData.sellToken.decimals);
@@ -101,7 +102,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       sellAmount,
       buyAmount,
       type: order.type,
-      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_CONTRACT.address(chain.chainId)),
+      allowanceTarget: calculateAllowanceTarget(sellToken, SWAP_PROXY_CONTRACT.address(chainId)),
       customData: {
         coupon,
         signingRequest,
@@ -115,7 +116,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
   async buildTx({
     components: { fetchService },
     request: {
-      chain,
+      chainId,
       sellToken,
       buyToken,
       maxSellAmount,
@@ -144,7 +145,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
       timeout,
     });
     if (!executionResponse.ok) {
-      failed(OKU_METADATA, chain, sellToken, buyToken, await executionResponse.text());
+      failed(OKU_METADATA, chainId, sellToken, buyToken, await executionResponse.text());
     }
     const {
       trade: { data, to, value },
@@ -153,7 +154,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
 
     const deadline = BigInt(calculateDeadline(txValidFor) ?? calculateDeadline('1w'));
     const tokenOut =
-      type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_CONTRACT.address(chain.chainId))
+      type === 'sell' || isSameAddress(takeFrom, PERMIT2_ADAPTER_CONTRACT.address(chainId))
         ? []
         : [{ token: mapToken(sellToken), distribution: [{ recipient: takeFrom as ViemAddress, shareBps: 0n }] }];
     const adapterData = encodeFunctionData({
@@ -177,7 +178,7 @@ export class OkuQuoteSource extends AlwaysValidConfigAndContextSource<OkuSupport
     });
 
     return {
-      to: SWAP_PROXY_CONTRACT.address(chain.chainId),
+      to: SWAP_PROXY_CONTRACT.address(chainId),
       calldata: swapProxyData,
       value: BigInt(value ?? 0),
     };

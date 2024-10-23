@@ -89,7 +89,7 @@ export const Chains = {
     chainId: 137,
     name: 'Polygon',
     ids: ['polygon', 'matic'],
-    nativeCurrency: { symbol: 'MATIC', name: 'Matic' },
+    nativeCurrency: { symbol: 'POL', name: 'Polygon Ecosystem Token' },
     wToken: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
     publicRPCs: [
       'https://polygon-rpc.com',
@@ -502,7 +502,7 @@ export const Chains = {
     chainId: 80001,
     name: 'Polygon Mumbai',
     ids: ['mumbai'],
-    nativeCurrency: { symbol: 'MATIC', name: 'Matic' },
+    nativeCurrency: { symbol: 'POL', name: 'Polygon Ecosystem Token' },
     wToken: '0x9c3c9283d3e44854697cd22d3faa240cfb032889',
     publicRPCs: [
       'https://rpc.ankr.com/polygon_mumbai',
