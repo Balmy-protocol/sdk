@@ -612,27 +612,26 @@ export class EarnService implements IEarnService {
       args: [bigIntPositionId],
     });
 
-    const [strategyAddress, { result }] = await Promise.all([
-      this.providerService.getViemPublicClient({ chainId }).readContract({
-        address: EARN_STRATEGY_REGISTRY.address(chainId),
-        abi: strategyRegistryAbi,
-        functionName: 'getStrategy',
-        args: [strategyId],
-      }),
-      this.providerService.getViemPublicClient({ chainId }).simulateContract({
-        address: EARN_VAULT_COMPANION.address(chainId),
-        abi: companionAbi,
-        functionName: 'specialWithdraw',
-        args: [
-          vault as ViemAddress,
-          bigIntPositionId,
-          BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
-          [BigInt(amount)],
-          '0x',
-          COMPANION_SWAPPER_CONTRACT.address(chainId),
-        ],
-      }),
-    ]);
+    const strategyAddress = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      address: EARN_STRATEGY_REGISTRY.address(chainId),
+      abi: strategyRegistryAbi,
+      functionName: 'getStrategy',
+      args: [strategyId],
+    });
+    const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
+      address: strategyAddress as ViemAddress,
+      account: vault,
+      abi: companionAbi,
+      functionName: 'specialWithdraw',
+      args: [
+        vault as ViemAddress,
+        bigIntPositionId,
+        BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
+        [BigInt(amount)],
+        '0x',
+        COMPANION_SWAPPER_CONTRACT.address(chainId),
+      ],
+    });
 
     const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
     const estimateQuote = await this.quoteService.getBestQuote({
@@ -653,6 +652,7 @@ export class EarnService implements IEarnService {
     positionId,
     withdraw,
     recipient,
+    caller,
     permissionPermit,
   }: WithdrawEarnPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
@@ -738,7 +738,7 @@ export class EarnService implements IEarnService {
 
       const { result } = await this.providerService
         .getViemPublicClient({ chainId })
-        .simulateContract({ ...specialWithdrawTx, address: EARN_VAULT_COMPANION.address(chainId) });
+        .simulateContract({ ...specialWithdrawTx, address: vault, account: caller as ViemAddress });
       const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
 
       calls.push(encodeFunctionData(specialWithdrawTx));

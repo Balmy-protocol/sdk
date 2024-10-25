@@ -54,12 +54,14 @@ export type CreateEarnPositionParams = {
   strategyValidationData?: Hex;
   misc?: Hex;
   deposit: AddFundsEarn;
+  caller: Address;
 };
 
 export type IncreaseEarnPositionParams = {
   chainId: ChainId;
   positionId: PositionId;
   increase: AddFundsEarn;
+  caller: Address;
   permissionPermit?: EarnPermissionPermit;
 };
 
@@ -71,6 +73,7 @@ export type WithdrawEarnPositionParams = {
     swapConfig?: EarnActionSwapConfig;
   };
   recipient: Address;
+  caller: Address;
   permissionPermit?: EarnPermissionPermit;
 };
 
@@ -80,6 +83,7 @@ export type ClaimDelayedWithdrawPositionParams = {
   recipient: Address;
   permissionPermit?: EarnPermissionPermit;
   claim: { tokens: { token: TokenAddress; convertTo?: TokenAddress }[]; swapConfig?: EarnActionSwapConfig };
+  caller: Address;
 };
 
 export type EarnPermissionPermit = {
