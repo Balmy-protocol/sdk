@@ -19,6 +19,7 @@ export const BALMY_SUPPORTED_CHAINS = [
   Chains.MOONBEAM,
   Chains.ROOTSTOCK,
   Chains.AVALANCHE,
+  Chains.BASE,
 ].map(({ chainId }) => chainId);
 
 const BALMY_METADATA: QuoteSourceMetadata<BalmySupport> = {
