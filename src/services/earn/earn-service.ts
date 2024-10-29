@@ -618,22 +618,32 @@ export class EarnService implements IEarnService {
       functionName: 'getStrategy',
       args: [strategyId],
     });
+
+    let amountToWithdraw = BigInt(amount);
+    if (amount == Uint.MAX_256) {
+      const [, balance] = await this.providerService.getViemPublicClient({ chainId }).readContract({
+        address: vault,
+        abi: vaultAbi,
+        functionName: 'position',
+        args: [bigIntPositionId],
+      });
+      amountToWithdraw = balance[0];
+    }
     const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
       address: strategyAddress as ViemAddress,
       account: vault,
-      abi: companionAbi,
+      abi: strategyAbi,
       functionName: 'specialWithdraw',
       args: [
-        vault as ViemAddress,
         bigIntPositionId,
         BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
-        [BigInt(amount)],
+        [amountToWithdraw],
         '0x',
         COMPANION_SWAPPER_CONTRACT.address(chainId),
       ],
     });
 
-    const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
+    const [, actualWithdrawnTokens, actualWithdrawnAmounts] = result;
     const estimateQuote = await this.quoteService.getBestQuote({
       request: {
         chainId,
@@ -723,22 +733,26 @@ export class EarnService implements IEarnService {
 
     // Handle special withdraw
     if (shouldWithdrawFarmToken) {
+      const basicArgs = [
+        bigIntPositionId,
+        BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
+        [intendedWithdraw[0] != Uint.MAX_256 ? intendedWithdraw[0] : balancesFromVault[tokensToWithdraw[0]]],
+        '0x',
+        COMPANION_SWAPPER_CONTRACT.address(chainId),
+      ] as const;
       const specialWithdrawTx = {
         abi: companionAbi,
         functionName: 'specialWithdraw',
-        args: [
-          vault as ViemAddress,
-          bigIntPositionId,
-          BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
-          [intendedWithdraw[0]],
-          '0x',
-          COMPANION_SWAPPER_CONTRACT.address(chainId),
-        ],
+        args: [vault as ViemAddress, ...basicArgs],
       } as const;
 
-      const { result } = await this.providerService
-        .getViemPublicClient({ chainId })
-        .simulateContract({ ...specialWithdrawTx, address: vault, account: caller as ViemAddress });
+      const { result } = await this.providerService.getViemPublicClient({ chainId }).simulateContract({
+        abi: vaultAbi,
+        address: vault,
+        account: caller as ViemAddress,
+        functionName: 'specialWithdraw',
+        args: basicArgs,
+      });
       const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
 
       calls.push(encodeFunctionData(specialWithdrawTx));
