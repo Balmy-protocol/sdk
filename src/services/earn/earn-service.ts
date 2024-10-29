@@ -751,7 +751,7 @@ export class EarnService implements IEarnService {
         address: vault,
         account: caller as ViemAddress,
         functionName: 'specialWithdraw',
-        args: [...basicArgs],
+        args: basicArgs,
       });
       const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
 
