@@ -6,6 +6,7 @@ import { calculateAllowanceTarget, failed } from './utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { Chains } from '@chains';
 
+// https://build.portals.fi/docs/concepts/networks
 const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.OPTIMISM.chainId]: 'optimism',
@@ -15,6 +16,7 @@ const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.AVALANCHE.chainId]: 'avalanche',
   [Chains.BNB_CHAIN.chainId]: 'bsc',
   [Chains.BASE.chainId]: 'base',
+  [Chains.GNOSIS.chainId]: 'gnosis',
 };
 
 export const PORTALS_FI_METADATA: QuoteSourceMetadata<PortalsFiSupport> = {

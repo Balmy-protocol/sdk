@@ -10,6 +10,7 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
   supports: {
     chains: [
       Chains.ETHEREUM.chainId,
+      Chains.AURORA.chainId,
       Chains.BNB_CHAIN.chainId,
       Chains.POLYGON.chainId,
       Chains.OPTIMISM.chainId,

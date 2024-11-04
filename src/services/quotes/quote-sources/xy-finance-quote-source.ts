@@ -4,22 +4,22 @@ import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTrans
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 
+// https://docs.xy.finance/supported-blockchains-bridges-dexs
 const SUPPORTED_CHAINS = [
   Chains.ETHEREUM,
   Chains.BNB_CHAIN,
   Chains.POLYGON,
-  Chains.FANTOM,
   Chains.CRONOS,
   Chains.AVALANCHE,
   Chains.ARBITRUM,
   Chains.OPTIMISM,
   Chains.ASTAR,
-  Chains.MOONRIVER,
-  Chains.KLAYTN,
   Chains.POLYGON_ZKEVM,
   Chains.LINEA,
   Chains.BASE,
   Chains.SCROLL,
+  Chains.BLAST,
+  Chains.MANTLE,
 ];
 
 const XY_FINANCE_METADATA: QuoteSourceMetadata<XYFinanceSupport> = {

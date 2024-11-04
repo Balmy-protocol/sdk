@@ -5,13 +5,19 @@ import { isSameAddress } from '@shared/utils';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
 
-// Supported Networks: https://docs.bebop.xyz/bebop/bebop-api/api-introduction#smart-contract
+// Supported Networks: https://docs.bebop.xyz/bebop/chains-availability
 const NETWORK_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.ARBITRUM.chainId]: 'arbitrum',
   [Chains.OPTIMISM.chainId]: 'optimism',
   [Chains.BLAST.chainId]: 'blast',
+  [Chains.OPTIMISM.chainId]: 'optimism',
+  [Chains.BASE.chainId]: 'base',
+  [Chains.BNB_CHAIN.chainId]: 'bsc',
+  [Chains.MODE.chainId]: 'mode',
+  [Chains.POLYGON.chainId]: 'polygon',
+  [Chains.SCROLL.chainId]: 'scroll',
 };
 
 const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {

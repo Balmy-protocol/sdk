@@ -24,6 +24,7 @@ const ODOS_METADATA: QuoteSourceMetadata<OdosSupport> = {
       Chains.MODE.chainId,
       Chains.LINEA.chainId,
       Chains.MANTLE.chainId,
+      Chains.SCROLL.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
