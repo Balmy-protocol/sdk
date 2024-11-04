@@ -36,16 +36,8 @@ const CHAIN_ID_TO_KEY: Record<ChainId, Lowercase<string>> = {
   [Chains.MODE.chainId]: 'mode',
   [Chains.BLAST.chainId]: 'blast',
   [Chains.SCROLL.chainId]: 'scroll',
-
-  // TODO: these chains are also supported by DefiLlama. We should add them
-  // "kcc",
-  // "wan",
-  // "kardia",
-  // "metis",
-  // "telos",
-  // "meter",
-  // "sx",
-  // "milkomeda"
+  [Chains.MANTLE.chainId]: 'mantle',
+  [Chains.METIS_ANDROMEDA.chainId]: 'metis',
 };
 
 const KEY_TO_CHAIN_ID: Record<string, ChainId> = Object.fromEntries(
