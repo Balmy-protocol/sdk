@@ -32,7 +32,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON_ZKEVM.chainId]: 'POLYGONZK',
   [Chains.BLAST.chainId]: 'BLAST',
   [Chains.MODE.chainId]: 'MODE',
-  [Chains.LINEA.chainId]: 'LINA',
+  [Chains.LINEA.chainId]: 'LINEA',
   [Chains.SCROLL.chainId]: 'SCROLL',
 };
 
