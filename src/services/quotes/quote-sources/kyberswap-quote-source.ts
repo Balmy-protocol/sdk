@@ -24,6 +24,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
   [Chains.SCROLL.chainId]: 'scroll',
   [Chains.BLAST.chainId]: 'blast',
+  [Chains.MANTLE.chainId]: 'mantle',
 };
 
 const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {

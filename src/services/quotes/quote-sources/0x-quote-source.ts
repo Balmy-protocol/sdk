@@ -13,6 +13,8 @@ const SUPPORTED_CHAINS = [
   Chains.BLAST,
   Chains.BNB_CHAIN,
   Chains.LINEA,
+  Chains.MANTLE,
+  Chains.MODE,
   Chains.OPTIMISM,
   Chains.POLYGON,
   Chains.SCROLL,

@@ -37,6 +37,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.METIS_ANDROMEDA.chainId,
       Chains.SCROLL.chainId,
       Chains.BLAST.chainId,
+      Chains.MANTLE.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,

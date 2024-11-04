@@ -17,6 +17,10 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.OPTIMISM.chainId]: 'optimism',
   [Chains.BASE.chainId]: 'base',
   [Chains.POLYGON_ZKEVM.chainId]: 'polygonzk',
+  [Chains.BLAST.chainId]: 'blast',
+  [Chains.SCROLL.chainId]: 'scroll',
+  [Chains.METIS_ANDROMEDA.chainId]: 'metis',
+  [Chains.FANTOM.chainId]: 'fantom',
 };
 
 const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {

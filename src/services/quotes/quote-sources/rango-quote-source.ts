@@ -8,6 +8,7 @@ import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, So
 import { calculateAllowanceTarget, failed } from './utils';
 import { decodeFunctionData, parseAbi } from 'viem';
 
+// https://docs.rango.exchange/integrations
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ETH',
   [Chains.BNB_CHAIN.chainId]: 'BNB',
@@ -29,6 +30,10 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.HECO.chainId]: 'HECO',
   [Chains.EVMOS.chainId]: 'EVMOS',
   [Chains.POLYGON_ZKEVM.chainId]: 'POLYGONZK',
+  [Chains.BLAST.chainId]: 'BLAST',
+  [Chains.MODE.chainId]: 'MODE',
+  [Chains.LINEA.chainId]: 'LINA',
+  [Chains.SCROLL.chainId]: 'SCROLL',
 };
 
 const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {

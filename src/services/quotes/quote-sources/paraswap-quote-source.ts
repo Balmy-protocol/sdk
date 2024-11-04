@@ -18,6 +18,7 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
       Chains.OPTIMISM.chainId,
       Chains.POLYGON_ZKEVM.chainId,
       Chains.BASE.chainId,
+      Chains.GNOSIS.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: true,

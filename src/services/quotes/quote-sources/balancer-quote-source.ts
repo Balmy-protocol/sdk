@@ -1,7 +1,7 @@
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits } from 'viem';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { ChainId } from '@types';
 

@@ -3,6 +3,7 @@ import { IQuoteSource, SourceQuoteTransaction, BuildTxParams } from './types';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 
+// Must check app directly: https://app.squidrouter.com/
 const SQUID_METADATA: QuoteSourceMetadata<SquidSupport> = {
   name: 'Squid',
   supports: {
@@ -23,6 +24,8 @@ const SQUID_METADATA: QuoteSourceMetadata<SquidSupport> = {
       Chains.FANTOM.chainId,
       Chains.EVMOS.chainId,
       Chains.BLAST.chainId,
+      Chains.MANTLE.chainId,
+      Chains.MOONBEAM.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
