@@ -711,8 +711,8 @@ export class EarnService implements IEarnService {
       })
     );
     let balancesFromVault: Record<TokenAddress, bigint> = {};
-    // If any token amount to convert is MAX_UINT256, then we need to check vault balance
-    if (withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
+    // If any token amount to convert is MAX_UINT256 or we are withdrawing the farm token, then we need to check vault balance
+    if (shouldWithdrawFarmToken || withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
       const [positionTokens, positionBalances] = await this.providerService.getViemPublicClient({ chainId }).readContract({
         abi: vaultAbi,
         address: vault,
