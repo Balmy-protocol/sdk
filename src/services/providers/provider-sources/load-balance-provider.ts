@@ -93,7 +93,7 @@ function loadBalance(transports_: readonly Transport[], config: LoadBalanceProvi
         }
 
         try {
-          return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, ...params }), timeout));
+          return await Promise.any(toExecute.map(({ transport }) => transport.request({ method, ...params })));
         } catch (error: any) {
           // Consider all transports used as attempts
           attempts += toExecute.length;
