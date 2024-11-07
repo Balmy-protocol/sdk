@@ -37,7 +37,7 @@ import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
 import strategyAbi from '@shared/abis/earn-strategy';
 import delayerWithdrawalManagerAbi from '@shared/abis/earn-delayed-withdrawal-manager';
-import { calculateDeadline, isSameAddress, toAmountsOfToken } from '@shared/utils';
+import { calculateDeadline, isSameAddress, toAmountsOfToken, toLower } from '@shared/utils';
 import { Addresses, Uint } from '@shared/constants';
 import { GenericContractCall, IPermit2Service, PermitData, SinglePermitParams } from '@services/permit2';
 import { IQuoteService, QuoteRequest } from '@services/quotes';
@@ -719,7 +719,7 @@ export class EarnService implements IEarnService {
         functionName: 'position',
         args: [bigIntPositionId],
       });
-      balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [token, positionBalances[index]]));
+      balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [toLower(token), positionBalances[index]]));
     }
     // Handle swaps
     const withdrawsToConvert = withdraw.amounts
@@ -736,7 +736,7 @@ export class EarnService implements IEarnService {
       const basicArgs = [
         bigIntPositionId,
         BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
-        [intendedWithdraw[0] != Uint.MAX_256 ? intendedWithdraw[0] : balancesFromVault[tokensToWithdraw[0]]],
+        [intendedWithdraw[0] != Uint.MAX_256 ? intendedWithdraw[0] : balancesFromVault[toLower(tokensToWithdraw[0])]],
         '0x',
         COMPANION_SWAPPER_CONTRACT.address(chainId),
       ] as const;
