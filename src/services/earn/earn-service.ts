@@ -670,6 +670,9 @@ export class EarnService implements IEarnService {
     const bigIntPositionId = BigInt(tokenId);
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
+    if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
+      throw new Error('Can not convert delayed withdrawals');
+    }
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
     const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
     const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
