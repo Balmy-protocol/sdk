@@ -37,8 +37,7 @@ const SWING_METADATA: QuoteSourceMetadata<SwingSupport> = {
     swapAndTransfer: true,
     buyOrders: false,
   },
-  // TODO: update after we have hash
-  logoURI: 'ipfs://QmPQY4siKEJHZGW5F4JDBrUXCBFqfpnKzPA2xDmboeuZzL',
+  logoURI: 'ipfs://QmNjjXnWeWSsn9fbTFNCs9CA3WneQU27NfTJgoZ4kBqCUv',
 };
 type SwingConfig = { projectId?: string };
 type SwingSupport = { buyOrders: false; swapAndTransfer: true };
