@@ -217,6 +217,7 @@ export type ActionType =
   | CreatedAction
   | IncreasedAction
   | WithdrawnAction
+  | WithdrawnSpeciallyAction
   | TransferredAction
   | PermissionsModifiedAction
   | DelayedWithdrawalClaimedAction;
@@ -241,6 +242,15 @@ export type WithdrawnAction = {
     token: Token; // With price
     amount: AmountsOfToken;
     withdrawType: WithdrawType;
+  }[];
+  recipient: ViemAddress;
+};
+
+export type WithdrawnSpeciallyAction = {
+  action: 'withdrawn specially';
+  withdrawn: {
+    token: Token; // With price
+    amount: AmountsOfToken;
   }[];
   recipient: ViemAddress;
 };
