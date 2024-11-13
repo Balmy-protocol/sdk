@@ -699,20 +699,25 @@ export class EarnService implements IEarnService {
       calls.push(buildPermissionPermit(bigIntPositionId, permissionPermit, vault));
     }
 
-    // Handle withdraw
-    calls.push(
-      encodeFunctionData({
-        abi: companionAbi,
-        functionName: 'withdraw',
-        args: [
-          vault as ViemAddress,
-          bigIntPositionId,
-          tokensToWithdraw,
-          intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
-          COMPANION_SWAPPER_CONTRACT.address(chainId),
-        ],
-      })
-    );
+    const shouldCallWithdraw =
+      !shouldWithdrawFarmToken || withdraw.amounts.some(({ type, amount }) => type != WithdrawType.MARKET && BigInt(amount) >= 0n);
+    if (shouldCallWithdraw) {
+      // Handle withdraw
+      calls.push(
+        encodeFunctionData({
+          abi: companionAbi,
+          functionName: 'withdraw',
+          args: [
+            vault as ViemAddress,
+            bigIntPositionId,
+            tokensToWithdraw,
+            intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
+            COMPANION_SWAPPER_CONTRACT.address(chainId),
+          ],
+        })
+      );
+    }
+
     let balancesFromVault: Record<TokenAddress, bigint> = {};
     // If any token amount to convert is MAX_UINT256 or we are withdrawing the farm token, then we need to check vault balance
     if (shouldWithdrawFarmToken || withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
@@ -769,7 +774,9 @@ export class EarnService implements IEarnService {
       });
     }
 
-    const withdrawsToTransfer = withdraw.amounts.filter(({ convertTo }) => !convertTo).map(({ token }) => token);
+    const withdrawsToTransfer = withdraw.amounts
+      .filter(({ type, convertTo, amount }) => !convertTo && type != WithdrawType.MARKET && BigInt(amount) > 0n)
+      .map(({ token }) => token);
 
     const swapAndTransferData = await this.getSwapAndTransferData({
       chainId,
@@ -865,7 +872,8 @@ export class EarnService implements IEarnService {
     // Handle transfers
     if (transfers) {
       for (const transfer of transfers) {
-        distributions[transfer] = [{ recipient, shareBps: 0 }];
+        const tokenOutTransfer = isSameAddress(transfer, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : transfer;
+        distributions[tokenOutTransfer] = [{ recipient, shareBps: 0 }];
       }
     }
 
