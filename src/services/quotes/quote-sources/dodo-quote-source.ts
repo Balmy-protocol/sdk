@@ -28,7 +28,7 @@ const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
     swapAndTransfer: false,
     buyOrders: false,
   },
-  logoURI: 'ipfs://QmYpbxSqVmeHrzfjdd5JWdPitvZZhiMaeAiBGe7VT8qQTA',
+  logoURI: 'ipfs://Qmc5ug2FpdeDFVNif7Q48Uvx3LoAvkeU4ksNJtL3qkEdqc',
 };
 type DodoDexConfig = { apiKey: string };
 type DodoDexSupport = { buyOrders: false; swapAndTransfer: false };
