@@ -1075,6 +1075,18 @@ function fulfillHistory(action: EarnPositionAction, asset: TokenAddress, tokens:
           withdrawType,
         })),
       };
+    case 'withdrawn specially':
+      return {
+        ...action,
+        withdrawn: action.withdrawn.map(({ token, amount, tokenPrice }) => ({
+          token: { ...tokens[token], address: token, price: tokenPrice },
+          amount: toAmountsOfToken({
+            price: tokenPrice,
+            amount,
+            decimals: tokens[token].decimals,
+          }),
+        })),
+      };
     case 'transferred':
     case 'modified permissions':
       return action;
@@ -1188,6 +1200,7 @@ type ActionType =
   | CreatedAction
   | IncreasedAction
   | WithdrawnAction
+  | WithdrawnSpeciallyAction
   | TransferredAction
   | PermissionsModifiedAction
   | DelayedWithdrawalClaimedAction;
@@ -1214,6 +1227,16 @@ type WithdrawnAction = {
     amount: bigint;
     tokenPrice?: number;
     withdrawType: WithdrawType;
+  }[];
+  recipient: ViemAddress;
+};
+
+type WithdrawnSpeciallyAction = {
+  action: 'withdrawn specially';
+  withdrawn: {
+    token: ViemAddress;
+    amount: bigint;
+    tokenPrice?: number;
   }[];
   recipient: ViemAddress;
 };
