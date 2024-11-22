@@ -28,7 +28,7 @@ export type ProviderSourceInput =
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
-  | { type: 'alchemy'; key: string; onChains?: ChainId[] }
+  | { type: 'alchemy'; key: string; onChains?: ChainId[] | 'free tier' | 'paid tier' }
   | { type: 'third-web'; onChains?: ChainId[] }
   | { type: 'blast'; key?: string; onChains?: ChainId[] }
   | ({ type: 'moralis'; site?: 'site1' | 'site2' } & ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }))

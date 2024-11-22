@@ -26,6 +26,7 @@ import { SovrynQuoteSource } from './quote-sources/sovryn-quote-source';
 import { BarterQuoteSource } from './quote-sources/barter-quote-source';
 import { DodoDexQuoteSource } from './quote-sources/dodo-quote-source';
 import { BalancerQuoteSource } from './quote-sources/balancer-quote-source';
+import { SwingQuoteSource } from './quote-sources/swing-quote-source';
 
 export const QUOTE_SOURCES = {
   bebop: new BebopQuoteSource(),
@@ -53,6 +54,7 @@ export const QUOTE_SOURCES = {
   conveyor: new ConveyorQuoteSource(),
   dodo: new DodoDexQuoteSource(),
   balancer: new BalancerQuoteSource(),
+  swing: new SwingQuoteSource(),
 } satisfies Record<SourceId, IQuoteSource<QuoteSourceSupport, any>>;
 
 export const SOURCES_METADATA = Object.fromEntries(

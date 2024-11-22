@@ -33,9 +33,13 @@ const ALCHEMY_NETWORKS: Record<ChainId, { key: string; onlyPaid?: true }> = {
 export class AlchemyProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
 
-  constructor(private readonly key: string, onChains?: ChainId[]) {
+  constructor(private readonly key: string, onChains?: ChainId[] | 'free tier' | 'paid tier') {
     super();
-    this.supported = onChains ?? alchemySupportedChains();
+    if (typeof onChains === 'string') {
+      this.supported = alchemySupportedChains({ onlyFree: onChains === 'free tier' });
+    } else {
+      this.supported = onChains ?? alchemySupportedChains();
+    }
   }
 
   supportedChains(): ChainId[] {

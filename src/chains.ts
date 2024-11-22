@@ -288,7 +288,15 @@ export const Chains = {
     ids: ['cronos'],
     nativeCurrency: { symbol: 'CRO', name: 'Cronos' },
     wToken: '0x5c7f8a570d578ed84e63fdfa7b1ee72deae1ae23',
-    publicRPCs: ['https://cronosrpc-1.xstaking.sg', 'https://evm.cronos.org', 'https://rpc.vvs.finance', 'https://evm-cronos.crypto.org'],
+    publicRPCs: [
+      'https://cronosrpc-1.xstaking.sg',
+      'https://evm.cronos.org',
+      'https://rpc.vvs.finance',
+      'https://evm-cronos.crypto.org',
+      'https://cronos.blockpi.network/v1/rpc/public',
+      'https://cronos.drpc.org',
+      'https://cronos-evm-rpc.publicnode.com',
+    ],
     explorer: 'https://cronoscan.com/',
   },
   BOBA: {
@@ -424,7 +432,14 @@ export const Chains = {
     ids: ['kava'],
     nativeCurrency: { symbol: 'KAVA', name: 'Kava' },
     wToken: '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b',
-    publicRPCs: ['https://evm.kava.io', 'https://evm2.kava.io', 'https://kava-pokt.nodies.app'],
+    publicRPCs: [
+      'https://evm.kava.io',
+      'https://evm2.kava.io',
+      'https://kava-pokt.nodies.app',
+      'https://kava-evm-rpc.publicnode.com',
+      'https://kava.drpc.org',
+      'https://evm.kava-rpc.com',
+    ],
     explorer: 'https://explorer.kava.io/',
   },
   LINEA: {
