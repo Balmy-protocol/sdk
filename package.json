@@ -52,7 +52,7 @@
     "viem": "2.18.4"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.8.0",
+    "@commitlint/cli": "19.6.0",
     "@commitlint/config-conventional": "17.8.0",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "1.0.8",
