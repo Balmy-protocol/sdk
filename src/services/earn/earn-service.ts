@@ -30,8 +30,15 @@ import {
   WithdrawEarnPositionParams,
   WithdrawType,
 } from './types';
-import { COMPANION_SWAPPER_CONTRACT, DELAYED_WITHDRAWAL_MANAGER, EARN_STRATEGY_REGISTRY, EARN_VAULT, EARN_VAULT_COMPANION } from './config';
-import { encodeFunctionData, Hex, Address as ViemAddress } from 'viem';
+import {
+  COMPANION_SWAPPER_CONTRACT,
+  DELAYED_WITHDRAWAL_MANAGER,
+  EARN_STRATEGY_REGISTRY,
+  EARN_VAULT,
+  EARN_VAULT_COMPANION,
+  EXTERNAL_FIREWALL,
+} from './config';
+import { encodeFunctionData, Hex, toFunctionSelector, toHex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
@@ -267,6 +274,7 @@ export class EarnService implements IEarnService {
     strategyValidationData,
     misc,
     deposit,
+    caller,
   }: CreateEarnPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const companion = EARN_VAULT_COMPANION.address(chainId);
@@ -286,7 +294,7 @@ export class EarnService implements IEarnService {
 
     if ('token' in deposit && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
-      return {
+      const tx = {
         to: vault,
         data: encodeFunctionData({
           abi: vaultAbi,
@@ -306,6 +314,7 @@ export class EarnService implements IEarnService {
         }),
         value: depositInfo.value,
       };
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'createPosition'));
     }
     // If we get to this point, then we'll use the Companion for the deposit
     const calls: Hex[] = [];
@@ -376,10 +385,23 @@ export class EarnService implements IEarnService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ chainId, calls, value: depositInfo.value });
+    return this.buildCompanionMulticall({
+      chainId,
+      calls,
+      value: depositInfo.value,
+      caller,
+      needsAttestation: true,
+      method: getSelectorFromAbi(companionAbi, 'createPosition'),
+    });
   }
 
-  async buildIncreasePositionTx({ chainId, positionId, increase, permissionPermit }: IncreaseEarnPositionParams): Promise<BuiltTransaction> {
+  async buildIncreasePositionTx({
+    chainId,
+    positionId,
+    increase,
+    permissionPermit,
+    caller,
+  }: IncreaseEarnPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const companion = EARN_VAULT_COMPANION.address(chainId);
     let increaseInfo: { token: Address; amount: bigint; value: bigint };
@@ -417,7 +439,7 @@ export class EarnService implements IEarnService {
 
     if ('token' in increase && !needsSwap) {
       // If don't need to use Permit2, then just call the vault
-      return {
+      const tx = {
         to: vault,
         data: encodeFunctionData({
           abi: vaultAbi,
@@ -426,6 +448,7 @@ export class EarnService implements IEarnService {
         }),
         value: increaseInfo.value,
       };
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'increasePosition'));
     }
 
     // If we get to this point, then we'll use the Companion for the increase
@@ -489,7 +512,14 @@ export class EarnService implements IEarnService {
     );
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ chainId, calls, value: increaseInfo.value });
+    return this.buildCompanionMulticall({
+      chainId,
+      calls,
+      value: increaseInfo.value,
+      caller,
+      needsAttestation: true,
+      method: getSelectorFromAbi(companionAbi, 'increasePosition'),
+    });
   }
 
   async buildClaimDelayedWithdrawPositionTx({
@@ -587,7 +617,7 @@ export class EarnService implements IEarnService {
     calls.push(swapAndTransferData);
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ chainId, calls });
+    return this.buildCompanionMulticall({ chainId, calls, needsAttestation: false });
   }
   async estimateMarketWithdraw({
     chainId,
@@ -681,7 +711,7 @@ export class EarnService implements IEarnService {
     }
     if (!shouldConvertAnyToken && !shouldWithdrawFarmToken) {
       // If don't need to convert anything, then just call the vault
-      return {
+      const tx = {
         to: vault,
         data: encodeFunctionData({
           abi: vaultAbi,
@@ -689,6 +719,8 @@ export class EarnService implements IEarnService {
           args: [BigInt(bigIntPositionId), tokensToWithdraw, intendedWithdraw, recipient as ViemAddress],
         }),
       };
+
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'withdraw'));
     }
 
     // If we get to this point, then we'll use the Companion for swap & transfer
@@ -762,9 +794,7 @@ export class EarnService implements IEarnService {
         args: basicArgs,
       });
       const [, , actualWithdrawnTokens, actualWithdrawnAmounts] = result;
-
       calls.push(encodeFunctionData(specialWithdrawTx));
-
       // Convert farm token to asset or specified token
       withdrawsToConvert.push({
         chainId,
@@ -788,7 +818,13 @@ export class EarnService implements IEarnService {
     calls.push(swapAndTransferData);
 
     // Build multicall and return tx
-    return buildCompanionMulticall({ chainId, calls });
+    return this.buildCompanionMulticall({
+      chainId,
+      calls,
+      caller,
+      needsAttestation: true,
+      method: getSelectorFromAbi(companionAbi, 'withdraw'),
+    });
   }
 
   private async getSwapData({
@@ -955,6 +991,73 @@ export class EarnService implements IEarnService {
 
     return { needsSwap: !isDepositTokenSupported, asset };
   }
+
+  private async buildCompanionMulticall({
+    chainId,
+    calls,
+    value,
+    ...rest
+  }: { chainId: ChainId; calls: Hex[]; value?: bigint } & (
+    | { caller: Address; needsAttestation: true; method: Hex }
+    | { needsAttestation: false }
+  )) {
+    const data = encodeFunctionData({
+      abi: companionAbi,
+      functionName: 'multicall',
+      args: [calls],
+    });
+
+    const tx = { to: EARN_VAULT_COMPANION.address(chainId), data, value };
+
+    if (rest.needsAttestation) {
+      return this.buildAttestedCallIfActivated(tx, rest.caller, chainId, rest.method);
+    }
+
+    return tx;
+  }
+
+  private async attestTx(
+    tx: BuiltTransaction,
+    caller: Address,
+    chainId: ChainId
+  ): Promise<{ attestation: { deadline: bigint; executionHashes: Hex[] }; signature: Hex }> {
+    const result = await this.fetchService.fetch(`https://attester-api.forta.network/attest`, {
+      method: 'POST',
+      body: JSON.stringify({
+        from: caller,
+        to: tx.to,
+        input: tx.data,
+        value: toHex(tx.value ?? 0n),
+        chainId,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return result.json();
+  }
+
+  private async buildAttestedCallIfActivated(tx: BuiltTransaction, caller: Address, chainId: ChainId, method: Hex): Promise<BuiltTransaction> {
+    const [, , , activationStatus] = await this.providerService.getViemPublicClient({ chainId }).readContract({
+      abi: externalFirewallAbi,
+      address: EXTERNAL_FIREWALL.address(chainId),
+      functionName: 'getCheckpoint',
+      args: [method],
+    });
+
+    if (!activationStatus) {
+      return tx;
+    }
+
+    const { attestation, signature } = await this.attestTx(tx, caller, chainId);
+    return {
+      to: tx.to,
+      value: tx.value,
+      data: encodeFunctionData({
+        abi: vaultAbi, // same abi as companion for attestedCall
+        functionName: 'attestedCall',
+        args: [attestation, signature, tx.data as Hex],
+      }),
+    };
+  }
 }
 
 function buildPermissionPermit(positionId: bigint, permit: EarnPermissionPermit, vault: Address): Hex {
@@ -1005,15 +1108,6 @@ function buildTakeFromCaller(token: TokenAddress, amount: BigIntish, recipient: 
     functionName: 'takeFromCaller',
     args: [token as ViemAddress, BigInt(amount), recipient as ViemAddress],
   });
-}
-
-async function buildCompanionMulticall({ chainId, calls, value }: { chainId: ChainId; calls: Hex[]; value?: bigint }) {
-  const data = encodeFunctionData({
-    abi: companionAbi,
-    functionName: 'multicall',
-    args: [calls],
-  });
-  return { to: EARN_VAULT_COMPANION.address(chainId), data, value };
 }
 
 function fulfillStrategy(
@@ -1276,3 +1370,24 @@ type GetPositionsParams = BaseGetPositionsParams &
         accounts: ArrayOneOrMore<Address>;
       }
   );
+
+const externalFirewallAbi = [
+  {
+    inputs: [{ internalType: 'bytes4', name: 'selector', type: 'bytes4' }],
+    name: 'getCheckpoint',
+    outputs: [
+      { internalType: 'uint192', name: '', type: 'uint192' },
+      { internalType: 'uint16', name: '', type: 'uint16' },
+      { internalType: 'uint16', name: '', type: 'uint16' },
+      { internalType: 'enum Activation', name: '', type: 'uint8' },
+      { internalType: 'bool', name: '', type: 'bool' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+function getSelectorFromAbi(abi: any, method: string) {
+  const abiFunction = abi.find((item: any) => item.name === method);
+  return toFunctionSelector(abiFunction);
+}

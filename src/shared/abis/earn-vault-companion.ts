@@ -231,4 +231,23 @@ export default [
     ],
     stateMutability: 'payable',
   },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          { internalType: 'bytes32[]', name: 'executionHashes', type: 'bytes32[]' },
+        ],
+        internalType: 'struct Attestation',
+        name: 'attestation',
+        type: 'tuple',
+      },
+      { internalType: 'bytes', name: 'attestationSignature', type: 'bytes' },
+      { internalType: 'bytes', name: 'data', type: 'bytes' },
+    ],
+    name: 'attestedCall',
+    outputs: [{ internalType: 'bytes', name: '', type: 'bytes' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ] as const;

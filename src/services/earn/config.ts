@@ -19,3 +19,7 @@ export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
 export const DELAYED_WITHDRAWAL_MANAGER = Contract.with({ defaultAddress: '0x92fdb7604ca7e5635421332d4c9a00680dfa53e6' }) // Polygon
   .and({ address: '0x9b5004c016fe00bb81c90e2e2beaa128d1815108', onChain: Chains.BASE })
   .build();
+
+export const EXTERNAL_FIREWALL = Contract.with({ defaultAddress: '0x6B35d4869C2E72F29fbc9a2EE3a29B5502DC1e10' }) // Polygon
+  .and({ address: '0x0aDa65e309d609294ADC39Add02aA52331e372Ee', onChain: Chains.BASE })
+  .build();
