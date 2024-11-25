@@ -38,7 +38,7 @@ import {
   EARN_VAULT_COMPANION,
   EXTERNAL_FIREWALL,
 } from './config';
-import { encodeFunctionData, Hex, toHex, Address as ViemAddress } from 'viem';
+import { encodeFunctionData, Hex, toFunctionSelector, toHex, Address as ViemAddress } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRegistryAbi from '@shared/abis/earn-strategy-registry';
@@ -314,7 +314,7 @@ export class EarnService implements IEarnService {
         }),
         value: depositInfo.value,
       };
-      return this.buildAttestedCallIfActivated(tx, caller, chainId, MethodsSelector.EARN_VAULT_CREATE_POSITION);
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'createPosition'));
     }
     // If we get to this point, then we'll use the Companion for the deposit
     const calls: Hex[] = [];
@@ -391,7 +391,7 @@ export class EarnService implements IEarnService {
       value: depositInfo.value,
       caller,
       needsAttestation: true,
-      method: MethodsSelector.EARN_VAULT_COMPANION_CREATE_POSITION,
+      method: getSelectorFromAbi(companionAbi, 'createPosition'),
     });
   }
 
@@ -448,7 +448,7 @@ export class EarnService implements IEarnService {
         }),
         value: increaseInfo.value,
       };
-      return this.buildAttestedCallIfActivated(tx, caller, chainId, MethodsSelector.EARN_VAULT_INCREASE_POSITION);
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'increasePosition'));
     }
 
     // If we get to this point, then we'll use the Companion for the increase
@@ -518,7 +518,7 @@ export class EarnService implements IEarnService {
       value: increaseInfo.value,
       caller,
       needsAttestation: true,
-      method: MethodsSelector.EARN_VAULT_COMPANION_INCREASE_POSITION,
+      method: getSelectorFromAbi(companionAbi, 'increasePosition'),
     });
   }
 
@@ -720,7 +720,7 @@ export class EarnService implements IEarnService {
         }),
       };
 
-      return this.buildAttestedCallIfActivated(tx, caller, chainId, MethodsSelector.EARN_VAULT_WITHDRAW);
+      return this.buildAttestedCallIfActivated(tx, caller, chainId, getSelectorFromAbi(vaultAbi, 'withdraw'));
     }
 
     // If we get to this point, then we'll use the Companion for swap & transfer
@@ -823,7 +823,7 @@ export class EarnService implements IEarnService {
       calls,
       caller,
       needsAttestation: true,
-      method: MethodsSelector.EARN_VAULT_COMPANION_WITHDRAW,
+      method: getSelectorFromAbi(companionAbi, 'withdraw'),
     });
   }
 
@@ -998,7 +998,7 @@ export class EarnService implements IEarnService {
     value,
     ...rest
   }: { chainId: ChainId; calls: Hex[]; value?: bigint } & (
-    | { caller: Address; needsAttestation: true; method: MethodsSelector }
+    | { caller: Address; needsAttestation: true; method: Hex }
     | { needsAttestation: false }
   )) {
     const data = encodeFunctionData({
@@ -1035,12 +1035,7 @@ export class EarnService implements IEarnService {
     return result.json();
   }
 
-  private async buildAttestedCallIfActivated(
-    tx: BuiltTransaction,
-    caller: Address,
-    chainId: ChainId,
-    method: MethodsSelector
-  ): Promise<BuiltTransaction> {
+  private async buildAttestedCallIfActivated(tx: BuiltTransaction, caller: Address, chainId: ChainId, method: Hex): Promise<BuiltTransaction> {
     const [, , , activationStatus] = await this.providerService.getViemPublicClient({ chainId }).readContract({
       abi: externalFirewallAbi,
       address: EXTERNAL_FIREWALL.address(chainId),
@@ -1392,11 +1387,7 @@ const externalFirewallAbi = [
   },
 ] as const;
 
-enum MethodsSelector {
-  EARN_VAULT_COMPANION_WITHDRAW = '0x48316792',
-  EARN_VAULT_COMPANION_CREATE_POSITION = '0x1b0830f8',
-  EARN_VAULT_COMPANION_INCREASE_POSITION = '0xdeb2e2a2',
-  EARN_VAULT_WITHDRAW = '0x3c5343b7',
-  EARN_VAULT_CREATE_POSITION = '0xc84a8b2d',
-  EARN_VAULT_INCREASE_POSITION = '0xf41cc8e6',
+function getSelectorFromAbi(abi: any, method: string) {
+  const abiFunction = abi.find((item: any) => item.name === method);
+  return toFunctionSelector(abiFunction);
 }
