@@ -151,6 +151,7 @@ export class EarnService implements IEarnService {
                   fulfillHistoricalBalance(historicalBalance, positionsInThisNetwork.tokens)
                 )
               : undefined,
+          lastUpdatedAt: position.lastUpdatedAt,
         };
       });
     });
@@ -1276,6 +1277,7 @@ type EarnPositionResponse = {
   delayed?: DelayedWithdrawalResponse[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
+  lastUpdatedAt: Timestamp;
 };
 type DelayedWithdrawalResponse = { token: ViemAddress; pending: bigint; ready: bigint };
 
