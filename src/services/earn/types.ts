@@ -206,6 +206,7 @@ export type EarnPosition = {
   delayed?: { token: Token; pending: AmountsOfToken; ready: AmountsOfToken }[];
   history?: EarnPositionAction[];
   historicalBalances?: HistoricalBalance[];
+  lastUpdatedAt: Timestamp;
 };
 
 export type HistoricalBalance = {
