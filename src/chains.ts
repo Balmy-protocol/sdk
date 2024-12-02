@@ -322,14 +322,19 @@ export const Chains = {
     ],
     explorer: 'https://explorer.ont.io/',
   },
-  KLAYTN: {
+  KAIA: {
     chainId: 8217,
-    name: 'Klaytn',
-    ids: ['klaytn'],
-    nativeCurrency: { symbol: 'KLAY', name: 'Klaytn' },
+    name: 'Kaia',
+    ids: ['klaytn', 'kaia'],
+    nativeCurrency: { symbol: 'KAIA', name: 'Kaia' },
     wToken: '0xe4f05a66ec68b54a58b17c22107b02e0232cc817',
-    publicRPCs: ['https://public-en-cypress.klaytn.net', 'https://public-node-api.klaytnapi.com/v1/cypress', 'https://klaytn-pokt.nodies.app'],
-    explorer: 'https://scope.klaytn.com/',
+    publicRPCs: [
+      'https://public-en-cypress.klaytn.net',
+      'https://public-node-api.klaytnapi.com/v1/cypress',
+      'https://klaytn-pokt.nodies.app',
+      'https://public-en.node.kaia.io',
+    ],
+    explorer: 'https://kaiascan.io/',
   },
   AURORA: {
     chainId: 1313161554,

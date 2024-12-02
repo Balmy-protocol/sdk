@@ -17,7 +17,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.GNOSIS.chainId]: 'gnosis',
   [Chains.AURORA.chainId]: 'aurora',
   [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
-  [Chains.KLAYTN.chainId]: 'klaytn',
+  [Chains.KAIA.chainId]: 'klaytn',
   [Chains.BOBA.chainId]: 'boba-eth',
   [Chains.CELO.chainId]: 'celo',
   [Chains.CRONOS.chainId]: 'cronos',
