@@ -147,7 +147,7 @@ export const TOKENS: Record<ChainId, Record<string, TokenData>> = {
       whale: '0xc73eed4494382093c6a7c284426a9a00f6c79939',
     },
   },
-  [Chains.KLAYTN.chainId]: {
+  [Chains.KAIA.chainId]: {
     STABLE_ERC20: {
       address: '0x6270b58be569a7c0b8f47594f191631ae5b2c86c',
       whale: '0x7d274dce8e2467fc4cdb6e8e1755db5686daebbb',

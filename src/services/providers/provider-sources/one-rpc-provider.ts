@@ -15,7 +15,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.OPTIMISM.chainId]: 'op',
   [Chains.FANTOM.chainId]: 'ftm',
   [Chains.CELO.chainId]: 'celo',
-  [Chains.KLAYTN.chainId]: 'klay',
+  [Chains.KAIA.chainId]: 'klay',
   [Chains.AURORA.chainId]: 'aurora',
   [Chains.BASE.chainId]: 'base',
   [Chains.GNOSIS.chainId]: 'gnosis',
