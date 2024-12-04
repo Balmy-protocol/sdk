@@ -28,6 +28,7 @@ const ALCHEMY_NETWORKS: Record<ChainId, { key: string; onlyPaid?: true }> = {
   // [Chains.ZKSYNC_SEPOLIA.chainId]: { key: 'zksync-sepolia' },
   [Chains.MANTLE.chainId]: { key: 'mantle-mainnet' },
   [Chains.ROOTSTOCK.chainId]: { key: 'rootstock-mainnet' },
+  [Chains.LINEA.chainId]: { key: 'linea-mainnet' },
 };
 
 export class AlchemyProviderSource extends BaseHttpProvider {
