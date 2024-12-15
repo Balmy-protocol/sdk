@@ -1,6 +1,9 @@
 # Balmy SDK
+### [Docs](https://docs.balmy.xyz) | [X](https://x.com/balmy_xyz) | [Discord](http://discord.balmy.xyz/)
 
-This repository contains the code for the Balmy sdk.
+Balmy is the state-of-the-art DCA open protocol that enables users (or dapps) to Dollar Cost Average (DCA) any ERC20 into any ERC20 with their preferred period frequency, without sacrificing decentralization or giving up personal information to any centralized parties.
+
+The Balmy SDK allows you to interact with the Balmy protocol, providing efficient tools to manage token balances, retrieve trade quotes from DEX aggregators, and check token holdings across multiple chains.
 
 ## 🧪 Installing
 
@@ -108,7 +111,3 @@ await signer.sendTransaction(bestTradeBySort.tx);
 ```bash
 yarn install
 ```
-
-## 📖 Docs
-
-WIP - Will be at [docs.balmy.xyz](https://docs.balmy.xyz)
