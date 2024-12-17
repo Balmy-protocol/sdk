@@ -4,6 +4,7 @@ import { PriceResult, IPriceSource, PricesQueriesSupport, PriceInput } from '../
 import { Chains, getChainByKeyOrFail } from '@chains';
 import { isSameAddress, splitInChunks } from '@shared/utils';
 import { Addresses } from '@shared/constants';
+import ms from 'ms';
 
 const SUPPORTED_CHAINS = [
   Chains.ARBITRUM,
@@ -45,8 +46,8 @@ export class CodexPriceSource implements IPriceSource {
   supportedQueries() {
     const support: PricesQueriesSupport = {
       getCurrentPrices: true,
-      getHistoricalPrices: false,
-      getBulkHistoricalPrices: false,
+      getHistoricalPrices: true,
+      getBulkHistoricalPrices: true,
       getChart: false,
     };
     const entries = SUPPORTED_CHAINS.map(({ chainId }) => chainId).map((chainId) => [chainId, support]);
@@ -60,7 +61,70 @@ export class CodexPriceSource implements IPriceSource {
     tokens: PriceInput[];
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    const result: Record<ChainId, Record<TokenAddress, PriceResult>> = {};
+    const input = tokens.map(({ token, chainId }) => ({ chainId, token }));
+    const prices = await this.getBulkPrices({ tokens: input, config });
+    return Object.fromEntries(
+      Object.entries(prices).map(([chainId, tokens]) => [
+        chainId,
+        Object.fromEntries(Object.entries(tokens).map(([token, price]) => [token, Object.values(price).at(0)!])),
+      ])
+    );
+  }
+
+  async getHistoricalPrices({
+    tokens,
+    timestamp,
+    searchWidth,
+    config,
+  }: {
+    tokens: PriceInput[];
+    timestamp: Timestamp;
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
+    const input = tokens.map(({ token, chainId }) => ({ chainId, token, timestamp }));
+    const prices = await this.getBulkHistoricalPrices({ tokens: input, searchWidth, config });
+    return Object.fromEntries(
+      Object.entries(prices).map(([chainId, tokens]) => [
+        chainId,
+        Object.fromEntries(Object.entries(tokens).map(([token, price]) => [token, price[timestamp]])),
+      ])
+    );
+  }
+
+  getBulkHistoricalPrices({
+    tokens,
+    searchWidth,
+    config,
+  }: {
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
+    searchWidth: TimeString | undefined;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    return this.getBulkPrices({ tokens, searchWidth, config });
+  }
+
+  async getChart(_: {
+    tokens: PriceInput[];
+    span: number;
+    period: TimeString;
+    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
+    return Promise.reject(new Error('Operation not supported'));
+  }
+
+  private async getBulkPrices({
+    tokens,
+    searchWidth,
+    config,
+  }: {
+    tokens: { chainId: ChainId; token: TokenAddress; timestamp?: Timestamp }[];
+    searchWidth?: TimeString;
+    config: { timeout?: TimeString } | undefined;
+  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    const result: Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>> = {};
     if (!this.apiKey) {
       return result;
     }
@@ -72,11 +136,11 @@ export class CodexPriceSource implements IPriceSource {
                   inputs: [
                     ${chunk
                       .map(
-                        ({ token, chainId }) =>
+                        ({ token, chainId, timestamp }) =>
                           `{ address: "${
                             // Codex doesn't support native tokens, so we use the wrapped native token
                             isSameAddress(token, Addresses.NATIVE_TOKEN) ? getChainByKeyOrFail(chainId).wToken : token
-                          }", networkId: ${chainId} }`
+                          }", networkId: ${chainId} ${timestamp ? `, timestamp: ${timestamp}` : ''}  }`
                       )
                       .join('\n')}
                   ]
@@ -100,50 +164,18 @@ export class CodexPriceSource implements IPriceSource {
       }
 
       const body: Response = await response.json();
-      for (const tokenPrice of body.data.getTokenPrices) {
-        if (!tokenPrice) continue;
-        if (!result[tokenPrice.networkId]) {
-          result[tokenPrice.networkId] = {};
-        }
-        let address = chunk.find(({ token, chainId }) => isSameAddress(token, tokenPrice.address) && chainId === tokenPrice.networkId)!;
-        if (!address && isSameAddress(tokenPrice.address, getChainByKeyOrFail(tokenPrice.networkId).wToken)) {
-          address = { token: Addresses.NATIVE_TOKEN, chainId: tokenPrice.networkId };
-        }
-        result[address.chainId][address.token] = { price: tokenPrice.priceUsd, closestTimestamp: tokenPrice.timestamp };
-      }
+      chunk.forEach(({ chainId, token, timestamp }, index) => {
+        const tokenPrice = body.data.getTokenPrices[index];
+        if (!tokenPrice) return;
+        if (searchWidth && timestamp && Math.abs(tokenPrice.timestamp - timestamp) > ms(searchWidth)) return;
+        if (!result[chainId]) result[chainId] = {};
+        if (!result[chainId][token]) result[chainId][token] = {};
+        result[chainId][token][timestamp ?? tokenPrice.timestamp] = { price: tokenPrice.priceUsd, closestTimestamp: tokenPrice.timestamp };
+      });
     });
 
     await Promise.all(requests);
     return result;
-  }
-
-  getHistoricalPrices(_: {
-    tokens: PriceInput[];
-    timestamp: Timestamp;
-    searchWidth: TimeString | undefined;
-    config: { timeout?: TimeString } | undefined;
-  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult>>> {
-    // Only last 3 days supported
-    return Promise.reject(new Error('Operation not supported'));
-  }
-
-  getBulkHistoricalPrices(_: {
-    tokens: { chainId: ChainId; token: TokenAddress; timestamp: Timestamp }[];
-    searchWidth: TimeString | undefined;
-    config: { timeout?: TimeString } | undefined;
-  }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
-    return Promise.reject(new Error('Operation not supported'));
-  }
-
-  async getChart(_: {
-    tokens: PriceInput[];
-    span: number;
-    period: TimeString;
-    bound: { from: Timestamp } | { upTo: Timestamp | 'now' };
-    searchWidth?: TimeString;
-    config: { timeout?: TimeString } | undefined;
-  }): Promise<Record<ChainId, Record<TokenAddress, PriceResult[]>>> {
-    return Promise.reject(new Error('Operation not supported'));
   }
 }
 

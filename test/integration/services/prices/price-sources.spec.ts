@@ -76,7 +76,7 @@ describe('Token Price Sources', () => {
         getResult: (source, tokens) =>
           source.getHistoricalPrices({
             tokens,
-            timestamp: 1711843200, // Friday, 31 March 2024 0:00:00
+            timestamp: 1729123200, // Thursday, 17 October 2024 0:00:00
             config: { timeout: '10s' },
             searchWidth: undefined,
           }),
@@ -85,7 +85,7 @@ describe('Token Price Sources', () => {
           expect(typeof timestamp).to.equal('number');
         },
       });
-      const from = 1711843200; // Friday, 31 March 2024 0:00:00
+      const from = 1729123200; // Thursday, 17 October 2024 0:00:00
       const span = 10;
       const period = '1d';
       queryTest({
