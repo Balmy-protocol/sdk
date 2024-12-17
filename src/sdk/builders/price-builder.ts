@@ -10,9 +10,11 @@ import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritiz
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
 import { BalmyPriceSource } from '@services/prices/price-sources/balmy-price-source';
+import { CodexPriceSource } from '@services/prices/price-sources/codex-price-source';
 
 export type PriceSourceInput =
   | { type: 'defi-llama' }
+  | { type: 'codex'; apiKey: string }
   | { type: 'odos' }
   | { type: 'coingecko' }
   | { type: 'balmy'; apiKey: string }
@@ -35,6 +37,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
     case undefined:
       // Defi Llama is basically Coingecko with some token mappings. Defi Llama has a 5 min cache, so the priority will be Coingecko => DefiLlama
       return new PrioritizedPriceSource([coingecko, defiLlama]);
+    case 'codex':
+      return new CodexPriceSource(fetchService, source.apiKey);
     case 'defi-llama':
       return defiLlama;
     case 'odos':

@@ -1,6 +1,7 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import dotenv from 'dotenv';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
@@ -13,7 +14,9 @@ import { IPriceSource, PriceInput, PricesQueriesSupport } from '@services/prices
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
+import { CodexPriceSource } from '@services/prices/price-sources/codex-price-source';
 chai.use(chaiAsPromised);
+dotenv.config();
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -33,6 +36,7 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   },
   maxSize: 100,
 });
+const CODEX_PRICE_SOURCE = new CodexPriceSource(FETCH_SERVICE, process.env.CODEX_API_KEY!);
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
@@ -50,7 +54,7 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
   // priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE }); Needs API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
-
+  priceSourceTest({ title: 'Codex Source', source: CODEX_PRICE_SOURCE });
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
     describe(title, () => {
       queryTest({
