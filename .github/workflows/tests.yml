@@ -53,7 +53,7 @@ jobs:
           ALCHEMY_API_KEY: ${{secrets.ALCHEMY_API_KEY}}
           BARTER_AUTH_HEADER: ${{secrets.BARTER_AUTH_HEADER}}
           BARTER_CUSTOM_SUBDOMAIN: ${{secrets.BARTER_CUSTOM_SUBDOMAIN}}
-
+          CODEX_API_KEY: ${{secrets.CODEX_API_KEY}}
   # integration-quotes:
   #   needs: ['integration']
   #   runs-on: ubuntu-latest
