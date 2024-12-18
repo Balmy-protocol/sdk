@@ -25,9 +25,9 @@ npm install @balmy/sdk
 ### 👷🏽‍♀️ Building the SDK
 
 ```javascript
-import { buildSdk } from "@balmy/sdk";
+import { buildSDK } from "@balmy/sdk";
 
-const sdk = buildSdk(config);
+const sdk = buildSDK(config);
 ```
 
 ### ⚖️ Getting balance for multiple tokens on several chains
