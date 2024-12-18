@@ -6,3 +6,4 @@ coverage
 newrelic_agent.log
 yarn-error.log
 cache
+.idea
