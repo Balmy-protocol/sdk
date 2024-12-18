@@ -124,10 +124,8 @@ export class CodexPriceSource implements IPriceSource {
     searchWidth?: TimeString;
     config: { timeout?: TimeString } | undefined;
   }): Promise<Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>>> {
+    if (!this.apiKey) throw new Error('API key is required');
     const result: Record<ChainId, Record<TokenAddress, Record<Timestamp, PriceResult>>> = {};
-    if (!this.apiKey) {
-      return result;
-    }
     const chunks = splitInChunks(tokens, 25);
     const requests = chunks.map(async (chunk) => {
       const query = {
