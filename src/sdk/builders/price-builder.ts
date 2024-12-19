@@ -11,11 +11,12 @@ import { FastestPriceSource } from '@services/prices/price-sources/fastest-price
 import { AggregatorPriceSource, PriceAggregationMethod } from '@services/prices/price-sources/aggregator-price-source';
 import { BalmyPriceSource } from '@services/prices/price-sources/balmy-price-source';
 import { CodexPriceSource } from '@services/prices/price-sources/codex-price-source';
-
+import { AlchemyPriceSource } from '@services/prices/price-sources/alchemy-price-source';
 export type PriceSourceInput =
   | { type: 'defi-llama' }
   | { type: 'codex'; apiKey: string }
   | { type: 'odos' }
+  | { type: 'alchemy'; apiKey: string }
   | { type: 'coingecko' }
   | { type: 'balmy'; apiKey: string }
   | { type: 'prioritized'; sources: PriceSourceInput[] }
@@ -39,6 +40,8 @@ function buildSource(source: PriceSourceInput | undefined, { fetchService }: { f
       return new PrioritizedPriceSource([coingecko, defiLlama]);
     case 'codex':
       return new CodexPriceSource(fetchService, source.apiKey);
+    case 'alchemy':
+      return new AlchemyPriceSource(fetchService, source.apiKey);
     case 'defi-llama':
       return defiLlama;
     case 'odos':

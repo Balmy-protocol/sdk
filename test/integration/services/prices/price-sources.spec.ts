@@ -15,6 +15,7 @@ import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritiz
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
 import { CodexPriceSource } from '@services/prices/price-sources/codex-price-source';
+import { AlchemyPriceSource } from '@services/prices/price-sources/alchemy-price-source';
 chai.use(chaiAsPromised);
 dotenv.config();
 
@@ -37,6 +38,7 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   maxSize: 100,
 });
 const CODEX_PRICE_SOURCE = new CodexPriceSource(FETCH_SERVICE, process.env.CODEX_API_KEY!);
+const ALCHEMY_PRICE_SOURCE = new AlchemyPriceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
@@ -55,6 +57,7 @@ describe('Token Price Sources', () => {
   // priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE }); Needs API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
   priceSourceTest({ title: 'Codex Source', source: CODEX_PRICE_SOURCE });
+  priceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_PRICE_SOURCE });
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
     describe(title, () => {
       queryTest({
