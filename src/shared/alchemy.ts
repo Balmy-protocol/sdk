@@ -1,0 +1,31 @@
+import { Chains } from '@chains';
+import { ChainId } from '@types';
+
+export const ALCHEMY_NETWORKS: Record<ChainId, { key: string; onlyPaid?: true }> = {
+  [Chains.ETHEREUM.chainId]: { key: 'eth-mainnet' },
+  [Chains.ETHEREUM_SEPOLIA.chainId]: { key: 'eth-sepolia' },
+  [Chains.OPTIMISM.chainId]: { key: 'opt-mainnet' },
+  // [Chains.OPTIMISM_SEPOLIA.chainId]: { key: 'opt-sepolia' },
+  [Chains.ARBITRUM.chainId]: { key: 'arb-mainnet' },
+  // [Chains.ARBITRUM_SEPOLIA.chainId]: { key: 'arb-sepolia' },
+  [Chains.POLYGON.chainId]: { key: 'polygon-mainnet' },
+  [Chains.POLYGON_MUMBAI.chainId]: { key: 'polygon-mumbai' },
+  [Chains.ASTAR.chainId]: { key: 'astar-mainnet' },
+  [Chains.BLAST.chainId]: { key: 'blast-mainnet' },
+  [Chains.BNB_CHAIN.chainId]: { key: 'bnb-mainnet', onlyPaid: true },
+  [Chains.AVALANCHE.chainId]: { key: 'avax-mainnet', onlyPaid: true },
+  [Chains.FANTOM.chainId]: { key: 'fantom-mainnet' },
+  [Chains.METIS_ANDROMEDA.chainId]: { key: 'metis-mainnet', onlyPaid: true },
+  [Chains.POLYGON_ZKEVM.chainId]: { key: 'polygonzkevm-mainnet' },
+  // [Chains.POLYGON_ZKEVM_TESTNET.chainId]: { key: 'polygonzkevm-testnet' },
+  [Chains.BASE.chainId]: { key: 'base-mainnet' },
+  [Chains.GNOSIS.chainId]: { key: 'gnosis-mainnet', onlyPaid: true },
+  [Chains.SCROLL.chainId]: { key: 'scroll-mainnet' },
+  [Chains.opBNB.chainId]: { key: 'opbnb-mainnet', onlyPaid: true },
+  // [Chains.BASE_SEPOLIA.chainId]: { key: 'base-sepolia' },
+  // [Chains.ZKSYNC.chainId]: { key: 'zksync-mainnet' },
+  // [Chains.ZKSYNC_SEPOLIA.chainId]: { key: 'zksync-sepolia' },
+  [Chains.MANTLE.chainId]: { key: 'mantle-mainnet' },
+  [Chains.ROOTSTOCK.chainId]: { key: 'rootstock-mainnet' },
+  [Chains.LINEA.chainId]: { key: 'linea-mainnet' },
+};

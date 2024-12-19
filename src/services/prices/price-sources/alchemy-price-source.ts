@@ -5,25 +5,7 @@ import { Chains, getChainByKeyOrFail } from '@chains';
 import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, groupByChain, isSameAddress, splitInChunks } from '@shared/utils';
 import { Addresses } from '@shared/constants';
-
-const SUPPORTED_CHAINS: Record<ChainId, string> = {
-  [Chains.ARBITRUM.chainId]: 'arb-mainnet',
-  [Chains.AVALANCHE.chainId]: 'avax-mainnet',
-  [Chains.BNB_CHAIN.chainId]: 'bnb-mainnet',
-  [Chains.BASE.chainId]: 'base-mainnet',
-  [Chains.BLAST.chainId]: 'blast-mainnet',
-  [Chains.ETHEREUM.chainId]: 'eth-mainnet',
-  [Chains.FANTOM.chainId]: 'fantom-mainnet',
-  [Chains.GNOSIS.chainId]: 'gnosis-mainnet',
-  [Chains.LINEA.chainId]: 'linea-mainnet',
-  [Chains.METIS_ANDROMEDA.chainId]: 'metis-mainnet',
-  [Chains.OPTIMISM.chainId]: 'opt-mainnet',
-  [Chains.POLYGON.chainId]: 'polygon-mainnet',
-  [Chains.POLYGON_ZKEVM.chainId]: 'polygonzkevm-mainnet',
-  [Chains.SCROLL.chainId]: 'scroll-mainnet',
-  [Chains.opBNB.chainId]: 'opbnb-mainnet',
-};
-
+import { ALCHEMY_NETWORKS } from '@shared/alchemy';
 export class AlchemyPriceSource implements IPriceSource {
   constructor(private readonly fetch: IFetchService, private readonly apiKey: string) {
     if (!this.apiKey) throw new Error('API key is required');
@@ -36,7 +18,7 @@ export class AlchemyPriceSource implements IPriceSource {
       getBulkHistoricalPrices: false,
       getChart: false,
     };
-    const entries = Object.entries(SUPPORTED_CHAINS).map(([chainId]) => [chainId, support]);
+    const entries = Object.entries(ALCHEMY_NETWORKS).map(([chainId]) => [chainId, support]);
     return Object.fromEntries(entries);
   }
 
@@ -95,7 +77,7 @@ export class AlchemyPriceSource implements IPriceSource {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           addresses: chunk.map((address) => ({
-            network: SUPPORTED_CHAINS[chainId],
+            network: ALCHEMY_NETWORKS[chainId].key,
             // Alchemy doesn't support native tokens (only on Ethereum), so we use the wrapped native token
             address:
               isSameAddress(address, Addresses.NATIVE_TOKEN) && chainId !== Chains.ETHEREUM.chainId
