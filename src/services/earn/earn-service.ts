@@ -1243,6 +1243,7 @@ type StrategyResponse = {
   guardian?: StrategyGuardian;
   tos?: string;
   riskLevel?: StrategyRiskLevel;
+  needsTier?: number;
 };
 
 type StrategyFarmResponse = {
