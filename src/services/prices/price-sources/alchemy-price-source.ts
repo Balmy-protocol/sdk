@@ -18,7 +18,16 @@ export class AlchemyPriceSource implements IPriceSource {
       getBulkHistoricalPrices: false,
       getChart: false,
     };
-    const entries = Object.entries(ALCHEMY_NETWORKS).map(([chainId]) => [chainId, support]);
+    const entries = Object.entries(ALCHEMY_NETWORKS)
+      .filter(
+        ([
+          _,
+          {
+            price: { supported },
+          },
+        ]) => supported
+      )
+      .map(([chainId]) => [chainId, support]);
     return Object.fromEntries(entries);
   }
 

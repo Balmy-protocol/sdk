@@ -25,7 +25,14 @@ export class AlchemyProviderSource extends BaseHttpProvider {
 
 export function alchemySupportedChains(args?: { onlyFree?: boolean }): ChainId[] {
   return Object.entries(ALCHEMY_NETWORKS)
-    .filter(([_, { onlyPaid }]) => !onlyPaid || !args?.onlyFree)
+    .filter(
+      ([
+        _,
+        {
+          rpc: { tier },
+        },
+      ]) => tier === 'free' || !args?.onlyFree
+    )
     .map(([chainId]) => Number(chainId));
 }
 
