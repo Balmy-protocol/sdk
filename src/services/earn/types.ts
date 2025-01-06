@@ -128,6 +128,7 @@ export type Strategy = {
   guardian?: StrategyGuardian;
   tos?: string;
   riskLevel?: StrategyRiskLevel;
+  needsTier?: number;
 };
 
 export type StrategyFarm = {
