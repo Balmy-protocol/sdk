@@ -508,7 +508,7 @@ export class EarnService implements IEarnService {
       encodeFunctionData({
         abi: companionAbi,
         functionName: 'increasePosition',
-        args: [vault as ViemAddress, bigIntPositionId, asset, Uint.MAX_256, maxApprove],
+        args: [vault as ViemAddress, bigIntPositionId, depositToken, Uint.MAX_256, maxApprove],
       })
     );
 
