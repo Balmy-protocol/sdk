@@ -392,7 +392,7 @@ export class EarnService implements IEarnService {
       value: depositInfo.value,
       caller,
       needsAttestation: true,
-      method: getSelectorFromAbi(companionAbi, 'createPosition'),
+      method: getSelectorFromAbi(vaultAbi, 'createPosition'),
     });
   }
 
@@ -519,7 +519,7 @@ export class EarnService implements IEarnService {
       value: increaseInfo.value,
       caller,
       needsAttestation: true,
-      method: getSelectorFromAbi(companionAbi, 'increasePosition'),
+      method: getSelectorFromAbi(vaultAbi, 'increasePosition'),
     });
   }
 
@@ -824,7 +824,7 @@ export class EarnService implements IEarnService {
       calls,
       caller,
       needsAttestation: true,
-      method: getSelectorFromAbi(companionAbi, 'withdraw'),
+      method: getSelectorFromAbi(vaultAbi, 'withdraw'),
     });
   }
 
