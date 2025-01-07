@@ -982,7 +982,7 @@ export class EarnService implements IEarnService {
       batchSize: 0,
     });
 
-    return { needsSwap: !supportedDepositTokens.includes(depositToken as ViemAddress), asset };
+    return { needsSwap: !supportedDepositTokens.map(toLower).includes(toLower(depositToken)), asset };
   }
 
   private async buildCompanionMulticall({
