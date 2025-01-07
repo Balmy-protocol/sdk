@@ -419,7 +419,7 @@ export class EarnService implements IEarnService {
 
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
-    const [positionOwner, strategyId] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+    const [positionOwner, [strategyId]] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [
         {
           abi: vaultAbi,
@@ -636,18 +636,11 @@ export class EarnService implements IEarnService {
     const vault = EARN_VAULT.address(chainId);
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
-    const strategyId = await this.providerService.getViemPublicClient({ chainId }).readContract({
+    const [strategyId, strategyAddress] = await this.providerService.getViemPublicClient({ chainId }).readContract({
       address: vault,
       abi: vaultAbi,
       functionName: 'positionsStrategy',
       args: [bigIntPositionId],
-    });
-
-    const strategyAddress = await this.providerService.getViemPublicClient({ chainId }).readContract({
-      address: EARN_STRATEGY_REGISTRY.address(chainId),
-      abi: strategyRegistryAbi,
-      functionName: 'getStrategy',
-      args: [strategyId],
     });
 
     let amountToWithdraw = BigInt(amount);
@@ -975,14 +968,13 @@ export class EarnService implements IEarnService {
     });
 
     // Check if the deposit token is supported by the strategy and get the asset
-    const [asset, isDepositTokenSupported] = await this.providerService.getViemPublicClient({ chainId }).multicall({
+    const [asset, supportedDepositTokens] = await this.providerService.getViemPublicClient({ chainId }).multicall({
       contracts: [
         { abi: strategyAbi, address: strategy, functionName: 'asset' },
         {
           abi: strategyAbi,
           address: strategy,
-          functionName: 'isDepositTokenSupported',
-          args: [depositToken as ViemAddress],
+          functionName: 'supportedDepositTokens',
         },
       ],
       allowFailure: false,
@@ -990,7 +982,7 @@ export class EarnService implements IEarnService {
       batchSize: 0,
     });
 
-    return { needsSwap: !isDepositTokenSupported, asset };
+    return { needsSwap: !supportedDepositTokens.includes(depositToken as ViemAddress), asset };
   }
 
   private async buildCompanionMulticall({
