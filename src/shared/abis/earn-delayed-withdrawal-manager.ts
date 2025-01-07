@@ -1,79 +1,33 @@
 export default [
   {
-    type: 'function',
-    name: 'withdrawableFunds',
     inputs: [
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address', name: 'token', type: 'address' },
     ],
-    outputs: [
-      {
-        name: 'funds',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
+    name: 'withdrawableFunds',
+    outputs: [{ internalType: 'uint256', name: 'funds', type: 'uint256' }],
     stateMutability: 'view',
+    type: 'function',
   },
   {
-    type: 'function',
-    name: 'withdraw',
     inputs: [
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address',
-      },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
     ],
+    name: 'withdraw',
     outputs: [
-      {
-        name: 'withdrawn',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'stillPending',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { internalType: 'uint256', name: 'withdrawn', type: 'uint256' },
+      { internalType: 'uint256', name: 'stillPending', type: 'uint256' },
     ],
     stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
-    type: 'function',
+    inputs: [{ internalType: 'bytes[]', name: 'data', type: 'bytes[]' }],
     name: 'multicall',
-    inputs: [
-      {
-        name: 'data',
-        type: 'bytes[]',
-        internalType: 'bytes[]',
-      },
-    ],
-    outputs: [
-      {
-        name: 'results',
-        type: 'bytes[]',
-        internalType: 'bytes[]',
-      },
-    ],
+    outputs: [{ internalType: 'bytes[]', name: 'results', type: 'bytes[]' }],
     stateMutability: 'payable',
+    type: 'function',
   },
 ] as const;

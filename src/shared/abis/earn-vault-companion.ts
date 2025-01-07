@@ -38,7 +38,6 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
-
   {
     inputs: [
       { internalType: 'address', name: 'token', type: 'address' },
@@ -121,115 +120,44 @@ export default [
       { internalType: 'address', name: 'recipient', type: 'address' },
     ],
     name: 'withdraw',
-    outputs: [
-      { internalType: 'uint256[]', name: '', type: 'uint256[]' },
-      { internalType: 'enum IEarnStrategy.WithdrawalType[]', name: '', type: 'uint8[]' },
-    ],
+    outputs: [{ internalType: 'uint256[]', name: '', type: 'uint256[]' }],
     stateMutability: 'payable',
     type: 'function',
   },
   {
-    type: 'function',
+    inputs: [
+      { internalType: 'contract IDelayedWithdrawalManager', name: 'manager', type: 'address' },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+    ],
     name: 'claimDelayedWithdraw',
-    inputs: [
-      {
-        name: 'manager',
-        type: 'address',
-        internalType: 'contract IDelayedWithdrawalManager',
-      },
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
     outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { internalType: 'uint256', name: '', type: 'uint256' },
+      { internalType: 'uint256', name: '', type: 'uint256' },
     ],
     stateMutability: 'payable',
+    type: 'function',
   },
   {
-    type: 'function',
-    name: 'specialWithdraw',
     inputs: [
-      {
-        name: 'vault',
-        type: 'address',
-        internalType: 'contract IEarnVault',
-      },
-      {
-        name: 'positionId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'withdrawalCode',
-        type: 'uint256',
-        internalType: 'SpecialWithdrawalCode',
-      },
-      {
-        name: 'toWithdraw',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
-      {
-        name: 'withdrawalData',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address',
-      },
+      { internalType: 'contract IEarnVault', name: 'vault', type: 'address' },
+      { internalType: 'uint256', name: 'positionId', type: 'uint256' },
+      { internalType: 'SpecialWithdrawalCode', name: 'withdrawalCode', type: 'uint256' },
+      { internalType: 'uint256[]', name: 'toWithdraw', type: 'uint256[]' },
+      { internalType: 'bytes', name: 'withdrawalData', type: 'bytes' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
     ],
+    name: 'specialWithdraw',
     outputs: [
-      {
-        name: 'tokens',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-      {
-        name: 'balanceChanges',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
-      {
-        name: 'actualWithdrawnTokens',
-        type: 'address[]',
-        internalType: 'address[]',
-      },
-      {
-        name: 'actualWithdrawnAmounts',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
-      {
-        name: 'result',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
+      { internalType: 'address[]', name: 'tokens', type: 'address[]' },
+      { internalType: 'uint256[]', name: 'balanceChanges', type: 'uint256[]' },
+      { internalType: 'address[]', name: 'actualWithdrawnTokens', type: 'address[]' },
+      { internalType: 'uint256[]', name: 'actualWithdrawnAmounts', type: 'uint256[]' },
+      { internalType: 'bytes', name: 'result', type: 'bytes' },
     ],
     stateMutability: 'payable',
+    type: 'function',
   },
   {
     inputs: [
