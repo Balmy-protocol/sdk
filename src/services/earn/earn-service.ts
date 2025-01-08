@@ -1025,6 +1025,9 @@ export class EarnService implements IEarnService {
       }),
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!result.ok) {
+      throw new Error(`Failed to attest tx. Forta returned: ${await result.text()} (code: ${result.status})`);
+    }
     return result.json();
   }
 
