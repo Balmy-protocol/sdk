@@ -1,6 +1,7 @@
 import ms from 'ms';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import dotenv from 'dotenv';
 import { DefiLlamaPriceSource } from '@services/prices/price-sources/defi-llama-price-source';
 import { OdosPriceSource } from '@services/prices/price-sources/odos-price-source';
 import { CoingeckoPriceSource } from '@services/prices/price-sources/coingecko-price-source';
@@ -13,7 +14,10 @@ import { IPriceSource, PriceInput, PricesQueriesSupport } from '@services/prices
 import { PrioritizedPriceSource } from '@services/prices/price-sources/prioritized-price-source';
 import { FastestPriceSource } from '@services/prices/price-sources/fastest-price-source';
 import { AggregatorPriceSource } from '@services/prices/price-sources/aggregator-price-source';
+import { CodexPriceSource } from '@services/prices/price-sources/codex-price-source';
+import { AlchemyPriceSource } from '@services/prices/price-sources/alchemy-price-source';
 chai.use(chaiAsPromised);
+dotenv.config();
 
 const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
   [Chains.OPTIMISM.chainId]: { address: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', symbol: 'DAI' },
@@ -33,6 +37,8 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   },
   maxSize: 100,
 });
+const CODEX_PRICE_SOURCE = new CodexPriceSource(FETCH_SERVICE, process.env.CODEX_API_KEY!);
+const ALCHEMY_PRICE_SOURCE = new AlchemyPriceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
@@ -50,7 +56,8 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
   // priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE }); Needs API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
-
+  priceSourceTest({ title: 'Codex Source', source: CODEX_PRICE_SOURCE });
+  priceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_PRICE_SOURCE });
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
     describe(title, () => {
       queryTest({
@@ -72,7 +79,7 @@ describe('Token Price Sources', () => {
         getResult: (source, tokens) =>
           source.getHistoricalPrices({
             tokens,
-            timestamp: 1711843200, // Friday, 31 March 2024 0:00:00
+            timestamp: 1729123200, // Thursday, 17 October 2024 0:00:00
             config: { timeout: '10s' },
             searchWidth: undefined,
           }),
@@ -81,7 +88,7 @@ describe('Token Price Sources', () => {
           expect(typeof timestamp).to.equal('number');
         },
       });
-      const from = 1711843200; // Friday, 31 March 2024 0:00:00
+      const from = 1729123200; // Thursday, 17 October 2024 0:00:00
       const span = 10;
       const period = '1d';
       queryTest({

@@ -14,7 +14,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.FANTOM.chainId]: 'https://fantom.api.onfinality.io/public',
   [Chains.AVALANCHE.chainId]: 'https://avalanche.api.onfinality.io/public/ext/bc/C',
   [Chains.GNOSIS.chainId]: 'https://gnosis.api.onfinality.io/public',
-  [Chains.KLAYTN.chainId]: 'https://klaytn.api.onfinality.io/public',
+  [Chains.KAIA.chainId]: 'https://klaytn.api.onfinality.io/public',
   [Chains.CELO.chainId]: 'https://celo.api.onfinality.io/public',
   [Chains.FUSE.chainId]: 'https://fuse.api.onfinality.io/public',
   [Chains.KAVA.chainId]: 'https://kava.api.onfinality.io/public',

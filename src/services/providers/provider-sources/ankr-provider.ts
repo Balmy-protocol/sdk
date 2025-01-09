@@ -19,7 +19,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.MOONBEAM.chainId]: 'https://rpc.ankr.com/moonbeam',
   [Chains.BIT_TORRENT.chainId]: 'https://rpc.ankr.com/bttc',
   [Chains.BASE.chainId]: 'https://rpc.ankr.com/base',
-  [Chains.KLAYTN.chainId]: 'https://rpc.ankr.com/klaytn',
+  [Chains.KAIA.chainId]: 'https://rpc.ankr.com/klaytn',
   [Chains.SCROLL.chainId]: 'https://rpc.ankr.com/scroll',
 };
 

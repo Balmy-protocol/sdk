@@ -11,7 +11,7 @@ const COINGECKO_CHAIN_KEYS: Record<ChainId, { chainKey: string; nativeTokenKey: 
   [Chains.BIT_TORRENT.chainId]: { chainKey: 'bittorrent', nativeTokenKey: 'bittorrent' },
   [Chains.BNB_CHAIN.chainId]: { chainKey: 'binance-smart-chain', nativeTokenKey: 'binancecoin' },
   [Chains.HECO.chainId]: { chainKey: 'huobi-token', nativeTokenKey: 'huobi-token' },
-  [Chains.KLAYTN.chainId]: { chainKey: 'klay-token', nativeTokenKey: 'klay-token' },
+  [Chains.KAIA.chainId]: { chainKey: 'klay-token', nativeTokenKey: 'kaia' },
   [Chains.FANTOM.chainId]: { chainKey: 'fantom', nativeTokenKey: 'fantom' },
   [Chains.OPTIMISM.chainId]: { chainKey: 'optimistic-ethereum', nativeTokenKey: 'ethereum' },
   [Chains.POLYGON.chainId]: { chainKey: 'polygon-pos', nativeTokenKey: 'matic-network' },
