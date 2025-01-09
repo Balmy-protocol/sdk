@@ -125,6 +125,7 @@ export type Strategy = {
   id: StrategyId;
   depositTokens: DepositToken[];
   farm: StrategyFarm;
+  fees: Fee[];
   guardian?: StrategyGuardian;
   tos?: string;
   riskLevel?: StrategyRiskLevel;
@@ -144,7 +145,7 @@ export type StrategyFarm = {
 
 export type StrategyGuardian = {
   id: GuardianId;
-  fees: GuardianFee[];
+  fees: Fee[];
 } & Guardian;
 
 export type Guardian = {
@@ -168,12 +169,12 @@ export type Token = {
 
 export type TokenWithWithdrawTypes = Token & { withdrawTypes: WithdrawType[] };
 
-export type GuardianFee = {
-  type: GuardianFeeType;
+export type Fee = {
+  type: FeeType;
   percentage: number;
 };
 
-export enum GuardianFeeType {
+export enum FeeType {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
   PERFORMANCE = 'performance',

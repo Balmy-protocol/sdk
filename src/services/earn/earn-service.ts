@@ -13,6 +13,7 @@ import {
   EarnPermissionSet,
   EarnPosition,
   FarmId,
+  Fee,
   Guardian,
   GuardianId,
   HistoricalData,
@@ -1235,6 +1236,7 @@ type StrategyResponse = {
   id: StrategyId;
   farm: StrategyFarmResponse;
   depositTokens: ViemAddress[];
+  fees: Fee[];
   guardian?: StrategyGuardian;
   tos?: string;
   riskLevel?: StrategyRiskLevel;
