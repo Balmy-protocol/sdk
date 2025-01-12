@@ -12,4 +12,6 @@ export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
 
 export const DELAYED_WITHDRAWAL_MANAGER = Contract.with({ defaultAddress: '0x0ed7f185b12f8C5Cb91daA16edDb1778E404d5D0' }).build();
 
+export const EARN_STRATEGY_ROUTER = Contract.with({ defaultAddress: '0xaA2e04112B149Dc415d3F29fc53dD97647ddeE30' }).build();
+
 export const EXTERNAL_FIREWALL = Contract.with({ defaultAddress: '0xDFaF88Ee13CECF3d854F5A4eebffe99a242bbe8A' }).build();
