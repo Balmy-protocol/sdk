@@ -1,12 +1,9 @@
-import { Chains } from '@chains';
 import { PERMIT2_ADAPTER_CONTRACT } from '@services/permit2/utils/config';
 import { Contract } from '@shared/contracts';
 
-export const EARN_VAULT = Contract.with({ defaultAddress: '0x9332b2ceCcb56beD1d727c5e350E174699f96cCA' }).build();
+export const EARN_VAULT = Contract.with({ defaultAddress: '0x0990a4a641636D437Af9aa214a1A580377eF1954' }).build();
 
-export const EARN_VAULT_COMPANION = Contract.with({ defaultAddress: '0xAbbFc43F00e88d0ab836c8c630A98E6a27094Bb5' }).build();
-
-export const EARN_STRATEGY_REGISTRY = Contract.with({ defaultAddress: '0x020ebf53F4e5Ef859e18e2973bd8d8b9AF5C9c9F' }).build();
+export const EARN_VAULT_COMPANION = Contract.with({ defaultAddress: '0x5cb7667A29D2029aC2e38aA43F0608b620FAd087' }).build();
 
 export const COMPANION_SWAPPER_CONTRACT = PERMIT2_ADAPTER_CONTRACT;
 
@@ -14,4 +11,4 @@ export const DELAYED_WITHDRAWAL_MANAGER = Contract.with({ defaultAddress: '0x0ed
 
 export const EARN_STRATEGY_ROUTER = Contract.with({ defaultAddress: '0xaA2e04112B149Dc415d3F29fc53dD97647ddeE30' }).build();
 
-export const EXTERNAL_FIREWALL = Contract.with({ defaultAddress: '0xDFaF88Ee13CECF3d854F5A4eebffe99a242bbe8A' }).build();
+export const EXTERNAL_FIREWALL = Contract.with({ defaultAddress: '0xdcD1B12ab4941D1D2761119cd5f9B0C4a58e8eda' }).build();
