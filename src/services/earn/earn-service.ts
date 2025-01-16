@@ -1156,7 +1156,12 @@ function fulfillStrategy(
         asset: { ...tokens[asset.address], address: asset.address, withdrawTypes: asset.withdrawTypes },
         rewards: rewards
           ? {
-              tokens: rewards.tokens.map((token) => ({ ...tokens[token.address], address: token.address, withdrawTypes: token.withdrawTypes })),
+              tokens: rewards.tokens.map((token) => ({
+                ...tokens[token.address],
+                address: token.address,
+                withdrawTypes: token.withdrawTypes,
+                apy: token.apy,
+              })),
               apy: rewards.apy,
             }
           : undefined,
@@ -1273,7 +1278,7 @@ type StrategyFarmResponse = {
   chainId: ChainId;
   name: string;
   asset: { address: ViemAddress; withdrawTypes: WithdrawType[] };
-  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawType[] }[]; apy: number };
+  rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawType[]; apy?: number }[]; apy: number };
   tvl: number;
   type: StrategyYieldType;
   apy: number;
