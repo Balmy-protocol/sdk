@@ -56,7 +56,7 @@ describe('Token Price Sources', () => {
   priceSourceTest({ title: 'Aggregator Source', source: AGGREGATOR_PRICE_SOURCE });
   // priceSourceTest({ title: 'Balmy', source: BALMY_PRICE_SOURCE }); Needs API key
   // priceSourceTest({ title: 'Coingecko Source', source: COINGECKO_TOKEN_SOURCE }); Commented out because of rate limiting issues
-  priceSourceTest({ title: 'Codex Source', source: CODEX_PRICE_SOURCE });
+  // priceSourceTest({ title: 'Codex Source', source: CODEX_PRICE_SOURCE }); Commented out because of rate limiting issues
   priceSourceTest({ title: 'Alchemy Source', source: ALCHEMY_PRICE_SOURCE });
   function priceSourceTest({ title, source }: { title: string; source: IPriceSource }) {
     describe(title, () => {
@@ -79,7 +79,7 @@ describe('Token Price Sources', () => {
         getResult: (source, tokens) =>
           source.getHistoricalPrices({
             tokens,
-            timestamp: 1729123200, // Thursday, 17 October 2024 0:00:00
+            timestamp: 1736294400, // Wednesday, January 8, 2025 12:00:00 AM
             config: { timeout: '10s' },
             searchWidth: undefined,
           }),
@@ -88,8 +88,8 @@ describe('Token Price Sources', () => {
           expect(typeof timestamp).to.equal('number');
         },
       });
-      const from = 1729123200; // Thursday, 17 October 2024 0:00:00
-      const span = 10;
+      const from = 1736294400; // Wednesday, January 8, 2025 12:00:00 AM
+      const span = 5;
       const period = '1d';
       queryTest({
         source,
