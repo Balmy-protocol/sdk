@@ -27,7 +27,7 @@ const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {
     swapAndTransfer: true,
     buyOrders: true,
   },
-  logoURI: 'ipfs://QmTMusok8SqDoa1MDGgZ3xohrPTnY6j2xxR5jPphBDaUDi',
+  logoURI: 'ipfs://Qmc5ug2FpdeDFVNif7Q48Uvx3LoAvkeU4ksNJtL3qkEdqc',
 };
 type BebopConfig = { apiKey: string };
 type BebopSupport = { buyOrders: true; swapAndTransfer: true };
