@@ -21,6 +21,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.SCROLL.chainId]: 'scroll',
   [Chains.METIS_ANDROMEDA.chainId]: 'metis',
   [Chains.FANTOM.chainId]: 'fantom',
+  [Chains.SONIC.chainId]: 'sonic',
 };
 
 const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {

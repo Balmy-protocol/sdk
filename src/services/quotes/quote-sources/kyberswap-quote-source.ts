@@ -25,6 +25,8 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.SCROLL.chainId]: 'scroll',
   [Chains.BLAST.chainId]: 'blast',
   [Chains.MANTLE.chainId]: 'mantle',
+  [Chains.SONIC.chainId]: 'sonic',
+  [Chains.ZK_SYNC_ERA.chainId]: 'zksync',
 };
 
 const KYBERSWAP_METADATA: QuoteSourceMetadata<KyberswapSupport> = {
