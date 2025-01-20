@@ -1,7 +1,7 @@
 import qs from 'qs';
 import { parseUnits } from 'viem';
 import { Chains } from '@chains';
-import { Address, ChainId, TokenAddress } from '@types';
+import { ChainId, TokenAddress } from '@types';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { BuildTxParams, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction } from './types';
 import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
@@ -35,7 +35,7 @@ const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
 };
 type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
 type MagpieConfig = { sourceAllowlist?: string[] };
-type MagpieData = { quoteId: string; takeFrom: Address; recipient: Address | undefined };
+type MagpieData = { quoteId: string };
 export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
   getMetadata() {
     return MAGPIE_METADATA;
@@ -60,6 +60,9 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellAmount: order.sellAmount.toString(),
       slippage: slippagePercentage / 100,
       liquiditySources: config.sourceAllowlist,
+      fromAddress: takeFrom,
+      toAddress: recipient ?? takeFrom,
+      gasless: false,
     };
 
     const quoteQueryString = qs.stringify(quoteQueryParams, { skipNulls: true, arrayFormat: 'comma' });
@@ -90,13 +93,11 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       sellToken,
       buyToken,
       config: { timeout },
-      customData: { quoteId, takeFrom, recipient },
+      customData: { quoteId },
     },
   }: BuildTxParams<MagpieConfig, MagpieData>): Promise<SourceQuoteTransaction> {
     const transactionQueryParams = {
       quoteId,
-      toAddress: recipient ?? takeFrom,
-      fromAddress: takeFrom,
       estimateGas: false,
     };
     const transactionQueryString = qs.stringify(transactionQueryParams, { skipNulls: true, arrayFormat: 'comma' });
