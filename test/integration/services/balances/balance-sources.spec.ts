@@ -50,6 +50,7 @@ const CHAINS_WITH_NO_NATIVE_TOKEN_ON_DEAD_ADDRESS: Set<ChainId> = new Set([
   Chains.OASIS_EMERALD.chainId,
   Chains.ONTOLOGY.chainId,
   Chains.POLYGON_ZKEVM.chainId,
+  Chains.ZK_SYNC_ERA.chainId,
 ]);
 
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dead';
