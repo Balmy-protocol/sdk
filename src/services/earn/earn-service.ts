@@ -25,7 +25,7 @@ import {
   StrategyGuardian,
   StrategyId,
   StrategyRiskLevel,
-  StrategyStatus,
+  EarnStrategyStatus,
   StrategyYieldType,
   Token,
   TYPES,
@@ -1272,7 +1272,7 @@ type StrategyResponse = {
   tos?: string;
   riskLevel?: StrategyRiskLevel;
   needsTier?: number;
-  status: StrategyStatus;
+  status: EarnStrategyStatus;
 };
 
 type StrategyFarmResponse = {
