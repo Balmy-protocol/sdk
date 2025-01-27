@@ -130,6 +130,7 @@ export type Strategy = {
   tos?: string;
   riskLevel?: StrategyRiskLevel;
   needsTier?: number;
+  status: StrategyStatus;
 };
 
 export type StrategyFarm = {
@@ -196,6 +197,12 @@ export enum StrategyRiskLevel {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
+}
+
+export enum StrategyStatus {
+  OK = 'OK',
+  RESCUE_NEEDS_CONFIRMATION = 'RESCUE_NEEDS_CONFIRMATION',
+  RESCUED = 'RESCUED',
 }
 
 export type EarnPosition = {
