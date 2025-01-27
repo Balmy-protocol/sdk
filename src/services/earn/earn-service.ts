@@ -1279,6 +1279,7 @@ type StrategyFarmResponse = {
   id: FarmId;
   chainId: ChainId;
   name: string;
+  protocol: string;
   asset: { address: ViemAddress; withdrawTypes: WithdrawType[] };
   rewards?: { tokens: { address: ViemAddress; withdrawTypes: WithdrawType[]; apy?: number }[]; apy: number };
   tvl: number;

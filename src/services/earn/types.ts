@@ -137,6 +137,7 @@ export type StrategyFarm = {
   id: FarmId;
   chainId: ChainId;
   name: string;
+  protocol: string;
   asset: TokenWithWithdrawTypes;
   rewards?: { tokens: (TokenWithWithdrawTypes & { apy?: number })[]; apy: number };
   tvl: number;
