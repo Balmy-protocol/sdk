@@ -2,15 +2,21 @@ import { ChainId } from '@types';
 import { BaseHttpProvider } from './base/base-http-provider';
 import { ALCHEMY_NETWORKS } from '@shared/alchemy';
 
+export type AlchemySupportedChains = AlchemyDefaultChains | ChainId[];
+type AlchemyDefaultChains = { allInTier: 'free tier' | 'paid tier'; except?: ChainId[] };
+
 export class AlchemyProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
 
-  constructor(private readonly key: string, onChains?: ChainId[] | 'free tier' | 'paid tier') {
+  constructor(private readonly key: string, onChains?: AlchemySupportedChains) {
     super();
-    if (typeof onChains === 'string') {
-      this.supported = alchemySupportedChains({ onlyFree: onChains === 'free tier' });
+    if (onChains === undefined) {
+      this.supported = alchemySupportedChains();
+    } else if (Array.isArray(onChains)) {
+      this.supported = onChains;
     } else {
-      this.supported = onChains ?? alchemySupportedChains();
+      const chains = alchemySupportedChains({ onlyFree: onChains.allInTier === 'free tier' });
+      this.supported = onChains.except ? chains.filter((chain) => !onChains.except!.includes(chain)) : chains;
     }
   }
 

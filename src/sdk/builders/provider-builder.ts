@@ -17,7 +17,7 @@ import { dRPCProviderSource } from '@services/providers/provider-sources/drpc-pr
 import { BlastProviderSource } from '@services/providers/provider-sources/blast-provider';
 import { OnFinalityProviderSource } from '@services/providers/provider-sources/on-finality-provider';
 import { OneRPCProviderSource } from '@services/providers/provider-sources/one-rpc-provider';
-import { AlchemyProviderSource } from '@services/providers/provider-sources/alchemy-provider';
+import { AlchemyProviderSource, AlchemySupportedChains } from '@services/providers/provider-sources/alchemy-provider';
 import { MoralisProviderSource } from '@services/providers/provider-sources/moralis-provider';
 import { ThirdWebProviderSource } from '@services/providers/provider-sources/third-web-provider';
 
@@ -28,7 +28,7 @@ export type ProviderSourceInput =
   | { type: 'infura'; key: string; onChains?: ChainId[] }
   | { type: 'node-real'; key: string; onChains?: ChainId[] }
   | { type: 'dRPC'; key: string; onChains?: ChainId[] }
-  | { type: 'alchemy'; key: string; onChains?: ChainId[] | 'free tier' | 'paid tier' }
+  | { type: 'alchemy'; key: string; onChains?: AlchemySupportedChains }
   | { type: 'third-web'; onChains?: ChainId[] }
   | { type: 'blast'; key?: string; onChains?: ChainId[] }
   | ({ type: 'moralis'; site?: 'site1' | 'site2' } & ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }))
