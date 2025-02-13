@@ -8,9 +8,9 @@ export class FetchService implements IFetchService {
   constructor(private readonly realFetch: Fetch = crossFetch) {}
 
   async fetch(url: RequestInfo | URL, init?: RequestInit) {
-    const { retries = 3, retryDelay = 1000, retryWithTimeout = true, timeout: timeoutText = '5m', ...restInit } = init ?? {};
+    const { retries = 0, retryDelay = 1000, retryWhenTimeouted = true, timeout: timeoutText = '5m', ...restInit } = init ?? {};
 
-    let lastError: Error | null = null;
+    const errors: Error[] = [];
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
@@ -27,26 +27,27 @@ export class FetchService implements IFetchService {
         });
         return response;
       } catch (error: any) {
-        lastError = error;
-
         if (timeouted) {
           const timeoutError = new TimeoutError(`Request to ${url}`, timeoutText);
-          if (!retryWithTimeout || attempt === retries) {
-            throw timeoutError;
+          errors.push(timeoutError);
+          if (!retryWhenTimeouted || attempt === retries) {
+            throw new AggregateError(errors);
           }
-          lastError = timeoutError;
-        } else if (attempt === retries) {
-          throw error;
+        } else {
+          errors.push(error);
+          if (attempt === retries) {
+            throw new AggregateError(errors);
+          }
         }
 
         // Calculate delay with exponential backoff: delay * 2^attempt
-        const backoffDelay = retryDelay * Math.pow(2, attempt);
+        const backoffDelay = retryDelay * Math.pow(2, attempt + 1);
         await wait(backoffDelay);
       } finally {
         clearTimeout(timeoutId);
       }
     }
 
-    throw lastError;
+    throw new AggregateError(errors, 'Multiple fetch attempts failed');
   }
 }

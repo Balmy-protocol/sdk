@@ -4,7 +4,7 @@ export type RequestInit = globalThis.RequestInit & {
   timeout?: TimeString;
   retries?: number;
   retryDelay?: number;
-  retryWithTimeout?: boolean;
+  retryWhenTimeouted?: boolean;
 };
 
 export type IFetchService = {
