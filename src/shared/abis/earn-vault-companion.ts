@@ -178,4 +178,22 @@ export default [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'bytes[]', name: '_calls', type: 'bytes[]' }],
+    name: 'simulate',
+    outputs: [
+      {
+        components: [
+          { internalType: 'bool', name: 'success', type: 'bool' },
+          { internalType: 'bytes', name: 'result', type: 'bytes' },
+          { internalType: 'uint256', name: 'gasSpent', type: 'uint256' },
+        ],
+        internalType: 'struct ISimulationAdapter.SimulationResult[]',
+        name: '_results',
+        type: 'tuple[]',
+      },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
 ] as const;
