@@ -130,6 +130,7 @@ export class RPCBalanceSource implements IBalanceSource {
             abi: ABI,
             functionName: 'getNativeBalances',
             args: [accounts as ViemAddress[]],
+            blockTag: 'latest',
           })
         : [];
     return Object.fromEntries(accounts.map((account, i) => [account, balances[i]]));
