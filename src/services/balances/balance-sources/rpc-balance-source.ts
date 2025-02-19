@@ -1,4 +1,4 @@
-import { Address as ViemAddress } from 'viem';
+import { Hex, parseAbi, Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceInput, IBalanceSource } from '../types';
 import { IProviderService } from '@services/providers/types';
@@ -122,11 +122,32 @@ export class RPCBalanceSource implements IBalanceSource {
     accounts: Address[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, bigint>> {
-    const entries = await Promise.all(accounts.map(async (account) => [account, await this.fetchNativeBalanceInChain(chainId, account)]));
-    return Object.fromEntries(entries);
+    if (accounts.length === 0) return {};
+
+    let balances: Readonly<bigint[]>;
+
+    try {
+      // We are using deployless reads to perform a sort of multicall and fetch all native balances in one call
+      balances = await this.providerService.getViemPublicClient({ chainId }).readContract({
+        code: BYTECODE,
+        abi: ABI,
+        functionName: 'getNativeBalances',
+        args: [accounts as ViemAddress[]],
+        blockTag: 'latest',
+      });
+    } catch {
+      // Some chains don't support deployless reads, so we fallback to fetching each balance individually
+      balances = await Promise.all(accounts.map((account) => this.fetchNativeBalanceInChain(chainId, account)));
+    }
+
+    return Object.fromEntries(accounts.map((account, i) => [account, balances[i]]));
   }
 
   private fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }) {
     return this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' });
   }
 }
+
+const BYTECODE: Hex =
+  '0x608060405234801561001057600080fd5b506102ed806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80634c04bf9914610030575b600080fd5b61004361003e3660046101cf565b610059565b604051610050919061023e565b60405180910390f35b60608167ffffffffffffffff81111561009b577f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6040519080825280602002602001820160405280156100c4578160200160208202803683370190505b50905060005b8281101561018d5783838281811061010b577f4e487b7100000000000000000000000000000000000000000000000000000000600052603260045260246000fd5b90506020020160208101906101209190610194565b73ffffffffffffffffffffffffffffffffffffffff1631828281518110610170577f4e487b7100000000000000000000000000000000000000000000000000000000600052603260045260246000fd5b60209081029190910101528061018581610282565b9150506100ca565b5092915050565b6000602082840312156101a5578081fd5b813573ffffffffffffffffffffffffffffffffffffffff811681146101c8578182fd5b9392505050565b600080602083850312156101e1578081fd5b823567ffffffffffffffff808211156101f8578283fd5b818501915085601f83011261020b578283fd5b813581811115610219578384fd5b866020808302850101111561022c578384fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b818110156102765783518352928401929184019160010161025a565b50909695505050505050565b60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8214156102d9577f4e487b710000000000000000000000000000000000000000000000000000000081526011600452602481fd5b506001019056fea164736f6c6343000800000a';
+const ABI = parseAbi(['function getNativeBalances(address[] addresses) external view returns (uint256[] balances)']);
