@@ -1,4 +1,5 @@
 import { IAllowanceService } from '@services/allowances';
+import { IBalanceService } from '@services/balances';
 import { EarnService } from '@services/earn/earn-service';
 import { IFetchService } from '@services/fetch';
 import { IPermit2Service } from '@services/permit2';
@@ -12,10 +13,11 @@ type Dependencies = {
   providerService: IProviderService;
   allowanceService: IAllowanceService;
   fetchService: IFetchService;
+  balanceService: IBalanceService;
 };
 export function buildEarnService(
   params: BuildEarnParams | undefined,
-  { permit2Service, quoteService, providerService, allowanceService, fetchService }: Dependencies
+  { permit2Service, quoteService, providerService, allowanceService, fetchService, balanceService }: Dependencies
 ) {
   return new EarnService(
     params?.customAPIUrl ?? 'https://api.balmy.xyz',
@@ -23,6 +25,7 @@ export function buildEarnService(
     quoteService,
     providerService,
     allowanceService,
-    fetchService
+    fetchService,
+    balanceService
   );
 }

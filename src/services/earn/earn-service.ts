@@ -67,6 +67,7 @@ import qs from 'qs';
 import { IFetchService } from '@services/fetch';
 import { ArrayOneOrMore } from '@utility-types';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
+import { IBalanceService } from '@services/balances';
 
 export class EarnService implements IEarnService {
   constructor(
@@ -75,7 +76,8 @@ export class EarnService implements IEarnService {
     private readonly quoteService: IQuoteService,
     private readonly providerService: IProviderService,
     private readonly allowanceService: IAllowanceService,
-    private readonly fetchService: IFetchService
+    private readonly fetchService: IFetchService,
+    private readonly balanceService: IBalanceService
   ) {}
 
   async getPositionsByAccount({
@@ -767,7 +769,7 @@ export class EarnService implements IEarnService {
     if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
       throw new Error('Can not convert delayed withdrawals');
     }
-    const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount != 0n);
+    const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && BigInt(amount) > 0n);
     const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
     const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
     if (marketWithdrawalsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
@@ -907,11 +909,20 @@ export class EarnService implements IEarnService {
     caller: Address;
   }) {
     const txValidFor = swapConfig?.txValidFor ?? '1w';
-    const quotes = await this.buildQuotes({ request, leftoverRecipient, swapConfig });
+    const [quotes, balances] = await Promise.all([
+      this.buildQuotes({ request, leftoverRecipient, swapConfig }),
+      this.balanceService.getBalancesForAccountInChain({
+        account: caller,
+        chainId: request.chainId,
+        tokens: [Addresses.NATIVE_TOKEN],
+      }),
+    ]);
+    const nativeBalance = balances[Addresses.NATIVE_TOKEN] ?? 0n;
     const bestQuote = await this.simulateSwaps({
       request,
       txValidFor,
       quotes,
+      nativeBalance,
       previousCalls,
       recipient: EARN_VAULT_COMPANION.address(request.chainId),
       caller,
@@ -934,15 +945,23 @@ export class EarnService implements IEarnService {
     previousCalls: Hex[];
     caller: Address;
   }) {
-    const allowanceTargets: Record<TokenAddress, Address> = {};
     const distributions: Record<TokenAddress, { recipient: Address; shareBps: number }[]> = {};
 
     const promises = requests.map(async (request) => {
-      const quotes = await this.buildQuotes({ request, leftoverRecipient: recipient, swapConfig });
+      const [quotes, balances] = await Promise.all([
+        this.buildQuotes({ request, leftoverRecipient: recipient, swapConfig }),
+        this.balanceService.getBalancesForAccountInChain({
+          account: caller,
+          chainId: request.chainId,
+          tokens: [Addresses.NATIVE_TOKEN],
+        }),
+      ]);
+      const nativeBalance = balances[Addresses.NATIVE_TOKEN] ?? 0n;
       const bestQuote = await this.simulateSwaps({
         request,
         txValidFor: swapConfig?.txValidFor ?? '1w',
         quotes,
+        nativeBalance,
         previousCalls,
         recipient,
         caller,
@@ -959,7 +978,6 @@ export class EarnService implements IEarnService {
       }
 
       const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
-        allowanceTargets: Object.entries(allowanceTargets).map(([token, target]) => ({ token, target })),
         calls: [],
         distribution: distributions,
         txValidFor: swapConfig?.txValidFor ?? '1w',
@@ -991,6 +1009,7 @@ export class EarnService implements IEarnService {
     request,
     txValidFor,
     quotes,
+    nativeBalance,
     previousCalls,
     caller,
     recipient,
@@ -998,13 +1017,12 @@ export class EarnService implements IEarnService {
     request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>;
     txValidFor: TimeString;
     quotes: QuoteResponseWithTx<Record<string, any>>[];
+    nativeBalance: bigint;
     previousCalls: Hex[];
     caller: Address;
     recipient: Address;
   }) {
-    const swapsTx: Hex[] = [];
-
-    for (const quote of quotes) {
+    const swapsTx = quotes.map((quote) => {
       // Swap adapter uses the zero address as the native token
       const tokenInDistribution = isSameAddress(quote.sellToken.address, Addresses.NATIVE_TOKEN)
         ? Addresses.ZERO_ADDRESS
@@ -1022,7 +1040,7 @@ export class EarnService implements IEarnService {
             tokenIn: tokenInDistribution as ViemAddress,
             amountIn: BigInt(quote.sellAmount.amount),
             nonce: 0n,
-            signature: '0x',
+            signature: '0x' as Hex,
             allowanceTarget: quote.source.allowanceTarget as ViemAddress,
             swapper: quote.tx.to as ViemAddress,
             swapData: quote.tx.data as Hex,
@@ -1034,7 +1052,7 @@ export class EarnService implements IEarnService {
         ],
       });
 
-      const swapData = encodeFunctionData({
+      return encodeFunctionData({
         abi: companionAbi,
         functionName: 'runSwap',
         args: [
@@ -1043,8 +1061,7 @@ export class EarnService implements IEarnService {
           sellOrderSwapData,
         ],
       });
-      swapsTx.push(swapData);
-    }
+    });
 
     const multicallsToSimulate = await Promise.all(
       swapsTx.map(
@@ -1059,16 +1076,12 @@ export class EarnService implements IEarnService {
     );
 
     const value = quotes.sort((a, b) => Number(b.tx.value ?? 0n) - Number(a.tx.value ?? 0n))[0].tx.value ?? 0n;
-    const callerBalance = await this.providerService.getViemPublicClient({ chainId: request.chainId }).getBalance({
-      address: caller as ViemAddress,
-    });
-
     const { result } = await this.providerService.getViemPublicClient({ chainId: request.chainId }).simulateContract({
       abi: companionAbi,
       address: EARN_VAULT_COMPANION.address(request.chainId),
       functionName: 'simulate',
       args: [multicallsToSimulate],
-      value: value > callerBalance ? callerBalance : value,
+      value: value > nativeBalance ? nativeBalance : value,
       account: caller as ViemAddress,
       // We have to override this to avoid attest the call to the external firewall
       stateOverride: [
