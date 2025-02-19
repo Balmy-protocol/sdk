@@ -122,18 +122,29 @@ export class RPCBalanceSource implements IBalanceSource {
     accounts: Address[],
     config?: { timeout?: TimeString }
   ): Promise<Record<Address, bigint>> {
-    // We are using deployless reads to perform a sort of multicall and fetch all native balances in one call
-    const balances =
-      accounts.length > 0
-        ? await this.providerService.getViemPublicClient({ chainId }).readContract({
-            code: BYTECODE,
-            abi: ABI,
-            functionName: 'getNativeBalances',
-            args: [accounts as ViemAddress[]],
-            blockTag: 'latest',
-          })
-        : [];
+    if (accounts.length === 0) return {};
+
+    let balances: Readonly<bigint[]>;
+
+    try {
+      // We are using deployless reads to perform a sort of multicall and fetch all native balances in one call
+      balances = await this.providerService.getViemPublicClient({ chainId }).readContract({
+        code: BYTECODE,
+        abi: ABI,
+        functionName: 'getNativeBalances',
+        args: [accounts as ViemAddress[]],
+        blockTag: 'latest',
+      });
+    } catch {
+      // Some chains don't support deployless reads, so we fallback to fetching each balance individually
+      balances = await Promise.all(accounts.map((account) => this.fetchNativeBalanceInChain(chainId, account)));
+    }
+
     return Object.fromEntries(accounts.map((account, i) => [account, balances[i]]));
+  }
+
+  private fetchNativeBalanceInChain(chainId: ChainId, account: Address, config?: { timeout?: TimeString }) {
+    return this.providerService.getViemPublicClient({ chainId }).getBalance({ address: account as ViemAddress, blockTag: 'latest' });
   }
 }
 
