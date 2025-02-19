@@ -40,7 +40,16 @@ import {
   EARN_VAULT_COMPANION,
   EXTERNAL_FIREWALL,
 } from './config';
-import { decodeFunctionResult, encodeFunctionData, Hex, toFunctionSelector, toHex, Address as ViemAddress } from 'viem';
+import {
+  decodeAbiParameters,
+  decodeFunctionResult,
+  encodeFunctionData,
+  Hex,
+  parseAbiParameters,
+  toFunctionSelector,
+  toHex,
+  Address as ViemAddress,
+} from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
 import strategyRouterAbi from '@shared/abis/earn-strategy-router';
@@ -381,6 +390,7 @@ export class EarnService implements IEarnService {
         leftoverRecipient: owner,
         swapConfig: deposit?.swapConfig,
         previousCalls: calls,
+        caller,
       }).then((result) => calls.push(result.tx));
       promises.push(swapPromise);
     }
@@ -522,6 +532,7 @@ export class EarnService implements IEarnService {
         leftoverRecipient: positionOwner,
         swapConfig: increase?.swapConfig,
         previousCalls: calls,
+        caller,
       }).then((result) => calls.push(result.tx));
       promises.push(swapPromise);
     }
@@ -574,6 +585,7 @@ export class EarnService implements IEarnService {
     recipient,
     permissionPermit,
     claim,
+    caller,
   }: ClaimDelayedWithdrawPositionParams): Promise<BuiltTransaction> {
     const vault = EARN_VAULT.address(chainId);
     const manager = DELAYED_WITHDRAWAL_MANAGER.address(chainId);
@@ -659,6 +671,7 @@ export class EarnService implements IEarnService {
       },
       recipient,
       previousCalls: calls,
+      caller,
     });
 
     calls.push(swapAndTransferData);
@@ -754,7 +767,7 @@ export class EarnService implements IEarnService {
     if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
       throw new Error('Can not convert delayed withdrawals');
     }
-    const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo }) => !!convertTo);
+    const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount != 0n);
     const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
     const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
     if (marketWithdrawalsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
@@ -865,6 +878,7 @@ export class EarnService implements IEarnService {
       transfers: withdrawsToTransfer,
       recipient,
       previousCalls: calls,
+      caller,
     });
 
     calls.push(swapAndTransferData);
@@ -884,19 +898,25 @@ export class EarnService implements IEarnService {
     leftoverRecipient,
     swapConfig,
     previousCalls,
+    caller,
   }: {
     request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>;
     leftoverRecipient: Address;
     swapConfig: EarnActionSwapConfig | undefined;
     previousCalls: Hex[];
+    caller: Address;
   }) {
     const txValidFor = swapConfig?.txValidFor ?? '1w';
     const quotes = await this.buildQuotes({ request, leftoverRecipient, swapConfig });
-    const swaps = await this.simulateSwaps({ request, txValidFor, quotes, previousCalls });
-    if (swaps.length === 0) {
-      throw new Error('No swaps found');
-    }
-    return { quote: swaps[0].quote, tx: swaps[0].tx };
+    const bestQuote = await this.simulateSwaps({
+      request,
+      txValidFor,
+      quotes,
+      previousCalls,
+      recipient: EARN_VAULT_COMPANION.address(request.chainId),
+      caller,
+    });
+    return { quote: bestQuote.quote, tx: bestQuote.tx };
   }
 
   private async getSwapAndTransferData({
@@ -905,55 +925,60 @@ export class EarnService implements IEarnService {
     transfers,
     recipient,
     previousCalls,
+    caller,
   }: {
     chainId: ChainId;
     swaps: { requests: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>[]; swapConfig?: EarnActionSwapConfig };
     transfers?: Address[];
     recipient: Address;
     previousCalls: Hex[];
+    caller: Address;
   }) {
     const allowanceTargets: Record<TokenAddress, Address> = {};
     const distributions: Record<TokenAddress, { recipient: Address; shareBps: number }[]> = {};
 
     const promises = requests.map(async (request) => {
       const quotes = await this.buildQuotes({ request, leftoverRecipient: recipient, swapConfig });
-      const swaps = await this.simulateSwaps({ request, txValidFor: swapConfig?.txValidFor ?? '1w', quotes, previousCalls });
-      if (swaps.length === 0) {
-        throw new Error('No swaps found');
-      }
-
-      return { quote: swaps[0].quote, tx: swaps[0].tx };
+      const bestQuote = await this.simulateSwaps({
+        request,
+        txValidFor: swapConfig?.txValidFor ?? '1w',
+        quotes,
+        previousCalls,
+        recipient,
+        caller,
+      });
+      return { quote: bestQuote.quote, tx: bestQuote.tx };
     });
 
-    const calls = await Promise.all(promises);
-
+    const calls = (await Promise.all(promises)).map(({ tx }) => tx);
     // Handle transfers
-    if (transfers) {
+    if (transfers?.length) {
       for (const transfer of transfers) {
         const tokenOutTransfer = isSameAddress(transfer, Addresses.NATIVE_TOKEN) ? Addresses.ZERO_ADDRESS : transfer;
         distributions[tokenOutTransfer] = [{ recipient, shareBps: 0 }];
       }
+
+      const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
+        allowanceTargets: Object.entries(allowanceTargets).map(([token, target]) => ({ token, target })),
+        calls: [],
+        distribution: distributions,
+        txValidFor: swapConfig?.txValidFor ?? '1w',
+        chainId,
+      });
+
+      const runSwapData = encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'runSwap',
+        args: [
+          Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
+          0n,
+          arbitraryCall.data as Hex,
+        ],
+      });
+      calls.push(runSwapData);
     }
 
-    const arbitraryCall = this.permit2Service.arbitrary.buildArbitraryCallWithoutPermit({
-      allowanceTargets: Object.entries(allowanceTargets).map(([token, target]) => ({ token, target })),
-      calls: [],
-      distribution: distributions,
-      txValidFor: swapConfig?.txValidFor ?? '1w',
-      chainId,
-    });
-
-    const runSwapData = encodeFunctionData({
-      abi: companionAbi,
-      functionName: 'runSwap',
-      args: [
-        Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
-        0n,
-        arbitraryCall.data as Hex,
-      ],
-    });
-
-    const multicalls = [...previousCalls, ...calls.map(({ tx }) => tx), runSwapData];
+    const multicalls = [...previousCalls, ...calls];
     const multicall = encodeFunctionData({
       abi: companionAbi,
       functionName: 'multicall',
@@ -967,13 +992,18 @@ export class EarnService implements IEarnService {
     txValidFor,
     quotes,
     previousCalls,
+    caller,
+    recipient,
   }: {
     request: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>;
     txValidFor: TimeString;
     quotes: QuoteResponseWithTx<Record<string, any>>[];
     previousCalls: Hex[];
+    caller: Address;
+    recipient: Address;
   }) {
     const swapsTx: Hex[] = [];
+
     for (const quote of quotes) {
       // Swap adapter uses the zero address as the native token
       const tokenInDistribution = isSameAddress(quote.sellToken.address, Addresses.NATIVE_TOKEN)
@@ -998,7 +1028,7 @@ export class EarnService implements IEarnService {
             swapData: quote.tx.data as Hex,
             tokenOut: tokenOutDistribution as ViemAddress,
             minAmountOut: BigInt(quote.minBuyAmount.amount),
-            transferOut: [{ recipient: EARN_VAULT_COMPANION.address(request.chainId) as ViemAddress, shareBps: 0n }],
+            transferOut: [{ recipient: recipient as ViemAddress, shareBps: 0n }],
             misc: '0x',
           },
         ],
@@ -1028,23 +1058,38 @@ export class EarnService implements IEarnService {
       )
     );
 
-    const value = quotes.reduce((acc, { tx }) => acc + BigInt(tx.value ?? 0n), 0n);
+    const value = quotes.sort((a, b) => Number(b.tx.value ?? 0n) - Number(a.tx.value ?? 0n))[0].tx.value ?? 0n;
+    const callerBalance = await this.providerService.getViemPublicClient({ chainId: request.chainId }).getBalance({
+      address: caller as ViemAddress,
+    });
+
     const { result } = await this.providerService.getViemPublicClient({ chainId: request.chainId }).simulateContract({
       abi: companionAbi,
       address: EARN_VAULT_COMPANION.address(request.chainId),
       functionName: 'simulate',
       args: [multicallsToSimulate],
-      value,
+      value: value > callerBalance ? callerBalance : value,
+      account: caller as ViemAddress,
+      // We have to override this to avoid attest the call to the external firewall
+      stateOverride: [
+        {
+          address: '0x0000000000000000000000000000000000f01274',
+          code: '0x10', // Random value, it needs to be a non-zero value
+        },
+      ],
     });
 
-    const results = result.map((result, index) => ({
-      success: result.success,
-      result: result.result,
-      gasSpent: result.gasSpent,
-      tx: multicallsToSimulate[index],
-    }));
-    const successfulQuotes = results.map(({ success, tx }, index) => ({ success, tx, quote: quotes[index] })).filter(({ success }) => success);
-    return successfulQuotes;
+    const decodedResults = result.map(({ success, result, gasSpent }, index) => {
+      const [amountIn, amountOut] = success ? decodeAbiParameters(parseAbiParameters('uint256 amountIn, uint256 amountOut'), result) : [0n, 0n];
+      return { success, gasSpent, amountIn, amountOut, rawResult: result, tx: multicallsToSimulate[index], quote: quotes[index] };
+    });
+
+    // DISCLAIMER: We only sort the quotes by amountOut because we don't have buy orders. In the future, if we add buy orders, we should change this.
+    const successfulQuotes = decodedResults.filter(({ success }) => success).sort((a, b) => Number(b.amountOut - a.amountOut));
+    if (successfulQuotes.length === 0) {
+      throw new Error('No successful quotes');
+    }
+    return { quote: successfulQuotes[0].quote, tx: successfulQuotes[0].tx };
   }
   private async buildQuotes({
     request,

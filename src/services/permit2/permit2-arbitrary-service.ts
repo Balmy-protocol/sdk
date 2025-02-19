@@ -66,7 +66,6 @@ export class Permit2ArbitraryService implements IPermit2ArbitraryService {
     chainId,
     functionName,
   }: BaseArbitraryCallParams & { functionName: string }) {
-    if (calls.length === 0) throw new Error('Must submit at least one call');
     const repeatedToken = findRepeatedKey(distribution ?? {});
     if (repeatedToken) throw new Error(`Found token '${repeatedToken}' more than once, with different casing`);
 
