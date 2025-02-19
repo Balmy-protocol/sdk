@@ -1,4 +1,4 @@
-import { encodeFunctionData, Hex, parseAbi, Address as ViemAddress } from 'viem';
+import { Hex, parseAbi, Address as ViemAddress } from 'viem';
 import { Address, ChainId, TimeString, TokenAddress } from '@types';
 import { BalanceInput, IBalanceSource } from '../types';
 import { IProviderService } from '@services/providers/types';
