@@ -1,4 +1,5 @@
 import { PermitData, SinglePermitParams } from '@services/permit2';
+import { QuoteRequest } from '@services/quotes';
 import { Address, AmountsOfToken, BigIntish, BuiltTransaction, ChainId, Timestamp, TimeString, TokenAddress } from '@types';
 import { ArrayOneOrMore } from '@utility-types';
 import { Hex, Address as ViemAddress } from 'viem';
@@ -55,6 +56,7 @@ export type CreateEarnPositionParams = {
   misc?: Hex;
   deposit: AddFundsEarn;
   caller: Address;
+  needsAttestation?: boolean;
 };
 
 export type IncreaseEarnPositionParams = {
@@ -72,10 +74,36 @@ export type WithdrawEarnPositionParams = {
     amounts: { token: TokenAddress; amount: BigIntish; convertTo?: TokenAddress; type: WithdrawType }[];
     swapConfig?: EarnActionSwapConfig;
   };
+  migrate?: MigrateEarnPositionParams;
   recipient: Address;
   caller: Address;
   permissionPermit?: EarnPermissionPermit;
 };
+
+export type MigrateEarnPositionParams = {
+  chainId: ChainId;
+  strategyId: StrategyId;
+  amounts: { token: TokenAddress; amount: BigIntish }[];
+} & (MigrateEarnCreatePositionParams | MigrateEarnIncreasePositionParams);
+
+export type MigrateEarnCreatePositionParams = {
+  type: MigrateEarnType.CREATE;
+  strategyValidationData?: Hex;
+  permissions: EarnPermissionSet[];
+  misc?: Hex;
+};
+
+export type MigrateEarnIncreasePositionParams = {
+  type: MigrateEarnType.INCREASE;
+  positionId: PositionId;
+};
+
+export enum MigrateEarnType {
+  CREATE = 'CREATE',
+  INCREASE = 'INCREASE',
+}
+
+export type SwapperRequestType = Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>;
 
 export type ClaimDelayedWithdrawPositionParams = {
   chainId: ChainId;
