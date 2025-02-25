@@ -56,7 +56,6 @@ export type CreateEarnPositionParams = {
   misc?: Hex;
   deposit: AddFundsEarn;
   caller: Address;
-  needsAttestation?: boolean;
 };
 
 export type IncreaseEarnPositionParams = {
