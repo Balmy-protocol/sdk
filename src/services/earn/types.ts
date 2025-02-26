@@ -53,7 +53,6 @@ export type CreateEarnPositionParams = {
   owner: Address;
   permissions: EarnPermissionSet[];
   strategyValidationData?: Hex;
-  misc?: Hex;
   deposit: AddFundsEarn;
   caller: Address;
 };
@@ -89,7 +88,6 @@ export type MigrateEarnCreatePositionParams = {
   type: MigrateEarnType.CREATE;
   strategyValidationData?: Hex;
   permissions: EarnPermissionSet[];
-  misc?: Hex;
 };
 
 export type MigrateEarnIncreasePositionParams = {
@@ -377,4 +375,8 @@ export enum WithdrawType {
 export enum SpecialWithdrawalCode {
   WITHDRAW_ASSET_FARM_TOKEN_BY_AMOUNT = 0,
   WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT = 1,
+}
+
+export enum MigrationCode {
+  MIGRATE_FROM_POSITION_AND_CREATE = 0,
 }
