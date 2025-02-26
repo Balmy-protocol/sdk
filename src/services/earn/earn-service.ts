@@ -33,6 +33,7 @@ import {
   WithdrawType,
   MigrateEarnType,
   MigrateEarnPositionParams,
+  MigrationCode,
 } from './types';
 import {
   COMPANION_SWAPPER_CONTRACT,
@@ -51,6 +52,7 @@ import {
   toFunctionSelector,
   toHex,
   Address as ViemAddress,
+  encodeAbiParameters,
 } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
@@ -70,7 +72,6 @@ import { IFetchService } from '@services/fetch';
 import { ArrayOneOrMore } from '@utility-types';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import { IBalanceService } from '@services/balances';
-
 export class EarnService implements IEarnService {
   constructor(
     private readonly apiUrl: string,
@@ -301,7 +302,6 @@ export class EarnService implements IEarnService {
     owner,
     permissions,
     strategyValidationData,
-    misc,
     deposit,
     caller,
   }: CreateEarnPositionParams): Promise<BuiltTransaction> {
@@ -361,7 +361,7 @@ export class EarnService implements IEarnService {
               permissions: permissions.map(mapPermission),
             })),
             strategyValidationData ?? '0x',
-            misc ?? '0x',
+            '0x',
           ],
         }),
         value: depositInfo.value,
@@ -432,7 +432,7 @@ export class EarnService implements IEarnService {
             permissions: permissions.map(mapPermission),
           })),
           strategyValidationData ?? '0x',
-          misc ?? '0x',
+          '0x',
           maxApprove,
         ],
       })
@@ -985,6 +985,7 @@ export class EarnService implements IEarnService {
         caller,
         vault,
         migrationAsset: migrationAsset!,
+        fromPositionId: positionId,
       });
       calls.push(migrateTx);
     }
@@ -1039,10 +1040,14 @@ export class EarnService implements IEarnService {
     migrationAsset: ViemAddress;
     caller: Address;
     vault: ViemAddress;
+    fromPositionId: PositionId;
   }) {
-    const { migrate, migrationAsset, caller, vault } = params;
+    const { migrate, migrationAsset, caller, vault, fromPositionId } = params;
     if (migrate?.type == MigrateEarnType.CREATE) {
       const strategyIdBigInt = BigInt(migrate.strategyId.split('-')[2]);
+      const misc: Record<number, Hex> = {
+        [MigrationCode.MIGRATE_FROM_POSITION_AND_CREATE]: encodeAbiParameters(parseAbiParameters('string'), [fromPositionId]),
+      };
       // Handle deposit
       return encodeFunctionData({
         abi: companionAbi,
@@ -1058,7 +1063,7 @@ export class EarnService implements IEarnService {
             permissions: permissions.map(mapPermission),
           })),
           migrate.strategyValidationData ?? '0x',
-          migrate.misc ?? '0x',
+          encodeAbiParameters(parseAbiParameters('(string, bytes)[]'), [Object.entries(misc)]),
           false,
         ],
       });
