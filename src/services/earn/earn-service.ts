@@ -770,8 +770,8 @@ export class EarnService implements IEarnService {
     const bigIntPositionId = BigInt(tokenId);
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = Object.fromEntries(withdraw.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)]));
-    const tokensToMigrate = migrate?.amounts.map(({ token }) => token as ViemAddress) ?? [];
-    const intendedMigrate = migrate ? Object.fromEntries(migrate?.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)])) : {};
+    const tokensToMigrate = migrate?.amounts?.filter(({ amount }) => BigInt(amount) > 0n).map(({ token }) => token as ViemAddress) ?? [];
+    const intendedMigrate = migrate ? Object.fromEntries(migrate.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)])) : {};
 
     if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
       throw new Error('Can not convert delayed withdrawals');
@@ -829,7 +829,7 @@ export class EarnService implements IEarnService {
     if (
       shouldWithdrawFarmToken ||
       withdraw.amounts.some(({ amount }) => amount == Uint.MAX_256) ||
-      migrate?.amounts.some(({ amount }) => amount == Uint.MAX_256)
+      migrate?.amounts?.some(({ amount }) => amount == Uint.MAX_256)
     ) {
       const [positionTokens, positionBalances] = await this.providerService.getViemPublicClient({ chainId }).readContract({
         abi: vaultAbi,
@@ -847,11 +847,7 @@ export class EarnService implements IEarnService {
     const realMigrateAmounts = Object.fromEntries(
       withdraw.amounts.map(({ token }) => [
         toLower(token),
-        intendedMigrate?.[token]
-          ? BigInt(
-              intendedMigrate[token] != Uint.MAX_256 ? intendedMigrate[token] : MinBigint(balancesFromVault[token], realWithdrawAmounts[token])
-            )
-          : 0n,
+        intendedMigrate?.[token] ? BigInt(intendedMigrate[token] != Uint.MAX_256 ? intendedMigrate[token] : realWithdrawAmounts[token]) : 0n,
       ])
     );
     const realConvertAmounts = withdraw.amounts.reduce((acc, { token, convertTo }) => {
@@ -871,7 +867,7 @@ export class EarnService implements IEarnService {
 
     // Handle swaps
     const withdrawsToConvert = withdraw.amounts
-      .filter(({ token, convertTo }) => !!convertTo && realConvertAmounts[token] > 0n)
+      .filter(({ token }) => realConvertAmounts[token] > 0n)
       .map(({ token, convertTo }) => ({
         chainId,
         sellToken: token as ViemAddress,
@@ -882,19 +878,10 @@ export class EarnService implements IEarnService {
 
     let migrationAsset: ViemAddress;
     if (shouldMigrate) {
-      const strategyRouter = EARN_STRATEGY_ROUTER.address(chainId);
-      const [, strategyRegistry, strategyIdString] = migrate!.strategyId.split('-');
-      const strategyIdBigInt = BigInt(strategyIdString);
-      const assetEncoded = await this.providerService.getViemPublicClient({ chainId }).readContract({
-        abi: strategyRouterAbi,
-        address: strategyRouter,
-        functionName: 'routeByStrategyId',
-        args: [strategyRegistry as ViemAddress, strategyIdBigInt, ASSET_DATA],
-      });
-
-      migrationAsset = decodeFunctionResult({ abi: strategyAbi, functionName: 'asset', data: assetEncoded });
+      migrationAsset = await this.getStrategyAsset({ chainId, ...migrate! });
       withdrawsToConvert.push(
         ...Object.entries(realMigrateAmounts)
+          .filter(([token]) => !isSameAddress(token, migrationAsset) && realMigrateAmounts[token] > 0n)
           .map(([token, amount]) => ({
             chainId,
             sellToken: token as ViemAddress,
@@ -902,7 +889,6 @@ export class EarnService implements IEarnService {
             order: { type: 'sell' as const, sellAmount: amount },
             recipient: EARN_VAULT_COMPANION.address(chainId),
           }))
-          .filter(({ sellToken, order: { sellAmount } }) => !isSameAddress(sellToken, migrationAsset) && BigInt(sellAmount) > 0n)
       );
     }
 
@@ -1352,6 +1338,31 @@ export class EarnService implements IEarnService {
       }),
     };
   }
+
+  async getStrategyAsset(params: { chainId: ChainId } & ({ strategyId: StrategyId } | { positionId: PositionId })) {
+    const strategyRouter = EARN_STRATEGY_ROUTER.address(params.chainId);
+    let assetEncoded;
+    if ('strategyId' in params) {
+      const [, strategyRegistry, strategyIdString] = params.strategyId.split('-');
+      const strategyIdBigInt = BigInt(strategyIdString);
+      assetEncoded = await this.providerService.getViemPublicClient({ chainId: params.chainId }).readContract({
+        abi: strategyRouterAbi,
+        address: strategyRouter,
+        functionName: 'routeByStrategyId',
+        args: [strategyRegistry as ViemAddress, strategyIdBigInt, ASSET_DATA],
+      });
+    } else {
+      const [, vault, positionIdString] = params.positionId.split('-');
+      const positionIdBigInt = BigInt(positionIdString);
+      assetEncoded = await this.providerService.getViemPublicClient({ chainId: params.chainId }).readContract({
+        abi: strategyRouterAbi,
+        address: strategyRouter,
+        functionName: 'routeByPositionId',
+        args: [vault as ViemAddress, positionIdBigInt, ASSET_DATA],
+      });
+    }
+    return decodeFunctionResult({ abi: strategyAbi, functionName: 'asset', data: assetEncoded });
+  }
 }
 
 function buildPermissionPermit(positionId: bigint, permit: EarnPermissionPermit, vault: Address): Hex {
@@ -1517,10 +1528,6 @@ function fulfillBalance(balances: { token: TokenAddress; amount: bigint; profit:
       decimals: tokens[token].decimals,
     }),
   }));
-}
-
-function MinBigint(a: bigint, b: bigint) {
-  return a < b ? a : b;
 }
 
 type GetStrategyResponse = {
