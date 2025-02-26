@@ -79,13 +79,12 @@ export type WithdrawEarnPositionParams = {
 };
 
 export type MigrateEarnPositionParams = {
-  chainId: ChainId;
-  strategyId: StrategyId;
   amounts: { token: TokenAddress; amount: BigIntish }[];
 } & (MigrateEarnCreatePositionParams | MigrateEarnIncreasePositionParams);
 
 export type MigrateEarnCreatePositionParams = {
   type: MigrateEarnType.CREATE;
+  strategyId: StrategyId;
   strategyValidationData?: Hex;
   permissions: EarnPermissionSet[];
 };
