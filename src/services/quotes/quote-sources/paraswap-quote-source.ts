@@ -13,7 +13,6 @@ const PARASWAP_METADATA: QuoteSourceMetadata<ParaswapSupport> = {
       Chains.POLYGON.chainId,
       Chains.BNB_CHAIN.chainId,
       Chains.AVALANCHE.chainId,
-      Chains.FANTOM.chainId,
       Chains.ARBITRUM.chainId,
       Chains.OPTIMISM.chainId,
       Chains.POLYGON_ZKEVM.chainId,

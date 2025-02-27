@@ -17,7 +17,6 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
       Chains.ARBITRUM.chainId,
       Chains.GNOSIS.chainId,
       Chains.AVALANCHE.chainId,
-      Chains.FANTOM.chainId,
       Chains.KAIA.chainId,
       Chains.AURORA.chainId,
       Chains.BASE.chainId,

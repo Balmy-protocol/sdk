@@ -15,7 +15,6 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.POLYGON.chainId,
       Chains.BNB_CHAIN.chainId,
       Chains.GNOSIS.chainId,
-      Chains.FANTOM.chainId,
       Chains.OKC.chainId,
       Chains.AVALANCHE.chainId,
       Chains.ARBITRUM.chainId,

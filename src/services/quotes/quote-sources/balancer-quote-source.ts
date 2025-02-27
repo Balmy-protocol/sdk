@@ -9,7 +9,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
   [Chains.AVALANCHE.chainId]: 'AVALANCHE',
   [Chains.BASE.chainId]: 'BASE',
-  [Chains.FANTOM.chainId]: 'FANTOM',
   [Chains.GNOSIS.chainId]: 'GNOSIS',
   [Chains.ETHEREUM.chainId]: 'MAINNET',
   [Chains.POLYGON.chainId]: 'POLYGON',

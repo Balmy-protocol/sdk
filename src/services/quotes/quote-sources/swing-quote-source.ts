@@ -17,7 +17,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BLAST.chainId]: 'blast',
   [Chains.CELO.chainId]: 'celo',
   [Chains.ETHEREUM.chainId]: 'ethereum',
-  [Chains.FANTOM.chainId]: 'fantom',
   [Chains.GNOSIS.chainId]: 'gnosis',
   [Chains.LINEA.chainId]: 'linea',
   [Chains.MANTLE.chainId]: 'mantle',

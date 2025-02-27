@@ -16,7 +16,6 @@ const SUPPORTED_CHAINS: Record<ChainId, { chainKey: string; nativeAsset?: Addres
   [Chains.POLYGON.chainId]: { chainKey: 'polygon', nativeAsset: '0x0000000000000000000000000000000000001010' },
   [Chains.BASE.chainId]: { chainKey: 'base' },
   [Chains.LINEA.chainId]: { chainKey: 'linea' },
-  [Chains.FANTOM.chainId]: { chainKey: 'fantom', nativeAsset: '0x0000000000000000000000000000000000000000' },
   [Chains.AVALANCHE.chainId]: { chainKey: 'avax', nativeAsset: '0x0000000000000000000000000000000000000000' },
   [Chains.ARBITRUM.chainId]: { chainKey: 'arbitrum' },
   [Chains.OPTIMISM.chainId]: { chainKey: 'optimism' },

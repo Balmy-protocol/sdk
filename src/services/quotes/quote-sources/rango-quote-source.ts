@@ -13,7 +13,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ETH',
   [Chains.BNB_CHAIN.chainId]: 'BNB',
   [Chains.POLYGON.chainId]: 'POLYGON',
-  [Chains.FANTOM.chainId]: 'FANTOM',
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
   [Chains.CELO.chainId]: 'CELO',
   [Chains.OKC.chainId]: 'OKC',

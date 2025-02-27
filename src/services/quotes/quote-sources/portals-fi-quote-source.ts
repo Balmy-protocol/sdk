@@ -10,7 +10,6 @@ import { Chains } from '@chains';
 const PORTALS_FI_CHAIN_ID_TO_KEY: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.OPTIMISM.chainId]: 'optimism',
-  [Chains.FANTOM.chainId]: 'fantom',
   [Chains.ARBITRUM.chainId]: 'arbitrum',
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.AVALANCHE.chainId]: 'avalanche',

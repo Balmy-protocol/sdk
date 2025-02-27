@@ -14,7 +14,6 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BIT_TORRENT.chainId]: 'bttc',
   [Chains.CRONOS.chainId]: 'cronos',
   [Chains.ETHEREUM.chainId]: 'ethereum',
-  [Chains.FANTOM.chainId]: 'fantom',
   [Chains.OASIS_EMERALD.chainId]: 'oasis',
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.VELAS.chainId]: 'velas',
