@@ -679,7 +679,7 @@ export class EarnService implements IEarnService {
       caller,
     });
 
-    calls.push(swapAndTransferData.tx);
+    calls.push(...swapAndTransferData.calls);
 
     // Build multicall and return tx
     return this.buildCompanionMulticall({ chainId, calls, needsAttestation: false });
@@ -770,7 +770,7 @@ export class EarnService implements IEarnService {
     const bigIntPositionId = BigInt(tokenId);
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
     const intendedWithdraw = Object.fromEntries(withdraw.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)]));
-    const tokensToMigrate = migrate?.amounts?.filter(({ amount }) => BigInt(amount) > 0n).map(({ token }) => token as ViemAddress) ?? [];
+    const tokensToMigrate = migrate?.amounts?.filter(({ amount }) => BigInt(amount) > 0n)?.map(({ token }) => token as ViemAddress) ?? [];
     const intendedMigrate = migrate ? Object.fromEntries(migrate.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)])) : {};
 
     if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
@@ -944,7 +944,7 @@ export class EarnService implements IEarnService {
         caller,
       });
 
-      calls.push(swapAndTransferData.tx);
+      calls.push(...swapAndTransferData.calls);
     }
 
     if (shouldMigrate) {
@@ -1049,7 +1049,9 @@ export class EarnService implements IEarnService {
             permissions: permissions.map(mapPermission),
           })),
           migrate.strategyValidationData ?? '0x',
-          encodeAbiParameters(parseAbiParameters('(string, bytes)[]'), [Object.entries(misc)]),
+          encodeAbiParameters(parseAbiParameters('(uint256, bytes)[]'), [
+            Object.entries(misc).map(([key, value]) => [BigInt(key), value] as const),
+          ]),
           false,
         ],
       });
@@ -1135,14 +1137,7 @@ export class EarnService implements IEarnService {
       calls.push(runSwapData);
     }
 
-    const multicalls = [...calls];
-    const multicall = encodeFunctionData({
-      abi: companionAbi,
-      functionName: 'multicall',
-      args: [multicalls],
-    });
-
-    return { tx: multicall, quotes: bestQuotes };
+    return { calls, quotes: bestQuotes };
   }
   private async simulateSwaps({
     request,
