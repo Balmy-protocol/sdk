@@ -428,7 +428,7 @@ function getSources() {
   return result;
 }
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
+const PROVIDER_SERVICE = new ProviderService({ source: new PublicRPCsProviderSource() });
 const FETCH_SERVICE = new FetchService();
 const OPEN_OCEAN_GAS_PRICE_SOURCE = new OpenOceanGasPriceSource(FETCH_SERVICE);
 const RPC_GAS_PRICE_SOURCE = new RPCGasPriceSource(PROVIDER_SERVICE);
