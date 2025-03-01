@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { ChainId } from '@types';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'https://mainnet.gateway.tenderly.co',
@@ -17,9 +17,11 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 
 export class TenderlyProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
+  private readonly key: string | undefined;
 
-  constructor(private readonly key?: string, onChains?: ChainId[]) {
-    super();
+  constructor({ key, onChains, config }: { key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }) {
+    super(config);
+    this.key = key;
     this.supported = onChains ?? tenderlySupportedChains();
   }
 
