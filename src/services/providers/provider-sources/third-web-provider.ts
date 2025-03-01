@@ -1,6 +1,6 @@
 import { Chain, ChainId } from '@types';
 import { Chains } from '@chains';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 
 const SUPPORTED_NETWORKS: Chain[] = [
   Chains.ETHEREUM,
@@ -37,8 +37,8 @@ const SUPPORTED_NETWORKS: Chain[] = [
 export class ThirdWebProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
 
-  constructor(onChains?: ChainId[]) {
-    super();
+  constructor({ onChains, config }: { onChains?: ChainId[]; config?: HttpProviderConfig }) {
+    super(config);
     this.supported = onChains ?? thirdWebSupportedChains();
   }
 

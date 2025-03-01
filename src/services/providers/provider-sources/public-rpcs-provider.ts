@@ -31,7 +31,7 @@ export class PublicRPCsProviderSource implements IProviderSource {
 }
 
 function buildSources(publicRPCs: { chainId: ChainId; publicRPC: string }[]) {
-  return publicRPCs.map(({ chainId, publicRPC }) => new HttpProviderSource(publicRPC, [chainId]));
+  return publicRPCs.map(({ chainId, publicRPC }) => new HttpProviderSource({ url: publicRPC, chains: [chainId] }));
 }
 
 function calculateRPCs(publicRPCs?: Record<ChainId, string[]>): { chainId: ChainId; publicRPC: string }[] {

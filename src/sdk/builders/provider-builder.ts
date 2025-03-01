@@ -1,5 +1,6 @@
 import { ChainId } from '@types';
 import { IProviderSource } from '@services/providers/types';
+import { HttpProviderConfig } from '@services/providers/provider-sources/base/base-http-provider';
 import { PublicRPCsProviderSource, PublicRPCsProviderSourceConfig } from '@services/providers/provider-sources/public-rpcs-provider';
 import { FallbackProviderSourceConfig, FallbackProviderSource } from '@services/providers/provider-sources/fallback-provider';
 import { LoadBalanceProviderSource, LoadBalanceProviderSourceConfig } from '@services/providers/provider-sources/load-balance-provider';
@@ -25,20 +26,20 @@ export type BuildProviderParams = { source: ProviderSourceInput };
 export type ProviderSourceInput =
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: PublicRPCsProviderSourceConfig }
-  | { type: 'infura'; key: string; onChains?: ChainId[] }
-  | { type: 'node-real'; key: string; onChains?: ChainId[] }
-  | { type: 'dRPC'; key: string; onChains?: ChainId[] }
-  | { type: 'alchemy'; key: string; onChains?: AlchemySupportedChains }
-  | { type: 'third-web'; onChains?: ChainId[] }
-  | { type: 'blast'; key?: string; onChains?: ChainId[] }
-  | ({ type: 'moralis'; site?: 'site1' | 'site2' } & ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }))
-  | { type: '1rpc'; key?: string; onChains?: ChainId[] }
-  | { type: 'get-block'; accessTokens: Record<ChainId, string> }
-  | { type: 'llama-nodes'; key?: string; onChains?: ChainId[] }
-  | { type: 'on-finality'; key?: string; onChains?: ChainId[] }
-  | { type: 'ankr'; key?: string; onChains?: ChainId[] }
-  | { type: 'tenderly'; key?: string; onChains?: ChainId[] }
-  | { type: 'http'; url: string; supportedChains: ChainId[] }
+  | { type: 'infura'; key: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'node-real'; key: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'dRPC'; key: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'alchemy'; key: string; onChains?: AlchemySupportedChains; config?: HttpProviderConfig }
+  | { type: 'third-web'; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'blast'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | ({ type: 'moralis'; site?: 'site1' | 'site2'; config?: HttpProviderConfig } & ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }))
+  | { type: '1rpc'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'get-block'; accessTokens: Record<ChainId, string>; config?: HttpProviderConfig }
+  | { type: 'llama-nodes'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'on-finality'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'ankr'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'tenderly'; key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }
+  | { type: 'http'; url: string; supportedChains: ChainId[]; config?: HttpProviderConfig }
   | { type: 'web-socket'; url: string; supportedChains: ChainId[] }
   | { type: 'fallback'; sources: ProviderSourceInput[]; config?: FallbackProviderSourceConfig }
   | { type: 'load-balance'; sources: ProviderSourceInput[]; config?: LoadBalanceProviderSourceConfig }
@@ -60,31 +61,31 @@ function buildSource(source?: ProviderSourceInput): IProviderSource {
     case 'moralis':
       return new MoralisProviderSource(source);
     case 'dRPC':
-      return new dRPCProviderSource(source.key, source.onChains);
+      return new dRPCProviderSource(source);
     case 'third-web':
-      return new ThirdWebProviderSource(source.onChains);
+      return new ThirdWebProviderSource(source);
     case 'alchemy':
-      return new AlchemyProviderSource(source.key, source.onChains);
+      return new AlchemyProviderSource(source);
     case 'blast':
-      return new BlastProviderSource(source.key, source.onChains);
+      return new BlastProviderSource(source);
     case '1rpc':
-      return new OneRPCProviderSource(source.key, source.onChains);
+      return new OneRPCProviderSource(source);
     case 'llama-nodes':
-      return new LlamaNodesProviderSource(source.key, source.onChains);
+      return new LlamaNodesProviderSource(source);
     case 'ankr':
-      return new AnkrProviderSource(source.key, source.onChains);
+      return new AnkrProviderSource(source);
     case 'on-finality':
-      return new OnFinalityProviderSource(source.key, source.onChains);
+      return new OnFinalityProviderSource(source);
     case 'tenderly':
-      return new TenderlyProviderSource(source.key, source.onChains);
+      return new TenderlyProviderSource(source);
     case 'infura':
-      return new InfuraProviderSource(source.key, source.onChains);
+      return new InfuraProviderSource(source);
     case 'node-real':
-      return new NodeRealProviderSource(source.key, source.onChains);
+      return new NodeRealProviderSource(source);
     case 'get-block':
-      return new GetBlockProviderSource(source.accessTokens);
+      return new GetBlockProviderSource(source);
     case 'http':
-      return new HttpProviderSource(source.url, source.supportedChains);
+      return new HttpProviderSource({ url: source.url, chains: source.supportedChains, config: source.config });
     case 'web-socket':
       return new WebSocketProviderSource(source.url, source.supportedChains);
     case 'fallback':

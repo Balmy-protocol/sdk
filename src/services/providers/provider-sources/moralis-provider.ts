@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { ChainId } from '@types';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth',
@@ -20,7 +20,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON_ZKEVM.chainId]: 'polygon-zkevm',
 };
 
-type MoralisConfig = { onChains?: ChainId[]; site?: 'site1' | 'site2' } | { keys: Record<ChainId, string>; site?: 'site1' | 'site2' };
+type MoralisConfig = ({ onChains?: ChainId[] } | { keys: Record<ChainId, string> }) & { site?: 'site1' | 'site2'; config?: HttpProviderConfig };
 
 export class MoralisProviderSource extends BaseHttpProvider {
   private readonly keys: Record<ChainId, string>;
@@ -28,7 +28,7 @@ export class MoralisProviderSource extends BaseHttpProvider {
   private readonly site: 'site1' | 'site2';
 
   constructor(config: MoralisConfig) {
-    super();
+    super(config.config);
     if ('keys' in config) {
       this.supported = Object.keys(config.keys).map(Number);
       this.keys = config.keys;

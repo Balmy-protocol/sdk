@@ -1,6 +1,6 @@
 import { Chains } from '@chains';
 import { ChainId } from '@types';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON.chainId]: 'https://rpc.ankr.com/polygon',
@@ -25,9 +25,10 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
 
 export class AnkrProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
-
-  constructor(private readonly key?: string, onChains?: ChainId[]) {
-    super();
+  private readonly key: string | undefined;
+  constructor({ key, onChains, config }: { key?: string; onChains?: ChainId[]; config?: HttpProviderConfig }) {
+    super(config);
+    this.key = key;
     this.supported = onChains ?? ankrSupportedChains();
   }
 

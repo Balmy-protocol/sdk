@@ -1,15 +1,17 @@
 import { ChainId } from '@types';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 import { ALCHEMY_NETWORKS } from '@shared/alchemy';
 
 export type AlchemySupportedChains = AlchemyDefaultChains | ChainId[];
 type AlchemyDefaultChains = { allInTier: 'free tier' | 'paid tier'; except?: ChainId[] };
 
 export class AlchemyProviderSource extends BaseHttpProvider {
+  private readonly key: string;
   private readonly supported: ChainId[];
 
-  constructor(private readonly key: string, onChains?: AlchemySupportedChains) {
-    super();
+  constructor({ key, onChains, config }: { key: string; onChains?: AlchemySupportedChains; config?: HttpProviderConfig }) {
+    super(config);
+    this.key = key;
     if (onChains === undefined) {
       this.supported = alchemySupportedChains();
     } else if (Array.isArray(onChains)) {

@@ -1,11 +1,13 @@
 import { ChainId } from '@types';
-import { BaseHttpProvider } from './base/base-http-provider';
+import { BaseHttpProvider, HttpProviderConfig } from './base/base-http-provider';
 
 export class GetBlockProviderSource extends BaseHttpProvider {
   private readonly supported: ChainId[];
+  private readonly accessTokens: Record<ChainId, string>;
 
-  constructor(private readonly accessTokens: Record<ChainId, string>) {
-    super();
+  constructor({ accessTokens, config }: { accessTokens: Record<ChainId, string>; config?: HttpProviderConfig }) {
+    super(config);
+    this.accessTokens = accessTokens;
     this.supported = Object.keys(accessTokens).map(Number);
   }
 
