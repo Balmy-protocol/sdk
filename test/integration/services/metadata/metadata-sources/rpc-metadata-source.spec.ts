@@ -10,7 +10,7 @@ import { ProviderService } from '@services/providers/provider-service';
 
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
 
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
+const PROVIDER_SERVICE = new ProviderService({ source: new PublicRPCsProviderSource() });
 const RPC_METADATA_SOURCE = new RPCMetadataSource(PROVIDER_SERVICE);
 
 jest.retryTimes(2);

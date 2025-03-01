@@ -31,7 +31,7 @@ const TESTS: Record<ChainId, { address: TokenAddress; symbol: string }> = {
     symbol: 'waUSDC',
   },
 };
-const PROVIDER_SERVICE = new ProviderService(new PublicRPCsProviderSource());
+const PROVIDER_SERVICE = new ProviderService({ source: new PublicRPCsProviderSource() });
 const RPC_ALLOWANCE_SOURCE = new RPCAllowanceSource(PROVIDER_SERVICE);
 const CACHED_ALLOWANCE_SOURCE = new CachedAllowanceSource(RPC_ALLOWANCE_SOURCE, {
   expiration: {

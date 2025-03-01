@@ -9,7 +9,7 @@ import { InfuraProviderSource } from '@services/providers/provider-sources/infur
 import { HttpProviderSource } from '@services/providers/provider-sources/http-provider';
 import { LlamaNodesProviderSource } from '@services/providers/provider-sources/llama-nodes-provider';
 import { WebSocketProviderSource } from '@services/providers/provider-sources/web-sockets-provider';
-import { ProviderService } from '@services/providers/provider-service';
+import { ProviderService, ProviderConfig } from '@services/providers/provider-service';
 import { NodeRealProviderSource } from '@services/providers/provider-sources/node-real-provider';
 import { GetBlockProviderSource } from '@services/providers/provider-sources/get-block-provider';
 import { AnkrProviderSource } from '@services/providers/provider-sources/ankr-provider';
@@ -22,7 +22,7 @@ import { AlchemyProviderSource, AlchemySupportedChains } from '@services/provide
 import { MoralisProviderSource } from '@services/providers/provider-sources/moralis-provider';
 import { ThirdWebProviderSource } from '@services/providers/provider-sources/third-web-provider';
 
-export type BuildProviderParams = { source: ProviderSourceInput };
+export type BuildProviderParams = { source: ProviderSourceInput; config?: ProviderConfig };
 export type ProviderSourceInput =
   | { type: 'custom'; instance: IProviderSource }
   | { type: 'public-rpcs'; rpcsPerChain?: Record<ChainId, string[]>; config?: PublicRPCsProviderSourceConfig }
@@ -47,7 +47,7 @@ export type ProviderSourceInput =
 
 export function buildProviderService(params?: BuildProviderParams) {
   const source = buildSource(params?.source);
-  return new ProviderService(source);
+  return new ProviderService({ source, config: params?.config });
 }
 
 function buildSource(source?: ProviderSourceInput): IProviderSource {
