@@ -13,6 +13,10 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.BOBA.chainId]: 'https://boba-ethereum.gateway.tenderly.co',
   [Chains.BLAST.chainId]: 'https://blast.gateway.tenderly.co',
   [Chains.MODE.chainId]: 'https://mode.gateway.tenderly.co',
+  [Chains.AVALANCHE.chainId]: 'https://avalanche.gateway.tenderly.co',
+  [Chains.LINEA.chainId]: 'https://linea.gateway.tenderly.co',
+  [Chains.SONIC.chainId]: 'https://sonic.gateway.tenderly.co',
+  [Chains.MANTLE.chainId]: 'https://mantle.gateway.tenderly.co',
 };
 
 export class TenderlyProviderSource extends BaseHttpProvider {
