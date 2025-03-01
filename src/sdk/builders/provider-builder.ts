@@ -21,6 +21,7 @@ import { OneRPCProviderSource } from '@services/providers/provider-sources/one-r
 import { AlchemyProviderSource, AlchemySupportedChains } from '@services/providers/provider-sources/alchemy-provider';
 import { MoralisProviderSource } from '@services/providers/provider-sources/moralis-provider';
 import { ThirdWebProviderSource } from '@services/providers/provider-sources/third-web-provider';
+export type { ProviderConfig } from '@services/providers/provider-service';
 
 export type BuildProviderParams = { source: ProviderSourceInput; config?: ProviderConfig };
 export type ProviderSourceInput =
