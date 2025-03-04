@@ -818,7 +818,7 @@ export class EarnService implements IEarnService {
             bigIntPositionId,
             tokensToWithdraw,
             Object.values(intendedWithdraw).map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
-            COMPANION_SWAPPER_CONTRACT.address(chainId),
+            shouldMigrate ? EARN_VAULT_COMPANION.address(chainId) : COMPANION_SWAPPER_CONTRACT.address(chainId),
           ],
         })
       );
@@ -853,7 +853,7 @@ export class EarnService implements IEarnService {
     const realConvertAmounts = withdraw.amounts.reduce((acc, { token, convertTo }) => {
       const convertAmount = realWithdrawAmounts[token] - realMigrateAmounts[token];
       if (!!convertTo && convertAmount > 0n) {
-        acc[toLower(convertTo)] = convertAmount;
+        acc[toLower(token)] = convertAmount;
       }
       return acc;
     }, {} as Record<TokenAddress, bigint>);
@@ -892,6 +892,14 @@ export class EarnService implements IEarnService {
       );
     }
 
+    // Check circular swaps
+    const convertToSet = new Set(withdrawsToConvert.map(({ buyToken }) => buyToken));
+    const convertFromSet = new Set(withdrawsToConvert.map(({ sellToken }) => sellToken));
+    const isCircularConversion = [...convertToSet].find((to) => convertFromSet.has(to));
+    if (isCircularConversion) {
+      throw new Error('Cannot make a circular swap');
+    }
+
     // Handle special withdraw
     if (shouldWithdrawFarmToken) {
       const token = toLower(tokensToWithdraw[0]);
@@ -927,19 +935,41 @@ export class EarnService implements IEarnService {
       });
     }
 
-    const tokensToTransfer = withdraw.amounts
-      .filter(
-        ({ token }) =>
-          (realTransferAmounts[token] > 0n && realMigrateAmounts[token] == 0n) || (token == migrationAsset && realMigrateAmounts[token] > 0n)
-      )
-      .map(({ token }) => token);
+    if (shouldMigrate) {
+      const tokensToRecipientWithoutMigrate = withdraw.amounts.filter(({ token }) => realTransferAmounts[token] > 0n).map(({ token }) => token);
+      if (tokensToRecipientWithoutMigrate.length > 0) {
+        calls.push(
+          ...tokensToRecipientWithoutMigrate.map((token) =>
+            encodeFunctionData({
+              abi: companionAbi,
+              functionName: 'sendToRecipient',
+              args: [token as ViemAddress, realTransferAmounts[token], recipient as ViemAddress],
+            })
+          )
+        );
+      }
+
+      calls.push(
+        ...withdrawsToConvert.map(({ sellToken, order }) =>
+          encodeFunctionData({
+            abi: companionAbi,
+            functionName: 'sendToRecipient',
+            args: [sellToken, order.sellAmount, COMPANION_SWAPPER_CONTRACT.address(chainId) as ViemAddress],
+          })
+        )
+      );
+    }
+
+    const tokensToTransfer = !shouldMigrate
+      ? withdraw.amounts.filter(({ token }) => realTransferAmounts[token] > 0n).map(({ token }) => token)
+      : [];
 
     if (tokensToTransfer.length > 0 || withdrawsToConvert.length > 0) {
       const swapAndTransferData = await this.getSwapAndTransferData({
         chainId,
         swaps: { requests: withdrawsToConvert, swapConfig: withdraw.swapConfig },
         transfers: tokensToTransfer,
-        recipient: shouldMigrate ? EARN_VAULT_COMPANION.address(chainId) : recipient,
+        recipient,
         previousCalls: calls,
         caller,
       });
@@ -948,24 +978,6 @@ export class EarnService implements IEarnService {
     }
 
     if (shouldMigrate) {
-      const tokensToRecipientWithoutMigrate = withdraw.amounts.filter(({ token }) => realTransferAmounts[token] > 0n).map(({ token }) => token);
-      if (tokensToRecipientWithoutMigrate.length > 0) {
-        calls.push(
-          encodeFunctionData({
-            abi: companionAbi,
-            functionName: 'multicall',
-            args: [
-              tokensToRecipientWithoutMigrate.map((token) =>
-                encodeFunctionData({
-                  abi: companionAbi,
-                  functionName: 'sendToRecipient',
-                  args: [token as ViemAddress, realTransferAmounts[token], recipient as ViemAddress],
-                })
-              ),
-            ],
-          })
-        );
-      }
       const migrateTx = this.buildMigrateTransaction({
         migrate: migrate!,
         caller,
@@ -1111,6 +1123,7 @@ export class EarnService implements IEarnService {
 
     const bestQuotes = await Promise.all(promises);
     const calls = bestQuotes.map(({ tx }) => tx);
+    const value = bestQuotes.reduce((acc, { quote }) => acc + BigInt(quote.tx.value ?? 0), 0n);
     // Handle transfers
     if (transfers?.length) {
       for (const transfer of transfers) {
@@ -1130,7 +1143,7 @@ export class EarnService implements IEarnService {
         functionName: 'runSwap',
         args: [
           Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
-          0n,
+          value,
           arbitraryCall.data as Hex,
         ],
       });
@@ -1228,7 +1241,7 @@ export class EarnService implements IEarnService {
 
     const decodedResults = result.map(({ success, result, gasSpent }, index) => {
       const [amountIn, amountOut] = success ? decodeAbiParameters(parseAbiParameters('uint256 amountIn, uint256 amountOut'), result) : [0n, 0n];
-      return { success, gasSpent, amountIn, amountOut, rawResult: result, tx: multicallsToSimulate[index], quote: quotes[index] };
+      return { success, gasSpent, amountIn, amountOut, rawResult: result, tx: swapsTx[index], quote: quotes[index] };
     });
 
     // DISCLAIMER: We only sort the quotes by amountOut because we don't have buy orders. In the future, if we add buy orders, we should change this.
