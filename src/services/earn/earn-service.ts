@@ -895,7 +895,7 @@ export class EarnService implements IEarnService {
     // Check circular swaps
     const convertToSet = new Set(withdrawsToConvert.map(({ buyToken }) => buyToken));
     const convertFromSet = new Set(withdrawsToConvert.map(({ sellToken }) => sellToken));
-    const isCircularConversion = [...convertToSet].find((to) => convertFromSet.has(to));
+    const isCircularConversion = [...convertToSet].some((to) => convertFromSet.has(to));
     if (isCircularConversion) {
       throw new Error('Cannot make a circular swap');
     }
