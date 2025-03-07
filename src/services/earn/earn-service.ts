@@ -676,7 +676,7 @@ export class EarnService implements IEarnService {
       caller,
     });
 
-    calls.push(swapAndTransferData);
+    calls.push(...swapAndTransferData);
 
     // Build multicall and return tx
     return this.buildCompanionMulticall({ chainId, calls, needsAttestation: false });
@@ -883,7 +883,7 @@ export class EarnService implements IEarnService {
       caller,
     });
 
-    calls.push(swapAndTransferData);
+    calls.push(...swapAndTransferData);
 
     // Build multicall and return tx
     return this.buildCompanionMulticall({
@@ -996,14 +996,7 @@ export class EarnService implements IEarnService {
       calls.push(runSwapData);
     }
 
-    const multicalls = [...previousCalls, ...calls];
-    const multicall = encodeFunctionData({
-      abi: companionAbi,
-      functionName: 'multicall',
-      args: [multicalls],
-    });
-
-    return multicall;
+    return calls;
   }
   private async simulateSwaps({
     request,
@@ -1094,7 +1087,7 @@ export class EarnService implements IEarnService {
 
     const decodedResults = result.map(({ success, result, gasSpent }, index) => {
       const [amountIn, amountOut] = success ? decodeAbiParameters(parseAbiParameters('uint256 amountIn, uint256 amountOut'), result) : [0n, 0n];
-      return { success, gasSpent, amountIn, amountOut, rawResult: result, tx: multicallsToSimulate[index], quote: quotes[index] };
+      return { success, gasSpent, amountIn, amountOut, rawResult: result, tx: swapsTx[index], quote: quotes[index] };
     });
 
     // DISCLAIMER: We only sort the quotes by amountOut because we don't have buy orders. In the future, if we add buy orders, we should change this.
