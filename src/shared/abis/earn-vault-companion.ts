@@ -196,4 +196,15 @@ export default [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'address', name: 'token', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+    ],
+    name: 'sendToRecipient',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
 ] as const;

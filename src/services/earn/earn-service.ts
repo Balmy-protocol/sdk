@@ -31,6 +31,9 @@ import {
   TYPES,
   WithdrawEarnPositionParams,
   WithdrawType,
+  MigrateEarnType,
+  MigrateEarnPositionParams,
+  MigrationCode,
 } from './types';
 import {
   COMPANION_SWAPPER_CONTRACT,
@@ -49,6 +52,7 @@ import {
   toFunctionSelector,
   toHex,
   Address as ViemAddress,
+  encodeAbiParameters,
 } from 'viem';
 import vaultAbi from '@shared/abis/earn-vault';
 import companionAbi from '@shared/abis/earn-vault-companion';
@@ -68,7 +72,6 @@ import { IFetchService } from '@services/fetch';
 import { ArrayOneOrMore } from '@utility-types';
 import permit2AdapterAbi from '@shared/abis/permit2-adapter';
 import { IBalanceService } from '@services/balances';
-
 export class EarnService implements IEarnService {
   constructor(
     private readonly apiUrl: string,
@@ -299,7 +302,6 @@ export class EarnService implements IEarnService {
     owner,
     permissions,
     strategyValidationData,
-    misc,
     deposit,
     caller,
   }: CreateEarnPositionParams): Promise<BuiltTransaction> {
@@ -359,7 +361,7 @@ export class EarnService implements IEarnService {
               permissions: permissions.map(mapPermission),
             })),
             strategyValidationData ?? '0x',
-            misc ?? '0x',
+            '0x',
           ],
         }),
         value: depositInfo.value,
@@ -430,7 +432,7 @@ export class EarnService implements IEarnService {
             permissions: permissions.map(mapPermission),
           })),
           strategyValidationData ?? '0x',
-          misc ?? '0x',
+          '0x',
           maxApprove,
         ],
       })
@@ -662,6 +664,7 @@ export class EarnService implements IEarnService {
       sellToken: token,
       buyToken: convertTo!,
       order: { type: 'sell' as const, sellAmount: amount },
+      recipient: caller,
     }));
 
     // Handle swaps
@@ -676,7 +679,7 @@ export class EarnService implements IEarnService {
       caller,
     });
 
-    calls.push(...swapAndTransferData);
+    calls.push(...swapAndTransferData.calls);
 
     // Build multicall and return tx
     return this.buildCompanionMulticall({ chainId, calls, needsAttestation: false });
@@ -757,6 +760,7 @@ export class EarnService implements IEarnService {
     chainId,
     positionId,
     withdraw,
+    migrate,
     recipient,
     caller,
     permissionPermit,
@@ -765,24 +769,28 @@ export class EarnService implements IEarnService {
     const [, , tokenId] = positionId.split('-');
     const bigIntPositionId = BigInt(tokenId);
     const tokensToWithdraw = withdraw.amounts.map(({ token }) => token as ViemAddress);
-    const intendedWithdraw = withdraw.amounts.map(({ amount }) => BigInt(amount));
+    const intendedWithdraw = Object.fromEntries(withdraw.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)]));
+    const tokensToMigrate = migrate?.amounts?.filter(({ amount }) => BigInt(amount) > 0n)?.map(({ token }) => token as ViemAddress) ?? [];
+    const intendedMigrate = migrate ? Object.fromEntries(migrate.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount)])) : {};
+
     if (withdraw.amounts.some(({ convertTo, type }) => !!convertTo && type == WithdrawType.DELAYED)) {
       throw new Error('Can not convert delayed withdrawals');
     }
     const shouldConvertAnyToken = withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && BigInt(amount) > 0n);
     const marketWithdrawalsTypes = withdraw.amounts.filter(({ type }) => type == WithdrawType.MARKET);
     const shouldWithdrawFarmToken = marketWithdrawalsTypes.length > 0;
+    const shouldMigrate = tokensToMigrate.length > 0;
     if (marketWithdrawalsTypes.length > 1 || (shouldWithdrawFarmToken && withdraw.amounts[0].type != WithdrawType.MARKET)) {
       throw new Error('Only one withdraw type MARKET is allowed, and it should be the first one');
     }
-    if (!shouldConvertAnyToken && !shouldWithdrawFarmToken) {
-      // If don't need to convert anything, then just call the vault
+    if (!shouldConvertAnyToken && !shouldWithdrawFarmToken && !shouldMigrate) {
+      // If don't need to convert or migrate anything, then just call the vault
       const tx = {
         to: vault,
         data: encodeFunctionData({
           abi: vaultAbi,
           functionName: 'withdraw',
-          args: [BigInt(bigIntPositionId), tokensToWithdraw, intendedWithdraw, recipient as ViemAddress],
+          args: [BigInt(bigIntPositionId), tokensToWithdraw, Object.values(intendedWithdraw), recipient as ViemAddress],
         }),
       };
 
@@ -809,8 +817,8 @@ export class EarnService implements IEarnService {
             vault as ViemAddress,
             bigIntPositionId,
             tokensToWithdraw,
-            intendedWithdraw.map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
-            COMPANION_SWAPPER_CONTRACT.address(chainId),
+            Object.values(intendedWithdraw).map((amount, index) => (withdraw.amounts[index].type != WithdrawType.MARKET ? amount : 0n)),
+            shouldMigrate ? EARN_VAULT_COMPANION.address(chainId) : COMPANION_SWAPPER_CONTRACT.address(chainId),
           ],
         })
       );
@@ -818,7 +826,11 @@ export class EarnService implements IEarnService {
 
     let balancesFromVault: Record<TokenAddress, bigint> = {};
     // If any token amount to convert is MAX_UINT256 or we are withdrawing the farm token, then we need to check vault balance
-    if (shouldWithdrawFarmToken || withdraw.amounts.some(({ convertTo, amount }) => !!convertTo && amount == Uint.MAX_256)) {
+    if (
+      shouldWithdrawFarmToken ||
+      withdraw.amounts.some(({ amount }) => amount == Uint.MAX_256) ||
+      migrate?.amounts?.some(({ amount }) => amount == Uint.MAX_256)
+    ) {
       const [positionTokens, positionBalances] = await this.providerService.getViemPublicClient({ chainId }).readContract({
         abi: vaultAbi,
         address: vault,
@@ -827,22 +839,74 @@ export class EarnService implements IEarnService {
       });
       balancesFromVault = Object.fromEntries(positionTokens.map((token, index) => [toLower(token), positionBalances[index]]));
     }
+
+    // Calculate real amounts
+    const realWithdrawAmounts = Object.fromEntries(
+      withdraw.amounts.map(({ token, amount }) => [toLower(token), BigInt(amount != Uint.MAX_256 ? amount : balancesFromVault[token])])
+    );
+    const realMigrateAmounts = Object.fromEntries(
+      withdraw.amounts.map(({ token }) => [
+        toLower(token),
+        intendedMigrate?.[token] ? BigInt(intendedMigrate[token] != Uint.MAX_256 ? intendedMigrate[token] : realWithdrawAmounts[token]) : 0n,
+      ])
+    );
+    const realConvertAmounts = withdraw.amounts.reduce((acc, { token, convertTo }) => {
+      const convertAmount = realWithdrawAmounts[token] - realMigrateAmounts[token];
+      if (!!convertTo && convertAmount > 0n) {
+        acc[toLower(token)] = convertAmount;
+      }
+      return acc;
+    }, {} as Record<TokenAddress, bigint>);
+    const realTransferAmounts = withdraw.amounts.reduce((acc, { token, type, convertTo }) => {
+      const transferAmount = realWithdrawAmounts[token] - realMigrateAmounts[token];
+      if (!convertTo && transferAmount > 0n && type != WithdrawType.MARKET) {
+        acc[toLower(token)] = transferAmount;
+      }
+      return acc;
+    }, {} as Record<TokenAddress, bigint>);
+
     // Handle swaps
     const withdrawsToConvert = withdraw.amounts
-      .filter(({ convertTo }) => !!convertTo)
-      .map(({ token, amount, convertTo }) => ({
+      .filter(({ token }) => realConvertAmounts[token] > 0n)
+      .map(({ token, convertTo }) => ({
         chainId,
-        sellToken: token,
-        buyToken: convertTo!,
-        order: { type: 'sell' as const, sellAmount: amount != Uint.MAX_256 ? amount : balancesFromVault[token] },
+        sellToken: token as ViemAddress,
+        buyToken: convertTo! as ViemAddress,
+        order: { type: 'sell' as const, sellAmount: realConvertAmounts[token] },
+        recipient: caller,
       }));
+
+    let migrationAsset: ViemAddress;
+    if (shouldMigrate) {
+      migrationAsset = await this.getStrategyAsset({ chainId, ...migrate! });
+      withdrawsToConvert.push(
+        ...Object.entries(realMigrateAmounts)
+          .filter(([token]) => !isSameAddress(token, migrationAsset) && realMigrateAmounts[token] > 0n)
+          .map(([token, amount]) => ({
+            chainId,
+            sellToken: token as ViemAddress,
+            buyToken: migrationAsset,
+            order: { type: 'sell' as const, sellAmount: amount },
+            recipient: EARN_VAULT_COMPANION.address(chainId),
+          }))
+      );
+    }
+
+    // Check circular swaps
+    const convertToSet = new Set(withdrawsToConvert.map(({ buyToken }) => buyToken));
+    const convertFromSet = new Set(withdrawsToConvert.map(({ sellToken }) => sellToken));
+    const isCircularConversion = [...convertToSet].some((to) => convertFromSet.has(to));
+    if (isCircularConversion) {
+      throw new Error('Cannot make a circular swap');
+    }
 
     // Handle special withdraw
     if (shouldWithdrawFarmToken) {
+      const token = toLower(tokensToWithdraw[0]);
       const basicArgs = [
         bigIntPositionId,
         BigInt(SpecialWithdrawalCode.WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT),
-        [intendedWithdraw[0] != Uint.MAX_256 ? intendedWithdraw[0] : balancesFromVault[toLower(tokensToWithdraw[0])]],
+        [realWithdrawAmounts[token]],
         '0x',
         COMPANION_SWAPPER_CONTRACT.address(chainId),
       ] as const;
@@ -865,25 +929,64 @@ export class EarnService implements IEarnService {
       withdrawsToConvert.push({
         chainId,
         sellToken: actualWithdrawnTokens[0], // Farm token
-        buyToken: withdraw.amounts[0].convertTo ?? withdraw.amounts[0].token, // Asset or token to convert to
+        buyToken: (withdraw.amounts[0].convertTo ?? withdraw.amounts[0].token) as ViemAddress, // Asset or token to convert to
         order: { type: 'sell' as const, sellAmount: actualWithdrawnAmounts[0] }, // Amount of farm token to convert
+        recipient: caller,
       });
     }
 
-    const withdrawsToTransfer = withdraw.amounts
-      .filter(({ type, convertTo, amount }) => !convertTo && type != WithdrawType.MARKET && BigInt(amount) > 0n)
-      .map(({ token }) => token);
+    if (shouldMigrate) {
+      const tokensToRecipientWithoutMigrate = withdraw.amounts.filter(({ token }) => realTransferAmounts[token] > 0n).map(({ token }) => token);
+      if (tokensToRecipientWithoutMigrate.length > 0) {
+        calls.push(
+          ...tokensToRecipientWithoutMigrate.map((token) =>
+            encodeFunctionData({
+              abi: companionAbi,
+              functionName: 'sendToRecipient',
+              args: [token as ViemAddress, realTransferAmounts[token], recipient as ViemAddress],
+            })
+          )
+        );
+      }
 
-    const swapAndTransferData = await this.getSwapAndTransferData({
-      chainId,
-      swaps: { requests: withdrawsToConvert, swapConfig: withdraw.swapConfig },
-      transfers: withdrawsToTransfer,
-      recipient,
-      previousCalls: calls,
-      caller,
-    });
+      calls.push(
+        ...withdrawsToConvert.map(({ sellToken, order }) =>
+          encodeFunctionData({
+            abi: companionAbi,
+            functionName: 'sendToRecipient',
+            args: [sellToken, order.sellAmount, COMPANION_SWAPPER_CONTRACT.address(chainId) as ViemAddress],
+          })
+        )
+      );
+    }
 
-    calls.push(...swapAndTransferData);
+    const tokensToTransfer = !shouldMigrate
+      ? withdraw.amounts.filter(({ token }) => realTransferAmounts[token] > 0n).map(({ token }) => token)
+      : [];
+
+    if (tokensToTransfer.length > 0 || withdrawsToConvert.length > 0) {
+      const swapAndTransferData = await this.getSwapAndTransferData({
+        chainId,
+        swaps: { requests: withdrawsToConvert, swapConfig: withdraw.swapConfig },
+        transfers: tokensToTransfer,
+        recipient,
+        previousCalls: calls,
+        caller,
+      });
+
+      calls.push(...swapAndTransferData.calls);
+    }
+
+    if (shouldMigrate) {
+      const migrateTx = this.buildMigrateTransaction({
+        migrate: migrate!,
+        caller,
+        vault,
+        migrationAsset: migrationAsset!,
+        fromPositionId: positionId,
+      });
+      calls.push(migrateTx);
+    }
 
     // Build multicall and return tx
     return this.buildCompanionMulticall({
@@ -930,6 +1033,52 @@ export class EarnService implements IEarnService {
     return { quote: bestQuote.quote, tx: bestQuote.tx };
   }
 
+  private buildMigrateTransaction(params: {
+    migrate: MigrateEarnPositionParams;
+    migrationAsset: ViemAddress;
+    caller: Address;
+    vault: ViemAddress;
+    fromPositionId: PositionId;
+  }) {
+    const { migrate, migrationAsset, caller, vault, fromPositionId } = params;
+    if (migrate?.type == MigrateEarnType.CREATE) {
+      const strategyIdBigInt = BigInt(migrate.strategyId.split('-')[2]);
+      const misc: Record<number, Hex> = {
+        [MigrationCode.MIGRATE_FROM_POSITION_AND_CREATE]: encodeAbiParameters(parseAbiParameters('string'), [fromPositionId]),
+      };
+      // Handle deposit
+      return encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'createPosition',
+        args: [
+          vault,
+          strategyIdBigInt,
+          migrationAsset!,
+          Uint.MAX_256,
+          caller as ViemAddress,
+          migrate?.permissions.map(({ operator, permissions }) => ({
+            operator: operator as ViemAddress,
+            permissions: permissions.map(mapPermission),
+          })),
+          migrate.strategyValidationData ?? '0x',
+          encodeAbiParameters(parseAbiParameters('(uint256, bytes)[]'), [
+            Object.entries(misc).map(([key, value]) => [BigInt(key), value] as const),
+          ]),
+          false,
+        ],
+      });
+    } else if (migrate?.type == MigrateEarnType.INCREASE) {
+      // Handle increase
+      const positionId = BigInt(migrate.positionId.split('-')[2]);
+      return encodeFunctionData({
+        abi: companionAbi,
+        functionName: 'increasePosition',
+        args: [vault as ViemAddress, positionId, migrationAsset!, Uint.MAX_256, false],
+      });
+    }
+    throw new Error('Invalid migration type');
+  }
+
   private async getSwapAndTransferData({
     chainId,
     swaps: { requests, swapConfig },
@@ -939,7 +1088,10 @@ export class EarnService implements IEarnService {
     caller,
   }: {
     chainId: ChainId;
-    swaps: { requests: Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'>[]; swapConfig?: EarnActionSwapConfig };
+    swaps: {
+      requests: (Pick<QuoteRequest, 'chainId' | 'sellToken' | 'buyToken' | 'order'> & { recipient: Address })[];
+      swapConfig?: EarnActionSwapConfig;
+    };
     transfers?: Address[];
     recipient: Address;
     previousCalls: Hex[];
@@ -963,13 +1115,15 @@ export class EarnService implements IEarnService {
         quotes,
         nativeBalance,
         previousCalls,
-        recipient,
+        recipient: request.recipient,
         caller,
       });
       return { quote: bestQuote.quote, tx: bestQuote.tx };
     });
 
-    const calls = (await Promise.all(promises)).map(({ tx }) => tx);
+    const bestQuotes = await Promise.all(promises);
+    const calls = bestQuotes.map(({ tx }) => tx);
+    const value = bestQuotes.reduce((acc, { quote }) => acc + BigInt(quote.tx.value ?? 0), 0n);
     // Handle transfers
     if (transfers?.length) {
       for (const transfer of transfers) {
@@ -989,14 +1143,14 @@ export class EarnService implements IEarnService {
         functionName: 'runSwap',
         args: [
           Addresses.ZERO_ADDRESS, // No need to set it because we are already transferring the funds to the swapper
-          0n,
+          value,
           arbitraryCall.data as Hex,
         ],
       });
       calls.push(runSwapData);
     }
 
-    return calls;
+    return { calls, quotes: bestQuotes };
   }
   private async simulateSwaps({
     request,
@@ -1191,6 +1345,31 @@ export class EarnService implements IEarnService {
         args: [attestation, signature, tx.data as Hex],
       }),
     };
+  }
+
+  async getStrategyAsset(params: { chainId: ChainId } & ({ strategyId: StrategyId } | { positionId: PositionId })) {
+    const strategyRouter = EARN_STRATEGY_ROUTER.address(params.chainId);
+    let assetEncoded;
+    if ('strategyId' in params) {
+      const [, strategyRegistry, strategyIdString] = params.strategyId.split('-');
+      const strategyIdBigInt = BigInt(strategyIdString);
+      assetEncoded = await this.providerService.getViemPublicClient({ chainId: params.chainId }).readContract({
+        abi: strategyRouterAbi,
+        address: strategyRouter,
+        functionName: 'routeByStrategyId',
+        args: [strategyRegistry as ViemAddress, strategyIdBigInt, ASSET_DATA],
+      });
+    } else {
+      const [, vault, positionIdString] = params.positionId.split('-');
+      const positionIdBigInt = BigInt(positionIdString);
+      assetEncoded = await this.providerService.getViemPublicClient({ chainId: params.chainId }).readContract({
+        abi: strategyRouterAbi,
+        address: strategyRouter,
+        functionName: 'routeByPositionId',
+        args: [vault as ViemAddress, positionIdBigInt, ASSET_DATA],
+      });
+    }
+    return decodeFunctionResult({ abi: strategyAbi, functionName: 'asset', data: assetEncoded });
   }
 }
 
