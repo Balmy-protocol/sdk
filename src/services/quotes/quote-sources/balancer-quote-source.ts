@@ -1,9 +1,10 @@
 import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
-import { formatUnits } from 'viem';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { ChainId } from '@types';
+import { StringifyBigInt } from '@utility-types';
+import { SourceListQuoteResponse } from '../source-lists';
 
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
@@ -28,7 +29,7 @@ const BALANCER_METADATA: QuoteSourceMetadata<BalancerSupport> = {
   logoURI: 'ipfs://QmSb9Lr6Jgi9Y3RUuShfWcuCaa9EYxpyZWgBTe8GbvsUL7',
 };
 type BalancerSupport = { buyOrders: true; swapAndTransfer: false };
-type BalancerConfig = {};
+type BalancerConfig = { url?: string };
 type BalancerData = { tx: SourceQuoteTransaction };
 export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<BalancerSupport, BalancerConfig, BalancerData> {
   getMetadata() {
@@ -38,79 +39,56 @@ export class BalancerQuoteSource extends AlwaysValidConfigAndContextSource<Balan
     components: { fetchService },
     request: {
       chainId,
-      sellToken,
-      buyToken,
-      order,
+      config: { slippagePercentage, timeout, txValidFor },
       accounts: { takeFrom },
-      config: { slippagePercentage },
+      order,
       external,
+      ...request
     },
     config,
-  }: QuoteParams<BalancerSupport>): Promise<SourceQuoteResponse<BalancerData>> {
-    const { sellToken: sellTokenDataResult, buyToken: buyTokenDataResult } = await external.tokenData.request();
-    const amount =
-      order.type == 'sell'
-        ? formatUnits(order.sellAmount, sellTokenDataResult.decimals)
-        : formatUnits(order.buyAmount, buyTokenDataResult.decimals);
-    const query = {
-      query: `query {
-        sorGetSwapPaths( 
-          chain: ${SUPPORTED_CHAINS[chainId]}
-          swapAmount: "${amount}"
-          swapType: ${order.type == 'sell' ? 'EXACT_IN' : 'EXACT_OUT'}
-          tokenIn: "${sellToken}"
-          tokenOut: "${buyToken}"
-          queryBatchSwap: true
-          callDataInput: {sender: "${takeFrom}", receiver: "${takeFrom}", slippagePercentage: "${slippagePercentage}"}
-        ) {
-          tokenInAmount
-          tokenOutAmount
-          callData {
-            value
-            to
-            maxAmountInRaw
-            minAmountOutRaw
-            callData
-          }
-        }
-      }`,
+  }: QuoteParams<BalancerSupport, BalancerConfig>): Promise<SourceQuoteResponse<BalancerData>> {
+    const balmyUrl = config.url ?? 'https://api.balmy.xyz';
+    const url = `${balmyUrl}/v1/swap/networks/${chainId}/quotes/balancer`;
+    const body = {
+      ...request,
+      order,
+      slippagePercentage,
+      takerAddress: takeFrom,
+      txValidFor,
+      quoteTimeout: timeout,
+      sourceConfig: config,
     };
-    const quoteResponse = await fetchService.fetch(`https://api-v3.balancer.fi/`, {
+
+    const response = await fetchService.fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(query),
+      body: JSON.stringify(body),
+      timeout,
     });
-
-    if (!quoteResponse.ok) {
-      failed(BALANCER_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
+    if (!response.ok) {
+      failed(BALANCER_METADATA, chainId, request.sellToken, request.buyToken, await response.text());
     }
-    const quoteResult = await quoteResponse.json();
-
-    if (!quoteResult.data.sorGetSwapPaths.callData) {
-      failed(BALANCER_METADATA, chainId, sellToken, buyToken, quoteResult);
-    }
-
     const {
-      callData: { callData: data, to, value, minAmountOutRaw, maxAmountInRaw },
-      tokenInAmount,
-      tokenOutAmount,
-    } = quoteResult.data.sorGetSwapPaths;
-    const allowanceAddress = calculateAllowanceTarget(sellToken, to);
-    const minBuyAmount = order.type === 'sell' ? BigInt(minAmountOutRaw) : BigInt(tokenOutAmount);
-    const maxSellAmount = order.type === 'sell' ? BigInt(tokenInAmount) : BigInt(maxAmountInRaw);
-    return {
-      sellAmount: BigInt(tokenInAmount),
-      buyAmount: BigInt(tokenOutAmount),
-      estimatedGas: undefined,
-      minBuyAmount,
+      sellAmount,
+      buyAmount,
       maxSellAmount,
-      allowanceTarget: allowanceAddress,
+      minBuyAmount,
+      estimatedGas,
+      source: { allowanceTarget },
+      customData,
+    }: StringifyBigInt<SourceListQuoteResponse<{ tx: SourceQuoteTransaction }>> = await response.json();
+
+    return {
+      sellAmount: BigInt(sellAmount),
+      maxSellAmount: BigInt(maxSellAmount),
+      buyAmount: BigInt(buyAmount),
+      minBuyAmount: BigInt(minBuyAmount),
+      estimatedGas: estimatedGas ? BigInt(estimatedGas) : undefined,
+      allowanceTarget: calculateAllowanceTarget(request.sellToken, allowanceTarget),
       type: order.type,
       customData: {
         tx: {
-          calldata: data,
-          to,
-          value: BigInt(value ?? 0),
+          ...customData.tx,
+          value: customData.tx.value ? BigInt(customData.tx.value) : undefined,
         },
       },
     };
