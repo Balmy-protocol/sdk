@@ -34,7 +34,7 @@ const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
   logoURI: 'ipfs://QmfR2ybY1gvctAxU5KArQ1UDXFixBY8ehgTBUBvUqY4Q4b',
 };
 type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
-type MagpieConfig = { sourceAllowlist?: string[] };
+type MagpieConfig = { sourceAllowlist?: string[]; apiKey?: string };
 type MagpieData = { quoteId: string };
 export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
   getMetadata() {
@@ -66,8 +66,12 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     };
 
     const quoteQueryString = qs.stringify(quoteQueryParams, { skipNulls: true, arrayFormat: 'comma' });
+    const headers: Record<string, string> = {};
+    if (config.apiKey) {
+      headers['apikey'] = config.apiKey;
+    }
     const quoteUrl = `https://api.magpiefi.xyz/aggregator/quote?${quoteQueryString}`;
-    const quoteResponse = await fetchService.fetch(quoteUrl, { timeout });
+    const quoteResponse = await fetchService.fetch(quoteUrl, { timeout, headers });
     if (!quoteResponse.ok) {
       failed(MAGPIE_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
