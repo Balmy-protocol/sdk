@@ -6,23 +6,24 @@ import { ChainId } from '@types';
 import { StringifyBigInt } from '@utility-types';
 import { SourceListQuoteResponse } from '../source-lists';
 
-const SUPPORTED_CHAINS: Record<ChainId, string> = {
-  [Chains.ARBITRUM.chainId]: 'ARBITRUM',
-  [Chains.AVALANCHE.chainId]: 'AVALANCHE',
-  [Chains.BASE.chainId]: 'BASE',
-  [Chains.FANTOM.chainId]: 'FANTOM',
-  [Chains.GNOSIS.chainId]: 'GNOSIS',
-  [Chains.ETHEREUM.chainId]: 'MAINNET',
-  [Chains.POLYGON.chainId]: 'POLYGON',
-  [Chains.OPTIMISM.chainId]: 'OPTIMISM',
-  [Chains.POLYGON_ZKEVM.chainId]: 'ZKEVM',
-  [Chains.ETHEREUM_SEPOLIA.chainId]: 'SEPOLIA',
-};
-
 const BALANCER_METADATA: QuoteSourceMetadata<BalancerSupport> = {
   name: 'Balancer',
   supports: {
-    chains: Object.keys(SUPPORTED_CHAINS).map(Number),
+    chains: [
+      Chains.ARBITRUM.chainId,
+      Chains.AVALANCHE.chainId,
+      Chains.BASE.chainId,
+      Chains.FANTOM.chainId,
+      Chains.GNOSIS.chainId,
+      Chains.ETHEREUM.chainId,
+      Chains.POLYGON.chainId,
+      Chains.OPTIMISM.chainId,
+      Chains.POLYGON_ZKEVM.chainId,
+      Chains.ETHEREUM_SEPOLIA.chainId,
+      Chains.BNB_CHAIN.chainId,
+      Chains.SONIC.chainId,
+      Chains.MODE.chainId,
+    ],
     swapAndTransfer: false,
     buyOrders: true,
   },
