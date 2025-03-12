@@ -74,7 +74,10 @@ export class BarterQuoteSource implements IQuoteSource<BarterSupport, BarterConf
     if (!responseSwapRoute.ok) {
       failed(BARTER_METADATA, chainId, sellToken, buyToken, await responseSwapRoute.text());
     }
-    const { outputAmount, gasEstimation } = await responseSwapRoute.json();
+    const { outputAmount, gasEstimation, status } = await responseSwapRoute.json();
+    if (status === 'NoRouteFound') {
+      failed(BARTER_METADATA, chainId, sellToken, buyToken, await responseSwapRoute.text());
+    }
     const minBuyAmount = subtractPercentage(outputAmount, slippagePercentage, 'up');
 
     return {
