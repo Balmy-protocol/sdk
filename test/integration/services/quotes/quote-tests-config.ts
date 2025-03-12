@@ -37,7 +37,6 @@ if (process.env.ENSO_API_KEY) {
 if (process.env.BARTER_AUTH_HEADER && process.env.BARTER_CUSTOM_SUBDOMAIN) {
   CONFIG.custom!.barter = {
     authHeader: process.env.BARTER_AUTH_HEADER,
-    customSubdomain: process.env.BARTER_CUSTOM_SUBDOMAIN,
     sourceDenylist: ['Hashflow'],
   };
 }
