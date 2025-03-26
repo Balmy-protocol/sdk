@@ -24,4 +24,5 @@ export const ALCHEMY_NETWORKS: Record<ChainId, { key: string; rpc: { tier: 'free
   [Chains.LINEA.chainId]: { key: 'linea-mainnet', rpc: { tier: 'free' }, price: { supported: true } },
   [Chains.SONIC.chainId]: { key: 'sonic-mainnet', rpc: { tier: 'free' }, price: { supported: false } },
   [Chains.ZK_SYNC_ERA.chainId]: { key: 'zksync-mainnet', rpc: { tier: 'free' }, price: { supported: true } },
+  [Chains.CELO.chainId]: { key: 'celo-mainnet', rpc: { tier: 'free' }, price: { supported: true } },
 };
