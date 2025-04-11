@@ -34,7 +34,7 @@ const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
   logoURI: 'ipfs://QmfR2ybY1gvctAxU5KArQ1UDXFixBY8ehgTBUBvUqY4Q4b',
 };
 type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
-type MagpieConfig = { sourceAllowlist?: string[]; apiKey?: string };
+type MagpieConfig = { sourceAllowlist?: string[]; apiKey?: string; enableRFQ?: boolean };
 type MagpieData = { quoteId: string };
 export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
   getMetadata() {
@@ -63,6 +63,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       fromAddress: takeFrom,
       toAddress: recipient ?? takeFrom,
       gasless: false,
+      enableRFQ: config.enableRFQ,
     };
 
     const quoteQueryString = qs.stringify(quoteQueryParams, { skipNulls: true, arrayFormat: 'comma' });
