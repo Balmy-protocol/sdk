@@ -3,16 +3,7 @@ import { IGasPriceSource, GasPriceResult, GasValueForVersions, GasValueForVersio
 import { IFetchService } from '@services/fetch/types';
 import { Chains } from '@chains';
 
-const SUPPORTED_CHAINS = [
-  Chains.ETHEREUM,
-  Chains.POLYGON,
-  Chains.BNB_CHAIN,
-  Chains.AVALANCHE,
-  Chains.FANTOM,
-  Chains.ARBITRUM,
-  Chains.OPTIMISM,
-  Chains.BASE,
-];
+const SUPPORTED_CHAINS = [Chains.ETHEREUM, Chains.POLYGON, Chains.BNB_CHAIN, Chains.AVALANCHE, Chains.ARBITRUM, Chains.OPTIMISM, Chains.BASE];
 
 type GasValues = GasValueForVersion<'standard' | 'fast' | 'instant', LegacyGasPrice>;
 export class ParaswapGasPriceSource implements IGasPriceSource<GasValues> {

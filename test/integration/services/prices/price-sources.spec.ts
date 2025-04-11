@@ -38,7 +38,11 @@ const CACHED_PRICE_SOURCE = new CachedPriceSource(DEFI_LLAMA_PRICE_SOURCE, {
   maxSize: 100,
 });
 const CODEX_PRICE_SOURCE = new CodexPriceSource(FETCH_SERVICE, process.env.CODEX_API_KEY!);
-const ALCHEMY_PRICE_SOURCE = new AlchemyPriceSource(FETCH_SERVICE, process.env.ALCHEMY_API_KEY!);
+const ALCHEMY_PRICE_SOURCE = new AlchemyPriceSource({
+  key: process.env.ALCHEMY_API_KEY!,
+  fetch: FETCH_SERVICE,
+  onChains: { allInTier: 'free tier' },
+});
 const PRIORITIZED_PRICE_SOURCE = new PrioritizedPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const FASTEST_PRICE_SOURCE = new FastestPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE]);
 const AGGREGATOR_PRICE_SOURCE = new AggregatorPriceSource([ODOS_PRICE_SOURCE, DEFI_LLAMA_PRICE_SOURCE], 'median');
