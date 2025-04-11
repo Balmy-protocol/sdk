@@ -6,9 +6,24 @@ import { reduceTimeout, timeoutPromise } from '@shared/timeouts';
 import { filterRejectedResults, groupByChain, isSameAddress, splitInChunks } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 import { ALCHEMY_NETWORKS } from '@shared/alchemy';
+import { alchemySupportedChains, AlchemySupportedChains } from '@services/providers/provider-sources/alchemy-provider';
+
 export class AlchemyPriceSource implements IPriceSource {
-  constructor(private readonly fetch: IFetchService, private readonly apiKey: string) {
-    if (!this.apiKey) throw new Error('API key is required');
+  private readonly fetch: IFetchService;
+  private readonly apiKey: string;
+  private readonly supported: ChainId[];
+
+  constructor({ key, onChains, fetch }: { key: string; onChains?: AlchemySupportedChains; fetch: IFetchService }) {
+    this.fetch = fetch;
+    this.apiKey = key;
+    if (onChains === undefined) {
+      this.supported = alchemySupportedChains();
+    } else if (Array.isArray(onChains)) {
+      this.supported = onChains;
+    } else {
+      const chains = alchemySupportedChains({ onlyFree: onChains.allInTier === 'free tier' });
+      this.supported = onChains.except ? chains.filter((chain) => !onChains.except!.includes(chain)) : chains;
+    }
   }
 
   supportedQueries() {
@@ -19,6 +34,7 @@ export class AlchemyPriceSource implements IPriceSource {
       getChart: false,
     };
     const entries = Object.entries(ALCHEMY_NETWORKS)
+      .filter(([chainId]) => this.supported.includes(Number(chainId)))
       .filter(
         ([
           _,
