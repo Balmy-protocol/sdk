@@ -232,14 +232,70 @@ The Balances Service allows querying token balances across multiple chains and t
   - Multi-chain wallet integration
   - Automated balance checks for trading strategies
 
+#### Methods
+
+##### `supportedChains()`
+
+Returns an array of chain IDs that are supported by the service.
+
 ```typescript
-// Get balances for multiple tokens across chains
-const balances = await sdk.balanceService.getBalancesForTokens({
+const chains = sdk.balanceService.supportedChains();
+```
+
+##### `getBalancesForAccountInChain(params)`
+
+Gets balances for a specific account in a single chain.
+
+```typescript
+const balances = await sdk.balanceService.getBalancesForAccountInChain({
+  chainId: Chains.ETHEREUM.chainId,
   account: "0x...",
-  tokens: {
-    [Chains.ETHEREUM.chainId]: ["0x...", "0x..."],
-    [Chains.OPTIMISM.chainId]: ["0x...", "0x..."],
-  },
+  tokens: ["0x...", "0x..."],
+  config: { timeout: "30s" },
+});
+```
+
+##### `getBalancesForAccount(params)`
+
+Gets balances for a specific account across multiple chains.
+
+```typescript
+const balances = await sdk.balanceService.getBalancesForAccount({
+  account: "0x...",
+  tokens: [
+    { chainId: Chains.ETHEREUM.chainId, token: "0x..." },
+    { chainId: Chains.OPTIMISM.chainId, token: "0x..." },
+  ],
+  config: { timeout: "30s" },
+});
+```
+
+##### `getBalancesInChain(params)`
+
+Gets balances for multiple accounts in a single chain.
+
+```typescript
+const balances = await sdk.balanceService.getBalancesInChain({
+  chainId: Chains.ETHEREUM.chainId,
+  tokens: [
+    { account: "0x...", token: "0x..." },
+    { account: "0x...", token: "0x..." },
+  ],
+  config: { timeout: "30s" },
+});
+```
+
+##### `getBalances(params)`
+
+Gets balances for multiple accounts across multiple chains.
+
+```typescript
+const balances = await sdk.balanceService.getBalances({
+  tokens: [
+    { chainId: Chains.ETHEREUM.chainId, account: "0x...", token: "0x..." },
+    { chainId: Chains.OPTIMISM.chainId, account: "0x...", token: "0x..." },
+  ],
+  config: { timeout: "30s" },
 });
 ```
 
@@ -748,18 +804,17 @@ const gasCost = calculator.calculateGasCost({
 
 ### Prices Service
 
-The Prices Service provides token price feeds and conversion utilities.
+The Prices Service provides token price information across multiple chains.
 
 #### Objective and Potential
 
-- **Objective**: Provide reliable and comprehensive price data for tokens across multiple chains
+- **Objective**: Provide a unified interface for retrieving token prices across multiple chains
 - **Potential Use Cases**:
-  - Real-time price monitoring
+  - Price feeds for DeFi applications
+  - Token value calculations
   - Historical price analysis
-  - Price impact calculations
-  - Portfolio valuation
-  - Cross-chain price comparison
-  - Trading strategy backtesting
+  - Price chart generation
+  - Multi-chain price aggregation
 
 #### Methods
 
@@ -768,15 +823,15 @@ The Prices Service provides token price feeds and conversion utilities.
 Returns an array of chain IDs that are supported by the service.
 
 ```typescript
-const chains = sdk.priceService.supportedChains();
+const chains = sdk.pricesService.supportedChains();
 ```
 
 ##### `supportedQueries()`
 
-Returns information about supported price queries for each chain.
+Returns the supported price queries for each chain.
 
 ```typescript
-const queries = sdk.priceService.supportedQueries();
+const queries = sdk.pricesService.supportedQueries();
 ```
 
 ##### `getCurrentPricesInChain(params)`
@@ -784,10 +839,10 @@ const queries = sdk.priceService.supportedQueries();
 Gets current prices for tokens in a specific chain.
 
 ```typescript
-const prices = await sdk.priceService.getCurrentPricesInChain({
+const prices = await sdk.pricesService.getCurrentPricesInChain({
   chainId: Chains.ETHEREUM.chainId,
   tokens: ["0x...", "0x..."],
-  config: { timeout: TimeString },
+  config: { timeout: "30s" },
 });
 ```
 
@@ -796,12 +851,12 @@ const prices = await sdk.priceService.getCurrentPricesInChain({
 Gets current prices for tokens across multiple chains.
 
 ```typescript
-const prices = await sdk.priceService.getCurrentPrices({
+const prices = await sdk.pricesService.getCurrentPrices({
   tokens: [
     { chainId: Chains.ETHEREUM.chainId, token: "0x..." },
     { chainId: Chains.OPTIMISM.chainId, token: "0x..." },
   ],
-  config: { timeout: TimeString },
+  config: { timeout: "30s" },
 });
 ```
 
@@ -810,12 +865,12 @@ const prices = await sdk.priceService.getCurrentPrices({
 Gets historical prices for tokens in a specific chain at a given timestamp.
 
 ```typescript
-const prices = await sdk.priceService.getHistoricalPricesInChain({
+const prices = await sdk.pricesService.getHistoricalPricesInChain({
   chainId: Chains.ETHEREUM.chainId,
   tokens: ["0x...", "0x..."],
-  timestamp: 1672531200, // Unix timestamp
+  timestamp: 1234567890,
   searchWidth: "1h",
-  config: { timeout: TimeString },
+  config: { timeout: "30s" },
 });
 ```
 
@@ -824,14 +879,14 @@ const prices = await sdk.priceService.getHistoricalPricesInChain({
 Gets historical prices for tokens across multiple chains at a given timestamp.
 
 ```typescript
-const prices = await sdk.priceService.getHistoricalPrices({
+const prices = await sdk.pricesService.getHistoricalPrices({
   tokens: [
     { chainId: Chains.ETHEREUM.chainId, token: "0x..." },
     { chainId: Chains.OPTIMISM.chainId, token: "0x..." },
   ],
-  timestamp: 1672531200, // Unix timestamp
+  timestamp: 1234567890,
   searchWidth: "1h",
-  config: { timeout: TimeString },
+  config: { timeout: "30s" },
 });
 ```
 
@@ -840,13 +895,13 @@ const prices = await sdk.priceService.getHistoricalPrices({
 Gets historical prices for multiple tokens at different timestamps.
 
 ```typescript
-const prices = await sdk.priceService.getBulkHistoricalPrices({
+const prices = await sdk.pricesService.getBulkHistoricalPrices({
   tokens: [
-    { chainId: Chains.ETHEREUM.chainId, token: "0x...", timestamp: 1672531200 },
-    { chainId: Chains.OPTIMISM.chainId, token: "0x...", timestamp: 1672531200 },
+    { chainId: Chains.ETHEREUM.chainId, token: "0x...", timestamp: 1234567890 },
+    { chainId: Chains.OPTIMISM.chainId, token: "0x...", timestamp: 1234567890 },
   ],
   searchWidth: "1h",
-  config: { timeout: TimeString },
+  config: { timeout: "30s" },
 });
 ```
 
@@ -855,32 +910,30 @@ const prices = await sdk.priceService.getBulkHistoricalPrices({
 Gets price chart data for tokens over a specified time period.
 
 ```typescript
-const chart = await sdk.priceService.getChart({
+const chart = await sdk.pricesService.getChart({
   tokens: [
     { chainId: Chains.ETHEREUM.chainId, token: "0x..." },
     { chainId: Chains.OPTIMISM.chainId, token: "0x..." },
   ],
-  span: 100, // Number of data points
-  period: "1h", // Time between data points
-  bound: { from: 1672531200 }, // or { upTo: "now" }
+  span: 100,
+  period: "1d",
+  bound: { from: 1234567890 },
   searchWidth: "1h",
 });
 ```
 
 ### Metadata Service
 
-The Metadata Service provides token metadata retrieval and management.
+The Metadata Service provides token metadata information across multiple chains.
 
 #### Objective and Potential
 
-- **Objective**: Standardize and simplify token metadata access across chains
+- **Objective**: Provide a unified interface for retrieving token metadata across multiple chains
 - **Potential Use Cases**:
-  - Token information display
-  - Wallet integration
-  - Token discovery
-  - Cross-chain token management
-  - DApp development
-  - Token analytics
+  - Token information display in UIs
+  - Token validation and verification
+  - Multi-chain token management
+  - Token data aggregation
 
 #### Methods
 
@@ -894,7 +947,7 @@ const chains = sdk.metadataService.supportedChains();
 
 ##### `supportedProperties()`
 
-Returns information about supported metadata properties for each chain.
+Returns the supported metadata properties for each chain.
 
 ```typescript
 const properties = sdk.metadataService.supportedProperties();
@@ -909,8 +962,8 @@ const metadata = await sdk.metadataService.getMetadataInChain({
   chainId: Chains.ETHEREUM.chainId,
   tokens: ["0x...", "0x..."],
   config: {
-    fields: { symbol: true, decimals: true }, // Specify which fields to retrieve
-    timeout: TimeString,
+    fields: { symbol: "required", decimals: "required" },
+    timeout: "30s",
   },
 });
 ```
@@ -926,8 +979,8 @@ const metadata = await sdk.metadataService.getMetadata({
     { chainId: Chains.OPTIMISM.chainId, token: "0x..." },
   ],
   config: {
-    fields: { symbol: true, decimals: true }, // Specify which fields to retrieve
-    timeout: TimeString,
+    fields: { symbol: "required", decimals: "required" },
+    timeout: "30s",
   },
 });
 ```
