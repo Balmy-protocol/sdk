@@ -16,63 +16,6 @@ yarn add @balmy/sdk
 npm install @balmy/sdk
 ```
 
-## Features
-
-- Multi-chain support with comprehensive chain definitions
-- Type-safe interactions with blockchain networks
-- Built-in services for common blockchain operations
-- Support for various DeFi operations including:
-  - Token balances and allowances
-  - Price feeds
-  - Gas estimation
-  - DCA (Dollar Cost Averaging)
-  - Permit2 token approvals
-  - Earn protocols
-  - Quote fetching
-  - Block and transaction metadata
-
-## Core Types
-
-### Basic Types
-
-- `Address`: Ethereum address string
-- `TokenAddress`: Token contract address
-- `ChainId`: Network chain ID
-- `TimeString`: Time representation
-- `Timestamp`: Unix timestamp
-- `BigIntish`: Big number representation (string | number | bigint)
-
-### Chain Definition
-
-```typescript
-type Chain = {
-  chainId: ChainId;
-  name: string;
-  ids: string[];
-  nativeCurrency: { symbol: string; name: string };
-  wToken: Address;
-  publicRPCs: string[];
-  explorer: string;
-  testnet?: boolean;
-};
-```
-
-### Transaction Types
-
-- `InputTransaction`: Transaction input parameters
-- `BuiltTransaction`: Built transaction ready for submission
-- `ContractCall`: Smart contract interaction parameters
-
-### Token Amounts
-
-```typescript
-type AmountsOfToken = {
-  amount: bigint;
-  amountInUnits: string;
-  amountInUSD?: string;
-};
-```
-
 ## Quick Start
 
 ### 👷🏽‍♀️ Building the SDK
@@ -140,6 +83,26 @@ const allQuotes = await sdk.quoteService.getAllQuotesWithTxs({
   },
 });
 ```
+
+## Overview
+
+The Balmy SDK is a comprehensive TypeScript library that provides a unified interface for interacting with the Balmy protocol and various blockchain networks. The Balmy SDK allows you to interact with the Balmy protocol, providing efficient tools to manage token balances, retrieve trade quotes from DEX aggregators, and check token holdings across multiple chains. It's designed to be modular, with each functionality organized into specialized services that handle specific aspects of blockchain interaction.
+
+### Available Services
+
+The SDK is divided into the following services:
+
+- **[Allowances Service](#allowances-service)**: Manage token approvals and permissions across different chains
+- **[Balances Service](#balances-service)**: Query token balances across multiple chains and tokens
+- **[Quotes Service](#quotes-service)**: Get optimized swap quotes from various DEX aggregators
+- **[Gas Service](#gas-service)**: Optimize transaction costs and estimate gas prices
+- **[Prices Service](#prices-service)**: Retrieve token price information across multiple chains
+- **[Metadata Service](#metadata-service)**: Access token metadata and information
+- **[Permit2 Service](#permit2-service)**: Manage token approvals using the Permit2 protocol
+- **[DCA Service](#dca-service)**: Set up and manage Dollar Cost Averaging positions
+- **[Earn Service](#earn-service)**: Handle yield farming operations
+
+Each service provides a focused set of functionality while maintaining a consistent interface and error handling approach. This modular design allows developers to use only the services they need while ensuring a cohesive experience across the entire SDK.
 
 ## Services
 
@@ -1255,7 +1218,3 @@ yarn install
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ### [Docs](https://docs.balmy.xyz) | [X](https://x.com/balmy_xyz) | [Discord](http://discord.balmy.xyz/)
-
-Balmy is the state-of-the-art DCA open protocol that enables users (or dapps) to Dollar Cost Average (DCA) any ERC20 into any ERC20 with their preferred period frequency, without sacrificing decentralization or giving up personal information to any centralized parties.
-
-The Balmy SDK allows you to interact with the Balmy protocol, providing efficient tools to manage token balances, retrieve trade quotes from DEX aggregators, and check token holdings across multiple chains.
