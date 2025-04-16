@@ -980,7 +980,7 @@ Gets the allowance target address for a strategy.
 ```typescript
 const target = await sdk.earnService.getAllowanceTarget({
   chainId: Chains.ETHEREUM.chainId,
-  strategyId: "strategy-id",
+  strategyId: "1-0x1234567890123456789012345678901234567890-42", // Format: chainId-registryAddress-strategyNumber
   depositWith: "0x...", // Token to deposit with
   usePermit2: boolean,
 });
@@ -1006,7 +1006,7 @@ Prepares permission data for position management.
 ```typescript
 const permissionData = await sdk.earnService.preparePermissionData({
   chainId: Chains.ETHEREUM.chainId,
-  positionId: "position-id",
+  positionId: "1-0xabcdef1234567890123456789012345678901234-1337", // Format: chainId-vaultAddress-positionNumber
   permissions: [{ operator: "0x...", permissions: [EarnPermission.INCREASE] }],
   signerAddress: "0x...",
   signatureValidFor: "1w",
@@ -1020,7 +1020,7 @@ Builds a transaction to create a new earn position.
 ```typescript
 const tx = await sdk.earnService.buildCreatePositionTx({
   chainId: Chains.ETHEREUM.chainId,
-  strategyId: "strategy-id",
+  strategyId: "1-0x1234567890123456789012345678901234567890-42", // Format: chainId-registryAddress-strategyNumber
   owner: "0x...",
   permissions: [{ operator: "0x...", permissions: [EarnPermission.INCREASE] }],
   deposit: { token: "0x...", amount: "1000000" },
@@ -1034,7 +1034,7 @@ Builds a transaction to increase an existing position.
 ```typescript
 const tx = await sdk.earnService.buildIncreasePositionTx({
   chainId: Chains.ETHEREUM.chainId,
-  positionId: "position-id",
+  positionId: "1-0xabcdef1234567890123456789012345678901234-1337", // Format: chainId-vaultAddress-positionNumber
   increase: { token: "0x...", amount: "1000000" },
 });
 ```
@@ -1046,7 +1046,7 @@ Builds a transaction to withdraw from a position.
 ```typescript
 const tx = await sdk.earnService.buildWithdrawPositionTx({
   chainId: Chains.ETHEREUM.chainId,
-  positionId: "position-id",
+  positionId: "1-0xabcdef1234567890123456789012345678901234-1337", // Format: chainId-vaultAddress-positionNumber
   withdraw: { type: "market", token: "0x...", amount: "1000000" },
 });
 ```
@@ -1058,7 +1058,7 @@ Builds a transaction to claim a delayed withdrawal.
 ```typescript
 const tx = await sdk.earnService.buildClaimDelayedWithdrawPositionTx({
   chainId: Chains.ETHEREUM.chainId,
-  positionId: "position-id",
+  positionId: "1-0xabcdef1234567890123456789012345678901234-1337", // Format: chainId-vaultAddress-positionNumber
 });
 ```
 
@@ -1069,7 +1069,7 @@ Estimates the amount of tokens that would be received from a market withdrawal.
 ```typescript
 const estimation = await sdk.earnService.estimateMarketWithdraw({
   chainId: Chains.ETHEREUM.chainId,
-  positionId: "position-id",
+  positionId: "1-0xabcdef1234567890123456789012345678901234-1337", // Format: chainId-vaultAddress-positionNumber
   token: "0x...",
   amount: "1000000",
   swapConfig: {
@@ -1096,7 +1096,7 @@ Gets detailed information about a specific strategy.
 
 ```typescript
 const strategy = await sdk.earnService.getStrategy({
-  strategy: "strategy-id",
+  strategy: "1-0x1234567890123456789012345678901234567890-42", // Format: chainId-registryAddress-strategyNumber
   config: { timeout: "30s" },
 });
 ```
@@ -1115,6 +1115,19 @@ const positions = await sdk.earnService.getPositionsByAccount({
 });
 ```
 
+##### `getPositionsById(params)`
+
+Gets earn positions by their IDs.
+
+```typescript
+const positions = await sdk.earnService.getPositionsById({
+  ids: ["1-0xabcdef1234567890123456789012345678901234-1337"], // Format: chainId-vaultAddress-positionNumber
+  includeHistory: true,
+  includeHistoricalBalancesFrom: 1672531200,
+  config: { timeout: "30s" },
+});
+```
+
 ##### `getStrategyAsset(params)`
 
 Gets the asset token for a strategy or position.
@@ -1122,7 +1135,8 @@ Gets the asset token for a strategy or position.
 ```typescript
 const asset = await sdk.earnService.getStrategyAsset({
   chainId: Chains.ETHEREUM.chainId,
-  strategyId: "strategy-id", // or positionId: "position-id"
+  strategyId: "1-0x1234567890123456789012345678901234567890-42", // Format: chainId-registryAddress-strategyNumber
+  // or positionId: "1-0xabcdef1234567890123456789012345678901234-1337" // Format: chainId-vaultAddress-positionNumber
 });
 ```
 
@@ -1186,10 +1200,6 @@ yarn install
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-[Add your license information here]
 
 ### [Docs](https://docs.balmy.xyz) | [X](https://x.com/balmy_xyz) | [Discord](http://discord.balmy.xyz/)
 
