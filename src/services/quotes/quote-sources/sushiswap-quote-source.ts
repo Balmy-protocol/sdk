@@ -55,8 +55,6 @@ export class SushiswapQuoteSource extends AlwaysValidConfigAndContextSource<Sush
     },
     config,
   }: QuoteParams<SushiswapSupport, SushiswapConfig>): Promise<SourceQuoteResponse<SushiswapData>> {
-    const chain = getChainByKey(chainId);
-    if (!chain) throw new Error(`Chain with id ${chainId} not found`);
     const queryParams = {
       amount: order.sellAmount,
       tokenIn: sellToken,
@@ -66,7 +64,7 @@ export class SushiswapQuoteSource extends AlwaysValidConfigAndContextSource<Sush
       recipient,
 
       // Without this, the sender needs to have the balance to get the quote
-      simulate: false,
+      simulate: !config.disableValidation,
     };
 
     const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
