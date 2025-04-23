@@ -62,8 +62,6 @@ export class SushiswapQuoteSource extends AlwaysValidConfigAndContextSource<Sush
       maxSlippage: slippagePercentage / 100,
       sender: takeFrom,
       recipient,
-
-      // Without this, the sender needs to have the balance to get the quote
       simulate: !config.disableValidation,
     };
 
