@@ -34,7 +34,7 @@ const SUSHISWAP_METADATA: QuoteSourceMetadata<SushiswapSupport> = {
     swapAndTransfer: true,
     buyOrders: false,
   },
-  logoURI: '',
+  logoURI: 'ipfs://bafkreifo4eejuhgn2m3m476czrjobnyo3juvajc5ql7vgsclgq5b5lruym',
 };
 type SushiswapConfig = { apiKey: string };
 type SushiswapSupport = { buyOrders: false; swapAndTransfer: true };
