@@ -10,7 +10,7 @@ const BARTER_NETWORKS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth',
   [Chains.ARBITRUM.chainId]: 'arb',
   [Chains.BASE.chainId]: 'base',
-  [Chains.GNOSIS.chainId]: 'gn0',
+  [Chains.GNOSIS.chainId]: 'gno',
 };
 const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
   name: 'Barter',
