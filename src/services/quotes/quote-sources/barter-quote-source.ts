@@ -15,7 +15,7 @@ const BARTER_NETWORKS: Record<ChainId, string> = {
 const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
   name: 'Barter',
   supports: {
-    chains: [Chains.ETHEREUM.chainId, Chains.ARBITRUM.chainId, Chains.BASE.chainId, Chains.GNOSIS.chainId],
+    chains: Object.keys(BARTER_NETWORKS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },
