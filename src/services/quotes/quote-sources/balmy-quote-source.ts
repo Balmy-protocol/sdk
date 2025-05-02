@@ -5,8 +5,6 @@ import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
 import { SourceListQuoteResponse } from '../source-lists/types';
 import { StringifyBigInt } from '@utility-types';
-import { QuoteTransaction } from '../types';
-import { bigintifyTx } from '../source-lists/utils';
 
 export const BALMY_SUPPORTED_CHAINS = [
   Chains.ETHEREUM,
@@ -20,6 +18,7 @@ export const BALMY_SUPPORTED_CHAINS = [
   Chains.ROOTSTOCK,
   Chains.AVALANCHE,
   Chains.BASE,
+  Chains.SONIC,
 ].map(({ chainId }) => chainId);
 
 const BALMY_METADATA: QuoteSourceMetadata<BalmySupport> = {

@@ -5,6 +5,7 @@ import { addQuoteSlippage, failed } from './utils';
 import { parseUnits } from 'viem';
 import { Addresses } from '@shared/constants';
 
+// Supported Networks: https://docs.dodoex.io/en/developer/developers-portal/api/smart-trade/api
 const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
   name: 'DODO',
   supports: {
@@ -24,6 +25,7 @@ const DODO_DEX_METADATA: QuoteSourceMetadata<DodoDexSupport> = {
       Chains.OKC.chainId,
       Chains.OPTIMISM.chainId,
       Chains.SCROLL.chainId,
+      Chains.MANTLE.chainId,
     ],
     swapAndTransfer: false,
     buyOrders: false,

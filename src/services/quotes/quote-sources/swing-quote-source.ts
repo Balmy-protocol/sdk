@@ -19,6 +19,7 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ethereum',
   [Chains.FANTOM.chainId]: 'fantom',
   [Chains.GNOSIS.chainId]: 'gnosis',
+  [Chains.KAVA.chainId]: 'kava_2222-10',
   [Chains.LINEA.chainId]: 'linea',
   [Chains.MANTLE.chainId]: 'mantle',
   [Chains.METIS_ANDROMEDA.chainId]: 'metis',
@@ -28,6 +29,8 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.ROOTSTOCK.chainId]: 'rootstock',
   [Chains.SCROLL.chainId]: 'scroll',
+  [Chains.SONIC.chainId]: 'sonic',
+  [Chains.ZK_SYNC_ERA.chainId]: 'zksync-era',
 };
 
 const SWING_METADATA: QuoteSourceMetadata<SwingSupport> = {

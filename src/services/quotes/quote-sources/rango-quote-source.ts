@@ -11,7 +11,7 @@ import { decodeFunctionData, parseAbi } from 'viem';
 // https://docs.rango.exchange/integrations
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'ETH',
-  [Chains.BNB_CHAIN.chainId]: 'BNB',
+  [Chains.BNB_CHAIN.chainId]: 'BSC',
   [Chains.POLYGON.chainId]: 'POLYGON',
   [Chains.FANTOM.chainId]: 'FANTOM',
   [Chains.ARBITRUM.chainId]: 'ARBITRUM',
@@ -34,6 +34,9 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.MODE.chainId]: 'MODE',
   [Chains.LINEA.chainId]: 'LINEA',
   [Chains.SCROLL.chainId]: 'SCROLL',
+  [Chains.BASE.chainId]: 'BASE',
+  [Chains.METIS_ANDROMEDA.chainId]: 'METIS',
+  [Chains.ZK_SYNC_ERA.chainId]: 'ZKSYNC',
 };
 
 const RANGO_METADATA: QuoteSourceMetadata<RangoSupport> = {

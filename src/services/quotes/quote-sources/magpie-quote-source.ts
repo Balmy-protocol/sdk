@@ -8,6 +8,7 @@ import { addQuoteSlippage, calculateAllowanceTarget, failed } from './utils';
 import { isSameAddress } from '@shared/utils';
 import { Addresses } from '@shared/constants';
 
+// Supported Networks: https://docs.magpiefi.xyz/magpie-protocol/supported-networks
 const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.ARBITRUM.chainId]: 'arbitrum',
   [Chains.AVALANCHE.chainId]: 'avalanche',
@@ -22,6 +23,8 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.METIS_ANDROMEDA.chainId]: 'metis',
   [Chains.FANTOM.chainId]: 'fantom',
   [Chains.SONIC.chainId]: 'sonic',
+  [Chains.ZK_SYNC_ERA.chainId]: 'zksync',
+  [Chains.LINEA.chainId]: 'linea',
 };
 
 const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
