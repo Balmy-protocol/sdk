@@ -1268,6 +1268,7 @@ export class EarnService implements IEarnService {
         recipient: COMPANION_SWAPPER_CONTRACT.address(request.chainId),
         txValidFor: swapConfig?.txValidFor ?? '1w',
         sourceConfig: { custom: { balmy: { leftoverRecipient } } },
+        filters: { includeSources: ['balmy'] },
       },
       config: {
         timeout: '5s',

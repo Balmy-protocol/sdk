@@ -26,6 +26,8 @@ const SUPPORTED_CHAINS = [
   Chains.FANTOM,
   Chains.MANTLE,
   Chains.METIS_ANDROMEDA,
+  Chains.ZK_SYNC_ERA,
+  Chains.SONIC,
 ];
 
 const OKX_DEX_METADATA: QuoteSourceMetadata<OKXDexSupport> = {

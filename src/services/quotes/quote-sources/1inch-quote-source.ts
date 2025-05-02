@@ -22,6 +22,7 @@ export const ONE_INCH_METADATA: QuoteSourceMetadata<OneInchSupport> = {
       Chains.AURORA.chainId,
       Chains.BASE.chainId,
       Chains.ZK_SYNC_ERA.chainId,
+      Chains.LINEA.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,

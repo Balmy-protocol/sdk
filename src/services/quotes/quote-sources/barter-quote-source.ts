@@ -5,14 +5,17 @@ import { Addresses } from '@shared/constants';
 import { IQuoteSource, QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, checksum, failed } from './utils';
 
+// Supported Networks: https://app.barterswap.xyz/docs/apiv1
 const BARTER_NETWORKS: Record<ChainId, string> = {
   [Chains.ETHEREUM.chainId]: 'eth',
   [Chains.ARBITRUM.chainId]: 'arb',
+  [Chains.BASE.chainId]: 'base',
+  [Chains.GNOSIS.chainId]: 'gno',
 };
 const BARTER_METADATA: QuoteSourceMetadata<BarterSupport> = {
   name: 'Barter',
   supports: {
-    chains: [Chains.ETHEREUM.chainId, Chains.ARBITRUM.chainId],
+    chains: Object.keys(BARTER_NETWORKS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },

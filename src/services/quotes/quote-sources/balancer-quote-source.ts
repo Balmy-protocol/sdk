@@ -2,7 +2,6 @@ import { Chains } from '@chains';
 import { QuoteParams, QuoteSourceMetadata, SourceQuoteResponse, SourceQuoteTransaction, BuildTxParams } from './types';
 import { calculateAllowanceTarget, failed } from './utils';
 import { AlwaysValidConfigAndContextSource } from './base/always-valid-source';
-import { ChainId } from '@types';
 import { StringifyBigInt } from '@utility-types';
 import { SourceListQuoteResponse } from '../source-lists';
 

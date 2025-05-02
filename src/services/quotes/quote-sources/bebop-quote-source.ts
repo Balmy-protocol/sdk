@@ -18,6 +18,7 @@ const NETWORK_KEY: Record<ChainId, string> = {
   [Chains.MODE.chainId]: 'mode',
   [Chains.POLYGON.chainId]: 'polygon',
   [Chains.SCROLL.chainId]: 'scroll',
+  [Chains.ZK_SYNC_ERA.chainId]: 'zksync',
 };
 
 const BEBOP_METADATA: QuoteSourceMetadata<BebopSupport> = {

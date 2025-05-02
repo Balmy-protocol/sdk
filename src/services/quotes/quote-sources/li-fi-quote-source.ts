@@ -39,6 +39,7 @@ const LI_FI_METADATA: QuoteSourceMetadata<LiFiSupport> = {
       Chains.BLAST.chainId,
       Chains.MANTLE.chainId,
       Chains.ZK_SYNC_ERA.chainId,
+      Chains.SONIC.chainId,
     ],
     swapAndTransfer: true,
     buyOrders: false,
