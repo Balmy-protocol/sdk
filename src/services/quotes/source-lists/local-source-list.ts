@@ -60,12 +60,12 @@ export class LocalSourceList implements IQuoteSourceList {
   ): Promise<QuoteTransaction> {
     const source = this.sources[sourceId];
 
-    if (!source) throw new SourceNotFoundError(sourceId);
+    if (!source) return Promise.reject(new SourceNotFoundError(sourceId));
 
     // Check config is valid
     const config = { ...sourceConfig?.global, ...sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
     if (!source.isConfigAndContextValidForTxBuilding(config)) {
-      throw new SourceInvalidConfigOrContextError(sourceId);
+      return Promise.reject(new SourceInvalidConfigOrContextError(sourceId));
     }
 
     // Map request to source request
@@ -82,19 +82,19 @@ export class LocalSourceList implements IQuoteSourceList {
 
   private async getQuote(request: SourceListQuoteRequest, sourceId: SourceId): Promise<SourceListQuoteResponse> {
     if (!(sourceId in this.sources)) {
-      throw new SourceNotFoundError(sourceId);
+      return Promise.reject(new SourceNotFoundError(sourceId));
     }
 
     // Map request to source request
     const sourceRequest = mapQuoteRequestToSourceRequest(request);
 
     // Find and wrap source
-    const source = this.getSourceForRequest(request, sourceId);
+    const source = await this.getSourceForRequest(request, sourceId);
 
     // Check config is valid
     const config = { ...request.sourceConfig?.global, ...request.sourceConfig?.custom?.[sourceId as SourceWithConfigId] };
     if (!source.isConfigAndContextValidForQuoting(config)) {
-      throw new SourceInvalidConfigOrContextError(sourceId);
+      return Promise.reject(new SourceInvalidConfigOrContextError(sourceId));
     }
 
     // Ask for quote
@@ -115,7 +115,7 @@ export class LocalSourceList implements IQuoteSourceList {
       if (request.estimateBuyOrdersWithSellOnlySources) {
         source = buyToSellOrderWrapper(source);
       } else {
-        throw new SourceNoBuyOrdersError(sourceId);
+        return Promise.reject(new SourceNoBuyOrdersError(sourceId));
       }
     }
     // Cast so that even if the source doesn't support it, everything else types ok
