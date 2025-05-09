@@ -27,21 +27,21 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.LINEA.chainId]: 'linea',
 };
 
-const MAGPIE_METADATA: QuoteSourceMetadata<MagpieSupport> = {
-  name: 'Magpie',
+const FLY_METADATA: QuoteSourceMetadata<FlySupport> = {
+  name: 'Fly',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
     buyOrders: false,
   },
-  logoURI: 'ipfs://QmfR2ybY1gvctAxU5KArQ1UDXFixBY8ehgTBUBvUqY4Q4b',
+  logoURI: 'ipfs://bafkreidiz34vnfrvsakwfzibepsbni5pnvdrjo4vjssteyspeaxwydubmq',
 };
-type MagpieSupport = { buyOrders: false; swapAndTransfer: true };
-type MagpieConfig = { sourceAllowlist?: string[]; apiKey?: string; enableRFQ?: boolean };
-type MagpieData = { quoteId: string };
-export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieSupport, MagpieConfig, MagpieData> {
+type FlySupport = { buyOrders: false; swapAndTransfer: true };
+type FlyConfig = { sourceAllowlist?: string[]; apiKey?: string; enableRFQ?: boolean };
+type FlyData = { quoteId: string };
+export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport, FlyConfig, FlyData> {
   getMetadata() {
-    return MAGPIE_METADATA;
+    return FLY_METADATA;
   }
 
   async quote({
@@ -55,7 +55,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<MagpieSupport, MagpieConfig>): Promise<SourceQuoteResponse<MagpieData>> {
+  }: QuoteParams<FlySupport, FlyConfig>): Promise<SourceQuoteResponse<FlyData>> {
     const quoteQueryParams = {
       network: SUPPORTED_CHAINS[chainId],
       fromTokenAddress: mapToken(sellToken),
@@ -77,7 +77,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     const quoteUrl = `https://api.magpiefi.xyz/aggregator/quote?${quoteQueryString}`;
     const quoteResponse = await fetchService.fetch(quoteUrl, { timeout, headers });
     if (!quoteResponse.ok) {
-      failed(MAGPIE_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
+      failed(FLY_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
     const estimatedGasNum: `${number}` | undefined = fees.find((fee: { type: string; value: `${number}` }) => fee.type === 'gas')?.value;
@@ -103,7 +103,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
       config: { timeout },
       customData: { quoteId },
     },
-  }: BuildTxParams<MagpieConfig, MagpieData>): Promise<SourceQuoteTransaction> {
+  }: BuildTxParams<FlyConfig, FlyData>): Promise<SourceQuoteTransaction> {
     const transactionQueryParams = {
       quoteId,
       estimateGas: false,
@@ -112,7 +112,7 @@ export class MagpieQuoteSource extends AlwaysValidConfigAndContextSource<MagpieS
     const transactionUrl = `https://api.magpiefi.xyz/aggregator/transaction?${transactionQueryString}`;
     const transactionResponse = await fetchService.fetch(transactionUrl, { timeout });
     if (!transactionResponse.ok) {
-      failed(MAGPIE_METADATA, chainId, sellToken, buyToken, await transactionResponse.text());
+      failed(FLY_METADATA, chainId, sellToken, buyToken, await transactionResponse.text());
     }
     const { to, value, data } = await transactionResponse.json();
     return { to, calldata: data, value: BigInt(value) };

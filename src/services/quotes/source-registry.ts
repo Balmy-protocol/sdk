@@ -16,7 +16,7 @@ import { PortalsFiQuoteSource } from './quote-sources/portals-fi-quote-source';
 import { OKXDexQuoteSource } from './quote-sources/okx-dex-quote-source';
 import { BebopQuoteSource } from './quote-sources/bebop-quote-source';
 import { XYFinanceQuoteSource } from './quote-sources/xy-finance-quote-source';
-import { MagpieQuoteSource } from './quote-sources/magpie-quote-source';
+import { FlyQuoteSource } from './quote-sources/fly-quote-source';
 import { SquidQuoteSource } from './quote-sources/squid-quote-source';
 import { ConveyorQuoteSource } from './quote-sources/conveyor-quote-source';
 import { OkuQuoteSource } from './quote-sources/oku-quote-source';
@@ -47,7 +47,7 @@ export const QUOTE_SOURCES = {
   changelly: new ChangellyQuoteSource(),
   balmy: new BalmyQuoteSource(),
   oku: new OkuQuoteSource(),
-  magpie: new MagpieQuoteSource(),
+  fly: new FlyQuoteSource(),
   squid: new SquidQuoteSource(),
   'portals-fi': new PortalsFiQuoteSource(),
   enso: new EnsoQuoteSource(),
