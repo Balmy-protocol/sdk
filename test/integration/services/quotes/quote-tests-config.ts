@@ -50,8 +50,8 @@ if (process.env.OKX_DEX_API_KEY && process.env.OKX_DEX_SECRET_KEY && process.env
     passphrase: process.env.OKX_DEX_PASSPHRASE,
   };
 }
-if (process.env.MAGPIE_API_KEY) {
-  CONFIG.custom!.magpie = { apiKey: process.env.MAGPIE_API_KEY };
+if (process.env.FLY_API_KEY) {
+  CONFIG.custom!.fly = { apiKey: process.env.FLY_API_KEY };
 }
 
 export enum Test {
