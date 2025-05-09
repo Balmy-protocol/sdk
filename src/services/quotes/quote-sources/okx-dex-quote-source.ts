@@ -34,13 +34,13 @@ const OKX_DEX_METADATA: QuoteSourceMetadata<OKXDexSupport> = {
   name: 'OKX Dex',
   supports: {
     chains: SUPPORTED_CHAINS.map(({ chainId }) => chainId),
-    swapAndTransfer: false,
+    swapAndTransfer: true,
     buyOrders: false,
   },
   logoURI: 'ipfs://QmarS9mPPLegvNaazZ8Kqg1gLvkbsvQE2tkdF6uZCvBrFn',
 };
 type OKXDexConfig = { apiKey: string; secretKey: string; passphrase: string };
-type OKXDexSupport = { buyOrders: false; swapAndTransfer: false };
+type OKXDexSupport = { buyOrders: false; swapAndTransfer: true };
 type OKXDexData = { tx: SourceQuoteTransaction };
 export class OKXDexQuoteSource implements IQuoteSource<OKXDexSupport, OKXDexConfig> {
   getMetadata() {
@@ -134,19 +134,18 @@ async function calculateQuote({
     buyToken,
     order,
     config: { slippagePercentage, timeout },
-    accounts: { takeFrom },
+    accounts: { takeFrom, recipient },
   },
   config,
 }: QuoteParams<OKXDexSupport, OKXDexConfig>) {
   const queryParams = {
-    chainId,
+    chainIndex: chainId,
     amount: order.sellAmount.toString(),
     fromTokenAddress: sellToken,
     toTokenAddress: buyToken,
     slippage: slippagePercentage / 100,
     userWalletAddress: takeFrom,
-    referrerAddress: config.referrer?.address,
-    feePercent: config.referrer?.address ? 0 : undefined,
+    swapReceiverAddress: recipient,
   };
   const queryString = qs.stringify(queryParams, { skipNulls: true, arrayFormat: 'comma' });
   const path = `/api/v5/dex/aggregator/swap?${queryString}`;
@@ -190,7 +189,7 @@ async function fetch({
     ['OK-ACCESS-SIGN']: base64,
   };
 
-  const url = `https://www.okx.com${path}`;
+  const url = `https://web3.okx.com${path}`;
   const response = await fetchService.fetch(url, { timeout, headers });
   if (!response.ok) {
     failed(OKX_DEX_METADATA, chainId, sellToken, buyToken, await response.text());
