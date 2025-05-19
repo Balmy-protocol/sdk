@@ -27,8 +27,8 @@ const SUPPORTED_CHAINS: Record<ChainId, string> = {
   [Chains.LINEA.chainId]: 'linea',
 };
 
-const FLY_METADATA: QuoteSourceMetadata<FlySupport> = {
-  name: 'Fly',
+const FLY_TRADE_METADATA: QuoteSourceMetadata<FlyTradeSupport> = {
+  name: 'fly.trade',
   supports: {
     chains: Object.keys(SUPPORTED_CHAINS).map(Number),
     swapAndTransfer: true,
@@ -36,12 +36,12 @@ const FLY_METADATA: QuoteSourceMetadata<FlySupport> = {
   },
   logoURI: 'ipfs://bafkreidiz34vnfrvsakwfzibepsbni5pnvdrjo4vjssteyspeaxwydubmq',
 };
-type FlySupport = { buyOrders: false; swapAndTransfer: true };
-type FlyConfig = { sourceAllowlist?: string[]; apiKey?: string; enableRFQ?: boolean };
-type FlyData = { quoteId: string };
-export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport, FlyConfig, FlyData> {
+type FlyTradeSupport = { buyOrders: false; swapAndTransfer: true };
+type FlyTradeConfig = { sourceAllowlist?: string[]; apiKey?: string; enableRFQ?: boolean };
+type FlyTradeData = { quoteId: string };
+export class FlyTradeQuoteSource extends AlwaysValidConfigAndContextSource<FlyTradeSupport, FlyTradeConfig, FlyTradeData> {
   getMetadata() {
-    return FLY_METADATA;
+    return FLY_TRADE_METADATA;
   }
 
   async quote({
@@ -55,7 +55,7 @@ export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport
       config: { slippagePercentage, timeout },
     },
     config,
-  }: QuoteParams<FlySupport, FlyConfig>): Promise<SourceQuoteResponse<FlyData>> {
+  }: QuoteParams<FlyTradeSupport, FlyTradeConfig>): Promise<SourceQuoteResponse<FlyTradeData>> {
     const quoteQueryParams = {
       network: SUPPORTED_CHAINS[chainId],
       fromTokenAddress: mapToken(sellToken),
@@ -77,7 +77,7 @@ export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport
     const quoteUrl = `https://api.magpiefi.xyz/aggregator/quote?${quoteQueryString}`;
     const quoteResponse = await fetchService.fetch(quoteUrl, { timeout, headers });
     if (!quoteResponse.ok) {
-      failed(FLY_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
+      failed(FLY_TRADE_METADATA, chainId, sellToken, buyToken, await quoteResponse.text());
     }
     const { id: quoteId, amountOut, targetAddress, fees } = await quoteResponse.json();
     const estimatedGasNum: `${number}` | undefined = fees.find((fee: { type: string; value: `${number}` }) => fee.type === 'gas')?.value;
@@ -103,7 +103,7 @@ export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport
       config: { timeout },
       customData: { quoteId },
     },
-  }: BuildTxParams<FlyConfig, FlyData>): Promise<SourceQuoteTransaction> {
+  }: BuildTxParams<FlyTradeConfig, FlyTradeData>): Promise<SourceQuoteTransaction> {
     const transactionQueryParams = {
       quoteId,
       estimateGas: false,
@@ -112,7 +112,7 @@ export class FlyQuoteSource extends AlwaysValidConfigAndContextSource<FlySupport
     const transactionUrl = `https://api.magpiefi.xyz/aggregator/transaction?${transactionQueryString}`;
     const transactionResponse = await fetchService.fetch(transactionUrl, { timeout });
     if (!transactionResponse.ok) {
-      failed(FLY_METADATA, chainId, sellToken, buyToken, await transactionResponse.text());
+      failed(FLY_TRADE_METADATA, chainId, sellToken, buyToken, await transactionResponse.text());
     }
     const { to, value, data } = await transactionResponse.json();
     return { to, calldata: data, value: BigInt(value) };
